@@ -71,7 +71,12 @@ fun DownloadsScreen() {
     ) { }
 
     val info by produceState<WorkInfo?>(initialValue = null, key1 = workId) {
-        val id = workId?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: return@produceState
+        val id = workId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+        if (id == null) {
+            value = null
+            return@produceState
+        }
+
         while (true) {
             value = withContext(Dispatchers.IO) { workManager.getWorkInfoById(id).get() }
             if (value?.state?.isFinished == true) break
@@ -84,8 +89,15 @@ fun DownloadsScreen() {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Text("Downloads", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Background artifact downloads with SHA-256 verification.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Downloads",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "Background artifact downloads with SHA-256 verification.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         item {
             GlassCard(Modifier.fillMaxWidth()) {
@@ -113,7 +125,10 @@ fun DownloadsScreen() {
                                 validationError = "Only HTTPS downloads are allowed."
                                 return@Button
                             }
-                            if (expectedSha.isNotBlank() && !expectedSha.matches(Regex("[A-Fa-f0-9]{64}"))) {
+                            if (
+                                expectedSha.isNotBlank() &&
+                                !expectedSha.matches(Regex("[A-Fa-f0-9]{64}"))
+                            ) {
                                 validationError = "SHA-256 must be 64 hexadecimal characters."
                                 return@Button
                             }
@@ -122,8 +137,16 @@ fun DownloadsScreen() {
                             }
                             val request = OneTimeWorkRequestBuilder<ArtifactDownloadWorker>()
                                 .setInputData(ArtifactDownloadWorker.input(url, expectedSha))
-                                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-                                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)
+                                .setConstraints(
+                                    Constraints.Builder()
+                                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                                        .build()
+                                )
+                                .setBackoffCriteria(
+                                    BackoffPolicy.EXPONENTIAL,
+                                    15,
+                                    TimeUnit.SECONDS
+                                )
                                 .addTag(ArtifactDownloadWorker.TAG)
                                 .build()
                             workManager.enqueue(request)
@@ -143,42 +166,65 @@ fun DownloadsScreen() {
             item {
                 GlassCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp)) {
-                        Text("Download status: ${work.state.name.lowercase()}", fontWeight = FontWeight.SemiBold)
-                        val progress = work.progress.getInt(ArtifactDownloadWorker.KEY_PROGRESS, 0)
+                        Text(
+                            "Download status: ${work.state.name.lowercase()}",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        val progress = work.progress.getInt(
+                            ArtifactDownloadWorker.KEY_PROGRESS,
+                            0
+                        )
                         if (!work.state.isFinished) {
                             Spacer(Modifier.height(8.dp))
-                            LinearProgressIndicator(progress = progress / 100f, modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(
+                                progress = { progress / 100f },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             Text("$progress%")
                             Spacer(Modifier.height(10.dp))
-                            OutlinedButton(onClick = { workManager.cancelWorkById(work.id) }) {
+                            OutlinedButton(
+                                onClick = { workManager.cancelWorkById(work.id) }
+                            ) {
                                 Icon(Icons.Default.Delete, null)
                                 Text(" Cancel")
                             }
                         }
                         when (work.state) {
                             WorkInfo.State.SUCCEEDED -> {
-                                val path = work.outputData.getString(ArtifactDownloadWorker.KEY_FILE_PATH).orEmpty()
-                                val sha = work.outputData.getString(ArtifactDownloadWorker.KEY_ACTUAL_SHA).orEmpty()
+                                val path = work.outputData
+                                    .getString(ArtifactDownloadWorker.KEY_FILE_PATH)
+                                    .orEmpty()
+                                val sha = work.outputData
+                                    .getString(ArtifactDownloadWorker.KEY_ACTUAL_SHA)
+                                    .orEmpty()
                                 Text(path, style = MaterialTheme.typography.bodySmall)
-                                Text("SHA-256: $sha", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    "SHA-256: $sha",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                                 if (path.endsWith(".apk", ignoreCase = true)) {
                                     Spacer(Modifier.height(10.dp))
-                                    Button(onClick = {
-                                        runCatching {
-                                            File(path).also { inspectedFile = it }
-                                                .let { ApkInspector(context).inspect(it) }
-                                        }.onSuccess { inspection = it }
-                                            .onFailure { validationError = it.message }
-                                    }) {
+                                    Button(
+                                        onClick = {
+                                            runCatching {
+                                                File(path).also { inspectedFile = it }
+                                                    .let { ApkInspector(context).inspect(it) }
+                                            }.onSuccess { inspection = it }
+                                                .onFailure { validationError = it.message }
+                                        }
+                                    ) {
                                         Icon(Icons.Default.Security, null)
                                         Text(" Inspect APK")
                                     }
                                 }
                             }
+
                             WorkInfo.State.FAILED -> Text(
-                                work.outputData.getString(ArtifactDownloadWorker.KEY_ERROR) ?: "Download failed.",
+                                work.outputData.getString(ArtifactDownloadWorker.KEY_ERROR)
+                                    ?: "Download failed.",
                                 color = MaterialTheme.colorScheme.error
                             )
+
                             else -> Unit
                         }
                     }
@@ -210,15 +256,25 @@ fun DownloadsScreen() {
                     Text("Installed signature match: ${apk.signaturesMatch ?: "Not installed"}")
                     Spacer(Modifier.height(8.dp))
                     Text("Requested permissions", fontWeight = FontWeight.SemiBold)
-                    apk.requestedPermissions.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    apk.requestedPermissions.forEach {
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             },
             confirmButton = {
-                Button(onClick = { inspectedFile?.let { ApkInspector(context).install(it) } }) {
+                Button(
+                    onClick = {
+                        inspectedFile?.let { ApkInspector(context).install(it) }
+                    }
+                ) {
                     Text("Open installer")
                 }
             },
-            dismissButton = { TextButton(onClick = { inspection = null }) { Text("Close") } }
+            dismissButton = {
+                TextButton(onClick = { inspection = null }) {
+                    Text("Close")
+                }
+            }
         )
     }
 }
