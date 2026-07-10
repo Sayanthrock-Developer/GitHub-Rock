@@ -37,7 +37,7 @@ object AndroidWorkflowGenerator {
                   - name: Checkout selected ref
                     uses: actions/checkout@v4
                     with:
-                      ref: ${{ '${' }}{ inputs.git_ref || github.ref }}
+                      ref: ${'$'}{{ inputs.git_ref || github.ref }}
 
                   - name: Set up Java 17
                     uses: actions/setup-java@v4

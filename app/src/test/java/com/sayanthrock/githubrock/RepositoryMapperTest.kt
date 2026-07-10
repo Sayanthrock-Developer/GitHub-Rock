@@ -15,7 +15,7 @@ class RepositoryMapperTest {
             name = "GitHub-Rock",
             fullName = "SayanthRock/GitHub-Rock",
             owner = RepositoryOwnerDto("SayanthRock"),
-            private = true,
+            isPrivate = true,
             htmlUrl = "https://github.com/SayanthRock/GitHub-Rock",
             stars = 10
         ).toSummary()
