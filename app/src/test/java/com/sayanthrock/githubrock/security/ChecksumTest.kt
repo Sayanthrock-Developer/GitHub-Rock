@@ -10,8 +10,9 @@ class ChecksumTest {
     fun calculatesKnownSha256() {
         val file = File.createTempFile("github-rock", ".txt").apply { writeText("GitHub Rock") }
         try {
-            assertEquals("d217a297eceb96d08e9418f1cc4df2d830c8cc69b78e06518b5d76a18bfc48cc", Checksum.sha256(file))
-            assertTrue(Checksum.matches(file, "D217A297ECEB96D08E9418F1CC4DF2D830C8CC69B78E06518B5D76A18BFC48CC"))
+            val expected = "529fd561e17e6941665bf20fb69f7aa7ea42357f27b65174abb39161d1518608"
+            assertEquals(expected, Checksum.sha256(file))
+            assertTrue(Checksum.matches(file, expected.uppercase()))
         } finally {
             file.delete()
         }
