@@ -38,16 +38,25 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Unit tests
-        run: gradle :app:testDebugUnitTest --stacktrace
+      - name: Test, lint and assemble
+        id: gradle_verify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace 2>&1 | tee gradle-verification.log
 
-      - name: Android lint
-        run: gradle :app:lintDebug --stacktrace
-
-      - name: Assemble debug APK
-        run: gradle :app:assembleDebug --stacktrace
+      - name: Upload complete Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-verification-log
+          path: gradle-verification.log
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload debug APK
+        if: steps.gradle_verify.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: github-rock-debug-apk
@@ -63,3 +72,7 @@ jobs:
           path: app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Fail when Gradle verification failed
+        if: steps.gradle_verify.outcome == 'failure'
+        run: exit 1
