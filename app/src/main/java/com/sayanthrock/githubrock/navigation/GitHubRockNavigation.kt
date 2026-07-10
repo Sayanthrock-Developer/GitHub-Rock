@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,13 +33,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import androidx.navigation.NavType
 import com.sayanthrock.githubrock.feature.auth.AuthViewModel
 import com.sayanthrock.githubrock.feature.auth.LoginScreen
 import com.sayanthrock.githubrock.feature.builds.BuildsScreen
@@ -76,7 +75,9 @@ fun GitHubRockRoot(authViewModel: AuthViewModel = hiltViewModel()) {
 
     if (authState.initializing) {
         LiquidBackground {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         }
         return
     }
@@ -88,6 +89,7 @@ fun GitHubRockRoot(authViewModel: AuthViewModel = hiltViewModel()) {
             onGuest = { modeName = SessionMode.GUEST.name },
             onDemo = { modeName = SessionMode.DEMO.name }
         )
+
         else -> GitHubRockNavigation(
             mode = SessionMode.valueOf(modeName),
             onLogout = {
@@ -123,9 +125,12 @@ private fun GitHubRockNavigation(mode: SessionMode, onLogout: () -> Unit) {
                     )
                 }
                 composable("repositories") {
-                    RepositoriesScreen(demoMode = demoMode) { repository ->
-                        navController.navigate("repo/${repository.owner}/${repository.name}")
-                    }
+                    RepositoriesScreen(
+                        demoMode = demoMode,
+                        onRepository = { repository ->
+                            navController.navigate("repo/${repository.owner}/${repository.name}")
+                        }
+                    )
                 }
                 composable("builds") { BuildsScreen(demoMode) }
                 composable("downloads") { DownloadsScreen() }
@@ -150,7 +155,11 @@ private fun GitHubRockNavigation(mode: SessionMode, onLogout: () -> Unit) {
                 }
                 composable(
                     route = "build/{owner}/{repository}/{runId}",
-                    deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repository}/{runId}" })
+                    deepLinks = listOf(
+                        navDeepLink {
+                            uriPattern = "githubrock://build/{owner}/{repository}/{runId}"
+                        }
+                    )
                 ) { entry ->
                     DeepLinkScreen(
                         title = "Workflow run ${entry.arguments?.getString("runId").orEmpty()}",
@@ -159,7 +168,11 @@ private fun GitHubRockNavigation(mode: SessionMode, onLogout: () -> Unit) {
                 }
                 composable(
                     route = "release/{owner}/{repository}/{tag}",
-                    deepLinks = listOf(navDeepLink { uriPattern = "githubrock://release/{owner}/{repository}/{tag}" })
+                    deepLinks = listOf(
+                        navDeepLink {
+                            uriPattern = "githubrock://release/{owner}/{repository}/{tag}"
+                        }
+                    )
                 ) { entry ->
                     DeepLinkScreen(
                         title = "Release ${entry.arguments?.getString("tag").orEmpty()}",
@@ -175,7 +188,9 @@ private fun GitHubRockNavigation(mode: SessionMode, onLogout: () -> Unit) {
 fun BottomNavigationBar(navController: NavHostController) {
     val backStack by navController.currentBackStackEntryAsState()
     val destination = backStack?.destination
-    NavigationBar(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)) {
+    NavigationBar(
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+    ) {
         bottomDestinations.forEach { item ->
             NavigationBarItem(
                 selected = destination?.hierarchy?.any { it.route == item.route } == true,
@@ -197,7 +212,9 @@ fun BottomNavigationBar(navController: NavHostController) {
 private fun DeepLinkScreen(title: String, url: String) {
     val context = LocalContext.current
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        androidx.compose.material3.Button(onClick = { openUrl(context, url) }) { Text("Open $title on GitHub") }
+        androidx.compose.material3.Button(onClick = { openUrl(context, url) }) {
+            Text("Open $title on GitHub")
+        }
     }
 }
 
