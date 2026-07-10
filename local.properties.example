@@ -1,0 +1,5 @@
+# Copy this file to local.properties and replace the placeholder.
+# Never commit a client secret, private key, personal token, or signing key.
+sdk.dir=/path/to/Android/Sdk
+GITHUB_CLIENT_ID=Iv1.your_public_github_app_client_id
+GITHUB_API_VERSION=2022-11-28
