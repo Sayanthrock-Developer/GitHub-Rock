@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock.core.network
 
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.sayanthrock.githubrock.BuildConfig
 import com.sayanthrock.githubrock.core.security.TokenStore
 import dagger.Module
@@ -12,6 +11,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
@@ -39,9 +39,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun githubClient(tokenStore: TokenStore, logger: HttpLoggingInterceptor): OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(90, TimeUnit.SECONDS)
+        baseClient(logger)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .header("Accept", "application/vnd.github+json")
@@ -54,15 +52,12 @@ object NetworkModule {
                     .build()
                 chain.proceed(request)
             }
-            .addInterceptor(logger)
             .build()
 
     @Provides
     @Singleton
     @Named("authClient")
-    fun authClient(logger: HttpLoggingInterceptor): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
+    fun authClient(logger: HttpLoggingInterceptor): OkHttpClient = baseClient(logger)
         .addInterceptor { chain ->
             chain.proceed(
                 chain.request().newBuilder()
@@ -70,8 +65,12 @@ object NetworkModule {
                     .build()
             )
         }
-        .addInterceptor(logger)
         .build()
+
+    @Provides
+    @Singleton
+    @Named("downloadClient")
+    fun downloadClient(logger: HttpLoggingInterceptor): OkHttpClient = baseClient(logger).build()
 
     @Provides
     @Singleton
@@ -100,4 +99,10 @@ object NetworkModule {
     @Singleton
     fun authApi(@Named("authRetrofit") retrofit: Retrofit): GitHubAuthApi =
         retrofit.create(GitHubAuthApi::class.java)
+
+    private fun baseClient(logger: HttpLoggingInterceptor): OkHttpClient.Builder =
+        OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)
+            .addInterceptor(logger)
 }
