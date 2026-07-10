@@ -1,2 +1,0 @@
-# GitHub-Rock
-GitHub application 
