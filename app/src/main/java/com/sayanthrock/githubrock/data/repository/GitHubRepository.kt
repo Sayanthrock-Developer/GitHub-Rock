@@ -1,0 +1,60 @@
+package com.sayanthrock.githubrock.data.repository
+
+import com.sayanthrock.githubrock.core.model.*
+import com.sayanthrock.githubrock.core.network.GitHubRestApi
+import com.sayanthrock.githubrock.data.local.RepositoryDao
+import com.sayanthrock.githubrock.data.local.RepositoryEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class GitHubRepository @Inject constructor(
+    private val api: GitHubRestApi,
+    private val recentDao: RepositoryDao
+) {
+    suspend fun dashboard(): DashboardPayload = withContext(Dispatchers.IO) {
+        val profile = api.me()
+        val rate = api.rateLimit().rate
+        val repos = api.repositories()
+        DashboardPayload(profile, rate, repos)
+    }
+
+    suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> =
+        api.searchRepositories(query.ifBlank { "android stars:>1000" }, sort = "updated").items
+
+    suspend fun remember(repository: GitHubRepositoryModel) = recentDao.upsert(
+        RepositoryEntity(
+            id = repository.id,
+            owner = repository.owner.login,
+            name = repository.name,
+            fullName = repository.fullName,
+            description = repository.description,
+            language = repository.language,
+            stars = repository.stars,
+            isPrivate = repository.private,
+            updatedAt = repository.updatedAt
+        )
+    )
+
+    suspend fun contents(owner: String, repo: String, path: String, ref: String?) = api.contents(owner, repo, path, ref)
+    suspend fun issues(owner: String, repo: String) = api.issues(owner, repo).filterNot { it.body?.contains("pull request", ignoreCase = true) == true }
+    suspend fun pulls(owner: String, repo: String) = api.pullRequests(owner, repo)
+    suspend fun workflows(owner: String, repo: String) = api.workflows(owner, repo).workflows
+    suspend fun runs(owner: String, repo: String) = api.workflowRuns(owner, repo).runs
+    suspend fun releases(owner: String, repo: String) = api.releases(owner, repo)
+
+    suspend fun dispatch(owner: String, repo: String, workflowId: Long, ref: String, inputs: Map<String, String>): Boolean =
+        api.dispatchWorkflow(owner, repo, workflowId, WorkflowDispatchRequest(ref, inputs)).isSuccessful
+
+    suspend fun cancel(owner: String, repo: String, runId: Long): Boolean = api.cancelWorkflow(owner, repo, runId).isSuccessful
+    suspend fun rerun(owner: String, repo: String, runId: Long): Boolean = api.rerunWorkflow(owner, repo, runId).isSuccessful
+}
+
+data class DashboardPayload(
+    val profile: GitHubUser,
+    val rateLimit: RateLimit,
+    val repositories: List<GitHubRepositoryModel>
+)
+

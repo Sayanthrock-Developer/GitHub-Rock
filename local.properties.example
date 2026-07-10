@@ -1,0 +1,4 @@
+# Copy this file to local.properties. Never commit a real client secret or token.
+sdk.dir=/path/to/Android/Sdk
+GITHUB_CLIENT_ID=Iv1.your_public_github_app_client_id
+
