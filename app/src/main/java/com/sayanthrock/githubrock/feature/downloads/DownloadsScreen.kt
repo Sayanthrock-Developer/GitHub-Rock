@@ -7,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,9 +27,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -62,6 +61,7 @@ fun DownloadsScreen() {
     var url by rememberSaveable { mutableStateOf("") }
     var expectedSha by rememberSaveable { mutableStateOf("") }
     var workId by rememberSaveable { mutableStateOf<String?>(null) }
+    var workInfo by remember { mutableStateOf<WorkInfo?>(null) }
     var validationError by remember { mutableStateOf<String?>(null) }
     var inspection by remember { mutableStateOf<ApkInspection?>(null) }
     var inspectedFile by remember { mutableStateOf<File?>(null) }
@@ -70,17 +70,18 @@ fun DownloadsScreen() {
         ActivityResultContracts.RequestPermission()
     ) { }
 
-    val info by produceState<WorkInfo?>(initialValue = null, key1 = workId) {
+    LaunchedEffect(workId) {
+        workInfo = null
         val id = workId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        if (id == null) {
-            value = null
-            return@produceState
-        }
-
-        while (true) {
-            value = withContext(Dispatchers.IO) { workManager.getWorkInfoById(id).get() }
-            if (value?.state?.isFinished == true) break
-            delay(600)
+        if (id != null) {
+            while (true) {
+                val latest = withContext(Dispatchers.IO) {
+                    workManager.getWorkInfoById(id).get()
+                }
+                workInfo = latest
+                if (latest?.state?.isFinished == true) break
+                delay(600)
+            }
         }
     }
 
@@ -162,7 +163,7 @@ fun DownloadsScreen() {
             }
         }
 
-        info?.let { work ->
+        workInfo?.let { work ->
             item {
                 GlassCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp)) {
