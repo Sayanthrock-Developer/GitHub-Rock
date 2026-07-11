@@ -41,8 +41,8 @@ class KeystoreTokenStore @Inject constructor(
         return StoredTokens(
             accessToken = access,
             refreshToken = preferences.getString(KEY_REFRESH, null),
-            accessExpiresAtEpochSeconds = preferences.longOrNull(KEY_ACCESS_EXPIRY),
-            refreshExpiresAtEpochSeconds = preferences.longOrNull(KEY_REFRESH_EXPIRY)
+            accessExpiresAtEpochSeconds = if (preferences.contains(KEY_ACCESS_EXPIRY)) preferences.getLong(KEY_ACCESS_EXPIRY, 0L) else null,
+            refreshExpiresAtEpochSeconds = if (preferences.contains(KEY_REFRESH_EXPIRY)) preferences.getLong(KEY_REFRESH_EXPIRY, 0L) else null
         )
     }
 
@@ -57,9 +57,6 @@ class KeystoreTokenStore @Inject constructor(
 
     override fun clear() = preferences.edit().clear().apply()
 
-    private fun android.content.SharedPreferences.getLongOrNull(key: String): Long? =
-        if (contains(key)) getLong(key, 0L) else null
-
     private fun android.content.SharedPreferences.Editor.putLongOrRemove(key: String, value: Long?) {
         if (value == null) remove(key) else putLong(key, value)
     }
@@ -71,4 +68,3 @@ class KeystoreTokenStore @Inject constructor(
         const val KEY_REFRESH_EXPIRY = "refresh_expiry"
     }
 }
-
