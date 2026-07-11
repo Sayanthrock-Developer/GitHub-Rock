@@ -63,6 +63,9 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                             inspection = inspectionFile?.let { ApkInspector.inspect(context, it) }
                         }) { Text("Inspect APK") }
                     }
+                    if (item.status == "failed") {
+                        TextButton(onClick = { viewModel.retry(item) }) { Text("Retry") }
+                    }
                     TextButton(onClick = { viewModel.delete(item.id) }) { Text("Delete history") }
                 }
             }
