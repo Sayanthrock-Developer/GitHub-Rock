@@ -28,7 +28,8 @@ data class RepositoryDetailState(
     val artifacts: List<WorkflowArtifact> = emptyList(),
     val releases: List<Release> = emptyList(),
     val currentPath: String = "",
-    val error: String? = null
+    val error: String? = null,
+    val message: String? = null
 )
 
 @HiltViewModel
@@ -50,6 +51,20 @@ class RepositoryDetailViewModel @Inject constructor(
     fun openDirectory(path: String) {
         _state.update { it.copy(currentPath = path, section = RepoSection.Code) }
         load(RepoSection.Code)
+    }
+
+    fun mergePullRequest(number: Int, method: String = "merge") = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.mergePullRequest(owner, repo, number, method) }
+            .onSuccess { result ->
+                _state.update {
+                    if (result.merged) it.copy(message = "Pull request #$number merged successfully")
+                    else it.copy(error = "GitHub did not merge #$number: ${result.message}")
+                }
+                if (result.merged) load(RepoSection.Pulls)
+            }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to merge pull request") } }
+        _state.update { it.copy(loading = false) }
     }
 
     private fun load(section: RepoSection) = viewModelScope.launch {
