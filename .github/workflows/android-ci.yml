@@ -43,5 +43,8 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
+            gradlew
+            gradlew.bat
+            gradle/wrapper/gradle-wrapper.jar
+            gradle/wrapper/gradle-wrapper.properties
           if-no-files-found: warn
-
