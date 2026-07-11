@@ -12,6 +12,9 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,7 @@ fun RepositoryDetailScreen(
     viewModel: RepositoryDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -41,6 +45,7 @@ fun RepositoryDetailScreen(
         }
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp)) }
+        state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp)) }
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 40.dp),
@@ -68,7 +73,12 @@ fun RepositoryDetailScreen(
                     if (entry.type == "dir") TextButton(onClick = { viewModel.openDirectory(entry.path) }) { Text("Open folder") }
                 }
                 RepoSection.Issues -> items(state.issues, key = { it.id }) { issue -> SummaryCard("#${issue.number} ${issue.title}", "${issue.state} • ${issue.user.login}") }
-                RepoSection.Pulls -> items(state.pulls, key = { it.id }) { pull -> SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}") }
+                RepoSection.Pulls -> items(state.pulls, key = { it.id }) { pull ->
+                    SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}")
+                    if (pull.state == "open" && pull.draft != true) {
+                        TextButton(onClick = { mergePull = pull }) { Text("Merge…") }
+                    }
+                }
                 RepoSection.Actions -> {
                     items(state.workflows, key = { it.id }) { workflow -> SummaryCard(workflow.name, workflow.path) }
                     items(state.runs, key = { it.id }) { run -> SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}") }
@@ -82,6 +92,17 @@ fun RepositoryDetailScreen(
                 RepoSection.Releases -> items(state.releases, key = { it.id }) { release -> SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets") }
             }
         }
+    }
+    mergePull?.let { pull ->
+        AlertDialog(
+            onDismissRequest = { mergePull = null },
+            title = { Text("Merge pull request #${pull.number}?") },
+            text = { Text("GitHub will apply the default merge method. This action cannot be silently undone.") },
+            confirmButton = {
+                TextButton(onClick = { mergePull = null; viewModel.mergePullRequest(pull.number) }) { Text("Merge") }
+            },
+            dismissButton = { TextButton(onClick = { mergePull = null }) { Text("Cancel") } }
+        )
     }
 }
 
