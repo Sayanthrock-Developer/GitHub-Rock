@@ -72,6 +72,12 @@ fun RepositoryDetailScreen(
                 RepoSection.Actions -> {
                     items(state.workflows, key = { it.id }) { workflow -> SummaryCard(workflow.name, workflow.path) }
                     items(state.runs, key = { it.id }) { run -> SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}") }
+                    items(state.jobs, key = { it.id }) { job ->
+                        SummaryCard(job.name, "${job.status} • ${job.conclusion ?: "running"} • ${job.steps.size} steps")
+                    }
+                    items(state.artifacts, key = { it.id }) { artifact ->
+                        SummaryCard(artifact.name, "${artifact.sizeBytes / 1_048_576} MB • ${if (artifact.expired) "expired" else "available"}")
+                    }
                 }
                 RepoSection.Releases -> items(state.releases, key = { it.id }) { release -> SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets") }
             }

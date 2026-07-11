@@ -24,6 +24,8 @@ data class RepositoryDetailState(
     val pulls: List<PullRequestSummary> = emptyList(),
     val workflows: List<Workflow> = emptyList(),
     val runs: List<WorkflowRun> = emptyList(),
+    val jobs: List<WorkflowJob> = emptyList(),
+    val artifacts: List<WorkflowArtifact> = emptyList(),
     val releases: List<Release> = emptyList(),
     val currentPath: String = "",
     val error: String? = null
@@ -58,7 +60,18 @@ class RepositoryDetailViewModel @Inject constructor(
                 RepoSection.Code -> _state.update { it.copy(contents = repository.contents(owner, repo, it.currentPath, null)) }
                 RepoSection.Issues -> _state.update { it.copy(issues = repository.issues(owner, repo)) }
                 RepoSection.Pulls -> _state.update { it.copy(pulls = repository.pulls(owner, repo)) }
-                RepoSection.Actions -> _state.update { it.copy(workflows = repository.workflows(owner, repo), runs = repository.runs(owner, repo)) }
+                RepoSection.Actions -> {
+                    val runs = repository.runs(owner, repo)
+                    val latest = runs.firstOrNull()
+                    _state.update {
+                        it.copy(
+                            workflows = repository.workflows(owner, repo),
+                            runs = runs,
+                            jobs = latest?.let { run -> repository.workflowJobs(owner, repo, run.id) }.orEmpty(),
+                            artifacts = latest?.let { run -> repository.workflowArtifacts(owner, repo, run.id) }.orEmpty()
+                        )
+                    }
+                }
                 RepoSection.Releases -> _state.update { it.copy(releases = repository.releases(owner, repo)) }
             }
         }.onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load this section") } }
@@ -78,4 +91,3 @@ class RepositoryDetailViewModel @Inject constructor(
         }
     }
 }
-
