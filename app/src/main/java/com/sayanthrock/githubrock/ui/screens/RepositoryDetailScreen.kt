@@ -99,7 +99,17 @@ fun RepositoryDetailScreen(
                         }
                     }
                 }
-                RepoSection.Releases -> items(state.releases, key = { it.id }) { release -> SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets") }
+                RepoSection.Releases -> items(state.releases, key = { it.id }) { release ->
+                    SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets")
+                    release.assets.forEach { asset ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(asset.name, style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = {
+                                downloadsViewModel.enqueue(asset.downloadUrl, asset.name)
+                            }) { Text("Download") }
+                        }
+                    }
+                }
             }
         }
     }
