@@ -35,4 +35,6 @@ class DownloadsViewModel @Inject constructor(
     }
 
     fun delete(id: Long) = viewModelScope.launch { dao.delete(id) }
+
+    fun retry(download: DownloadEntity) = enqueue(download.sourceUrl, download.fileName)
 }
