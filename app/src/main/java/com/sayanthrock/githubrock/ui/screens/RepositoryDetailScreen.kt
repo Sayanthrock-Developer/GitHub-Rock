@@ -33,6 +33,7 @@ fun RepositoryDetailScreen(
     viewModel: RepositoryDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val downloadsViewModel: DownloadsViewModel = hiltViewModel()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
     Column(Modifier.fillMaxSize()) {
@@ -91,6 +92,11 @@ fun RepositoryDetailScreen(
                     }
                     items(state.artifacts, key = { it.id }) { artifact ->
                         SummaryCard(artifact.name, "${artifact.sizeBytes / 1_048_576} MB • ${if (artifact.expired) "expired" else "available"}")
+                        if (!artifact.expired) {
+                            TextButton(onClick = {
+                                downloadsViewModel.enqueue(artifact.archiveDownloadUrl, "${artifact.name}-${artifact.id}.zip")
+                            }) { Text("Download artifact") }
+                        }
                     }
                 }
                 RepoSection.Releases -> items(state.releases, key = { it.id }) { release -> SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets") }
