@@ -43,6 +43,7 @@ fun RepositoryDetailScreen(
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
     var runAction by remember { mutableStateOf<WorkflowRun?>(null) }
     var expandedRelease by remember { mutableStateOf<Long?>(null) }
+    var dispatchWorkflow by remember { mutableStateOf<Workflow?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -91,7 +92,10 @@ fun RepositoryDetailScreen(
                     }
                 }
                 RepoSection.Actions -> {
-                    items(state.workflows, key = { it.id }) { workflow -> SummaryCard(workflow.name, workflow.path) }
+                    items(state.workflows, key = { it.id }) { workflow ->
+                        SummaryCard(workflow.name, workflow.path)
+                        TextButton(onClick = { dispatchWorkflow = workflow }) { Text("Run workflow") }
+                    }
                     items(state.runs, key = { it.id }) { run ->
                         SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}")
                         if (run.htmlUrl.isNotBlank()) TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))) }) { Text("Open on GitHub") }
@@ -159,6 +163,15 @@ fun RepositoryDetailScreen(
             text = { Text(if (cancel) "GitHub will stop this workflow run if cancellation is permitted." else "GitHub will start another run using the same workflow revision.") },
             confirmButton = { TextButton(onClick = { runAction = null; if (cancel) viewModel.cancelWorkflow(run.id) else viewModel.rerunWorkflow(run.id) }) { Text(if (cancel) "Cancel workflow" else "Rerun") } },
             dismissButton = { TextButton(onClick = { runAction = null }) { Text("Keep") } }
+        )
+    }
+    dispatchWorkflow?.let { workflow ->
+        AlertDialog(
+            onDismissRequest = { dispatchWorkflow = null },
+            title = { Text("Run ${workflow.name}?") },
+            text = { Text("GitHub will dispatch this workflow on the repository default branch. Any required workflow inputs must be configured in GitHub.") },
+            confirmButton = { TextButton(onClick = { dispatchWorkflow = null; viewModel.dispatchWorkflow(workflow.id, repository?.defaultBranch ?: "main") }) { Text("Run") } },
+            dismissButton = { TextButton(onClick = { dispatchWorkflow = null }) { Text("Cancel") } }
         )
     }
 }
