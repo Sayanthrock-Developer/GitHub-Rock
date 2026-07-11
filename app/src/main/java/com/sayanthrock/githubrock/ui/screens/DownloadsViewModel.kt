@@ -34,7 +34,10 @@ class DownloadsViewModel @Inject constructor(
         workManager.enqueue(request)
     }
 
-    fun delete(id: Long) = viewModelScope.launch { dao.delete(id) }
+    fun delete(download: DownloadEntity) = viewModelScope.launch {
+        download.localPath?.let { java.io.File(it).delete() }
+        dao.delete(download.id)
+    }
 
     fun retry(download: DownloadEntity) = enqueue(download.sourceUrl, download.fileName)
 }

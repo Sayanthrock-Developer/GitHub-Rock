@@ -29,6 +29,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var inspection by remember { mutableStateOf<ApkInspection?>(null) }
     var inspectionFile by remember { mutableStateOf<File?>(null) }
+    var deleteTarget by remember { mutableStateOf<com.sayanthrock.githubrock.data.local.DownloadEntity?>(null) }
     Column(
         Modifier.fillMaxSize().padding(18.dp).padding(bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -79,7 +80,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     if (item.status == "failed") {
                         TextButton(onClick = { viewModel.retry(item) }) { Text("Retry") }
                     }
-                    TextButton(onClick = { viewModel.delete(item.id) }) { Text("Delete history") }
+                    TextButton(onClick = { deleteTarget = item }) { Text("Delete") }
                 }
             }
         }
@@ -112,6 +113,15 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     TextButton(onClick = { inspection = null; inspectionFile = null }) { Text("Close") }
                 }
             }
+        )
+    }
+    deleteTarget?.let { item ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete download?") },
+            text = { Text("This removes the local file and its download history. This cannot be undone.") },
+            confirmButton = { TextButton(onClick = { viewModel.delete(item); deleteTarget = null }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } }
         )
     }
 }
