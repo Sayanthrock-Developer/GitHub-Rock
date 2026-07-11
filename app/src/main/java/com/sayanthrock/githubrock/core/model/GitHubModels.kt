@@ -195,6 +195,50 @@ data class PullRequest(
     @SerialName("html_url") val htmlUrl: String = ""
 )
 
+@Serializable
+data class IssueComment(
+    val id: Long,
+    val body: String,
+    val user: Owner,
+    @SerialName("created_at") val createdAt: String = ""
+)
+
+@Serializable
+data class ReviewRequest(val body: String, val event: String)
+
+@Serializable
+data class PullRequestReview(
+    val id: Long,
+    val user: Owner,
+    val body: String? = null,
+    val state: String,
+    @SerialName("submitted_at") val submittedAt: String? = null
+)
+
+@Serializable
+data class WorkflowJob(
+    val id: Long,
+    val name: String,
+    val status: String,
+    val conclusion: String? = null,
+    val steps: List<WorkflowStep> = emptyList()
+)
+
+@Serializable
+data class WorkflowStep(val name: String, val status: String, val conclusion: String? = null)
+
+@Serializable
+data class WorkflowArtifact(
+    val id: Long,
+    val name: String,
+    @SerialName("archive_download_url") val archiveDownloadUrl: String,
+    @SerialName("expired") val expired: Boolean = false,
+    @SerialName("size_in_bytes") val sizeBytes: Long = 0
+)
+
+@Serializable
+data class MergeResponse(val sha: String? = null, val merged: Boolean, val message: String)
+
 enum class WorkflowDisplayState { Queued, Running, Success, Failed, Cancelled, Unknown }
 
 fun WorkflowRun.displayState(): WorkflowDisplayState = when {
