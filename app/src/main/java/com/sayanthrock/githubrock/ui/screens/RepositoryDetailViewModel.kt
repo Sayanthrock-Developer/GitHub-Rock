@@ -29,7 +29,8 @@ data class RepositoryDetailState(
     val releases: List<Release> = emptyList(),
     val currentPath: String = "",
     val error: String? = null,
-    val message: String? = null
+    val message: String? = null,
+    val jobLog: String? = null
 )
 
 @HiltViewModel
@@ -64,6 +65,14 @@ class RepositoryDetailViewModel @Inject constructor(
                 if (result.merged) load(RepoSection.Pulls)
             }
             .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to merge pull request") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun loadJobLog(jobId: Long) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, jobLog = null) }
+        runCatching { repository.workflowJobLogs(owner, repo, jobId) }
+            .onSuccess { log -> _state.update { it.copy(jobLog = log.ifBlank { "No log output was returned by GitHub." }) } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load workflow logs") } }
         _state.update { it.copy(loading = false) }
     }
 
