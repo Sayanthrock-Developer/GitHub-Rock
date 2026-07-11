@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.core.network
 
 import com.sayanthrock.githubrock.core.model.*
 import retrofit2.Response
+import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.PUT
 import retrofit2.http.DELETE
@@ -93,6 +94,30 @@ interface GitHubRestApi {
         @Path("repo") repo: String,
         @Body request: PullRequestRequest
     ): PullRequest
+
+    @GET("repos/{owner}/{repo}/issues/{issueNumber}/comments")
+    suspend fun issueComments(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int): List<IssueComment>
+
+    @POST("repos/{owner}/{repo}/issues/{issueNumber}/comments")
+    suspend fun addIssueComment(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int, @Body body: Map<String, String>): IssueComment
+
+    @GET("repos/{owner}/{repo}/pulls/{pullNumber}/reviews")
+    suspend fun pullReviews(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int): List<PullRequestReview>
+
+    @POST("repos/{owner}/{repo}/pulls/{pullNumber}/reviews")
+    suspend fun submitPullReview(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: ReviewRequest): PullRequestReview
+
+    @PUT("repos/{owner}/{repo}/pulls/{pullNumber}/merge")
+    suspend fun mergePullRequest(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, String>): MergeResponse
+
+    @GET("repos/{owner}/{repo}/actions/runs/{runId}/jobs")
+    suspend fun workflowJobs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Map<String, List<WorkflowJob>>
+
+    @GET("repos/{owner}/{repo}/actions/runs/{runId}/artifacts")
+    suspend fun workflowArtifacts(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Map<String, List<WorkflowArtifact>>
+
+    @GET("repos/{owner}/{repo}/actions/jobs/{jobId}/logs")
+    suspend fun workflowJobLogs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("jobId") jobId: Long): Response<ResponseBody>
 
     @GET("repos/{owner}/{repo}/issues")
     suspend fun issues(
