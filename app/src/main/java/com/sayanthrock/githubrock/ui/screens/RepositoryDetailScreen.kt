@@ -42,6 +42,7 @@ fun RepositoryDetailScreen(
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
     var runAction by remember { mutableStateOf<WorkflowRun?>(null) }
+    var expandedRelease by remember { mutableStateOf<Long?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -112,6 +113,13 @@ fun RepositoryDetailScreen(
                 }
                 RepoSection.Releases -> items(state.releases, key = { it.id }) { release ->
                     SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets")
+                    TextButton(onClick = { expandedRelease = if (expandedRelease == release.id) null else release.id }) {
+                        Text(if (expandedRelease == release.id) "Hide release notes" else "View release notes")
+                    }
+                    if (expandedRelease == release.id) {
+                        Text(release.body?.ifBlank { "No release notes." } ?: "No release notes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${if (release.draft) "Draft" else "Published"} • ${if (release.prerelease) "Prerelease" else "Stable"} • ${release.publishedAt ?: "Not published"}", style = MaterialTheme.typography.bodySmall)
+                    }
                     release.assets.forEach { asset ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(asset.name, style = MaterialTheme.typography.bodySmall)
