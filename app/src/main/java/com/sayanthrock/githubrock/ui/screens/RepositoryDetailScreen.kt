@@ -33,6 +33,7 @@ fun RepositoryDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
+    var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -85,6 +86,7 @@ fun RepositoryDetailScreen(
                     items(state.runs, key = { it.id }) { run -> SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}") }
                     items(state.jobs, key = { it.id }) { job ->
                         SummaryCard(job.name, "${job.status} • ${job.conclusion ?: "running"} • ${job.steps.size} steps")
+                        TextButton(onClick = { logJob = job; viewModel.loadJobLog(job.id) }) { Text("View logs") }
                     }
                     items(state.artifacts, key = { it.id }) { artifact ->
                         SummaryCard(artifact.name, "${artifact.sizeBytes / 1_048_576} MB • ${if (artifact.expired) "expired" else "available"}")
@@ -103,6 +105,14 @@ fun RepositoryDetailScreen(
                 TextButton(onClick = { mergePull = null; viewModel.mergePullRequest(pull.number) }) { Text("Merge") }
             },
             dismissButton = { TextButton(onClick = { mergePull = null }) { Text("Cancel") } }
+        )
+    }
+    logJob?.let { job ->
+        AlertDialog(
+            onDismissRequest = { logJob = null },
+            title = { Text("Logs • ${job.name}") },
+            text = { Text(state.jobLog ?: "Loading workflow logs…", style = MaterialTheme.typography.bodySmall, maxLines = 18, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
+            confirmButton = { TextButton(onClick = { logJob = null }) { Text("Close") } }
         )
     }
 }
