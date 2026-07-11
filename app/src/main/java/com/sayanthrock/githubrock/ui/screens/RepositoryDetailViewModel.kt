@@ -76,6 +76,22 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun cancelWorkflow(runId: Long) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.cancel(owner, repo, runId) }
+            .onSuccess { ok -> _state.update { if (ok) it.copy(message = "Workflow cancellation requested") else it.copy(error = "GitHub rejected the cancellation request") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to cancel workflow") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun rerunWorkflow(runId: Long) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.rerun(owner, repo, runId) }
+            .onSuccess { ok -> _state.update { if (ok) it.copy(message = "Workflow rerun requested") else it.copy(error = "GitHub rejected the rerun request") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to rerun workflow") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     private fun load(section: RepoSection) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null) }
         runCatching {

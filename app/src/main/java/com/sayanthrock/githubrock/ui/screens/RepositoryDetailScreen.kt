@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.PullRequestSummary
 import com.sayanthrock.githubrock.core.model.WorkflowJob
+import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
 @Composable
@@ -36,6 +37,7 @@ fun RepositoryDetailScreen(
     val downloadsViewModel: DownloadsViewModel = hiltViewModel()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
+    var runAction by remember { mutableStateOf<WorkflowRun?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -85,7 +87,11 @@ fun RepositoryDetailScreen(
                 }
                 RepoSection.Actions -> {
                     items(state.workflows, key = { it.id }) { workflow -> SummaryCard(workflow.name, workflow.path) }
-                    items(state.runs, key = { it.id }) { run -> SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}") }
+                    items(state.runs, key = { it.id }) { run ->
+                        SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}")
+                        if (run.status == "in_progress" || run.status == "queued") TextButton(onClick = { runAction = run }) { Text("Cancel") }
+                        if (run.conclusion == "failure" || run.conclusion == "cancelled") TextButton(onClick = { runAction = run }) { Text("Rerun") }
+                    }
                     items(state.jobs, key = { it.id }) { job ->
                         SummaryCard(job.name, "${job.status} • ${job.conclusion ?: "running"} • ${job.steps.size} steps")
                         TextButton(onClick = { logJob = job; viewModel.loadJobLog(job.id) }) { Text("View logs") }
@@ -130,6 +136,16 @@ fun RepositoryDetailScreen(
             title = { Text("Logs • ${job.name}") },
             text = { Text(state.jobLog ?: "Loading workflow logs…", style = MaterialTheme.typography.bodySmall, maxLines = 18, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
             confirmButton = { TextButton(onClick = { logJob = null }) { Text("Close") } }
+        )
+    }
+    runAction?.let { run ->
+        val cancel = run.status == "in_progress" || run.status == "queued"
+        AlertDialog(
+            onDismissRequest = { runAction = null },
+            title = { Text(if (cancel) "Cancel workflow?" else "Rerun workflow?") },
+            text = { Text(if (cancel) "GitHub will stop this workflow run if cancellation is permitted." else "GitHub will start another run using the same workflow revision.") },
+            confirmButton = { TextButton(onClick = { runAction = null; if (cancel) viewModel.cancelWorkflow(run.id) else viewModel.rerunWorkflow(run.id) }) { Text(if (cancel) "Cancel workflow" else "Rerun") } },
+            dismissButton = { TextButton(onClick = { runAction = null }) { Text("Keep") } }
         )
     }
 }
