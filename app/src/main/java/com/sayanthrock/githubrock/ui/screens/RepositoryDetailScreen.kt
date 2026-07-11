@@ -1,5 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,6 +37,7 @@ fun RepositoryDetailScreen(
     viewModel: RepositoryDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val downloadsViewModel: DownloadsViewModel = hiltViewModel()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
@@ -89,6 +93,7 @@ fun RepositoryDetailScreen(
                     items(state.workflows, key = { it.id }) { workflow -> SummaryCard(workflow.name, workflow.path) }
                     items(state.runs, key = { it.id }) { run ->
                         SummaryCard(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, "${run.status} • ${run.conclusion ?: "pending"}")
+                        if (run.htmlUrl.isNotBlank()) TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))) }) { Text("Open on GitHub") }
                         if (run.status == "in_progress" || run.status == "queued") TextButton(onClick = { runAction = run }) { Text("Cancel") }
                         if (run.conclusion == "failure" || run.conclusion == "cancelled") TextButton(onClick = { runAction = run }) { Text("Rerun") }
                     }
