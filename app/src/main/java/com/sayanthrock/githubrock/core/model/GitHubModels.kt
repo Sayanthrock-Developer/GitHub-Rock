@@ -48,11 +48,11 @@ data class RepositorySearchResponse(
 
 @Serializable
 data class ContentEntry(
-    val name: String,
-    val path: String,
-    val sha: String,
+    val name: String = "",
+    val path: String = "",
+    val sha: String = "",
     val size: Long = 0,
-    val type: String,
+    val type: String = "file",
     @SerialName("download_url") val downloadUrl: String? = null,
     val content: String? = null,
     val encoding: String? = null
@@ -166,6 +166,35 @@ data class CreateIssueRequest(val title: String, val body: String? = null)
 @Serializable
 data class WorkflowDispatchRequest(val ref: String, val inputs: Map<String, String> = emptyMap())
 
+@Serializable
+data class GitRefRequest(val ref: String, val sha: String)
+
+@Serializable
+data class FileCommitRequest(
+    val message: String,
+    val content: String,
+    val branch: String,
+    val sha: String? = null
+)
+
+@Serializable
+data class PullRequestRequest(
+    val title: String,
+    val head: String,
+    val base: String,
+    val body: String? = null,
+    val draft: Boolean = false
+)
+
+@Serializable
+data class PullRequest(
+    val id: Long,
+    val number: Int,
+    val title: String,
+    val state: String,
+    @SerialName("html_url") val htmlUrl: String = ""
+)
+
 enum class WorkflowDisplayState { Queued, Running, Success, Failed, Cancelled, Unknown }
 
 fun WorkflowRun.displayState(): WorkflowDisplayState = when {
@@ -176,4 +205,3 @@ fun WorkflowRun.displayState(): WorkflowDisplayState = when {
     conclusion == "cancelled" || conclusion == "skipped" -> WorkflowDisplayState.Cancelled
     else -> WorkflowDisplayState.Unknown
 }
-

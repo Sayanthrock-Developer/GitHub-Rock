@@ -6,6 +6,7 @@ import com.sayanthrock.githubrock.data.local.RepositoryDao
 import com.sayanthrock.githubrock.data.local.RepositoryEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,6 +40,7 @@ class GitHubRepository @Inject constructor(
     )
 
     suspend fun contents(owner: String, repo: String, path: String, ref: String?) = api.contents(owner, repo, path, ref)
+    suspend fun file(owner: String, repo: String, path: String, ref: String?) = api.file(owner, repo, path, ref)
     suspend fun issues(owner: String, repo: String) = api.issues(owner, repo).filterNot { it.body?.contains("pull request", ignoreCase = true) == true }
     suspend fun pulls(owner: String, repo: String) = api.pullRequests(owner, repo)
     suspend fun workflows(owner: String, repo: String) = api.workflows(owner, repo).workflows
@@ -50,6 +52,29 @@ class GitHubRepository @Inject constructor(
 
     suspend fun cancel(owner: String, repo: String, runId: Long): Boolean = api.cancelWorkflow(owner, repo, runId).isSuccessful
     suspend fun rerun(owner: String, repo: String, runId: Long): Boolean = api.rerunWorkflow(owner, repo, runId).isSuccessful
+
+    suspend fun commitFileAndOpenPullRequest(
+        owner: String,
+        repo: String,
+        path: String,
+        content: String,
+        currentSha: String,
+        baseBranch: String,
+        featureBranch: String,
+        commitMessage: String,
+        pullTitle: String,
+        pullBody: String
+    ): PullRequest {
+        check(featureBranch.matches(Regex("^[A-Za-z0-9._/-]+$"))) { "Unsafe branch name" }
+        check(api.createBranch(owner, repo, GitRefRequest("refs/heads/$featureBranch", baseBranch)).isSuccessful) {
+            "Unable to create the review branch"
+        }
+        val encoded = Base64.encodeToString(content.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        check(api.commitFile(owner, repo, path, FileCommitRequest(commitMessage, encoded, featureBranch, currentSha)).isSuccessful) {
+            "Unable to commit the file"
+        }
+        return api.createPullRequest(owner, repo, PullRequestRequest(pullTitle, featureBranch, baseBranch, pullBody))
+    }
 }
 
 data class DashboardPayload(
@@ -57,4 +82,3 @@ data class DashboardPayload(
     val rateLimit: RateLimit,
     val repositories: List<GitHubRepositoryModel>
 )
-

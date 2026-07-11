@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.core.network
 import com.sayanthrock.githubrock.core.model.*
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.PUT
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Headers
@@ -62,6 +63,36 @@ interface GitHubRestApi {
         @Path(value = "path", encoded = true) path: String,
         @Query("ref") ref: String? = null
     ): List<ContentEntry>
+
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun file(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @Query("ref") ref: String? = null
+    ): ContentEntry
+
+    @POST("repos/{owner}/{repo}/git/refs")
+    suspend fun createBranch(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Body request: GitRefRequest
+    ): Response<Unit>
+
+    @PUT("repos/{owner}/{repo}/contents/{path}")
+    suspend fun commitFile(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @Body request: FileCommitRequest
+    ): Response<ContentEntry>
+
+    @POST("repos/{owner}/{repo}/pulls")
+    suspend fun createPullRequest(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Body request: PullRequestRequest
+    ): PullRequest
 
     @GET("repos/{owner}/{repo}/issues")
     suspend fun issues(
@@ -132,4 +163,3 @@ interface GitHubRestApi {
         @Path("releaseId") releaseId: Long
     ): Response<Unit>
 }
-
