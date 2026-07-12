@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,9 @@ import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.Workflow
+import com.sayanthrock.githubrock.core.util.DiffLine
+import com.sayanthrock.githubrock.core.util.DiffLineKind
+import com.sayanthrock.githubrock.core.util.TextDiff
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
 @Composable
@@ -448,7 +452,11 @@ private fun CodeEditorCard(
 ) {
     var featureBranch by remember(editor.path) { mutableStateOf("github-rock/edit-${System.currentTimeMillis() / 1000}") }
     var commitMessage by remember(editor.path) { mutableStateOf("Update ${editor.path}") }
+    var showDiff by remember(editor.path) { mutableStateOf(true) }
     val changed = editor.content != editor.originalContent
+    val diff = remember(editor.originalContent, editor.content) {
+        TextDiff.unified(editor.originalContent, editor.content)
+    }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(editor.path, style = MaterialTheme.typography.titleLarge)
@@ -458,6 +466,35 @@ private fun CodeEditorCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text("${editor.content.length} characters • ${if (changed) "unsaved changes" else "unchanged"}", style = MaterialTheme.typography.bodySmall)
+            if (changed) {
+                TextButton(onClick = { showDiff = !showDiff }) {
+                    Text(if (showDiff) "Hide diff" else "Show diff")
+                }
+                if (showDiff) {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
+                    ) {
+                        Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            diff.take(MAX_VISIBLE_DIFF_LINES).forEach { line ->
+                                val background = when (line.kind) {
+                                    DiffLineKind.Added -> MaterialTheme.colorScheme.tertiary.copy(alpha = .18f)
+                                    DiffLineKind.Removed -> MaterialTheme.colorScheme.error.copy(alpha = .18f)
+                                    DiffLineKind.Context -> androidx.compose.ui.graphics.Color.Transparent
+                                }
+                                Text(
+                                    text = "${line.prefix()}${line.text}",
+                                    modifier = Modifier.fillMaxWidth().background(background).padding(horizontal = 8.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                                )
+                            }
+                            if (diff.size > MAX_VISIBLE_DIFF_LINES) {
+                                Text("Diff truncated for readability.", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
             OutlinedTextField(
                 value = editor.content,
                 onValueChange = onContentChange,
@@ -497,3 +534,11 @@ private fun CodeEditorCard(
         }
     }
 }
+
+private fun com.sayanthrock.githubrock.core.util.DiffLine.prefix(): String = when (kind) {
+    DiffLineKind.Added -> "+ "
+    DiffLineKind.Removed -> "- "
+    DiffLineKind.Context -> "  "
+}
+
+private const val MAX_VISIBLE_DIFF_LINES = 240
