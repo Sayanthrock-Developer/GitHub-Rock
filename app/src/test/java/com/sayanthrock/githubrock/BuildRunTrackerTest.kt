@@ -35,6 +35,13 @@ class BuildRunTrackerTest {
     }
 
     @Test
+    fun `disabled generated workflow is not dispatchable`() {
+        val disabled = Workflow(2, "Custom build", ".github/workflows/android-build.yml", "disabled_manually")
+
+        assertNull(BuildRunTracker.findAndroidWorkflow(listOf(disabled)))
+    }
+
+    @Test
     fun `tracking and ref safety reject terminal or unsafe values`() {
         assertTrue(BuildRunTracker.isActive(run(id = 1, status = "queued")))
         assertFalse(BuildRunTracker.isActive(run(id = 1, status = "completed", conclusion = "success")))
