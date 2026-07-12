@@ -27,6 +27,7 @@ import javax.inject.Inject
 
 data class BuildsActionState(
     val loading: Boolean = false,
+    val creatingPullRequest: Boolean = false,
     val tracking: Boolean = false,
     val message: String? = null,
     val error: String? = null,
@@ -52,6 +53,7 @@ class BuildsViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     loading = true,
+                    creatingPullRequest = false,
                     tracking = false,
                     message = null,
                     error = null,
@@ -121,6 +123,7 @@ class BuildsViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     loading = true,
+                    creatingPullRequest = false,
                     tracking = false,
                     error = null,
                     message = null,
@@ -184,6 +187,7 @@ class BuildsViewModel @Inject constructor(
         _state.update {
             it.copy(
                 loading = false,
+                creatingPullRequest = false,
                 tracking = false,
                 message = null,
                 error = null,
@@ -207,7 +211,15 @@ class BuildsViewModel @Inject constructor(
             _state.update { it.copy(error = "Use a valid review branch name", message = null) }
             return@launch
         }
-        _state.update { it.copy(loading = true, error = null, message = null, pullRequestUrl = null) }
+        _state.update {
+            it.copy(
+                loading = true,
+                creatingPullRequest = true,
+                error = null,
+                message = null,
+                pullRequestUrl = null
+            )
+        }
         runCatching {
             repository.commitFileAndOpenPullRequest(
                 owner = selected.owner.login,
@@ -226,7 +238,7 @@ class BuildsViewModel @Inject constructor(
         }.onFailure { error ->
             _state.update { it.copy(error = error.message ?: "Unable to create workflow pull request") }
         }
-        _state.update { it.copy(loading = false) }
+        _state.update { it.copy(loading = false, creatingPullRequest = false) }
     }
 
     private suspend fun awaitDispatchedRun(
