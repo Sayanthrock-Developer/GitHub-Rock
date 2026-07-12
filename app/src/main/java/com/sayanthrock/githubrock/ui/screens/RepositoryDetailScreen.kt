@@ -32,6 +32,7 @@ import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.Workflow
+import com.sayanthrock.githubrock.core.util.DiffLine
 import com.sayanthrock.githubrock.core.util.DiffLineKind
 import com.sayanthrock.githubrock.core.util.TextDiff
 import com.sayanthrock.githubrock.ui.components.GlassCard
