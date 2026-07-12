@@ -27,6 +27,7 @@ data class RepositoryDetailState(
     val jobs: List<WorkflowJob> = emptyList(),
     val artifacts: List<WorkflowArtifact> = emptyList(),
     val releases: List<Release> = emptyList(),
+    val issueComments: List<IssueComment> = emptyList(),
     val currentPath: String = "",
     val error: String? = null,
     val message: String? = null,
@@ -97,6 +98,30 @@ class RepositoryDetailViewModel @Inject constructor(
         runCatching { repository.dispatch(owner, repo, workflowId, ref, emptyMap()) }
             .onSuccess { ok -> _state.update { if (ok) it.copy(message = "Workflow dispatch requested") else it.copy(error = "GitHub rejected the workflow dispatch") } }
             .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to dispatch workflow") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun loadIssueComments(issueNumber: Int) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, issueComments = emptyList()) }
+        runCatching { if (demo) emptyList() else repository.issueComments(owner, repo, issueNumber) }
+            .onSuccess { comments -> _state.update { it.copy(issueComments = comments) } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load issue comments") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun addIssueComment(issueNumber: Int, body: String) = viewModelScope.launch {
+        if (body.isBlank()) {
+            _state.update { it.copy(error = "A comment cannot be empty") }
+            return@launch
+        }
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not post to GitHub") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.addIssueComment(owner, repo, issueNumber, body.trim()) }
+            .onSuccess { comment -> _state.update { it.copy(issueComments = it.issueComments + comment, message = "Comment added") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to add comment") } }
         _state.update { it.copy(loading = false) }
     }
 
