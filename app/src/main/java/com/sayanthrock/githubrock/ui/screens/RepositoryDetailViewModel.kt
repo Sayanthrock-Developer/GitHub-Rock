@@ -126,6 +126,22 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun createIssue(title: String, body: String) = viewModelScope.launch {
+        if (title.isBlank()) {
+            _state.update { it.copy(error = "An issue title is required") }
+            return@launch
+        }
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not create issues") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.createIssue(owner, repo, title.trim(), body.trim()) }
+            .onSuccess { issue -> _state.update { it.copy(issues = listOf(issue) + it.issues, message = "Issue #${issue.number} created") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to create issue") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
         runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
