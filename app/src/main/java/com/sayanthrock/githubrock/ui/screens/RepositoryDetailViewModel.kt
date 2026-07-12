@@ -224,6 +224,20 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun deleteRelease(releaseId: Long) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not delete releases") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.deleteRelease(owner, repo, releaseId) }
+            .onSuccess { deleted ->
+                _state.update { if (deleted) it.copy(releases = it.releases.filterNot { release -> release.id == releaseId }, message = "Release deleted") else it.copy(error = "GitHub rejected the release deletion") }
+            }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to delete release") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
         runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
