@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.model.GitHubIssue
 import com.sayanthrock.githubrock.core.model.PullRequestSummary
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
@@ -45,6 +46,8 @@ fun RepositoryDetailScreen(
     var runAction by remember { mutableStateOf<WorkflowRun?>(null) }
     var expandedRelease by remember { mutableStateOf<Long?>(null) }
     var dispatchWorkflow by remember { mutableStateOf<Workflow?>(null) }
+    var selectedIssue by remember { mutableStateOf<GitHubIssue?>(null) }
+    var issueCommentDraft by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -85,7 +88,10 @@ fun RepositoryDetailScreen(
                     )
                     if (entry.type == "dir") TextButton(onClick = { viewModel.openDirectory(entry.path) }) { Text("Open folder") }
                 }
-                RepoSection.Issues -> items(state.issues, key = { it.id }) { issue -> SummaryCard("#${issue.number} ${issue.title}", "${issue.state} • ${issue.user.login}") }
+                RepoSection.Issues -> items(state.issues, key = { it.id }) { issue ->
+                    SummaryCard("#${issue.number} ${issue.title}", "${issue.state} • ${issue.user.login} • ${issue.commentCount} comments")
+                    TextButton(onClick = { selectedIssue = issue; issueCommentDraft = ""; viewModel.loadIssueComments(issue.number) }) { Text("Open issue") }
+                }
                 RepoSection.Pulls -> items(state.pulls, key = { it.id }) { pull ->
                     SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}")
                     if (pull.state == "open" && pull.draft != true) {
@@ -173,6 +179,32 @@ fun RepositoryDetailScreen(
             text = { Text("GitHub will dispatch this workflow on the repository default branch. Any required workflow inputs must be configured in GitHub.") },
             confirmButton = { TextButton(onClick = { dispatchWorkflow = null; viewModel.dispatchWorkflow(workflow.id, repository?.defaultBranch ?: "main") }) { Text("Run") } },
             dismissButton = { TextButton(onClick = { dispatchWorkflow = null }) { Text("Cancel") } }
+        )
+    }
+    selectedIssue?.let { issue ->
+        AlertDialog(
+            onDismissRequest = { selectedIssue = null },
+            title = { Text("#${issue.number} ${issue.title}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(issue.body?.ifBlank { "No issue description." } ?: "No issue description.")
+                    if (issue.labels.isNotEmpty()) Text("Labels: ${issue.labels.joinToString { it.name }}", style = MaterialTheme.typography.bodySmall)
+                    Text("Comments", fontWeight = FontWeight.SemiBold)
+                    if (state.issueComments.isEmpty()) Text("No comments yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    state.issueComments.takeLast(4).forEach { comment ->
+                        Text("${comment.user.login}: ${comment.body}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    OutlinedTextField(
+                        value = issueCommentDraft,
+                        onValueChange = { issueCommentDraft = it },
+                        label = { Text("Add a comment") },
+                        minLines = 2,
+                        maxLines = 4
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.addIssueComment(issue.number, issueCommentDraft); issueCommentDraft = "" }) { Text("Comment") } },
+            dismissButton = { TextButton(onClick = { selectedIssue = null }) { Text("Close") } }
         )
     }
 }
