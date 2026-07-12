@@ -157,7 +157,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 ## Planned next
 
-- Commit diff preview, rename/move/delete operations, Markdown rendering, and syntax highlighting
+- Rename/move/delete operations, Markdown rendering, and syntax highlighting
 - Issue reactions/templates, labels, milestones, assignee editing, and richer PR diff/conflict presentation
 - Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
 - Complete download queue UI with pause/cancel/retry/mirror selection and Storage Access Framework location selection
