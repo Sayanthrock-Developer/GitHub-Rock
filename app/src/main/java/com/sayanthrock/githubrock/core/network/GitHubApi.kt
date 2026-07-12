@@ -175,7 +175,11 @@ interface GitHubRestApi {
     ): List<PullRequestSummary>
 
     @GET("repos/{owner}/{repo}/actions/workflows")
-    suspend fun workflows(@Path("owner") owner: String, @Path("repo") repo: String): WorkflowList
+    suspend fun workflows(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 100
+    ): WorkflowList
 
     @GET("repos/{owner}/{repo}/actions/runs")
     suspend fun workflowRuns(
@@ -183,6 +187,22 @@ interface GitHubRestApi {
         @Path("repo") repo: String,
         @Query("per_page") perPage: Int = 30
     ): WorkflowRuns
+
+    @GET("repos/{owner}/{repo}/actions/workflows/{workflowId}/runs")
+    suspend fun workflowRunsForWorkflow(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("workflowId") workflowId: Long,
+        @Query("event") event: String = "workflow_dispatch",
+        @Query("per_page") perPage: Int = 20
+    ): WorkflowRuns
+
+    @GET("repos/{owner}/{repo}/actions/runs/{runId}")
+    suspend fun workflowRun(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("runId") runId: Long
+    ): WorkflowRun
 
     @POST("repos/{owner}/{repo}/actions/workflows/{workflowId}/dispatches")
     suspend fun dispatchWorkflow(

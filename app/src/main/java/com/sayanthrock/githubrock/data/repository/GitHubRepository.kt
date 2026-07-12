@@ -59,6 +59,9 @@ class GitHubRepository @Inject constructor(
         api.createPullRequest(owner, repo, PullRequestRequest(title, head, base, body.takeIf { it.isNotBlank() }))
     suspend fun workflows(owner: String, repo: String) = api.workflows(owner, repo).workflows
     suspend fun runs(owner: String, repo: String) = api.workflowRuns(owner, repo).runs
+    suspend fun runsForWorkflow(owner: String, repo: String, workflowId: Long) =
+        api.workflowRunsForWorkflow(owner, repo, workflowId).runs
+    suspend fun run(owner: String, repo: String, runId: Long) = api.workflowRun(owner, repo, runId)
     suspend fun releases(owner: String, repo: String) = api.releases(owner, repo)
 
     suspend fun dispatch(owner: String, repo: String, workflowId: Long, ref: String, inputs: Map<String, String>): Boolean =
