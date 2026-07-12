@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +71,11 @@ fun RepositoryDetailScreen(
     var editReleaseName by remember { mutableStateOf("") }
     var editReleaseNotes by remember { mutableStateOf("") }
     var editReleasePrerelease by remember { mutableStateOf(false) }
+    var showNewFile by remember { mutableStateOf(false) }
+    var newFilePath by remember { mutableStateOf("") }
+    LaunchedEffect(repository?.id, repository?.defaultBranch) {
+        repository?.let { viewModel.setRepositoryDefaults(it.defaultBranch) }
+    }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -106,14 +112,39 @@ fun RepositoryDetailScreen(
                         }
                     }
                 }
-                RepoSection.Code -> items(state.contents, key = { it.sha }) { entry ->
-                    ListItem(
-                        headlineContent = { Text(entry.name) },
-                        supportingContent = { Text(entry.path) },
-                        leadingContent = { Icon(if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, null) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (entry.type == "dir") TextButton(onClick = { viewModel.openDirectory(entry.path) }) { Text("Open folder") }
+                RepoSection.Code -> {
+                    if (state.editor == null) {
+                        item {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Branch: ${repository?.defaultBranch ?: "main"}", style = MaterialTheme.typography.titleMedium)
+                                OutlinedButton(onClick = { showNewFile = true }) { Text("New text file") }
+                            }
+                        }
+                        items(state.contents, key = { it.path }) { entry ->
+                            ListItem(
+                                headlineContent = { Text(entry.name) },
+                                supportingContent = { Text(entry.path) },
+                                leadingContent = { Icon(if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, null) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (entry.type == "dir") {
+                                TextButton(onClick = { viewModel.openDirectory(entry.path) }) { Text("Open folder") }
+                            } else {
+                                TextButton(onClick = { viewModel.openFile(entry.path) }) { Text("Open file") }
+                            }
+                        }
+                    } else {
+                        item {
+                            CodeEditorCard(
+                                editor = requireNotNull(state.editor),
+                                loading = state.loading,
+                                demo = repository?.id?.let { it < 0 } == true,
+                                onContentChange = viewModel::updateEditorContent,
+                                onClose = viewModel::closeEditor,
+                                onSave = viewModel::saveEditor
+                            )
+                        }
+                    }
                 }
                 RepoSection.Issues -> {
                     item { OutlinedButton(onClick = { showCreateIssue = true }, Modifier.fillMaxWidth()) { Text("New issue") } }
@@ -304,6 +335,25 @@ fun RepositoryDetailScreen(
             dismissButton = { TextButton(onClick = { showCreateIssue = false }) { Text("Cancel") } }
         )
     }
+    if (showNewFile) {
+        AlertDialog(
+            onDismissRequest = { showNewFile = false },
+            title = { Text("New text file") },
+            text = {
+                OutlinedTextField(
+                    value = newFilePath,
+                    onValueChange = { newFilePath = it },
+                    label = { Text("Relative path") },
+                    placeholder = { Text("docs/notes.md") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.startNewFile(newFilePath.trim()); newFilePath = ""; showNewFile = false }) { Text("Create") }
+            },
+            dismissButton = { TextButton(onClick = { showNewFile = false }) { Text("Cancel") } }
+        )
+    }
     if (showCreatePull) {
         AlertDialog(
             onDismissRequest = { showCreatePull = false },
@@ -383,6 +433,67 @@ private fun SummaryCard(title: String, subtitle: String) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, fontWeight = FontWeight.SemiBold)
             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun CodeEditorCard(
+    editor: FileEditorState,
+    loading: Boolean,
+    demo: Boolean,
+    onContentChange: (String) -> Unit,
+    onClose: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var featureBranch by remember(editor.path) { mutableStateOf("github-rock/edit-${System.currentTimeMillis() / 1000}") }
+    var commitMessage by remember(editor.path) { mutableStateOf("Update ${editor.path}") }
+    val changed = editor.content != editor.originalContent
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(editor.path, style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (editor.branchProtected) "Protected default branch: changes require review."
+                else "Changes are still isolated on a new branch before the pull request.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text("${editor.content.length} characters • ${if (changed) "unsaved changes" else "unchanged"}", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = editor.content,
+                onValueChange = onContentChange,
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 16,
+                maxLines = 28,
+                textStyle = LocalTextStyle.current.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                label = { Text("File contents") }
+            )
+            OutlinedTextField(
+                value = featureBranch,
+                onValueChange = { featureBranch = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Review branch") }
+            )
+            OutlinedTextField(
+                value = commitMessage,
+                onValueChange = { commitMessage = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Commit message") }
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onClose, modifier = Modifier.weight(1f)) { Text("Close") }
+                Button(
+                    onClick = { onSave(featureBranch, commitMessage) },
+                    enabled = !demo && changed && editor.pullRequestUrl == null && !loading && featureBranch.isNotBlank() && commitMessage.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) { Text(if (loading) "Saving…" else if (editor.pullRequestUrl != null) "Pull request created" else "Open pull request") }
+            }
+            if (demo) Text("Demo mode never commits to GitHub.", color = MaterialTheme.colorScheme.primary)
+            editor.pullRequestUrl?.let { url ->
+                val context = LocalContext.current
+                TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) { Text("Open created pull request") }
+            }
         }
     }
 }
