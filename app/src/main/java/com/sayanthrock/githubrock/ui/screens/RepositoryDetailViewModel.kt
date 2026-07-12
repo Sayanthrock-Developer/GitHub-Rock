@@ -184,6 +184,18 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun setRepositoryStarred(starred: Boolean) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not change repository stars") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.setRepositoryStarred(owner, repo, starred) }
+            .onSuccess { ok -> _state.update { if (ok) it.copy(message = if (starred) "Repository starred" else "Repository unstarred") else it.copy(error = "GitHub rejected the star change") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to update repository star") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
         runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
