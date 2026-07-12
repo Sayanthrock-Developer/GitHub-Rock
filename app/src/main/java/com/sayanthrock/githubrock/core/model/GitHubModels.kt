@@ -176,6 +176,14 @@ data class CreateReleaseRequest(
 )
 
 @Serializable
+data class UpdateReleaseRequest(
+    val name: String? = null,
+    val body: String? = null,
+    val draft: Boolean,
+    val prerelease: Boolean
+)
+
+@Serializable
 data class WorkflowDispatchRequest(val ref: String, val inputs: Map<String, String> = emptyMap())
 
 @Serializable
