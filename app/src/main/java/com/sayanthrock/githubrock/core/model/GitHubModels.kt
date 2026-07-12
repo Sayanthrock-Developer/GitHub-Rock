@@ -167,6 +167,15 @@ data class CreateIssueRequest(val title: String, val body: String? = null)
 data class UpdateIssueRequest(val state: String)
 
 @Serializable
+data class CreateReleaseRequest(
+    @SerialName("tag_name") val tagName: String,
+    val name: String? = null,
+    val body: String? = null,
+    val draft: Boolean = true,
+    val prerelease: Boolean = false
+)
+
+@Serializable
 data class WorkflowDispatchRequest(val ref: String, val inputs: Map<String, String> = emptyMap())
 
 @Serializable
