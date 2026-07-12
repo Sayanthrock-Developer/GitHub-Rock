@@ -22,4 +22,14 @@ class TextDiffTest {
         assertEquals(DiffLineKind.Context, diff[3].kind)
         assertEquals(DiffLineKind.Added, diff[4].kind)
     }
+
+    @Test
+    fun `large content triggers bounded diff`() {
+        val before = (1..450).joinToString("\n") { "line $it" }
+        val after = (1..450).map { if (it == 100) "line 100 updated" else "line $it" }.joinToString("\n")
+        val diff = TextDiff.unified(before, after)
+
+        assertTrue(diff.any { it.kind == DiffLineKind.Removed })
+        assertTrue(diff.any { it.kind == DiffLineKind.Added })
+    }
 }
