@@ -72,7 +72,7 @@ class GitHubRepository @Inject constructor(
         repo: String,
         path: String,
         content: String,
-        currentSha: String,
+        currentSha: String?,
         baseBranch: String,
         featureBranch: String,
         commitMessage: String,
@@ -80,7 +80,8 @@ class GitHubRepository @Inject constructor(
         pullBody: String
     ): PullRequest {
         check(featureBranch.matches(Regex("^[A-Za-z0-9._/-]+$"))) { "Unsafe branch name" }
-        check(api.createBranch(owner, repo, GitRefRequest("refs/heads/$featureBranch", baseBranch)).isSuccessful) {
+        val baseSha = api.branchReference(owner, repo, baseBranch).target.sha
+        check(api.createBranch(owner, repo, GitRefRequest("refs/heads/$featureBranch", baseSha)).isSuccessful) {
             "Unable to create the review branch"
         }
         val encoded = Base64.encodeToString(content.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
