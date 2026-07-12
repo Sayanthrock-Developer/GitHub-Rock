@@ -51,6 +51,13 @@ interface GitHubRestApi {
     @POST("repos/{owner}/{repo}/forks")
     suspend fun forkRepository(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositoryModel
 
+    @POST("repos/{owner}/{repo}/releases")
+    suspend fun createRelease(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Body request: CreateReleaseRequest
+    ): Release
+
     @GET("user/repos")
     suspend fun repositories(
         @Query("affiliation") affiliation: String = "owner,collaborator,organization_member",
