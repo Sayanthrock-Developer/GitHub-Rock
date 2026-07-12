@@ -88,7 +88,7 @@ class WorkflowMonitorWorker @AssistedInject constructor(
                     workflowId = workflowId,
                     ref = ref,
                     monitorKey = monitorKey,
-                    knownRunIds = data.getLongArray(KEY_KNOWN_RUN_IDS).orEmpty().toSet()
+                    knownRunIds = (data.getLongArray(KEY_KNOWN_RUN_IDS) ?: longArrayOf()).toSet()
                 )
             }
         }
