@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubIssue
 import com.sayanthrock.githubrock.core.model.PullRequestSummary
+import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.Workflow
@@ -64,6 +65,7 @@ fun RepositoryDetailScreen(
     var newReleaseName by remember { mutableStateOf("") }
     var newReleaseNotes by remember { mutableStateOf("") }
     var newReleasePrerelease by remember { mutableStateOf(false) }
+    var deleteReleaseTarget by remember { mutableStateOf<Release?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -160,6 +162,7 @@ fun RepositoryDetailScreen(
                         if (expandedRelease == release.id) {
                             Text(release.body?.ifBlank { "No release notes." } ?: "No release notes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("${if (release.draft) "Draft" else "Published"} • ${if (release.prerelease) "Prerelease" else "Stable"} • ${release.publishedAt ?: "Not published"}", style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = { deleteReleaseTarget = release }) { Text("Delete release") }
                         }
                         release.assets.forEach { asset ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -338,6 +341,15 @@ fun RepositoryDetailScreen(
             },
             confirmButton = { TextButton(onClick = { viewModel.createDraftRelease(newReleaseTag, newReleaseName, newReleaseNotes, newReleasePrerelease); newReleaseTag = ""; newReleaseName = ""; newReleaseNotes = ""; newReleasePrerelease = false; showCreateRelease = false }) { Text("Create draft") } },
             dismissButton = { TextButton(onClick = { showCreateRelease = false }) { Text("Cancel") } }
+        )
+    }
+    deleteReleaseTarget?.let { release ->
+        AlertDialog(
+            onDismissRequest = { deleteReleaseTarget = null },
+            title = { Text("Delete ${release.tagName}?") },
+            text = { Text("This permanently deletes the GitHub release. Release assets may no longer be available to users.") },
+            confirmButton = { TextButton(onClick = { deleteReleaseTarget = null; viewModel.deleteRelease(release.id) }) { Text("Delete release") } },
+            dismissButton = { TextButton(onClick = { deleteReleaseTarget = null }) { Text("Cancel") } }
         )
     }
 }
