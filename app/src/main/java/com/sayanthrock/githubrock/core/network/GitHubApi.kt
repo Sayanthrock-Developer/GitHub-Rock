@@ -58,6 +58,13 @@ interface GitHubRestApi {
         @Body request: CreateReleaseRequest
     ): Release
 
+    @DELETE("repos/{owner}/{repo}/releases/{releaseId}")
+    suspend fun deleteRelease(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("releaseId") releaseId: Long
+    ): Response<Unit>
+
     @GET("user/repos")
     suspend fun repositories(
         @Query("affiliation") affiliation: String = "owner,collaborator,organization_member",
