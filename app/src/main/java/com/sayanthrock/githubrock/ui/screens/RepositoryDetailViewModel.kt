@@ -92,6 +92,14 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun dispatchWorkflow(workflowId: Long, ref: String) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.dispatch(owner, repo, workflowId, ref, emptyMap()) }
+            .onSuccess { ok -> _state.update { if (ok) it.copy(message = "Workflow dispatch requested") else it.copy(error = "GitHub rejected the workflow dispatch") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to dispatch workflow") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     private fun load(section: RepoSection) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null) }
         runCatching {
