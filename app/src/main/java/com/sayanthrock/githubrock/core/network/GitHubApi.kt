@@ -48,6 +48,9 @@ interface GitHubRestApi {
     @DELETE("user/starred/{owner}/{repo}")
     suspend fun unstarRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
 
+    @POST("repos/{owner}/{repo}/forks")
+    suspend fun forkRepository(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositoryModel
+
     @GET("user/repos")
     suspend fun repositories(
         @Query("affiliation") affiliation: String = "owner,collaborator,organization_member",
