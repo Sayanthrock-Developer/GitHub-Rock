@@ -14,12 +14,12 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - GitHub App Device Flow with pending, slow-down, expired, denied, and refresh handling
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile, API rate limit, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
-- Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, exact run tracking, and artifact handoff to Downloads
+- Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
 - Background download worker with resume support, SHA-256 verification, retry recovery, duplicate-safe file finalization, and Room history
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
 - GitHub-inspired Liquid Glass dark/light theme with dynamic color and edge-to-edge layout
 - Deep links for repositories, builds, releases, and standard GitHub repository URLs
-- Unit tests for authentication responses, workflow status, Android workflow generation, project detection, dispatched-run matching, safe refs, and checksums
+- Unit tests for authentication responses, workflow status, Android workflow generation, project detection, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
 
 ## Screenshots
@@ -30,7 +30,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Home | Profile, rate limit, quick actions, recent workflows, and repositories |
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and Releases sections |
-| Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, and artifact handoff |
+| Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
 | Downloads | Verified artifact pipeline and download empty state |
 | Profile | Account/session mode and token-security information |
 
@@ -115,7 +115,7 @@ The debug APK is produced under `app/build/outputs/apk/debug/`.
 
 GitHub Rock's `AndroidProjectDetector` looks for `gradlew`, Gradle settings/build files, Android manifests, application-module paths, and existing workflow files. `AndroidWorkflowGenerator` maps a validated module name to a fixed Gradle task; it rejects shell syntax instead of interpolating arbitrary commands.
 
-When adding a workflow to another repository, GitHub Rock previews the complete YAML, creates a new branch, commits the file, and opens a pull request. After that workflow is reviewed and merged, the Builds tab detects it on the repository, dispatches a selected branch or tag, identifies the exact new run, follows job/step state to completion, and queues published artifacts in Downloads. Branch protection is never bypassed.
+When adding a workflow to another repository, GitHub Rock previews the complete YAML, creates a new branch, commits the file, and opens a pull request. After that workflow is reviewed and merged, the Builds tab detects it on the repository, dispatches a selected branch or tag, identifies the new run, and follows job/step state to completion. A network-constrained WorkManager job persists run discovery across process loss and posts an honest terminal-state notification when Android notification permission is available. Published artifacts can then be queued in Downloads. Branch protection is never bypassed.
 
 ## Release signing
 
@@ -138,6 +138,7 @@ The workflow decodes the keystore into the runner's temporary directory and expo
 - SHA-256 is calculated locally before an artifact is trusted.
 - Destructive GitHub operations require an explicit confirmation in the product flow.
 - Demo records use negative IDs, are loaded from an isolated provider, and are never merged with connected account data.
+- Build notification permission is requested only when the user starts a monitored build; denying it does not block the workflow.
 
 See [SECURITY.md](SECURITY.md) for reporting guidance.
 
@@ -149,7 +150,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Public repository search
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
-- Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live run tracking, and artifact handoff
+- Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
 - Recoverable verified downloader and APK inspection core
 - Own-repository CI and manual APK/AAB workflows
 
@@ -157,7 +158,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 - Full file editor, commit diff preview, protected-branch branch/PR flow, Markdown and syntax highlighting
 - Issue reactions/templates, labels, milestones, assignee editing, and richer PR diff/conflict presentation
-- Workflow failure annotations, dynamic inputs UI, and finish notifications that survive the app leaving the foreground
+- Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
 - Complete download queue UI with pause/cancel/retry/mirror selection and Storage Access Framework location selection
 - Richer APK permission/certificate presentation and checksum-file matching
 - Release-note generation and release asset upload
