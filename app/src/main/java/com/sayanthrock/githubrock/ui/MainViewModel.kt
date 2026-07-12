@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sayanthrock.githubrock.build.WorkflowMonitorScheduler
 import com.sayanthrock.githubrock.core.model.*
 import com.sayanthrock.githubrock.data.auth.DeviceFlowAuthRepository
 import com.sayanthrock.githubrock.data.demo.DemoData
@@ -38,7 +39,8 @@ data class MainUiState(
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val authRepository: DeviceFlowAuthRepository,
-    private val githubRepository: GitHubRepository
+    private val githubRepository: GitHubRepository,
+    private val monitorScheduler: WorkflowMonitorScheduler
 ) : ViewModel() {
     private val _state = MutableStateFlow(MainUiState())
     val state: StateFlow<MainUiState> = _state.asStateFlow()
@@ -110,6 +112,7 @@ class MainViewModel @Inject constructor(
 
     fun logout() {
         authJob?.cancel()
+        monitorScheduler.cancelAll()
         authRepository.logout()
         _state.value = MainUiState()
     }
@@ -120,6 +123,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(mode = AppMode.Connected, isLoading = true) }
             if (!runCatching { authRepository.refreshIfNeeded() }.getOrDefault(false)) {
+                monitorScheduler.cancelAll()
                 authRepository.logout()
                 _state.value = MainUiState(message = "Your GitHub session expired. Please sign in again.")
             } else {
@@ -159,4 +163,3 @@ private fun Throwable.userMessage(): String = when (this) {
     is java.io.IOException -> "Network unavailable. Check your connection and retry."
     else -> message ?: "Something went wrong. Please retry."
 }
-
