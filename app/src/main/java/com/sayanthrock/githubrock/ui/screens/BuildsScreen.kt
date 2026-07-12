@@ -151,6 +151,7 @@ private fun WorkflowPreviewCard(
     val context = LocalContext.current
     val yamlResult = remember(module, artifact) { runCatching { AndroidWorkflowGenerator.generate(module, artifact) } }
     val yaml = yamlResult.getOrDefault("")
+    val workflowExists = repository?.id == actionState.selectedRepositoryId && actionState.workflow != null
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Workflow preview", style = MaterialTheme.typography.titleLarge)
@@ -170,8 +171,24 @@ private fun WorkflowPreviewCard(
             Button(
                 onClick = { repository?.let { onCreatePullRequest(it, featureBranch, yaml, artifact) } },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = mode == AppMode.Connected && repository != null && yaml.isNotBlank() && !actionState.loading
-            ) { Text(if (actionState.loading) "Creating pull request…" else "Create branch and pull request") }
+                enabled = mode == AppMode.Connected &&
+                    repository != null &&
+                    yaml.isNotBlank() &&
+                    !actionState.loading &&
+                    !workflowExists
+            ) {
+                Text(
+                    when {
+                        actionState.creatingPullRequest -> "Creating pull request…"
+                        workflowExists -> "Workflow already exists"
+                        actionState.loading -> "Checking workflow…"
+                        else -> "Create branch and pull request"
+                    }
+                )
+            }
+            if (workflowExists) {
+                Text("Use the run card below for the active workflow.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             if (mode != AppMode.Connected) Text("Connect GitHub to commit this workflow.", color = MaterialTheme.colorScheme.primary)
             actionState.pullRequestUrl?.let { url ->
                 TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) { Text("Open pull request") }
