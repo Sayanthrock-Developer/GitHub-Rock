@@ -42,6 +42,12 @@ interface GitHubRestApi {
     @GET("user") suspend fun me(): GitHubUser
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
 
+    @PUT("user/starred/{owner}/{repo}")
+    suspend fun starRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
+
+    @DELETE("user/starred/{owner}/{repo}")
+    suspend fun unstarRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
+
     @GET("user/repos")
     suspend fun repositories(
         @Query("affiliation") affiliation: String = "owner,collaborator,organization_member",
