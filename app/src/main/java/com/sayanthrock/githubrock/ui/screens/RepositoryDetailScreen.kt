@@ -59,6 +59,11 @@ fun RepositoryDetailScreen(
     var newPullBody by remember { mutableStateOf("") }
     var issueStateAction by remember { mutableStateOf<GitHubIssue?>(null) }
     var showForkConfirmation by remember { mutableStateOf(false) }
+    var showCreateRelease by remember { mutableStateOf(false) }
+    var newReleaseTag by remember { mutableStateOf("") }
+    var newReleaseName by remember { mutableStateOf("") }
+    var newReleaseNotes by remember { mutableStateOf("") }
+    var newReleasePrerelease by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -145,21 +150,24 @@ fun RepositoryDetailScreen(
                         }
                     }
                 }
-                RepoSection.Releases -> items(state.releases, key = { it.id }) { release ->
-                    SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets")
-                    TextButton(onClick = { expandedRelease = if (expandedRelease == release.id) null else release.id }) {
-                        Text(if (expandedRelease == release.id) "Hide release notes" else "View release notes")
-                    }
-                    if (expandedRelease == release.id) {
-                        Text(release.body?.ifBlank { "No release notes." } ?: "No release notes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${if (release.draft) "Draft" else "Published"} • ${if (release.prerelease) "Prerelease" else "Stable"} • ${release.publishedAt ?: "Not published"}", style = MaterialTheme.typography.bodySmall)
-                    }
-                    release.assets.forEach { asset ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(asset.name, style = MaterialTheme.typography.bodySmall)
-                            TextButton(onClick = {
-                                downloadsViewModel.enqueue(asset.downloadUrl, asset.name)
-                            }) { Text("Download") }
+                RepoSection.Releases -> {
+                    item { OutlinedButton(onClick = { showCreateRelease = true }, Modifier.fillMaxWidth()) { Text("New draft release") } }
+                    items(state.releases, key = { it.id }) { release ->
+                        SummaryCard(release.name ?: release.tagName, "${release.tagName} • ${release.assets.size} assets")
+                        TextButton(onClick = { expandedRelease = if (expandedRelease == release.id) null else release.id }) {
+                            Text(if (expandedRelease == release.id) "Hide release notes" else "View release notes")
+                        }
+                        if (expandedRelease == release.id) {
+                            Text(release.body?.ifBlank { "No release notes." } ?: "No release notes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${if (release.draft) "Draft" else "Published"} • ${if (release.prerelease) "Prerelease" else "Stable"} • ${release.publishedAt ?: "Not published"}", style = MaterialTheme.typography.bodySmall)
+                        }
+                        release.assets.forEach { asset ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(asset.name, style = MaterialTheme.typography.bodySmall)
+                                TextButton(onClick = {
+                                    downloadsViewModel.enqueue(asset.downloadUrl, asset.name)
+                                }) { Text("Download") }
+                            }
                         }
                     }
                 }
@@ -311,6 +319,25 @@ fun RepositoryDetailScreen(
             text = { Text("GitHub will create a separate repository copy in your account. This does not change the original repository.") },
             confirmButton = { TextButton(onClick = { showForkConfirmation = false; viewModel.forkRepository() }) { Text("Fork") } },
             dismissButton = { TextButton(onClick = { showForkConfirmation = false }) { Text("Cancel") } }
+        )
+    }
+    if (showCreateRelease) {
+        AlertDialog(
+            onDismissRequest = { showCreateRelease = false },
+            title = { Text("New draft release") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = newReleaseTag, onValueChange = { newReleaseTag = it }, label = { Text("Tag") }, singleLine = true)
+                    OutlinedTextField(value = newReleaseName, onValueChange = { newReleaseName = it }, label = { Text("Release name (optional)") }, singleLine = true)
+                    OutlinedTextField(value = newReleaseNotes, onValueChange = { newReleaseNotes = it }, label = { Text("Release notes (optional)") }, minLines = 3, maxLines = 6)
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Checkbox(checked = newReleasePrerelease, onCheckedChange = { newReleasePrerelease = it })
+                        Text("Mark as prerelease")
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.createDraftRelease(newReleaseTag, newReleaseName, newReleaseNotes, newReleasePrerelease); newReleaseTag = ""; newReleaseName = ""; newReleaseNotes = ""; newReleasePrerelease = false; showCreateRelease = false }) { Text("Create draft") } },
+            dismissButton = { TextButton(onClick = { showCreateRelease = false }) { Text("Cancel") } }
         )
     }
 }
