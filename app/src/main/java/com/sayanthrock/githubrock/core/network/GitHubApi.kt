@@ -9,6 +9,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
+import retrofit2.http.PATCH
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -132,6 +133,14 @@ interface GitHubRestApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Body request: CreateIssueRequest
+    ): GitHubIssue
+
+    @PATCH("repos/{owner}/{repo}/issues/{issueNumber}")
+    suspend fun updateIssue(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issueNumber") issueNumber: Int,
+        @Body request: UpdateIssueRequest
     ): GitHubIssue
 
     @GET("repos/{owner}/{repo}/pulls")
