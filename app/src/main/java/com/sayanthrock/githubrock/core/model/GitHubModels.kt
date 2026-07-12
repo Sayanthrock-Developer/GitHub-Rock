@@ -190,6 +190,15 @@ data class WorkflowDispatchRequest(val ref: String, val inputs: Map<String, Stri
 data class GitRefRequest(val ref: String, val sha: String)
 
 @Serializable
+data class GitReference(
+    val ref: String,
+    @SerialName("object") val target: GitObject
+)
+
+@Serializable
+data class GitObject(val sha: String)
+
+@Serializable
 data class FileCommitRequest(
     val message: String,
     val content: String,

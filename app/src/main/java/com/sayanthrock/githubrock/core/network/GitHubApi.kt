@@ -97,6 +97,13 @@ interface GitHubRestApi {
         @Body request: GitRefRequest
     ): Response<Unit>
 
+    @GET("repos/{owner}/{repo}/git/ref/heads/{branch}")
+    suspend fun branchReference(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "branch", encoded = true) branch: String
+    ): GitReference
+
     @PUT("repos/{owner}/{repo}/contents/{path}")
     suspend fun commitFile(
         @Path("owner") owner: String,
