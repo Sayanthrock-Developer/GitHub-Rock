@@ -50,6 +50,9 @@ fun RepositoryDetailScreen(
     var issueCommentDraft by remember { mutableStateOf("") }
     var selectedPull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var reviewDraft by remember { mutableStateOf("") }
+    var showCreateIssue by remember { mutableStateOf(false) }
+    var newIssueTitle by remember { mutableStateOf("") }
+    var newIssueBody by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -90,9 +93,12 @@ fun RepositoryDetailScreen(
                     )
                     if (entry.type == "dir") TextButton(onClick = { viewModel.openDirectory(entry.path) }) { Text("Open folder") }
                 }
-                RepoSection.Issues -> items(state.issues, key = { it.id }) { issue ->
-                    SummaryCard("#${issue.number} ${issue.title}", "${issue.state} • ${issue.user.login} • ${issue.commentCount} comments")
-                    TextButton(onClick = { selectedIssue = issue; issueCommentDraft = ""; viewModel.loadIssueComments(issue.number) }) { Text("Open issue") }
+                RepoSection.Issues -> {
+                    item { OutlinedButton(onClick = { showCreateIssue = true }, Modifier.fillMaxWidth()) { Text("New issue") } }
+                    items(state.issues, key = { it.id }) { issue ->
+                        SummaryCard("#${issue.number} ${issue.title}", "${issue.state} • ${issue.user.login} • ${issue.commentCount} comments")
+                        TextButton(onClick = { selectedIssue = issue; issueCommentDraft = ""; viewModel.loadIssueComments(issue.number) }) { Text("Open issue") }
+                    }
                 }
                 RepoSection.Pulls -> items(state.pulls, key = { it.id }) { pull ->
                     SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}")
@@ -237,6 +243,20 @@ fun RepositoryDetailScreen(
                 }
             },
             dismissButton = { TextButton(onClick = { selectedPull = null }) { Text("Close") } }
+        )
+    }
+    if (showCreateIssue) {
+        AlertDialog(
+            onDismissRequest = { showCreateIssue = false },
+            title = { Text("New issue") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = newIssueTitle, onValueChange = { newIssueTitle = it }, label = { Text("Title") }, singleLine = true)
+                    OutlinedTextField(value = newIssueBody, onValueChange = { newIssueBody = it }, label = { Text("Description (optional)") }, minLines = 3, maxLines = 6)
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.createIssue(newIssueTitle, newIssueBody); newIssueTitle = ""; newIssueBody = ""; showCreateIssue = false }) { Text("Create") } },
+            dismissButton = { TextButton(onClick = { showCreateIssue = false }) { Text("Cancel") } }
         )
     }
 }
