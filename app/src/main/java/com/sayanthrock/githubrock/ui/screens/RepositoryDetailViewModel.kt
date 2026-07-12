@@ -238,6 +238,18 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun updateRelease(releaseId: Long, name: String, body: String, draft: Boolean, prerelease: Boolean) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not edit releases") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.updateRelease(owner, repo, releaseId, name.trim(), body.trim(), draft, prerelease) }
+            .onSuccess { updated -> _state.update { current -> current.copy(releases = current.releases.map { if (it.id == updated.id) updated else it }, message = "Release ${updated.tagName} updated") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to update release") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
         runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
