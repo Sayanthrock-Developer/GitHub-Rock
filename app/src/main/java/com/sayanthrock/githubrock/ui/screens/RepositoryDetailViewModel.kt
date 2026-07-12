@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.*
+import com.sayanthrock.githubrock.core.util.BuildRunTracker
+import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,9 +32,19 @@ data class RepositoryDetailState(
     val issueComments: List<IssueComment> = emptyList(),
     val pullReviews: List<PullRequestReview> = emptyList(),
     val currentPath: String = "",
+    val editor: FileEditorState? = null,
     val error: String? = null,
     val message: String? = null,
     val jobLog: String? = null
+)
+
+data class FileEditorState(
+    val path: String,
+    val sha: String?,
+    val content: String,
+    val originalContent: String,
+    val branchProtected: Boolean,
+    val pullRequestUrl: String? = null
 )
 
 @HiltViewModel
@@ -43,8 +55,13 @@ class RepositoryDetailViewModel @Inject constructor(
     private val owner: String = checkNotNull(savedStateHandle["owner"])
     private val repo: String = checkNotNull(savedStateHandle["repo"])
     private val demo: Boolean = savedStateHandle["demo"] ?: false
+    private var baseBranch: String = "main"
     private val _state = MutableStateFlow(RepositoryDetailState())
     val state: StateFlow<RepositoryDetailState> = _state.asStateFlow()
+
+    fun setRepositoryDefaults(defaultBranch: String) {
+        if (defaultBranch.isNotBlank()) baseBranch = defaultBranch
+    }
 
     fun select(section: RepoSection) {
         _state.update { it.copy(section = section, error = null) }
@@ -54,6 +71,117 @@ class RepositoryDetailViewModel @Inject constructor(
     fun openDirectory(path: String) {
         _state.update { it.copy(currentPath = path, section = RepoSection.Code) }
         load(RepoSection.Code)
+    }
+
+    fun openFile(path: String) = viewModelScope.launch {
+        if (path.isBlank()) return@launch
+        _state.update { it.copy(loading = true, error = null, message = null, editor = null) }
+        try {
+            val entry = if (demo) {
+                DemoData.contents.firstOrNull { it.path == path }
+                    ?: error("Demo file was not found")
+            } else {
+                repository.file(owner, repo, path, baseBranch)
+            }
+            if (entry.type != "file") error("Only text files can be opened")
+            if (entry.size > MAX_EDITABLE_FILE_BYTES) error("This file is too large to edit in the app")
+            val content = if (demo) {
+                "# Demo file\n\nDemo mode does not load repository file contents.\n"
+            } else {
+                SourceFileDecoder.decode(entry)
+            }
+            val branchProtected = if (demo) false else runCatching {
+                repository.branchProtected(owner, repo, baseBranch)
+            }.getOrDefault(false)
+            _state.update {
+                it.copy(
+                    loading = false,
+                    editor = FileEditorState(
+                        path = path,
+                        sha = entry.sha.takeIf(String::isNotBlank),
+                        content = content,
+                        originalContent = content,
+                        branchProtected = branchProtected
+                    ),
+                    message = if (branchProtected) {
+                        "${baseBranch} is protected. Changes will be proposed through a new branch and pull request."
+                    } else {
+                        "Changes always use a new branch and pull request."
+                    }
+                )
+            }
+        } catch (error: Throwable) {
+            _state.update { it.copy(loading = false, error = error.message ?: "Unable to open this file") }
+        }
+    }
+
+    fun startNewFile(path: String) = viewModelScope.launch {
+        if (!isSafeFilePath(path)) {
+            _state.update { it.copy(error = "Use a valid relative text-file path") }
+            return@launch
+        }
+        val protected = if (demo) false else runCatching {
+            repository.branchProtected(owner, repo, baseBranch)
+        }.getOrDefault(false)
+        _state.update {
+            it.copy(
+                error = null,
+                message = "New file will be created on a review branch.",
+                editor = FileEditorState(path, null, "", "", protected)
+            )
+        }
+    }
+
+    fun updateEditorContent(content: String) {
+        _state.update { current -> current.editor?.let { current.copy(editor = it.copy(content = content)) } ?: current }
+    }
+
+    fun closeEditor() {
+        _state.update { it.copy(editor = null, error = null, message = null) }
+    }
+
+    fun saveEditor(featureBranch: String, commitMessage: String) = viewModelScope.launch {
+        val editor = _state.value.editor ?: return@launch
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not commit files") }
+            return@launch
+        }
+        if (!BuildRunTracker.isSafeRef(featureBranch)) {
+            _state.update { it.copy(error = "Use a valid review branch name") }
+            return@launch
+        }
+        if (commitMessage.isBlank()) {
+            _state.update { it.copy(error = "A commit message is required") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching {
+            repository.commitFileAndOpenPullRequest(
+                owner = owner,
+                repo = repo,
+                path = editor.path,
+                content = editor.content,
+                currentSha = editor.sha,
+                baseBranch = baseBranch,
+                featureBranch = featureBranch,
+                commitMessage = commitMessage.trim(),
+                pullTitle = "Edit ${editor.path}",
+                pullBody = "Prepared in GitHub Rock on a new review branch. The default branch was not overwritten."
+            )
+        }.onSuccess { pull ->
+            _state.update {
+                it.copy(
+                    message = "Pull request #${pull.number} created",
+                    editor = it.editor?.copy(
+                        originalContent = it.editor.content,
+                        pullRequestUrl = pull.htmlUrl
+                    )
+                )
+            }
+        }.onFailure { error ->
+            _state.update { it.copy(error = error.message ?: "Unable to commit this file") }
+        }
+        _state.update { it.copy(loading = false) }
     }
 
     fun mergePullRequest(number: Int, method: String = "merge") = viewModelScope.launch {
@@ -275,7 +403,7 @@ class RepositoryDetailViewModel @Inject constructor(
         runCatching {
             if (demo) loadDemo(section) else when (section) {
                 RepoSection.Overview -> Unit
-                RepoSection.Code -> _state.update { it.copy(contents = repository.contents(owner, repo, it.currentPath, null)) }
+                RepoSection.Code -> _state.update { it.copy(contents = repository.contents(owner, repo, it.currentPath, baseBranch)) }
                 RepoSection.Issues -> _state.update { it.copy(issues = repository.issues(owner, repo)) }
                 RepoSection.Pulls -> _state.update { it.copy(pulls = repository.pulls(owner, repo)) }
                 RepoSection.Actions -> {
@@ -307,5 +435,16 @@ class RepositoryDetailViewModel @Inject constructor(
                 RepoSection.Overview -> it
             }
         }
+    }
+
+    private fun isSafeFilePath(path: String): Boolean =
+        path.matches(Regex("^[A-Za-z0-9._/-]+$")) &&
+            !path.startsWith('/') &&
+            !path.endsWith('/') &&
+            !path.contains("..") &&
+            !path.contains("//")
+
+    private companion object {
+        const val MAX_EDITABLE_FILE_BYTES = 1_000_000L
     }
 }
