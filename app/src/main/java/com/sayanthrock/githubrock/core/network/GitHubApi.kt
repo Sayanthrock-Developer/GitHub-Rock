@@ -206,6 +206,14 @@ interface GitHubRestApi {
         @Query("per_page") perPage: Int = 30
     ): List<Release>
 
+    @PATCH("repos/{owner}/{repo}/releases/{releaseId}")
+    suspend fun updateRelease(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("releaseId") releaseId: Long,
+        @Body request: UpdateReleaseRequest
+    ): Release
+
     @DELETE("repos/{owner}/{repo}/releases/{releaseId}")
     suspend fun deleteRelease(
         @Path("owner") owner: String,
