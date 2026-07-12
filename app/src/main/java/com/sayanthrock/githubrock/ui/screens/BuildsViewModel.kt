@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sayanthrock.githubrock.build.WorkflowMonitorScheduler
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Workflow
 import com.sayanthrock.githubrock.core.model.WorkflowArtifact
@@ -41,13 +42,14 @@ data class BuildsActionState(
 
 @HiltViewModel
 class BuildsViewModel @Inject constructor(
-    private val repository: GitHubRepository
+    private val repository: GitHubRepository,
+    private val monitorScheduler: WorkflowMonitorScheduler
 ) : ViewModel() {
     private val _state = MutableStateFlow(BuildsActionState())
     val state: StateFlow<BuildsActionState> = _state.asStateFlow()
     private var trackingJob: Job? = null
 
-    fun loadAndroidBuild(selected: GitHubRepositoryModel) {
+    fun loadAndroidBuild(selected: GitHubRepositoryModel, requestedRunId: Long? = null) {
         trackingJob?.cancel()
         trackingJob = viewModelScope.launch {
             _state.update {
@@ -79,7 +81,9 @@ class BuildsViewModel @Inject constructor(
                     return@launch
                 }
 
-                val latest = repository.runsForWorkflow(selected.owner.login, selected.name, workflow.id).firstOrNull()
+                val latest = requestedRunId?.let {
+                    repository.run(selected.owner.login, selected.name, it)
+                } ?: repository.runsForWorkflow(selected.owner.login, selected.name, workflow.id).firstOrNull()
                 val jobs = latest?.let { repository.workflowJobs(selected.owner.login, selected.name, it.id) }.orEmpty()
                 val artifacts = if (latest?.displayState() == WorkflowDisplayState.Success) {
                     repository.workflowArtifacts(selected.owner.login, selected.name, latest.id)
@@ -142,6 +146,13 @@ class BuildsViewModel @Inject constructor(
                 check(repository.dispatch(selected.owner.login, selected.name, workflow.id, ref, emptyMap())) {
                     "GitHub rejected the workflow dispatch"
                 }
+                monitorScheduler.monitorDispatch(
+                    owner = selected.owner.login,
+                    repo = selected.name,
+                    workflowId = workflow.id,
+                    ref = ref,
+                    knownRunIds = knownIds
+                )
                 _state.update {
                     it.copy(
                         loading = false,
