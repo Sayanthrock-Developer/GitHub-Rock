@@ -27,6 +27,7 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.PullRequestSummary
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
+import com.sayanthrock.githubrock.core.model.Workflow
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
 @Composable
