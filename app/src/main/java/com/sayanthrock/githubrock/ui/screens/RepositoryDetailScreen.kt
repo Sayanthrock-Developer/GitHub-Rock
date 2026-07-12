@@ -48,6 +48,8 @@ fun RepositoryDetailScreen(
     var dispatchWorkflow by remember { mutableStateOf<Workflow?>(null) }
     var selectedIssue by remember { mutableStateOf<GitHubIssue?>(null) }
     var issueCommentDraft by remember { mutableStateOf("") }
+    var selectedPull by remember { mutableStateOf<PullRequestSummary?>(null) }
+    var reviewDraft by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -94,6 +96,7 @@ fun RepositoryDetailScreen(
                 }
                 RepoSection.Pulls -> items(state.pulls, key = { it.id }) { pull ->
                     SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}")
+                    TextButton(onClick = { selectedPull = pull; reviewDraft = ""; viewModel.loadPullReviews(pull.number) }) { Text("Open reviews") }
                     if (pull.state == "open" && pull.draft != true) {
                         TextButton(onClick = { mergePull = pull }) { Text("Merge…") }
                     }
@@ -205,6 +208,35 @@ fun RepositoryDetailScreen(
             },
             confirmButton = { TextButton(onClick = { viewModel.addIssueComment(issue.number, issueCommentDraft); issueCommentDraft = "" }) { Text("Comment") } },
             dismissButton = { TextButton(onClick = { selectedIssue = null }) { Text("Close") } }
+        )
+    }
+    selectedPull?.let { pull ->
+        AlertDialog(
+            onDismissRequest = { selectedPull = null },
+            title = { Text("#${pull.number} ${pull.title}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Reviews", fontWeight = FontWeight.SemiBold)
+                    if (state.pullReviews.isEmpty()) Text("No reviews yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    state.pullReviews.takeLast(4).forEach { review ->
+                        Text("${review.user.login}: ${review.state}${review.body?.let { " • $it" }.orEmpty()}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    OutlinedTextField(
+                        value = reviewDraft,
+                        onValueChange = { reviewDraft = it },
+                        label = { Text("Review comment (optional)") },
+                        minLines = 2,
+                        maxLines = 4
+                    )
+                }
+            },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { viewModel.submitPullReview(pull.number, "APPROVE", reviewDraft); reviewDraft = "" }) { Text("Approve") }
+                    TextButton(onClick = { viewModel.submitPullReview(pull.number, "REQUEST_CHANGES", reviewDraft); reviewDraft = "" }) { Text("Request changes") }
+                }
+            },
+            dismissButton = { TextButton(onClick = { selectedPull = null }) { Text("Close") } }
         )
     }
 }

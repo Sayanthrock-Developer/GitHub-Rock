@@ -28,6 +28,7 @@ data class RepositoryDetailState(
     val artifacts: List<WorkflowArtifact> = emptyList(),
     val releases: List<Release> = emptyList(),
     val issueComments: List<IssueComment> = emptyList(),
+    val pullReviews: List<PullRequestReview> = emptyList(),
     val currentPath: String = "",
     val error: String? = null,
     val message: String? = null,
@@ -122,6 +123,26 @@ class RepositoryDetailViewModel @Inject constructor(
         runCatching { repository.addIssueComment(owner, repo, issueNumber, body.trim()) }
             .onSuccess { comment -> _state.update { it.copy(issueComments = it.issueComments + comment, message = "Comment added") } }
             .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to add comment") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
+        runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
+            .onSuccess { reviews -> _state.update { it.copy(pullReviews = reviews) } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load pull request reviews") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun submitPullReview(pullNumber: Int, event: String, body: String) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not submit reviews") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.submitPullReview(owner, repo, pullNumber, event, body.trim()) }
+            .onSuccess { review -> _state.update { it.copy(pullReviews = it.pullReviews + review, message = "Review submitted") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to submit review") } }
         _state.update { it.copy(loading = false) }
     }
 
