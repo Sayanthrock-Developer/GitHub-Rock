@@ -165,6 +165,25 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun updateIssueState(issueNumber: Int, state: String) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not change issue state") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.updateIssueState(owner, repo, issueNumber, state) }
+            .onSuccess { updated ->
+                _state.update { current ->
+                    current.copy(
+                        issues = current.issues.map { if (it.id == updated.id) updated else it },
+                        message = "Issue #$issueNumber ${if (state == "closed") "closed" else "reopened"}"
+                    )
+                }
+            }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to update issue") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
         runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
