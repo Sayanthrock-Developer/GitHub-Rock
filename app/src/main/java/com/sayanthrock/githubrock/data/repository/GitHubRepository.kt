@@ -51,6 +51,8 @@ class GitHubRepository @Inject constructor(
 
     suspend fun contents(owner: String, repo: String, path: String, ref: String?) = api.contents(owner, repo, path, ref)
     suspend fun file(owner: String, repo: String, path: String, ref: String?) = api.file(owner, repo, path, ref)
+    suspend fun branchProtected(owner: String, repo: String, branch: String): Boolean =
+        api.branchProtection(owner, repo, branch).isSuccessful
     suspend fun issues(owner: String, repo: String) = api.issues(owner, repo).filterNot { it.body?.contains("pull request", ignoreCase = true) == true }
     suspend fun createIssue(owner: String, repo: String, title: String, body: String) = api.createIssue(owner, repo, CreateIssueRequest(title, body.takeIf { it.isNotBlank() }))
     suspend fun updateIssueState(owner: String, repo: String, issueNumber: Int, state: String) = api.updateIssue(owner, repo, issueNumber, UpdateIssueRequest(state))
