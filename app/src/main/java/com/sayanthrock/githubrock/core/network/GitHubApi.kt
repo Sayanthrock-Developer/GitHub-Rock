@@ -90,6 +90,13 @@ interface GitHubRestApi {
         @Query("ref") ref: String? = null
     ): ContentEntry
 
+    @GET("repos/{owner}/{repo}/branches/{branch}/protection")
+    suspend fun branchProtection(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "branch", encoded = true) branch: String
+    ): Response<Unit>
+
     @POST("repos/{owner}/{repo}/git/refs")
     suspend fun createBranch(
         @Path("owner") owner: String,
