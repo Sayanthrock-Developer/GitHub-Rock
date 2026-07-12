@@ -1,7 +1,12 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build as AndroidBuild
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +27,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.WorkflowArtifact
 import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
@@ -29,6 +36,7 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.core.util.AndroidArtifactType
 import com.sayanthrock.githubrock.core.util.AndroidWorkflowGenerator
+import com.sayanthrock.githubrock.core.util.BuildRunTracker
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,14 +48,22 @@ fun BuildsScreen(
     repositories: List<GitHubRepositoryModel>,
     runs: List<WorkflowRun>,
     onSelectRepository: (GitHubRepositoryModel) -> Unit,
+    initialRepository: GitHubRepositoryModel? = null,
+    initialRunId: Long? = null,
     viewModel: BuildsViewModel = hiltViewModel()
 ) {
     val actionState by viewModel.state.collectAsStateWithLifecycle()
     val downloadsViewModel: DownloadsViewModel = hiltViewModel()
-    var selectedRepository by remember(repositories) { mutableStateOf(repositories.firstOrNull()) }
-    LaunchedEffect(mode, selectedRepository?.id) {
+    var selectedRepository by remember(repositories, initialRepository?.id) {
+        val requested = initialRepository?.let { initial ->
+            repositories.firstOrNull { it.id == initial.id } ?: initial
+        }
+        mutableStateOf(requested ?: repositories.firstOrNull())
+    }
+    val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
+    LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
         if (mode == AppMode.Connected) {
-            selectedRepository?.let(viewModel::loadAndroidBuild)
+            selectedRepository?.let { viewModel.loadAndroidBuild(it, requestedRunId) }
         } else {
             viewModel.resetBuild()
         }
@@ -105,7 +121,7 @@ fun BuildsScreen(
                 mode = mode,
                 repository = selectedRepository,
                 actionState = actionState,
-                onRefresh = { selectedRepository?.let(viewModel::loadAndroidBuild) },
+                onRefresh = { selectedRepository?.let { viewModel.loadAndroidBuild(it) } },
                 onDispatch = { ref -> selectedRepository?.let { viewModel.dispatchAndroidBuild(it, ref) } },
                 onDownload = { artifact ->
                     selectedRepository?.let { repo ->
@@ -207,7 +223,31 @@ private fun BuildExecutionCard(
     onDownload: (WorkflowArtifact) -> Unit
 ) {
     var ref by remember(repository?.id) { mutableStateOf(repository?.defaultBranch ?: "main") }
+    val refIsSafe = remember(ref) { BuildRunTracker.isSafeRef(ref) }
     val context = LocalContext.current
+    val notificationManager = remember(context) { NotificationManagerCompat.from(context) }
+    val hasNotificationPermission = AndroidBuild.VERSION.SDK_INT < AndroidBuild.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    var notificationsAllowed by remember(context) {
+        mutableStateOf(hasNotificationPermission && notificationManager.areNotificationsEnabled())
+    }
+    var pendingDispatchRef by remember { mutableStateOf<String?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        notificationsAllowed = granted && notificationManager.areNotificationsEnabled()
+        pendingDispatchRef?.let(onDispatch)
+        pendingDispatchRef = null
+    }
+    val dispatchWithNotificationPermission: (String) -> Unit = { selectedRef ->
+        if (AndroidBuild.VERSION.SDK_INT >= AndroidBuild.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingDispatchRef = selectedRef
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            notificationsAllowed = notificationManager.areNotificationsEnabled()
+            onDispatch(selectedRef)
+        }
+    }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Run merged workflow", style = MaterialTheme.typography.titleLarge)
@@ -241,14 +281,24 @@ private fun BuildExecutionCard(
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
-                            onClick = { onDispatch(ref) },
-                            enabled = !actionState.loading && !actionState.tracking,
+                            onClick = { dispatchWithNotificationPermission(ref) },
+                            enabled = refIsSafe && !actionState.loading && !actionState.tracking,
                             modifier = Modifier.weight(1f)
                         ) { Text(if (actionState.tracking) "Tracking build…" else "Run Android build") }
                         OutlinedButton(
                             onClick = onRefresh,
                             enabled = !actionState.loading && !actionState.tracking
                         ) { Text("Refresh") }
+                    }
+                    if (!refIsSafe) {
+                        Text("Use a valid branch or tag.", color = MaterialTheme.colorScheme.error)
+                    }
+                    if (!notificationsAllowed) {
+                        Text(
+                            "Background tracking will continue, but Android notifications are currently disabled.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
