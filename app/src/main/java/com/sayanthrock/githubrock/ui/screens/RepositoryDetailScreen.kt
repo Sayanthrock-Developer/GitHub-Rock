@@ -85,6 +85,10 @@ fun RepositoryDetailScreen(
                             Text(repository?.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Default branch: ${repository?.defaultBranch ?: "main"}")
                             Text("${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
+                                OutlinedButton(onClick = { viewModel.setRepositoryStarred(false) }) { Text("Unstar") }
+                            }
                             if (repository?.private == true) Text("Private repository", color = MaterialTheme.colorScheme.primary)
                         }
                     }

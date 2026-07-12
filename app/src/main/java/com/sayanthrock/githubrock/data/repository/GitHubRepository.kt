@@ -25,6 +25,9 @@ class GitHubRepository @Inject constructor(
     suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> =
         api.searchRepositories(query.ifBlank { "android stars:>1000" }, sort = "updated").items
 
+    suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =
+        if (starred) api.starRepository(owner, repo).isSuccessful else api.unstarRepository(owner, repo).isSuccessful
+
     suspend fun remember(repository: GitHubRepositoryModel) = recentDao.upsert(
         RepositoryEntity(
             id = repository.id,
