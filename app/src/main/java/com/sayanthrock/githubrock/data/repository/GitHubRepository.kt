@@ -32,6 +32,8 @@ class GitHubRepository @Inject constructor(
     suspend fun createDraftRelease(owner: String, repo: String, tag: String, name: String, body: String, prerelease: Boolean) =
         api.createRelease(owner, repo, CreateReleaseRequest(tag, name.takeIf { it.isNotBlank() }, body.takeIf { it.isNotBlank() }, draft = true, prerelease = prerelease))
     suspend fun deleteRelease(owner: String, repo: String, releaseId: Long): Boolean = api.deleteRelease(owner, repo, releaseId).isSuccessful
+    suspend fun updateRelease(owner: String, repo: String, releaseId: Long, name: String, body: String, draft: Boolean, prerelease: Boolean) =
+        api.updateRelease(owner, repo, releaseId, UpdateReleaseRequest(name.takeIf { it.isNotBlank() }, body.takeIf { it.isNotBlank() }, draft, prerelease))
 
     suspend fun remember(repository: GitHubRepositoryModel) = recentDao.upsert(
         RepositoryEntity(

@@ -66,6 +66,10 @@ fun RepositoryDetailScreen(
     var newReleaseNotes by remember { mutableStateOf("") }
     var newReleasePrerelease by remember { mutableStateOf(false) }
     var deleteReleaseTarget by remember { mutableStateOf<Release?>(null) }
+    var editReleaseTarget by remember { mutableStateOf<Release?>(null) }
+    var editReleaseName by remember { mutableStateOf("") }
+    var editReleaseNotes by remember { mutableStateOf("") }
+    var editReleasePrerelease by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -162,6 +166,7 @@ fun RepositoryDetailScreen(
                         if (expandedRelease == release.id) {
                             Text(release.body?.ifBlank { "No release notes." } ?: "No release notes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("${if (release.draft) "Draft" else "Published"} • ${if (release.prerelease) "Prerelease" else "Stable"} • ${release.publishedAt ?: "Not published"}", style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = { editReleaseTarget = release; editReleaseName = release.name.orEmpty(); editReleaseNotes = release.body.orEmpty(); editReleasePrerelease = release.prerelease }) { Text("Edit release") }
                             TextButton(onClick = { deleteReleaseTarget = release }) { Text("Delete release") }
                         }
                         release.assets.forEach { asset ->
@@ -350,6 +355,24 @@ fun RepositoryDetailScreen(
             text = { Text("This permanently deletes the GitHub release. Release assets may no longer be available to users.") },
             confirmButton = { TextButton(onClick = { deleteReleaseTarget = null; viewModel.deleteRelease(release.id) }) { Text("Delete release") } },
             dismissButton = { TextButton(onClick = { deleteReleaseTarget = null }) { Text("Cancel") } }
+        )
+    }
+    editReleaseTarget?.let { release ->
+        AlertDialog(
+            onDismissRequest = { editReleaseTarget = null },
+            title = { Text("Edit ${release.tagName}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = editReleaseName, onValueChange = { editReleaseName = it }, label = { Text("Release name") }, singleLine = true)
+                    OutlinedTextField(value = editReleaseNotes, onValueChange = { editReleaseNotes = it }, label = { Text("Release notes") }, minLines = 3, maxLines = 6)
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Checkbox(checked = editReleasePrerelease, onCheckedChange = { editReleasePrerelease = it })
+                        Text("Mark as prerelease")
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.updateRelease(release.id, editReleaseName, editReleaseNotes, release.draft, editReleasePrerelease); editReleaseTarget = null }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = { editReleaseTarget = null }) { Text("Cancel") } }
         )
     }
 }
