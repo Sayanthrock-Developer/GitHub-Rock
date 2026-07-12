@@ -110,7 +110,20 @@ fun MainNavigation(
                     navArgument("runId") { type = NavType.LongType }
                 ),
                 deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" })
-            ) { BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo) }
+            ) { backStackEntry ->
+                val owner = backStackEntry.arguments?.getString("owner")
+                val repoName = backStackEntry.arguments?.getString("repo")
+                val runId = backStackEntry.arguments?.getLong("runId")
+                val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
+                BuildsScreen(
+                    mode = mode,
+                    repositories = state.repositories,
+                    runs = state.workflowRuns,
+                    onSelectRepository = openRepo,
+                    initialRepository = repository,
+                    initialRunId = runId
+                )
+            }
             composable(
                 route = "release/{owner}/{repo}/{tag}",
                 arguments = listOf(
