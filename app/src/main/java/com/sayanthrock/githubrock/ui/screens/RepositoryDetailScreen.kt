@@ -53,6 +53,10 @@ fun RepositoryDetailScreen(
     var showCreateIssue by remember { mutableStateOf(false) }
     var newIssueTitle by remember { mutableStateOf("") }
     var newIssueBody by remember { mutableStateOf("") }
+    var showCreatePull by remember { mutableStateOf(false) }
+    var newPullTitle by remember { mutableStateOf("") }
+    var newPullHead by remember { mutableStateOf("") }
+    var newPullBody by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -100,11 +104,14 @@ fun RepositoryDetailScreen(
                         TextButton(onClick = { selectedIssue = issue; issueCommentDraft = ""; viewModel.loadIssueComments(issue.number) }) { Text("Open issue") }
                     }
                 }
-                RepoSection.Pulls -> items(state.pulls, key = { it.id }) { pull ->
-                    SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}")
-                    TextButton(onClick = { selectedPull = pull; reviewDraft = ""; viewModel.loadPullReviews(pull.number) }) { Text("Open reviews") }
-                    if (pull.state == "open" && pull.draft != true) {
-                        TextButton(onClick = { mergePull = pull }) { Text("Merge…") }
+                RepoSection.Pulls -> {
+                    item { OutlinedButton(onClick = { showCreatePull = true }, Modifier.fillMaxWidth()) { Text("New pull request") } }
+                    items(state.pulls, key = { it.id }) { pull ->
+                        SummaryCard("#${pull.number} ${pull.title}", if (pull.draft) "Draft • ${pull.user.login}" else "${pull.state} • ${pull.user.login}")
+                        TextButton(onClick = { selectedPull = pull; reviewDraft = ""; viewModel.loadPullReviews(pull.number) }) { Text("Open reviews") }
+                        if (pull.state == "open" && pull.draft != true) {
+                            TextButton(onClick = { mergePull = pull }) { Text("Merge…") }
+                        }
                     }
                 }
                 RepoSection.Actions -> {
@@ -257,6 +264,22 @@ fun RepositoryDetailScreen(
             },
             confirmButton = { TextButton(onClick = { viewModel.createIssue(newIssueTitle, newIssueBody); newIssueTitle = ""; newIssueBody = ""; showCreateIssue = false }) { Text("Create") } },
             dismissButton = { TextButton(onClick = { showCreateIssue = false }) { Text("Cancel") } }
+        )
+    }
+    if (showCreatePull) {
+        AlertDialog(
+            onDismissRequest = { showCreatePull = false },
+            title = { Text("New pull request") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = newPullTitle, onValueChange = { newPullTitle = it }, label = { Text("Title") }, singleLine = true)
+                    OutlinedTextField(value = newPullHead, onValueChange = { newPullHead = it }, label = { Text("Source branch") }, singleLine = true)
+                    Text("Base branch: ${repository?.defaultBranch ?: "main"}", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(value = newPullBody, onValueChange = { newPullBody = it }, label = { Text("Description (optional)") }, minLines = 3, maxLines = 6)
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.createPullRequest(newPullTitle, newPullHead, repository?.defaultBranch ?: "main", newPullBody); newPullTitle = ""; newPullHead = ""; newPullBody = ""; showCreatePull = false }) { Text("Create") } },
+            dismissButton = { TextButton(onClick = { showCreatePull = false }) { Text("Cancel") } }
         )
     }
 }
