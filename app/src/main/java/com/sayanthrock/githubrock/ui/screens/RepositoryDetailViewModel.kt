@@ -208,6 +208,22 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun createDraftRelease(tag: String, name: String, body: String, prerelease: Boolean) = viewModelScope.launch {
+        if (tag.isBlank() || !tag.matches(Regex("^[A-Za-z0-9._/-]+$"))) {
+            _state.update { it.copy(error = "Use a valid release tag") }
+            return@launch
+        }
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not create releases") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.createDraftRelease(owner, repo, tag.trim(), name.trim(), body.trim(), prerelease) }
+            .onSuccess { release -> _state.update { it.copy(releases = listOf(release) + it.releases, message = "Draft release ${release.tagName} created") } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to create draft release") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
         runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
