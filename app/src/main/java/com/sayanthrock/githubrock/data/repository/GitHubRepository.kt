@@ -31,6 +31,7 @@ class GitHubRepository @Inject constructor(
     suspend fun forkRepository(owner: String, repo: String) = api.forkRepository(owner, repo)
     suspend fun createDraftRelease(owner: String, repo: String, tag: String, name: String, body: String, prerelease: Boolean) =
         api.createRelease(owner, repo, CreateReleaseRequest(tag, name.takeIf { it.isNotBlank() }, body.takeIf { it.isNotBlank() }, draft = true, prerelease = prerelease))
+    suspend fun deleteRelease(owner: String, repo: String, releaseId: Long): Boolean = api.deleteRelease(owner, repo, releaseId).isSuccessful
 
     suspend fun remember(repository: GitHubRepositoryModel) = recentDao.upsert(
         RepositoryEntity(
