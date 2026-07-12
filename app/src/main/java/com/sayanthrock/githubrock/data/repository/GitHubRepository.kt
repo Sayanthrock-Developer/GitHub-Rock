@@ -28,6 +28,8 @@ class GitHubRepository @Inject constructor(
     suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =
         if (starred) api.starRepository(owner, repo).isSuccessful else api.unstarRepository(owner, repo).isSuccessful
 
+    suspend fun forkRepository(owner: String, repo: String) = api.forkRepository(owner, repo)
+
     suspend fun remember(repository: GitHubRepositoryModel) = recentDao.upsert(
         RepositoryEntity(
             id = repository.id,

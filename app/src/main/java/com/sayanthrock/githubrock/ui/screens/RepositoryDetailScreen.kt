@@ -58,6 +58,7 @@ fun RepositoryDetailScreen(
     var newPullHead by remember { mutableStateOf("") }
     var newPullBody by remember { mutableStateOf("") }
     var issueStateAction by remember { mutableStateOf<GitHubIssue?>(null) }
+    var showForkConfirmation by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -88,6 +89,7 @@ fun RepositoryDetailScreen(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(false) }) { Text("Unstar") }
+                                OutlinedButton(onClick = { showForkConfirmation = true }) { Text("Fork") }
                             }
                             if (repository?.private == true) Text("Private repository", color = MaterialTheme.colorScheme.primary)
                         }
@@ -300,6 +302,15 @@ fun RepositoryDetailScreen(
             },
             confirmButton = { TextButton(onClick = { viewModel.createPullRequest(newPullTitle, newPullHead, repository?.defaultBranch ?: "main", newPullBody); newPullTitle = ""; newPullHead = ""; newPullBody = ""; showCreatePull = false }) { Text("Create") } },
             dismissButton = { TextButton(onClick = { showCreatePull = false }) { Text("Cancel") } }
+        )
+    }
+    if (showForkConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showForkConfirmation = false },
+            title = { Text("Fork ${repository?.name ?: "repository"}?") },
+            text = { Text("GitHub will create a separate repository copy in your account. This does not change the original repository.") },
+            confirmButton = { TextButton(onClick = { showForkConfirmation = false; viewModel.forkRepository() }) { Text("Fork") } },
+            dismissButton = { TextButton(onClick = { showForkConfirmation = false }) { Text("Cancel") } }
         )
     }
 }
