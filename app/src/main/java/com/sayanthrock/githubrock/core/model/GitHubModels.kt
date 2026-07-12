@@ -164,6 +164,9 @@ data class DeviceTokenResponse(
 data class CreateIssueRequest(val title: String, val body: String? = null)
 
 @Serializable
+data class UpdateIssueRequest(val state: String)
+
+@Serializable
 data class WorkflowDispatchRequest(val ref: String, val inputs: Map<String, String> = emptyMap())
 
 @Serializable

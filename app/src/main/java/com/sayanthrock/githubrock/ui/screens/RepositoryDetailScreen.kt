@@ -57,6 +57,7 @@ fun RepositoryDetailScreen(
     var newPullTitle by remember { mutableStateOf("") }
     var newPullHead by remember { mutableStateOf("") }
     var newPullBody by remember { mutableStateOf("") }
+    var issueStateAction by remember { mutableStateOf<GitHubIssue?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(repository?.fullName ?: "Repository") },
@@ -220,7 +221,22 @@ fun RepositoryDetailScreen(
                 }
             },
             confirmButton = { TextButton(onClick = { viewModel.addIssueComment(issue.number, issueCommentDraft); issueCommentDraft = "" }) { Text("Comment") } },
-            dismissButton = { TextButton(onClick = { selectedIssue = null }) { Text("Close") } }
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { issueStateAction = issue }) { Text(if (issue.state == "open") "Close issue" else "Reopen") }
+                    TextButton(onClick = { selectedIssue = null }) { Text("Close") }
+                }
+            }
+        )
+    }
+    issueStateAction?.let { issue ->
+        val closing = issue.state == "open"
+        AlertDialog(
+            onDismissRequest = { issueStateAction = null },
+            title = { Text(if (closing) "Close issue #${issue.number}?" else "Reopen issue #${issue.number}?") },
+            text = { Text(if (closing) "This changes the issue state on GitHub." else "This restores the issue to open state on GitHub.") },
+            confirmButton = { TextButton(onClick = { issueStateAction = null; viewModel.updateIssueState(issue.number, if (closing) "closed" else "open"); selectedIssue = null }) { Text(if (closing) "Close issue" else "Reopen") } },
+            dismissButton = { TextButton(onClick = { issueStateAction = null }) { Text("Cancel") } }
         )
     }
     selectedPull?.let { pull ->
