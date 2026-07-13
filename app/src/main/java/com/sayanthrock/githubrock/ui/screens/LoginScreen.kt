@@ -154,7 +154,7 @@ private fun DeviceCodeCard(
                 }
             }
             Text(
-                "After GitHub says you’re all set, return here with Android Back or the app switcher. The browser cannot reopen GitHub Rock automatically.",
+                "After GitHub says you’re all set, return with Android Back or the app switcher. GitHub Rock checks automatically; the button below is a backup.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
