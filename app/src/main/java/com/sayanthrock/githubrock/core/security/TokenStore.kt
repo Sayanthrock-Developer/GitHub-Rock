@@ -24,6 +24,12 @@ class TokenStore @Inject constructor(
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
+    /**
+     * Persists the access and refresh tokens with their expiration times.
+     *
+     * @param response The OAuth response containing the token data and expiration intervals.
+     * @throws IllegalArgumentException If the response does not contain an access token.
+     */
     @Synchronized
     fun save(response: AccessTokenResponse) {
         val accessToken = requireNotNull(response.accessToken) { "Missing access token" }
@@ -43,18 +49,48 @@ class TokenStore @Inject constructor(
             .apply()
     }
 
-    fun accessToken(): String? = preferences.getString(KEY_ACCESS_TOKEN, null)
+    /**
+ * Retrieves the stored access token.
+ *
+ * @return The access token, or `null` when none is stored.
+ */
+fun accessToken(): String? = preferences.getString(KEY_ACCESS_TOKEN, null)
 
-    fun refreshToken(): String? = preferences.getString(KEY_REFRESH_TOKEN, null)
+    /**
+ * Retrieves the stored refresh token.
+ *
+ * @return The refresh token, or `null` when none is stored.
+ */
+fun refreshToken(): String? = preferences.getString(KEY_REFRESH_TOKEN, null)
 
-    fun hasSession(): Boolean = !accessToken().isNullOrBlank()
+    /**
+ * Determines whether a stored access token represents an active session.
+ *
+ * @return `true` if the access token is present and contains non-whitespace characters, `false` otherwise.
+ */
+fun hasSession(): Boolean = !accessToken().isNullOrBlank()
 
-    fun accessTokenExpired(now: Long = System.currentTimeMillis()): Boolean =
+    /**
+         * Determines whether the stored access token has expired.
+         *
+         * @param now The timestamp used for the expiration comparison, in milliseconds.
+         * @return `true` if the access token expiry timestamp is less than or equal to `now`, `false` otherwise.
+         */
+        fun accessTokenExpired(now: Long = System.currentTimeMillis()): Boolean =
         preferences.getLong(KEY_ACCESS_EXPIRY, Long.MAX_VALUE) <= now
 
-    fun refreshTokenExpired(now: Long = System.currentTimeMillis()): Boolean =
+    /**
+         * Determines whether the stored refresh token has expired.
+         *
+         * @param now The timestamp against which the refresh token expiry is checked.
+         * @return `true` if the stored expiry time is less than or equal to `now`, `false` otherwise.
+         */
+        fun refreshTokenExpired(now: Long = System.currentTimeMillis()): Boolean =
         preferences.getLong(KEY_REFRESH_EXPIRY, Long.MAX_VALUE) <= now
 
+    /**
+     * Removes all stored token data.
+     */
     @Synchronized
     fun clear() {
         preferences.edit().clear().commit()

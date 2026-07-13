@@ -24,11 +24,26 @@ class AuthRepository @Inject constructor(
     private val api: GitHubAuthApi,
     private val tokenStore: TokenStore
 ) {
-    fun hasSession(): Boolean = tokenStore.hasSession()
+    /**
+ * Determines whether an authenticated session exists.
+ *
+ * @return `true` if a session exists, `false` otherwise.
+ */
+fun hasSession(): Boolean = tokenStore.hasSession()
 
-    fun isClientConfigured(): Boolean = BuildConfig.GITHUB_CLIENT_ID.isNotBlank() &&
+    /**
+         * Determines whether a valid GitHub client ID is configured.
+         *
+         * @return `true` if the client ID is non-blank and differs from the demo value, `false` otherwise.
+         */
+        fun isClientConfigured(): Boolean = BuildConfig.GITHUB_CLIENT_ID.isNotBlank() &&
         BuildConfig.GITHUB_CLIENT_ID != "DEMO_CLIENT_ID"
 
+    /**
+     * Requests a GitHub device code for authentication.
+     *
+     * @return The GitHub device-code response.
+     */
     suspend fun requestDeviceCode(): DeviceCodeResponse {
         check(isClientConfigured()) {
             "Add the public GitHub App client ID to local.properties before signing in."
@@ -36,6 +51,12 @@ class AuthRepository @Inject constructor(
         return api.requestDeviceCode(BuildConfig.GITHUB_CLIENT_ID)
     }
 
+    /**
+     * Polls GitHub until device authorization succeeds, fails, or expires.
+     *
+     * @param deviceCode The device authorization details used for polling.
+     * @return Updates describing polling status, success, or failure.
+     */
     fun pollForToken(deviceCode: DeviceCodeResponse): Flow<DeviceAuthUpdate> = flow {
         var intervalSeconds = deviceCode.interval.coerceAtLeast(5)
         val expiresAt = System.currentTimeMillis() + deviceCode.expiresIn * 1_000L
@@ -78,6 +99,11 @@ class AuthRepository @Inject constructor(
         emit(DeviceAuthUpdate.Failure("The verification code expired. Start again."))
     }
 
+    /**
+     * Ensures that the stored session has a valid access token.
+     *
+     * @return `true` if a session is available or successfully refreshed, `false` otherwise.
+     */
     suspend fun refreshIfNeeded(): Boolean {
         if (!tokenStore.hasSession()) return false
         if (!tokenStore.accessTokenExpired()) return true
@@ -103,7 +129,10 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    fun logout() = tokenStore.clear()
+    /**
+ * Clears the stored authentication session.
+ */
+fun logout() = tokenStore.clear()
 
     private companion object {
         const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"

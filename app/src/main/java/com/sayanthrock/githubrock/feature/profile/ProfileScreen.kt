@@ -29,6 +29,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.ui.theme.GlassCard
 
+/**
+ * Displays the user's profile, account status, API rate limit, and security actions.
+ *
+ * @param demoMode Whether the screen is displaying demo mode data.
+ * @param guestMode Whether the screen is displaying guest mode data.
+ * @param onLogout Called when the user selects the logout or exit action.
+ * @param viewModel Provides profile state and data-loading operations.
+ */
 @Composable
 fun ProfileScreen(
     demoMode: Boolean,

@@ -29,10 +29,20 @@ class SettingsRepository @Inject constructor(
         it[BIOMETRIC_LOCK] ?: false
     }
 
+    /**
+     * Persists the selected application theme preference.
+     *
+     * @param theme The theme preference to save.
+     */
     suspend fun setTheme(theme: ThemePreference) {
         context.settingsDataStore.edit { it[THEME] = theme.name }
     }
 
+    /**
+     * Sets whether biometric locking is enabled.
+     *
+     * @param enabled Whether biometric locking should be enabled.
+     */
     suspend fun setBiometricLock(enabled: Boolean) {
         context.settingsDataStore.edit { it[BIOMETRIC_LOCK] = enabled }
     }

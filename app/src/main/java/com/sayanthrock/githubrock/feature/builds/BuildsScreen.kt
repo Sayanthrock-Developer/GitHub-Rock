@@ -37,6 +37,11 @@ import com.sayanthrock.githubrock.core.workflow.AndroidWorkflowGenerator
 import com.sayanthrock.githubrock.demo.DemoData
 import com.sayanthrock.githubrock.ui.theme.GlassCard
 
+/**
+ * Displays the Android build workflow generator and optional demo workflow runs.
+ *
+ * @param demoMode Whether to display recent demo runs.
+ */
 @Composable
 fun BuildsScreen(demoMode: Boolean) {
     var module by remember { mutableStateOf("app") }

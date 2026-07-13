@@ -52,6 +52,12 @@ import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.RepositorySummary
 import com.sayanthrock.githubrock.ui.theme.GlassCard
 
+/**
+ * Displays a searchable, paginated list of repositories.
+ *
+ * @param demoMode Whether to display isolated sample repositories.
+ * @param onRepository Invoked when a repository is selected.
+ */
 @Composable
 fun RepositoriesScreen(
     demoMode: Boolean,
@@ -120,6 +126,12 @@ fun RepositoriesScreen(
     }
 }
 
+/**
+ * Displays a repository summary card and handles clicks on it.
+ *
+ * @param repository The repository to display.
+ * @param onClick Callback invoked when the card is clicked.
+ */
 @Composable
 private fun RepositoryCard(repository: RepositorySummary, onClick: () -> Unit) {
     GlassCard(
@@ -161,6 +173,12 @@ private fun RepositoryCard(repository: RepositorySummary, onClick: () -> Unit) {
     }
 }
 
+/**
+ * Displays an error message with an action to retry the operation.
+ *
+ * @param message The error message to display.
+ * @param onRetry The action invoked when the retry button is clicked.
+ */
 @Composable
 private fun ErrorState(message: String, onRetry: () -> Unit) {
     GlassCard(Modifier.fillMaxWidth()) {
@@ -176,6 +194,9 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
     }
 }
 
+/**
+ * Displays a message when no repositories match the current search.
+ */
 @Composable
 private fun EmptyState() {
     GlassCard(Modifier.fillMaxWidth()) {
@@ -187,6 +208,12 @@ private fun EmptyState() {
     }
 }
 
+/**
+ * Displays repository details with navigable tabs and an action to open the repository on GitHub.
+ *
+ * @param owner The repository owner's username or organization name.
+ * @param repository The repository name.
+ */
 @Composable
 fun RepositoryDetailsScreen(owner: String, repository: String) {
     val context = LocalContext.current
@@ -224,6 +251,12 @@ fun RepositoryDetailsScreen(owner: String, repository: String) {
     }
 }
 
+/**
+ * Opens a URL in a Chrome Custom Tab.
+ *
+ * @param context The context used to launch the browser.
+ * @param url The URL to open.
+ */
 private fun openUrl(context: Context, url: String) {
     CustomTabsIntent.Builder().build().launchUrl(context, url.toUri())
 }

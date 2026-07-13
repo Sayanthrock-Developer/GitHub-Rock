@@ -34,6 +34,14 @@ import com.sayanthrock.githubrock.core.model.WorkflowVisualState
 import com.sayanthrock.githubrock.demo.DemoData
 import com.sayanthrock.githubrock.ui.theme.GlassCard
 
+/**
+ * Displays the dashboard with mode-specific content, repository metrics, workflow status, and quick actions.
+ *
+ * @param demoMode Whether to display sample dashboard data.
+ * @param guestMode Whether to display public GitHub dashboard content.
+ * @param onRepositories Invoked when the repositories action is selected.
+ * @param onBuilds Invoked when the builds action is selected.
+ */
 @Composable
 fun HomeScreen(
     demoMode: Boolean,
@@ -130,6 +138,13 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Renders an action chip with a leading icon and click handler.
+ *
+ * @param label The text displayed on the chip.
+ * @param icon The icon displayed before the label.
+ * @param onClick The callback invoked when the chip is clicked.
+ */
 @Composable
 private fun ActionChip(label: String, icon: ImageVector, onClick: () -> Unit) {
     AssistChip(
@@ -139,6 +154,13 @@ private fun ActionChip(label: String, icon: ImageVector, onClick: () -> Unit) {
     )
 }
 
+/**
+ * Displays a metric value with its label in a styled card.
+ *
+ * @param label The metric's descriptive label.
+ * @param value The metric value to display.
+ * @param modifier The modifier applied to the card.
+ */
 @Composable
 private fun MetricCard(label: String, value: String, modifier: Modifier) {
     GlassCard(modifier) {
@@ -149,11 +171,22 @@ private fun MetricCard(label: String, value: String, modifier: Modifier) {
     }
 }
 
+/**
+ * Displays a section heading with emphasized medium-sized typography.
+ *
+ * @param text The heading text to display.
+ */
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 }
 
+/**
+ * Selects the theme color associated with a workflow state.
+ *
+ * @param state The workflow state to map to a color.
+ * @return The theme color representing the workflow state.
+ */
 @Composable
 private fun statusColor(state: WorkflowVisualState) = when (state) {
     WorkflowVisualState.SUCCESS -> MaterialTheme.colorScheme.secondary
@@ -163,8 +196,17 @@ private fun statusColor(state: WorkflowVisualState) = when (state) {
     WorkflowVisualState.CANCELLED, WorkflowVisualState.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
+/**
+ * Formats a workflow state name with a capitalized first character.
+ *
+ * @param state The workflow state to format.
+ * @return The state name with lowercase characters and an uppercase first character.
+ */
 private fun statusLabel(state: WorkflowVisualState): String = state.name.lowercase().replaceFirstChar(Char::uppercase)
 
+/**
+ * Opens a URL in a browser custom tab.
+ */
 private fun openUrl(context: Context, url: String) {
     CustomTabsIntent.Builder().build().launchUrl(context, url.toUri())
 }
