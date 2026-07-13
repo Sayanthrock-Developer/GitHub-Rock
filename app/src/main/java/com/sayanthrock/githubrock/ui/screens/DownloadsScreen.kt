@@ -33,6 +33,11 @@ import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import java.io.File
 
+/**
+ * Displays the downloads list and provides controls for inspecting, sharing, cancelling, and deleting downloads.
+ *
+ * @param viewModel The view model that supplies downloads and handles download actions.
+ */
 @Composable
 fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
@@ -170,6 +175,18 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     }
 }
 
+/**
+ * Displays a download's status, progress, and available actions.
+ *
+ * @param item The download to display.
+ * @param onPause Called when pausing the download.
+ * @param onResume Called when resuming the download.
+ * @param onCancel Called when canceling the download.
+ * @param onRetry Called when retrying or restarting the download.
+ * @param onInspect Called when inspecting a completed APK.
+ * @param onShare Called when sharing the downloaded file.
+ * @param onDelete Called when deleting the download.
+ */
 @Composable
 private fun DownloadCard(
     item: DownloadEntity,
@@ -289,6 +306,12 @@ private fun DownloadCard(
     }
 }
 
+/**
+ * Selects the theme color associated with a download status.
+ *
+ * @param status The current download status.
+ * @return The color to use when displaying the status.
+ */
 @Composable
 private fun downloadStatusColor(status: String) = when (status) {
     "completed" -> MaterialTheme.colorScheme.tertiary
@@ -297,6 +320,12 @@ private fun downloadStatusColor(status: String) = when (status) {
     else -> MaterialTheme.colorScheme.primary
 }
 
+/**
+ * Shares the downloaded file through the Android share sheet when it exists locally.
+ *
+ * @param context The context used to create the file URI and launch the share sheet.
+ * @param item The download whose local file should be shared.
+ */
 private fun shareDownload(context: android.content.Context, item: DownloadEntity) {
     val file = item.localPath?.let(::File) ?: return
     if (!file.exists()) return
@@ -313,6 +342,12 @@ private fun shareDownload(context: android.content.Context, item: DownloadEntity
     )
 }
 
+/**
+ * Formats a byte count using a human-readable unit.
+ *
+ * @param bytes The number of bytes to format.
+ * @return The byte count expressed in gigabytes, megabytes, kilobytes, or bytes.
+ */
 private fun formatBytes(bytes: Long): String = when {
     bytes >= 1_073_741_824 -> "%.1f GB".format(bytes / 1_073_741_824.0)
     bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)

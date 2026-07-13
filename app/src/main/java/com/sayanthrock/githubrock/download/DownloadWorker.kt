@@ -23,6 +23,12 @@ class DownloadWorker @AssistedInject constructor(
     private val client: OkHttpClient,
     private val dao: DownloadDao
 ) : CoroutineWorker(context, params) {
+    /**
+     * Downloads the requested file, supports resuming partial downloads, verifies its checksum when provided,
+     * and records progress and completion status.
+     *
+     * @return The successful, retry, or failure result based on the download outcome.
+     */
     override suspend fun doWork(): Result {
         val id = inputData.getLong(KEY_ID, -1)
         val url = inputData.getString(KEY_URL) ?: return Result.failure()
@@ -97,6 +103,16 @@ class DownloadWorker @AssistedInject constructor(
         }
     }
 
+    /**
+     * Copies response data to the target file and periodically records download progress.
+     *
+     * @param id The download identifier.
+     * @param body The response stream to copy.
+     * @param target The file receiving the response data.
+     * @param append Whether to append data to the target file.
+     * @param startingBytes The number of bytes already downloaded.
+     * @param totalBytes The expected total download size.
+     */
     private suspend fun copyResponseWithProgress(
         id: Long,
         body: java.io.InputStream,
@@ -126,7 +142,12 @@ class DownloadWorker @AssistedInject constructor(
         dao.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
     }
 
-    private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_")
+    /**
+ * Replaces characters that are unsafe for filenames with underscores.
+ *
+ * @return A filename containing only letters, digits, periods, underscores, and hyphens.
+ */
+private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_")
 
     companion object {
         const val KEY_ID = "download_id"
@@ -137,6 +158,12 @@ class DownloadWorker @AssistedInject constructor(
         private const val PROGRESS_UPDATE_BYTES = 256 * 1024L
         private const val MAX_AUTOMATIC_RETRIES = 2
 
-        fun workName(id: Long): String = "github-rock-download-$id"
+        /**
+ * Creates the unique WorkManager name for a download.
+ *
+ * @param id The download identifier.
+ * @return The standardized work name for the download.
+ */
+fun workName(id: Long): String = "github-rock-download-$id"
     }
 }
