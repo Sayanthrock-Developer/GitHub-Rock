@@ -17,7 +17,7 @@ val localProperties = Properties().apply {
 fun quotedBuildConfig(value: String): String =
     "\"${value.trim().trim('"').replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
-val bundledGitHubClientId = "Iv23Bz9KwjI8S24igW"
+val bundledGitHubClientId = "Iv23liBz9KwjI8S24igW"
 val githubClientId = sequenceOf(
     localProperties.getProperty("GITHUB_CLIENT_ID"),
     System.getenv("GITHUB_CLIENT_ID"),
