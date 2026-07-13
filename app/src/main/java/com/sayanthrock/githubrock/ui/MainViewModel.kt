@@ -50,6 +50,7 @@ class MainViewModel @Inject constructor(
     val state: StateFlow<MainUiState> = _state.asStateFlow()
     val loginConfigured: Boolean get() = authRepository.isConfigured
     private var authJob: Job? = null
+    private var socialJob: Job? = null
 
     init {
         if (authRepository.hasSession) connectExistingSession()
@@ -101,6 +102,7 @@ class MainViewModel @Inject constructor(
 
     fun continueAsGuest() {
         authJob?.cancel()
+        socialJob?.cancel()
         _state.update { MainUiState(mode = AppMode.Guest, isLoading = true) }
         viewModelScope.launch {
             runCatching { githubRepository.publicRepositories("") }
@@ -111,6 +113,7 @@ class MainViewModel @Inject constructor(
 
     fun enterDemo() {
         authJob?.cancel()
+        socialJob?.cancel()
         _state.value = MainUiState(
             mode = AppMode.Demo,
             profile = DemoData.profile,
@@ -142,11 +145,13 @@ class MainViewModel @Inject constructor(
 
     fun refreshSocialConnections() {
         if (_state.value.mode != AppMode.Connected) return
-        viewModelScope.launch { loadSocialConnections() }
+        socialJob?.cancel()
+        socialJob = viewModelScope.launch { loadSocialConnections() }
     }
 
     fun logout() {
         authJob?.cancel()
+        socialJob?.cancel()
         monitorScheduler.cancelAll()
         authRepository.logout()
         _state.value = MainUiState()
@@ -207,15 +212,18 @@ class MainViewModel @Inject constructor(
                         socialError = null
                     )
                 }
-                viewModelScope.launch { loadSocialConnections() }
+                socialJob?.cancel()
+                socialJob = viewModelScope.launch { loadSocialConnections() }
             }
             .onFailure { error -> _state.update { it.copy(isLoading = false, message = error.userMessage()) } }
     }
 
     private suspend fun loadSocialConnections() {
+        if (_state.value.mode != AppMode.Connected) return
         _state.update { it.copy(socialLoading = true, socialError = null) }
-        runCatching { githubRepository.socialConnections() }
-            .onSuccess { social ->
+        try {
+            val social = githubRepository.socialConnections()
+            if (_state.value.mode == AppMode.Connected) {
                 _state.update {
                     it.copy(
                         followers = social.followers,
@@ -225,7 +233,10 @@ class MainViewModel @Inject constructor(
                     )
                 }
             }
-            .onFailure { error ->
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            if (_state.value.mode == AppMode.Connected) {
                 _state.update {
                     it.copy(
                         socialLoading = false,
@@ -233,6 +244,7 @@ class MainViewModel @Inject constructor(
                     )
                 }
             }
+        }
     }
 }
 
