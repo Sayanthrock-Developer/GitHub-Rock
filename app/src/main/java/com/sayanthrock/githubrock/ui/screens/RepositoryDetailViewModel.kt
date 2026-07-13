@@ -184,6 +184,60 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun renameOrMoveFile(sourcePath: String, destinationPath: String, featureBranch: String, commitMessage: String) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not rename or move files") }
+            return@launch
+        }
+        if (!isSafeFilePath(sourcePath) || !isSafeFilePath(destinationPath) || sourcePath == destinationPath) {
+            _state.update { it.copy(error = "Use a different valid relative destination path") }
+            return@launch
+        }
+        if (!BuildRunTracker.isSafeRef(featureBranch) || commitMessage.isBlank()) {
+            _state.update { it.copy(error = "Use a valid review branch and commit message") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching {
+            val entry = repository.file(owner, repo, sourcePath, baseBranch)
+            check(entry.type == "file") { "Only files can be renamed or moved" }
+            check(entry.size <= MAX_EDITABLE_FILE_BYTES) { "This file is too large to move in the app" }
+            repository.renameOrMoveFileAndOpenPullRequest(
+                owner, repo, sourcePath, destinationPath, entry.sha, SourceFileDecoder.decode(entry),
+                baseBranch, featureBranch, commitMessage.trim()
+            )
+        }.onSuccess { pull ->
+            _state.update { it.copy(message = "Pull request #${pull.number} created for the file move") }
+            load(RepoSection.Code)
+        }.onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to rename or move the file") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun deleteFile(path: String, featureBranch: String, commitMessage: String) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not delete files") }
+            return@launch
+        }
+        if (!isSafeFilePath(path)) {
+            _state.update { it.copy(error = "Use a valid relative file path") }
+            return@launch
+        }
+        if (!BuildRunTracker.isSafeRef(featureBranch) || commitMessage.isBlank()) {
+            _state.update { it.copy(error = "Use a valid review branch and commit message") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching {
+            val entry = repository.file(owner, repo, path, baseBranch)
+            check(entry.type == "file") { "Only files can be deleted" }
+            repository.deleteFileAndOpenPullRequest(owner, repo, path, entry.sha, baseBranch, featureBranch, commitMessage.trim())
+        }.onSuccess { pull ->
+            _state.update { it.copy(message = "Pull request #${pull.number} created to delete the file") }
+            load(RepoSection.Code)
+        }.onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to delete the file") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun mergePullRequest(number: Int, method: String = "merge") = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.mergePullRequest(owner, repo, number, method) }
