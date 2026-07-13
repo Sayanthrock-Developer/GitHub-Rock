@@ -19,4 +19,10 @@ class GitHubUrlPolicyTest {
         assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("http://github.com/signup"))
         assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("https://github.com.example.com/signup"))
     }
+
+    @Test fun customTabsMustUseAnExternalBrowserPackage() {
+        assertTrue(isExternalBrowserPackage("com.android.chrome", "com.sayanthrock.githubrock"))
+        assertFalse(isExternalBrowserPackage("com.sayanthrock.githubrock", "com.sayanthrock.githubrock"))
+        assertFalse(isExternalBrowserPackage(null, "com.sayanthrock.githubrock"))
+    }
 }
