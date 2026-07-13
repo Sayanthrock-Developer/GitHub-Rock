@@ -1,9 +1,9 @@
 package com.sayanthrock.githubrock.core.navigation
 
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import java.net.URI
 
@@ -44,19 +44,32 @@ object GitHubExternalLinkLauncher {
         val baseIntent = Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
-        val externalPackages = context.packageManager
-            .queryIntentActivities(baseIntent, PackageManager.MATCH_DEFAULT_ONLY)
-            .map { it.activityInfo.packageName }
-            .distinct()
-            .filterNot { it == context.packageName }
-
-        return externalPackages.any { packageName ->
-            val intent = Intent(baseIntent).setPackage(packageName).apply {
-                if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val roleManager = context.getSystemService(RoleManager::class.java)
+        val defaultBrowser = runCatching {
+            if (roleManager?.isRoleAvailable(RoleManager.ROLE_BROWSER) == true) {
+                roleManager.getRoleHolders(RoleManager.ROLE_BROWSER)
+                    .firstOrNull { it != context.packageName }
+            } else {
+                null
             }
-            runCatching {
-                context.startActivity(intent)
-            }.isSuccess
+        }.getOrNull()
+
+        val launchIntent = if (defaultBrowser != null) {
+            Intent(baseIntent).setPackage(defaultBrowser)
+        } else {
+            val browserOnlyIntent = Intent(baseIntent).apply {
+                selector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                }
+            }
+            Intent.createChooser(browserOnlyIntent, "Open GitHub in browser")
+        }.apply {
+            if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+
+        return runCatching {
+            context.startActivity(launchIntent)
+            true
+        }.getOrDefault(false)
     }
 }
