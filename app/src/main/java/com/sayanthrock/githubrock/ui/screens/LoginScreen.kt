@@ -3,7 +3,6 @@ package com.sayanthrock.githubrock.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
@@ -20,6 +19,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
@@ -29,13 +29,14 @@ fun LoginScreen(
     loading: Boolean,
     auth: DeviceAuthState,
     onLogin: () -> Unit,
+    onOpenGitHubUrl: (String) -> Unit,
     onGuest: () -> Unit,
     onDemo: () -> Unit
 ) {
     val context = LocalContext.current
     val code = auth.code
     LaunchedEffect(code?.verificationUri) {
-        code?.verificationUri?.let { CustomTabsIntent.Builder().build().launchUrl(context, android.net.Uri.parse(it)) }
+        code?.verificationUri?.let(onOpenGitHubUrl)
     }
 
     Box(Modifier.fillMaxSize().padding(WindowInsets.safeDrawing.asPaddingValues()), contentAlignment = Alignment.Center) {
@@ -69,9 +70,7 @@ fun LoginScreen(
                     )
                 }
                 OutlinedButton(
-                    onClick = {
-                        CustomTabsIntent.Builder().build().launchUrl(context, android.net.Uri.parse("https://github.com/signup"))
-                    },
+                    onClick = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
                     modifier = Modifier.fillMaxWidth().height(52.dp).semantics { contentDescription = "Create GitHub account" }
                 ) { Text("Create GitHub account") }
                 OutlinedButton(onClick = onGuest, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Continue as guest") }
@@ -81,7 +80,7 @@ fun LoginScreen(
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", code.userCode))
                 }, onOpen = {
-                    CustomTabsIntent.Builder().build().launchUrl(context, android.net.Uri.parse(code.verificationUri))
+                    onOpenGitHubUrl(code.verificationUri)
                 })
             }
         }
