@@ -8,6 +8,14 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
     <application
         android:name=".GitHubRockApplication"
         android:allowBackup="false"
@@ -51,7 +59,10 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="github.com" />
+                <data
+                    android:scheme="https"
+                    android:host="github.com"
+                    android:pathPattern="/.*/.*" />
             </intent-filter>
         </activity>
 
