@@ -135,6 +135,12 @@ private fun DeviceCodeCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+            Text(
+                "GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+                textAlign = TextAlign.Center
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(onClick = onCopy) {
                     Icon(Icons.Default.ContentCopy, null)
