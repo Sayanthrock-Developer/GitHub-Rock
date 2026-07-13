@@ -63,11 +63,17 @@ fun LoginScreen(
                 ) { Text(if (loading) "Connecting…" else "Login with GitHub") }
                 if (!configured) {
                     Text(
-                        "GitHub login is disabled until GITHUB_CLIENT_ID is added to local.properties.",
+                        "This build is missing its public GitHub App client ID, so sign-in is unavailable. Guest and demo modes still work.",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
+                OutlinedButton(
+                    onClick = {
+                        CustomTabsIntent.Builder().build().launchUrl(context, android.net.Uri.parse("https://github.com/signup"))
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp).semantics { contentDescription = "Create GitHub account" }
+                ) { Text("Create GitHub account") }
                 OutlinedButton(onClick = onGuest, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Continue as guest") }
                 TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) { Text("Explore isolated demo mode") }
             } else {
@@ -98,4 +104,3 @@ private fun DeviceCodeCard(auth: DeviceAuthState, onCopy: () -> Unit, onOpen: ()
         }
     }
 }
-
