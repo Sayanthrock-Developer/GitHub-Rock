@@ -102,7 +102,7 @@ Recommended account permissions:
 | Email addresses | Read-only only if enabled later | Private email display; not required by the current UI |
 | Starring | Read & write only if star controls are enabled | Star/unstar repositories |
 
-After changing a GitHub App permission, save the app settings and re-authorize the account so GitHub can grant the updated permission. Account permissions should only be enabled when their corresponding UI is active. GitHub Rock never asks for a GitHub password.
+After changing an account permission, save the GitHub App settings and re-authorize the user so GitHub can grant the updated account access. Repository or organization permission changes instead require approval from the GitHub App installation owner. Permissions should only be enabled when their corresponding UI is active. GitHub Rock never asks for a GitHub password.
 
 ## Build
 
