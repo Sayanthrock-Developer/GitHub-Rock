@@ -93,5 +93,8 @@ class LoginScreenTest {
             assertTrue(checked)
         }
         compose.onNodeWithText("Use guest mode instead").assertIsDisplayed()
+        compose.onNodeWithText(
+            "GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel."
+        ).assertIsDisplayed()
     }
 }
