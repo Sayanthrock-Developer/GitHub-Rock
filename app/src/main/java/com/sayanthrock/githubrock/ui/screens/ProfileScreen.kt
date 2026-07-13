@@ -81,7 +81,7 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        ProfileStat("Repositories", profile?.publicRepos ?: 0, Icons.Default.Folder, Modifier.weight(1f))
+                        ProfileStat("Public repos", profile?.publicRepos ?: 0, Icons.Default.Folder, Modifier.weight(1f))
                         ProfileStat("Followers", profile?.followers ?: 0, Icons.Default.People, Modifier.weight(1f))
                         ProfileStat("Following", profile?.following ?: 0, Icons.Default.PersonAdd, Modifier.weight(1f))
                     }
@@ -91,20 +91,26 @@ fun ProfileScreen(
                             "Connect a GitHub account to view followers and following.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        socialLoading -> {
+                        followers.isEmpty() && following.isEmpty() && socialLoading -> {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
                             Text(
                                 "Loading GitHub followers…",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        socialError != null -> {
+                        followers.isEmpty() && following.isEmpty() && socialError != null -> {
                             Text(socialError, color = MaterialTheme.colorScheme.error)
                             OutlinedButton(onClick = onRetrySocial) { Text("Retry followers") }
                         }
                         else -> {
                             SocialAccounts("Followers", followers)
                             SocialAccounts("Following", following)
+                            if (socialLoading) {
+                                LinearProgressIndicator(Modifier.fillMaxWidth())
+                            } else if (socialError != null) {
+                                Text(socialError, color = MaterialTheme.colorScheme.error)
+                                OutlinedButton(onClick = onRetrySocial) { Text("Retry followers") }
+                            }
                         }
                     }
                 }
@@ -128,7 +134,7 @@ fun ProfileScreen(
             OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Logout, null)
                 Spacer(Modifier.width(8.dp))
-                Text(if (mode == AppMode.Connected) "Log out and delete token" else "Exit " + mode.name.lowercase() + " mode")
+                Text(if (mode == AppMode.Connected) "Log out and delete token" else "Exit ${mode.name.lowercase()} mode")
             }
         }
     }
@@ -203,7 +209,7 @@ private fun SocialAccounts(title: String, users: List<Owner>) {
                             if (user.avatarUrl.isNotBlank()) {
                                 AsyncImage(
                                     model = user.avatarUrl,
-                                    contentDescription = "@" + user.login,
+                                    contentDescription = "@${user.login}",
                                     modifier = Modifier.size(48.dp)
                                 )
                             } else {
@@ -213,7 +219,7 @@ private fun SocialAccounts(title: String, users: List<Owner>) {
                             }
                         }
                         Text(
-                            "@" + user.login,
+                            "@${user.login}",
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
