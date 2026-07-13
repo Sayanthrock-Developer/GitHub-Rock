@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +35,7 @@ fun LoginScreen(
     auth: DeviceAuthState,
     onLogin: () -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
+    onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
     onDemo: () -> Unit
 ) {
@@ -87,30 +89,91 @@ fun LoginScreen(
                 OutlinedButton(onClick = onGuest, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Continue as guest") }
                 TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) { Text("Explore isolated demo mode") }
             } else {
-                DeviceCodeCard(auth, onCopy = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", code.userCode))
-                }, onOpen = {
-                    onOpenGitHubUrl(code.verificationUri)
-                })
+                DeviceCodeCard(
+                    auth = auth,
+                    checking = loading,
+                    onCopy = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", code.userCode))
+                    },
+                    onOpen = {
+                        onOpenGitHubUrl(code.verificationUri)
+                    },
+                    onCheck = onCheckAuthorization,
+                    onRestart = onLogin,
+                    onGuest = onGuest
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DeviceCodeCard(auth: DeviceAuthState, onCopy: () -> Unit, onOpen: () -> Unit) {
+private fun DeviceCodeCard(
+    auth: DeviceAuthState,
+    checking: Boolean,
+    onCopy: () -> Unit,
+    onOpen: () -> Unit,
+    onCheck: () -> Unit,
+    onRestart: () -> Unit,
+    onGuest: () -> Unit
+) {
     val code = requireNotNull(auth.code)
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Verify on GitHub", style = MaterialTheme.typography.titleLarge)
             Text(code.userCode, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black)
+            Text(
+                "You can enter this code at github.com/login/device in any trusted browser.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onCopy) { Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(8.dp)); Text("Copy code") }
-                Button(onClick = onOpen) { Icon(Icons.Default.OpenInBrowser, null); Spacer(Modifier.width(8.dp)); Text("Open GitHub") }
+                OutlinedButton(onClick = onCopy) {
+                    Icon(Icons.Default.ContentCopy, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Copy code")
+                }
+                Button(onClick = onOpen) {
+                    Icon(Icons.Default.OpenInBrowser, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open GitHub")
+                }
             }
-            Text(auth.error ?: auth.status.orEmpty(), color = if (auth.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text(
+                "After GitHub says you’re all set, return here with Android Back or the app switcher. The browser cannot reopen GitHub Rock automatically.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Button(
+                onClick = onCheck,
+                enabled = !checking,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Refresh, null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (checking) "Checking GitHub…" else "I’ve authorized — check now")
+            }
+            TextButton(onClick = onRestart, enabled = !checking) {
+                Text("Get a new verification code")
+            }
+            TextButton(onClick = onGuest, enabled = !checking) {
+                Text("Use guest mode instead")
+            }
+            Text(
+                auth.error ?: auth.status.orEmpty(),
+                color = if (auth.error != null) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                textAlign = TextAlign.Center
+            )
+            if (auth.error == null) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
         }
     }
 }
