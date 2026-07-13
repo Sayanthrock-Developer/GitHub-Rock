@@ -366,6 +366,60 @@ class RepositoryDetailViewModel @Inject constructor(
         _state.update { it.copy(loading = false) }
     }
 
+    fun updateIssueMetadata(issueNumber: Int, labelsInput: String, assigneesInput: String, milestoneInput: String) = viewModelScope.launch {
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not edit issue metadata") }
+            return@launch
+        }
+        val labels = labelsInput.split(',').map(String::trim).filter(String::isNotBlank).distinct()
+        val assignees = assigneesInput.split(',').map(String::trim).filter(String::isNotBlank).distinct()
+        if (labels.any { it.length > 50 || !it.matches(Regex("^[A-Za-z0-9][A-Za-z0-9 _./-]*$")) }) {
+            _state.update { it.copy(error = "Use comma-separated GitHub label names") }
+            return@launch
+        }
+        if (assignees.any { !it.matches(Regex("^[A-Za-z0-9-]+$")) }) {
+            _state.update { it.copy(error = "Use comma-separated GitHub usernames") }
+            return@launch
+        }
+        val milestone = milestoneInput.trim().takeIf(String::isNotBlank)?.toIntOrNull()
+        if (milestoneInput.isNotBlank() && (milestone == null || milestone <= 0)) {
+            _state.update { it.copy(error = "Milestone must be a positive number") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.updateIssueMetadata(owner, repo, issueNumber, labels, assignees, milestone) }
+            .onSuccess { updated ->
+                _state.update { current ->
+                    current.copy(
+                        issues = current.issues.map { if (it.id == updated.id) updated else it },
+                        message = "Issue #$issueNumber metadata updated"
+                    )
+                }
+            }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to update issue metadata") } }
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun addIssueReaction(issueNumber: Int, content: String) = viewModelScope.launch {
+        val allowed = setOf("+1", "-1", "laugh", "hooray", "confused", "heart", "rocket", "eyes")
+        if (content !in allowed) {
+            _state.update { it.copy(error = "Unsupported reaction") }
+            return@launch
+        }
+        if (demo) {
+            _state.update { it.copy(error = "Demo mode does not add reactions") }
+            return@launch
+        }
+        _state.update { it.copy(loading = true, error = null, message = null) }
+        runCatching { repository.addIssueReaction(owner, repo, issueNumber, content) }
+            .onSuccess {
+                _state.update { it.copy(message = "Reaction added to issue #$issueNumber") }
+                load(RepoSection.Issues)
+            }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to add reaction") } }
+        _state.update { it.copy(loading = false) }
+    }
+
     fun setRepositoryStarred(starred: Boolean) = viewModelScope.launch {
         if (demo) {
             _state.update { it.copy(error = "Demo mode does not change repository stars") }
