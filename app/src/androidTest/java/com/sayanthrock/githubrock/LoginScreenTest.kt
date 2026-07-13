@@ -20,8 +20,8 @@ class LoginScreenTest {
             }
         }
         compose.onNodeWithContentDescription("Login with GitHub").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Create GitHub account").assertIsDisplayed()
         compose.onNodeWithText("Continue as guest").assertIsDisplayed()
         compose.onNodeWithText("Explore isolated demo mode").assertIsDisplayed()
     }
 }
-

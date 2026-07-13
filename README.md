@@ -11,7 +11,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - MVVM with a pragmatic Clean Architecture boundary
 - Hilt, Retrofit/OkHttp, Kotlin Serialization, Room, DataStore, Paging dependencies, WorkManager, Coil, and Navigation Compose
 - Android 10+ (`minSdk 29`), `compileSdk` / `targetSdk` 36
-- GitHub App Device Flow with pending, slow-down, expired, denied, and refresh handling
+- GitHub App Device Flow with pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile, API rate limit, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
@@ -75,6 +75,8 @@ GITHUB_CLIENT_ID=Iv1.your_public_client_id
 
 The value is exposed through `BuildConfig.GITHUB_CLIENT_ID`. `local.properties` is ignored by Git. The app opens GitHub in a Custom Tab, shows a copyable verification code, and polls only at GitHub's supplied interval.
 
+For GitHub Actions builds, add `GITHUB_CLIENT_ID` under **Settings → Secrets and variables → Actions → Variables**. It is a public identifier, not a client secret. CI passes this variable through the environment to `BuildConfig`; release publishing stops with a useful error if it is missing.
+
 ## Suggested GitHub App permissions
 
 Use the smallest permission set that matches the features you enable. Organization policy can further restrict access.
@@ -128,6 +130,18 @@ Create these GitHub Actions repository or environment secrets:
 
 The workflow decodes the keystore into the runner's temporary directory and exposes passwords only as masked environment variables. `app/build.gradle.kts` activates the release signing configuration only when `GITHUB_ROCK_KEYSTORE_PATH` exists in the build environment. Secret values are never written into YAML, source, logs, artifacts, or the APK.
 
+## Publish and install the app
+
+1. Add the public `GITHUB_CLIENT_ID` Actions variable and all four signing secrets listed above.
+2. Open **Actions → Publish Android Release → Run workflow**.
+3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
+4. Wait for signature verification, checksum generation, and release publication to finish.
+5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk` plus its `.sha256` file. An AAB cannot be installed directly on a phone.
+6. Compare the APK's SHA-256 value with the checksum file.
+7. On Android 10 or newer, allow **Install unknown apps** only for the browser or file manager you used, open the APK, and approve Android's official Package Installer prompt.
+
+If Android reports an incompatible signature, the installed copy was signed with a different key. Uninstall that older release before installing the new APK, or rebuild with the original signing key. Uninstalling removes that app's local data. Never bypass Play Protect or Android's package-signature checks.
+
 ## Security
 
 - Access and refresh tokens are kept in `EncryptedSharedPreferences` using an Android Keystore AES-256-GCM master key and are excluded from backups.
@@ -156,6 +170,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
 - Recoverable verified downloader and APK inspection core
 - Own-repository CI and manual APK/AAB workflows
+- Signed, versioned GitHub Release workflow with APK signature verification and SHA-256 assets
 
 ## Planned next
 
@@ -164,7 +179,6 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
 - Complete download queue UI with pause/cancel/retry/mirror selection and Storage Access Framework location selection
 - Richer APK permission/certificate presentation and checksum-file matching
-- Release-note generation and release asset upload
 - Biometric lock settings UI, tablet navigation rail, foldable list-detail panes, accessibility audit, and screenshot suite
 - GraphQL batching and Paging-backed large lists
 

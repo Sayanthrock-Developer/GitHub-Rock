@@ -17,6 +17,15 @@ val localProperties = Properties().apply {
 fun quotedBuildConfig(value: String): String =
     "\"${value.trim().trim('"').replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
+val githubClientId = sequenceOf(
+    localProperties.getProperty("GITHUB_CLIENT_ID"),
+    System.getenv("GITHUB_CLIENT_ID")
+).firstOrNull { !it.isNullOrBlank() }.orEmpty()
+val configuredVersionName = providers.gradleProperty("GITHUB_ROCK_VERSION_NAME").orNull
+    ?.trim()?.takeIf(String::isNotBlank) ?: "0.1.0"
+val configuredVersionCode = providers.gradleProperty("GITHUB_ROCK_VERSION_CODE").orNull
+    ?.toIntOrNull()?.takeIf { it > 0 } ?: 1
+
 android {
     namespace = "com.sayanthrock.githubrock"
     compileSdk = 36
@@ -25,15 +34,15 @@ android {
         applicationId = "com.sayanthrock.githubrock"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = configuredVersionCode
+        versionName = configuredVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         buildConfigField(
             "String",
             "GITHUB_CLIENT_ID",
-            quotedBuildConfig(localProperties.getProperty("GITHUB_CLIENT_ID", ""))
+            quotedBuildConfig(githubClientId)
         )
         buildConfigField("String", "GITHUB_API_VERSION", "\"2022-11-28\"")
     }
