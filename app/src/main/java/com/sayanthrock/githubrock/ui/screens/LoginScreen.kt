@@ -11,6 +11,10 @@ import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,8 +39,15 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val code = auth.code
+    var hasOpenedVerificationUri by rememberSaveable(code?.verificationUri) {
+        mutableStateOf(false)
+    }
     LaunchedEffect(code?.verificationUri) {
-        code?.verificationUri?.let(onOpenGitHubUrl)
+        val verificationUri = code?.verificationUri
+        if (verificationUri != null && !hasOpenedVerificationUri) {
+            hasOpenedVerificationUri = true
+            onOpenGitHubUrl(verificationUri)
+        }
     }
 
     Box(Modifier.fillMaxSize().padding(WindowInsets.safeDrawing.asPaddingValues()), contentAlignment = Alignment.Center) {
