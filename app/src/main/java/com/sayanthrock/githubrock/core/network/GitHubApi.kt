@@ -119,6 +119,14 @@ interface GitHubRestApi {
         @Body request: FileCommitRequest
     ): Response<ContentEntry>
 
+    @DELETE("repos/{owner}/{repo}/contents/{path}")
+    suspend fun deleteFile(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @Body request: FileDeleteRequest
+    ): Response<Unit>
+
     @POST("repos/{owner}/{repo}/pulls")
     suspend fun createPullRequest(
         @Path("owner") owner: String,
