@@ -57,12 +57,32 @@ interface DownloadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(download: DownloadEntity): Long
 
+    /**
+     * Updates the status, progress, local path, and checksum of a download.
+     *
+     * @param id The identifier of the download to update.
+     * @param downloaded The number of bytes downloaded.
+     * @param total The total number of bytes.
+     * @param path The local file path, or `null` if unavailable.
+     * @param sha The SHA-256 checksum, or `null` if unavailable.
+     */
     @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = :sha WHERE id = :id")
     suspend fun updateProgress(id: Long, status: String, downloaded: Long, total: Long, path: String?, sha: String?)
 
+    /**
+     * Updates the status of a download.
+     *
+     * @param id The identifier of the download to update.
+     * @param status The new status value.
+     */
     @Query("UPDATE downloads SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Long, status: String)
 
+    /**
+     * Deletes a download record by its identifier.
+     *
+     * @param id The identifier of the download record to delete.
+     */
     @Query("DELETE FROM downloads WHERE id = :id")
     suspend fun delete(id: Long)
 }
