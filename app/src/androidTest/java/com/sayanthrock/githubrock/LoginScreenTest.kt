@@ -85,7 +85,7 @@ class LoginScreenTest {
                     loading = false,
                     auth = authState,
                     onLogin = {},
-                    onOpenGitHubUrl = openedUrls::add,
+                    onOpenGitHubUrl = { openedUrls += it },
                     onCheckAuthorization = {},
                     onGuest = {},
                     onDemo = {}
