@@ -24,8 +24,7 @@ class DeviceFlowAuthRepository @Inject constructor(
     suspend fun begin(): DeviceCodeResponse {
         check(isConfigured) { "Add GITHUB_CLIENT_ID to local.properties before using GitHub login." }
         return api.requestDeviceCode(
-            clientId = BuildConfig.GITHUB_CLIENT_ID,
-            scope = "repo read:user user:email workflow write:packages"
+            clientId = BuildConfig.GITHUB_CLIENT_ID
         )
     }
 
