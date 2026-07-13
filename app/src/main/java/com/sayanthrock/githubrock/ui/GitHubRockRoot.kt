@@ -59,6 +59,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 auth = state.auth,
                 onLogin = viewModel::startLogin,
                 onOpenGitHubUrl = openGitHubUrl,
+                onCheckAuthorization = viewModel::checkLoginStatus,
                 onGuest = viewModel::continueAsGuest,
                 onDemo = viewModel::enterDemo
             )
