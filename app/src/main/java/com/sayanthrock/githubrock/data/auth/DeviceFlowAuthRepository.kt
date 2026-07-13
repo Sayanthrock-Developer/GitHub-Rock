@@ -7,6 +7,8 @@ import com.sayanthrock.githubrock.core.network.GitHubAuthApi
 import com.sayanthrock.githubrock.core.security.StoredTokens
 import com.sayanthrock.githubrock.core.security.TokenStore
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,30 +23,45 @@ class DeviceFlowAuthRepository @Inject constructor(
     val isConfigured: Boolean get() = BuildConfig.GITHUB_CLIENT_ID.isNotBlank()
     val hasSession: Boolean get() = tokenStore.read() != null
 
+    private val pollMutex = Mutex()
+    private var lastTokenRequestAtMillis = 0L
+    private var requiredIntervalSeconds = MINIMUM_POLL_INTERVAL_SECONDS
+
     suspend fun begin(): DeviceCodeResponse {
         check(isConfigured) { "Add GITHUB_CLIENT_ID to local.properties before using GitHub login." }
         return api.requestDeviceCode(
             clientId = BuildConfig.GITHUB_CLIENT_ID
-        )
+        ).also { device ->
+            pollMutex.withLock {
+                requiredIntervalSeconds = device.interval.coerceAtLeast(MINIMUM_POLL_INTERVAL_SECONDS)
+                lastTokenRequestAtMillis = elapsedRealtimeMillis()
+            }
+        }
     }
 
     suspend fun poll(device: DeviceCodeResponse, onStatus: (String) -> Unit = {}): StoredTokens {
-        var intervalSeconds = device.interval.coerceAtLeast(5)
         val deadline = Instant.now().epochSecond + device.expiresIn
         while (Instant.now().epochSecond < deadline) {
-            delay(intervalSeconds * 1_000L)
-            val response = api.requestToken(BuildConfig.GITHUB_CLIENT_ID, device.deviceCode)
+            val response = requestTokenAtAllowedInterval(device)
             response.accessToken?.let { token ->
                 return response.toStoredTokens(token).also(tokenStore::save)
             }
             when (response.error) {
                 "authorization_pending" -> onStatus("Waiting for approval on GitHub…")
                 "slow_down" -> {
-                    intervalSeconds += 5
+                    pollMutex.withLock {
+                        requiredIntervalSeconds += SLOW_DOWN_INCREMENT_SECONDS
+                    }
                     onStatus("GitHub requested slower polling. Still waiting…")
                 }
                 "expired_token" -> throw DeviceFlowException("The device code expired. Start login again.")
                 "access_denied" -> throw DeviceFlowException("GitHub login was denied.")
+                "device_flow_disabled" -> throw DeviceFlowException(
+                    "Device Flow is disabled for this GitHub App. Enable it in the GitHub App settings."
+                )
+                "incorrect_client_credentials" -> throw DeviceFlowException(
+                    "This build has an invalid GitHub App client ID."
+                )
                 else -> throw DeviceFlowException(response.errorDescription ?: "GitHub authentication failed.")
             }
         }
@@ -64,6 +81,21 @@ class DeviceFlowAuthRepository @Inject constructor(
 
     fun logout() = tokenStore.clear()
 
+    private suspend fun requestTokenAtAllowedInterval(device: DeviceCodeResponse): DeviceTokenResponse =
+        pollMutex.withLock {
+            val now = elapsedRealtimeMillis()
+            val remainingDelay = remainingPollDelayMillis(
+                lastRequestAtMillis = lastTokenRequestAtMillis,
+                nowMillis = now,
+                intervalSeconds = requiredIntervalSeconds
+            )
+            if (remainingDelay > 0L) {
+                delay(remainingDelay)
+            }
+            lastTokenRequestAtMillis = elapsedRealtimeMillis()
+            api.requestToken(BuildConfig.GITHUB_CLIENT_ID, device.deviceCode)
+        }
+
     private fun DeviceTokenResponse.toStoredTokens(token: String): StoredTokens {
         val now = Instant.now().epochSecond
         return StoredTokens(
@@ -73,4 +105,21 @@ class DeviceFlowAuthRepository @Inject constructor(
             refreshExpiresAtEpochSeconds = refreshTokenExpiresIn?.let { now + it }
         )
     }
+
+    private companion object {
+        const val MINIMUM_POLL_INTERVAL_SECONDS = 5
+        const val SLOW_DOWN_INCREMENT_SECONDS = 5
+    }
 }
+
+internal fun remainingPollDelayMillis(
+    lastRequestAtMillis: Long,
+    nowMillis: Long,
+    intervalSeconds: Int
+): Long {
+    val intervalMillis = intervalSeconds.coerceAtLeast(0) * 1_000L
+    if (lastRequestAtMillis <= 0L) return intervalMillis
+    return (intervalMillis - (nowMillis - lastRequestAtMillis)).coerceAtLeast(0L)
+}
+
+private fun elapsedRealtimeMillis(): Long = System.nanoTime() / 1_000_000L
