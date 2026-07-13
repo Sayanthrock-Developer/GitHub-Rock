@@ -151,14 +151,14 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
 - Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
-- Repository code browsing with base64 decoding, text-file editing/creation, branch-protection awareness, and reviewed branch/PR commits
-- Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering
+- Repository code browsing with base64 decoding, text-file editing/creation, syntax-highlighted previews, branch-protection awareness, and reviewed branch/PR commits
+- Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
 - Recoverable verified downloader and APK inspection core
 - Own-repository CI and manual APK/AAB workflows
 
 ## Planned next
 
-- Rename/move/delete operations and syntax highlighting
+- Rename/move/delete operations and richer language grammars
 - Issue reactions/templates, labels, milestones, assignee editing, and richer PR diff/conflict presentation
 - Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
 - Complete download queue UI with pause/cancel/retry/mirror selection and Storage Access Framework location selection
