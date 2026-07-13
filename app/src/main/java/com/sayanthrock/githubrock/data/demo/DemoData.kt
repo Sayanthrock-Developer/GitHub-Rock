@@ -9,7 +9,26 @@ object DemoData {
         name = "Sayanth Rock",
         bio = "Demo workspace — no GitHub account data is used.",
         publicRepos = 12,
-        followers = 248
+        followers = 248,
+        following = 73
+    )
+
+    val followers = listOf(
+        Owner("octo-demo"),
+        Owner("compose-rock"),
+        Owner("android-builder"),
+        Owner("kozhikode-dev"),
+        Owner("workflow-fan"),
+        Owner("open-source-rock")
+    )
+
+    val following = listOf(
+        Owner("github"),
+        Owner("android"),
+        Owner("kotlin"),
+        Owner("jetbrains"),
+        Owner("material-design"),
+        Owner("actions-team")
     )
 
     val repositories = listOf(
