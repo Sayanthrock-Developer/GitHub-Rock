@@ -30,8 +30,10 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val verificationUri = state.auth.code?.verificationUri
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(state.auth.code?.deviceCode) {
-        awaitingVerificationBrowserReturn = false
+    LaunchedEffect(state.auth.code == null) {
+        if (state.auth.code == null) {
+            awaitingVerificationBrowserReturn = false
+        }
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (AuthReturnPolicy.shouldCheckAuthorization(
