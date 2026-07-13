@@ -39,6 +39,19 @@ interface GitHubAuthApi {
 
 interface GitHubRestApi {
     @GET("user") suspend fun me(): GitHubUser
+
+    @GET("user/followers")
+    suspend fun followers(
+        @Query("per_page") perPage: Int = 30,
+        @Query("page") page: Int = 1
+    ): List<Owner>
+
+    @GET("user/following")
+    suspend fun following(
+        @Query("per_page") perPage: Int = 30,
+        @Query("page") page: Int = 1
+    ): List<Owner>
+
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
 
     @PUT("user/starred/{owner}/{repo}")

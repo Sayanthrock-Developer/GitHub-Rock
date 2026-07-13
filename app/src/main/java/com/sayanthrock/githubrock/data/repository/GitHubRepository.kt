@@ -5,6 +5,8 @@ import com.sayanthrock.githubrock.core.network.GitHubRestApi
 import com.sayanthrock.githubrock.data.local.RepositoryDao
 import com.sayanthrock.githubrock.data.local.RepositoryEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import android.util.Base64
 import javax.inject.Inject
@@ -20,6 +22,12 @@ class GitHubRepository @Inject constructor(
         val rate = api.rateLimit().rate
         val repos = api.repositories()
         DashboardPayload(profile, rate, repos)
+    }
+
+    suspend fun socialConnections(): SocialConnections = coroutineScope {
+        val followers = async { api.followers(perPage = SOCIAL_PREVIEW_PAGE_SIZE) }
+        val following = async { api.following(perPage = SOCIAL_PREVIEW_PAGE_SIZE) }
+        SocialConnections(followers.await(), following.await())
     }
 
     suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> =
@@ -200,3 +208,10 @@ data class DashboardPayload(
     val rateLimit: RateLimit,
     val repositories: List<GitHubRepositoryModel>
 )
+
+data class SocialConnections(
+    val followers: List<Owner>,
+    val following: List<Owner>
+)
+
+private const val SOCIAL_PREVIEW_PAGE_SIZE = 12

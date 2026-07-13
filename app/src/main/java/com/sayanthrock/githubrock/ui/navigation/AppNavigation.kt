@@ -40,6 +40,7 @@ fun MainNavigation(
     state: MainUiState,
     onSearch: (String) -> Unit,
     onRememberRepository: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit,
+    onRefreshSocial: () -> Unit,
     onLogout: () -> Unit
 ) {
     val entry by navController.currentBackStackEntryAsState()
@@ -84,7 +85,18 @@ fun MainNavigation(
                 BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
             }
             composable(TopDestination.Downloads.route) { DownloadsScreen() }
-            composable(TopDestination.Profile.route) { ProfileScreen(mode, state.profile, onLogout) }
+            composable(TopDestination.Profile.route) {
+                ProfileScreen(
+                    mode = mode,
+                    profile = state.profile,
+                    followers = state.followers,
+                    following = state.following,
+                    socialLoading = state.socialLoading,
+                    socialError = state.socialError,
+                    onRetrySocial = onRefreshSocial,
+                    onLogout = onLogout
+                )
+            }
             composable(
                 route = "repo/{owner}/{repo}?demo={demo}",
                 arguments = listOf(
