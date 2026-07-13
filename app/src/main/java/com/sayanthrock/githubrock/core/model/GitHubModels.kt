@@ -207,6 +207,13 @@ data class FileCommitRequest(
 )
 
 @Serializable
+data class FileDeleteRequest(
+    val message: String,
+    val branch: String,
+    val sha: String
+)
+
+@Serializable
 data class PullRequestRequest(
     val title: String,
     val head: String,
