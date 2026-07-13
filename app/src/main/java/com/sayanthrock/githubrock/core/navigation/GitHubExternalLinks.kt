@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
 const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
@@ -40,10 +41,30 @@ object GitHubExternalLinkLauncher {
     fun open(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
 
-        val baseIntent = Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)).apply {
+        val uri = Uri.parse(rawUrl)
+        val customTab = CustomTabsIntent.Builder()
+            .setShowTitle(true)
+            .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+            .build()
+            .apply {
+                intent.addCategory(Intent.CATEGORY_BROWSABLE)
+                if (context !is Activity) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+
+        if (runCatching {
+                customTab.launchUrl(context, uri)
+                true
+            }.getOrDefault(false)
+        ) {
+            return true
+        }
+
+        val baseIntent = Intent(Intent.ACTION_VIEW, uri).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
-        val launchIntent = Intent(baseIntent).apply {
+        val browserIntent = Intent(baseIntent).apply {
             selector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply {
                 addCategory(Intent.CATEGORY_BROWSABLE)
             }
@@ -51,7 +72,7 @@ object GitHubExternalLinkLauncher {
         }
 
         return runCatching {
-            context.startActivity(launchIntent)
+            context.startActivity(browserIntent)
             true
         }.getOrDefault(false)
     }
