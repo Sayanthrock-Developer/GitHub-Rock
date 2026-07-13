@@ -1,9 +1,9 @@
 package com.sayanthrock.githubrock.core.navigation
 
 import android.app.Activity
-import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import java.net.URI
 
@@ -44,23 +44,22 @@ object GitHubExternalLinkLauncher {
         val baseIntent = Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
-        val roleManager = context.getSystemService(RoleManager::class.java)
+        val browserSelector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
         val defaultBrowser = runCatching {
-            if (roleManager?.isRoleAvailable(RoleManager.ROLE_BROWSER) == true) {
-                roleManager.getRoleHolders(RoleManager.ROLE_BROWSER)
-                    .firstOrNull { it != context.packageName }
-            } else {
-                null
-            }
+            context.packageManager
+                .resolveActivity(browserSelector, PackageManager.MATCH_DEFAULT_ONLY)
+                ?.activityInfo
+                ?.packageName
+                ?.takeUnless { it == context.packageName }
         }.getOrNull()
 
         val launchIntent = if (defaultBrowser != null) {
             Intent(baseIntent).setPackage(defaultBrowser)
         } else {
             val browserOnlyIntent = Intent(baseIntent).apply {
-                selector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply {
-                    addCategory(Intent.CATEGORY_BROWSABLE)
-                }
+                selector = browserSelector
             }
             Intent.createChooser(browserOnlyIntent, "Open GitHub in browser")
         }.apply {
