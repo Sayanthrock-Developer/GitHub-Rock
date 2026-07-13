@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sayanthrock.githubrock.core.model.ContentEntry
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubIssue
 import com.sayanthrock.githubrock.core.model.PullRequestSummary
@@ -85,6 +86,11 @@ fun RepositoryDetailScreen(
     var editReleasePrerelease by remember { mutableStateOf(false) }
     var showNewFile by remember { mutableStateOf(false) }
     var newFilePath by remember { mutableStateOf("") }
+    var fileMoveTarget by remember { mutableStateOf<ContentEntry?>(null) }
+    var fileDeleteTarget by remember { mutableStateOf<ContentEntry?>(null) }
+    var destinationPath by remember { mutableStateOf("") }
+    var fileOperationBranch by remember { mutableStateOf("") }
+    var fileOperationMessage by remember { mutableStateOf("") }
     LaunchedEffect(repository?.id, repository?.defaultBranch) {
         repository?.let { viewModel.setRepositoryDefaults(it.defaultBranch) }
     }
@@ -143,6 +149,19 @@ fun RepositoryDetailScreen(
                                 TextButton(onClick = { viewModel.openDirectory(entry.path) }) { Text("Open folder") }
                             } else {
                                 TextButton(onClick = { viewModel.openFile(entry.path) }) { Text("Open file") }
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    TextButton(onClick = {
+                                        fileMoveTarget = entry
+                                        destinationPath = entry.path
+                                        fileOperationBranch = "github-rock/move-${System.currentTimeMillis() / 1000}"
+                                        fileOperationMessage = "Move ${entry.path}"
+                                    }) { Text("Rename / move") }
+                                    TextButton(onClick = {
+                                        fileDeleteTarget = entry
+                                        fileOperationBranch = "github-rock/delete-${System.currentTimeMillis() / 1000}"
+                                        fileOperationMessage = "Delete ${entry.path}"
+                                    }) { Text("Delete") }
+                                }
                             }
                         }
                     } else {
@@ -435,6 +454,47 @@ fun RepositoryDetailScreen(
             },
             confirmButton = { TextButton(onClick = { viewModel.updateRelease(release.id, editReleaseName, editReleaseNotes, release.draft, editReleasePrerelease); editReleaseTarget = null }) { Text("Save") } },
             dismissButton = { TextButton(onClick = { editReleaseTarget = null }) { Text("Cancel") } }
+        )
+    }
+    fileMoveTarget?.let { entry ->
+        AlertDialog(
+            onDismissRequest = { fileMoveTarget = null },
+            title = { Text("Rename or move file?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("The file will be copied to the destination and the original removed on a new review branch.")
+                    OutlinedTextField(value = destinationPath, onValueChange = { destinationPath = it }, label = { Text("Destination path") }, singleLine = true)
+                    OutlinedTextField(value = fileOperationBranch, onValueChange = { fileOperationBranch = it }, label = { Text("Review branch") }, singleLine = true)
+                    OutlinedTextField(value = fileOperationMessage, onValueChange = { fileOperationMessage = it }, label = { Text("Commit message") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.renameOrMoveFile(entry.path, destinationPath, fileOperationBranch, fileOperationMessage)
+                    fileMoveTarget = null
+                }) { Text("Open pull request") }
+            },
+            dismissButton = { TextButton(onClick = { fileMoveTarget = null }) { Text("Cancel") } }
+        )
+    }
+    fileDeleteTarget?.let { entry ->
+        AlertDialog(
+            onDismissRequest = { fileDeleteTarget = null },
+            title = { Text("Delete ${entry.path}?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("GitHub Rock will create a review branch and pull request. The default branch will not be changed automatically.")
+                    OutlinedTextField(value = fileOperationBranch, onValueChange = { fileOperationBranch = it }, label = { Text("Review branch") }, singleLine = true)
+                    OutlinedTextField(value = fileOperationMessage, onValueChange = { fileOperationMessage = it }, label = { Text("Commit message") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteFile(entry.path, fileOperationBranch, fileOperationMessage)
+                    fileDeleteTarget = null
+                }) { Text("Open pull request") }
+            },
+            dismissButton = { TextButton(onClick = { fileDeleteTarget = null }) { Text("Cancel") } }
         )
     }
 }
