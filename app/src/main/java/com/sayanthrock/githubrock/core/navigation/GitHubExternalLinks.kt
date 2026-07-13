@@ -3,7 +3,6 @@ package com.sayanthrock.githubrock.core.navigation
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import java.net.URI
 
@@ -44,25 +43,10 @@ object GitHubExternalLinkLauncher {
         val baseIntent = Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
-        val browserSelector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply {
-            addCategory(Intent.CATEGORY_BROWSABLE)
-        }
-        val defaultBrowser = runCatching {
-            context.packageManager
-                .resolveActivity(browserSelector, PackageManager.MATCH_DEFAULT_ONLY)
-                ?.activityInfo
-                ?.packageName
-                ?.takeUnless { it == context.packageName }
-        }.getOrNull()
-
-        val launchIntent = if (defaultBrowser != null) {
-            Intent(baseIntent).setPackage(defaultBrowser)
-        } else {
-            val browserOnlyIntent = Intent(baseIntent).apply {
-                selector = browserSelector
+        val launchIntent = Intent(baseIntent).apply {
+            selector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
             }
-            Intent.createChooser(browserOnlyIntent, "Open GitHub in browser")
-        }.apply {
             if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
