@@ -149,6 +149,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Connected dashboard request, rate limit, authorized repository listing
 - Public repository search
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
+- Issue metadata editing for labels, assignees, milestones, and reactions
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
 - Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
 - Repository code browsing with base64 decoding, text-file editing/creation, syntax-highlighted previews, safe rename/move/delete operations, branch-protection awareness, and reviewed branch/PR commits
@@ -159,7 +160,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 ## Planned next
 
 - Richer language grammars
-- Issue reactions/templates, labels, milestones, assignee editing, and richer PR diff/conflict presentation
+- Issue templates and richer PR diff/conflict presentation
 - Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
 - Complete download queue UI with pause/cancel/retry/mirror selection and Storage Access Framework location selection
 - Richer APK permission/certificate presentation and checksum-file matching

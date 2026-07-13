@@ -55,7 +55,22 @@ class GitHubRepository @Inject constructor(
         api.branchProtection(owner, repo, branch).isSuccessful
     suspend fun issues(owner: String, repo: String) = api.issues(owner, repo).filterNot { it.body?.contains("pull request", ignoreCase = true) == true }
     suspend fun createIssue(owner: String, repo: String, title: String, body: String) = api.createIssue(owner, repo, CreateIssueRequest(title, body.takeIf { it.isNotBlank() }))
-    suspend fun updateIssueState(owner: String, repo: String, issueNumber: Int, state: String) = api.updateIssue(owner, repo, issueNumber, UpdateIssueRequest(state))
+    suspend fun updateIssueState(owner: String, repo: String, issueNumber: Int, state: String) = api.updateIssue(owner, repo, issueNumber, UpdateIssueRequest(state = state))
+    suspend fun updateIssueMetadata(
+        owner: String,
+        repo: String,
+        issueNumber: Int,
+        labels: List<String>,
+        assignees: List<String>,
+        milestone: Int?
+    ) = api.updateIssue(
+        owner,
+        repo,
+        issueNumber,
+        UpdateIssueRequest(labels = labels, assignees = assignees, milestone = milestone)
+    )
+    suspend fun addIssueReaction(owner: String, repo: String, issueNumber: Int, content: String) =
+        api.addIssueReaction(owner, repo, issueNumber, IssueReactionRequest(content))
     suspend fun pulls(owner: String, repo: String) = api.pullRequests(owner, repo)
     suspend fun createPullRequest(owner: String, repo: String, title: String, head: String, base: String, body: String) =
         api.createPullRequest(owner, repo, PullRequestRequest(title, head, base, body.takeIf { it.isNotBlank() }))

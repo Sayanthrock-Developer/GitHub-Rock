@@ -181,6 +181,14 @@ interface GitHubRestApi {
         @Body request: UpdateIssueRequest
     ): GitHubIssue
 
+    @POST("repos/{owner}/{repo}/issues/{issueNumber}/reactions")
+    suspend fun addIssueReaction(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issueNumber") issueNumber: Int,
+        @Body request: IssueReactionRequest
+    ): IssueReaction
+
     @GET("repos/{owner}/{repo}/pulls")
     suspend fun pullRequests(
         @Path("owner") owner: String,

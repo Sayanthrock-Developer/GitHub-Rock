@@ -67,12 +67,40 @@ data class GitHubIssue(
     val body: String? = null,
     val user: Owner,
     val labels: List<GitHubLabel> = emptyList(),
+    val assignees: List<Owner> = emptyList(),
+    val milestone: Milestone? = null,
+    val reactions: IssueReactionSummary = IssueReactionSummary(),
     @SerialName("comments") val commentCount: Int = 0,
     @SerialName("updated_at") val updatedAt: String = ""
 )
 
 @Serializable
 data class GitHubLabel(val name: String, val color: String = "")
+
+@Serializable
+data class Milestone(
+    val number: Int,
+    val title: String,
+    val state: String = "open"
+)
+
+@Serializable
+data class IssueReactionSummary(
+    @SerialName("+1") val plusOne: Int = 0,
+    @SerialName("-1") val minusOne: Int = 0,
+    val laugh: Int = 0,
+    val hooray: Int = 0,
+    val confused: Int = 0,
+    val heart: Int = 0,
+    val rocket: Int = 0,
+    val eyes: Int = 0
+)
+
+@Serializable
+data class IssueReaction(
+    val id: Long = 0,
+    val content: String = ""
+)
 
 @Serializable
 data class PullRequestSummary(
@@ -164,7 +192,17 @@ data class DeviceTokenResponse(
 data class CreateIssueRequest(val title: String, val body: String? = null)
 
 @Serializable
-data class UpdateIssueRequest(val state: String)
+data class UpdateIssueRequest(
+    val state: String? = null,
+    val title: String? = null,
+    val body: String? = null,
+    val labels: List<String>? = null,
+    val assignees: List<String>? = null,
+    val milestone: Int? = null
+)
+
+@Serializable
+data class IssueReactionRequest(val content: String)
 
 @Serializable
 data class CreateReleaseRequest(
