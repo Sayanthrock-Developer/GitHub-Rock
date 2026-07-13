@@ -28,6 +28,17 @@ import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
+/**
+ * Displays the GitHub dashboard with profile information, workspace metrics, workflow activity, repository listings, and quick actions.
+ *
+ * @param mode The current application mode.
+ * @param profile The authenticated user's profile, when available.
+ * @param rateLimit The current GitHub API rate limit, when available.
+ * @param repositories The repositories to display.
+ * @param runs The workflow runs to summarize.
+ * @param onOpenRepo Called when a repository is selected.
+ * @param onOpenBuilds Called when the build action is selected.
+ */
 @Composable
 fun HomeScreen(
     mode: AppMode,
@@ -113,6 +124,13 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Displays the selected profile, application mode, biography, and GitHub API rate-limit status.
+ *
+ * @param mode The current application mode.
+ * @param profile The GitHub profile to display, or `null` when unavailable.
+ * @param rateLimit The GitHub API rate-limit information, or `null` when unavailable.
+ */
 @Composable
 private fun DashboardHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLimit?) {
     GlassCard {
@@ -188,6 +206,11 @@ private fun DashboardHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLi
     }
 }
 
+/**
+ * Displays a badge describing the current application mode.
+ *
+ * @param mode The application mode represented by the badge.
+ */
 @Composable
 private fun ModeBadge(mode: AppMode) {
     val label = when (mode) {
@@ -209,6 +232,14 @@ private fun ModeBadge(mode: AppMode) {
     }
 }
 
+/**
+ * Displays a dashboard metric with an icon, value, and label.
+ *
+ * @param label The metric label.
+ * @param value The metric value.
+ * @param icon The icon representing the metric.
+ * @param isWarning Whether to display the metric using the warning color.
+ */
 @Composable
 private fun DashboardMetric(label: String, value: String, icon: ImageVector, isWarning: Boolean = false) {
     val accent = if (isWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -225,6 +256,12 @@ private fun DashboardMetric(label: String, value: String, icon: ImageVector, isW
     }
 }
 
+/**
+ * Displays a section title alongside supporting text.
+ *
+ * @param title The primary section title.
+ * @param supporting The supporting text displayed beside the title.
+ */
 @Composable
 private fun SectionHeading(title: String, supporting: String) {
     Row(
@@ -237,6 +274,11 @@ private fun SectionHeading(title: String, supporting: String) {
     }
 }
 
+/**
+ * Displays a workflow run with its title, branch, and current state.
+ *
+ * @param run The workflow run to display.
+ */
 @Composable
 private fun WorkflowSummaryCard(run: WorkflowRun) {
     val state = run.displayState()
@@ -274,6 +316,12 @@ private fun WorkflowSummaryCard(run: WorkflowRun) {
     }
 }
 
+/**
+ * Selects the theme color associated with a workflow's display state.
+ *
+ * @param run The workflow run whose state determines the color.
+ * @return The color for the workflow state.
+ */
 @Composable
 private fun workflowColor(run: WorkflowRun) = when (run.displayState().name) {
     "Success" -> MaterialTheme.colorScheme.tertiary
@@ -282,6 +330,12 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState().name) {
     else -> MaterialTheme.colorScheme.primary
 }
 
+/**
+ * Displays a repository summary card with metadata and an optional private badge.
+ *
+ * @param repo The repository to display.
+ * @param onClick The action invoked when the repository name is selected.
+ */
 @Composable
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     GlassCard(modifier = Modifier.fillMaxWidth()) {
