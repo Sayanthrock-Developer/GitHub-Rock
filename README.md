@@ -70,12 +70,12 @@ app/src/main/java/com/sayanthrock/githubrock/
 
 ```properties
 sdk.dir=/absolute/path/to/Android/Sdk
-GITHUB_CLIENT_ID=Iv1.your_public_client_id
+GITHUB_CLIENT_ID=Iv23Bz9KwjI8S24igW
 ```
 
 The value is exposed through `BuildConfig.GITHUB_CLIENT_ID`. `local.properties` is ignored by Git. The app opens GitHub in a Custom Tab, shows a copyable verification code, and polls only at GitHub's supplied interval.
 
-For GitHub Actions builds, add `GITHUB_CLIENT_ID` under **Settings → Secrets and variables → Actions → Variables**. It is a public identifier, not a client secret. CI passes this variable through the environment to `BuildConfig`; release publishing stops with a useful error if it is missing.
+The official Sayanth Rock Mobile public Client ID (`Iv23Bz9KwjI8S24igW`) is bundled as a safe default so verified CI and release builds can sign in immediately. Forks can override it with a `GITHUB_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets, private keys, and tokens must never be bundled.
 
 ## Suggested GitHub App permissions
 
@@ -132,7 +132,7 @@ The workflow decodes the keystore into the runner's temporary directory and expo
 
 ## Publish and install the app
 
-1. Add the public `GITHUB_CLIENT_ID` Actions variable and all four signing secrets listed above.
+1. Add the four Android signing secrets listed above. The official public GitHub App Client ID is already configured; forks may override it with a `GITHUB_CLIENT_ID` Actions variable.
 2. Open **Actions → Publish Android Release → Run workflow**.
 3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
 4. Wait for signature verification, checksum generation, and release publication to finish.
