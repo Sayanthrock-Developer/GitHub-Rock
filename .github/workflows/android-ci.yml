@@ -17,6 +17,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      GITHUB_CLIENT_ID: ${{ vars.GITHUB_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -35,6 +37,8 @@ jobs:
         run: ./gradlew lintDebug --stacktrace
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
+      - name: Verify release build
+        run: ./gradlew assembleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
