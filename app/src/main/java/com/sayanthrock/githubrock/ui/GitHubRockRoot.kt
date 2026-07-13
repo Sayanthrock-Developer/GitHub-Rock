@@ -98,6 +98,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 state = state,
                 onSearch = viewModel::searchRepositories,
                 onRememberRepository = viewModel::rememberRepository,
+                onRefreshSocial = viewModel::refreshSocialConnections,
                 onLogout = viewModel::logout
             )
         }
