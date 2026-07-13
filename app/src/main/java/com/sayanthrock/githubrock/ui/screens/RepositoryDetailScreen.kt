@@ -32,8 +32,9 @@ import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.Workflow
-import com.sayanthrock.githubrock.core.util.DiffLine
 import com.sayanthrock.githubrock.core.util.DiffLineKind
+import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
+import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.TextDiff
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
@@ -453,7 +454,10 @@ private fun CodeEditorCard(
     var featureBranch by remember(editor.path) { mutableStateOf("github-rock/edit-${System.currentTimeMillis() / 1000}") }
     var commitMessage by remember(editor.path) { mutableStateOf("Update ${editor.path}") }
     var showDiff by remember(editor.path) { mutableStateOf(true) }
+    var showMarkdownPreview by remember(editor.path) { mutableStateOf(false) }
     val changed = editor.content != editor.originalContent
+    val isMarkdown = editor.path.endsWith(".md", ignoreCase = true) || editor.path.endsWith(".markdown", ignoreCase = true)
+    val markdownBlocks = remember(editor.content) { MarkdownRenderer.render(editor.content) }
     val diff = remember(editor.originalContent, editor.content) {
         TextDiff.unified(editor.originalContent, editor.content)
     }
@@ -466,11 +470,24 @@ private fun CodeEditorCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text("${editor.content.length} characters • ${if (changed) "unsaved changes" else "unchanged"}", style = MaterialTheme.typography.bodySmall)
-            if (changed) {
-                TextButton(onClick = { showDiff = !showDiff }) {
-                    Text(if (showDiff) "Hide diff" else "Show diff")
+            if (isMarkdown) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { showMarkdownPreview = !showMarkdownPreview }) {
+                        Text(if (showMarkdownPreview) "Edit Markdown" else "Preview Markdown")
+                    }
+                    if (changed) TextButton(onClick = { showDiff = !showDiff }) { Text(if (showDiff) "Hide diff" else "Show diff") }
                 }
-                if (showDiff) {
+            }
+            if (showMarkdownPreview && isMarkdown) {
+                MarkdownPreviewCard(markdownBlocks)
+            } else {
+                if (changed) {
+                    if (!isMarkdown) {
+                        TextButton(onClick = { showDiff = !showDiff }) {
+                            Text(if (showDiff) "Hide diff" else "Show diff")
+                        }
+                    }
+                    if (showDiff) {
                     Surface(
                         shape = MaterialTheme.shapes.medium,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
@@ -493,17 +510,18 @@ private fun CodeEditorCard(
                             }
                         }
                     }
+                    }
                 }
+                OutlinedTextField(
+                    value = editor.content,
+                    onValueChange = onContentChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 16,
+                    maxLines = 28,
+                    textStyle = LocalTextStyle.current.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                    label = { Text("File contents") }
+                )
             }
-            OutlinedTextField(
-                value = editor.content,
-                onValueChange = onContentChange,
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 16,
-                maxLines = 28,
-                textStyle = LocalTextStyle.current.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
-                label = { Text("File contents") }
-            )
             OutlinedTextField(
                 value = featureBranch,
                 onValueChange = { featureBranch = it },
@@ -530,6 +548,36 @@ private fun CodeEditorCard(
             editor.pullRequestUrl?.let { url ->
                 val context = LocalContext.current
                 TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) { Text("Open created pull request") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarkdownPreviewCard(blocks: List<com.sayanthrock.githubrock.core.util.MarkdownBlock>) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            blocks.forEach { block ->
+                when (block.kind) {
+                    MarkdownBlockKind.Heading -> Text(
+                        block.text,
+                        style = when (block.level) {
+                            1 -> MaterialTheme.typography.headlineSmall
+                            2 -> MaterialTheme.typography.titleLarge
+                            else -> MaterialTheme.typography.titleMedium
+                        }
+                    )
+                    MarkdownBlockKind.Bullet -> Text("• ${block.text}")
+                    MarkdownBlockKind.Quote -> Text("> ${block.text}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    MarkdownBlockKind.Code -> Surface(color = MaterialTheme.colorScheme.background.copy(alpha = .7f)) {
+                        Text(block.text, Modifier.fillMaxWidth().padding(10.dp), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                    }
+                    MarkdownBlockKind.Divider -> HorizontalDivider()
+                    MarkdownBlockKind.Paragraph -> Text(block.text)
+                }
             }
         }
     }
