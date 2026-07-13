@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -23,6 +24,7 @@ import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.RateLimit
+import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.ui.AppMode
@@ -38,8 +40,11 @@ fun HomeScreen(
     onOpenRepo: (GitHubRepositoryModel) -> Unit,
     onOpenBuilds: () -> Unit
 ) {
-    val activeWorkflows = runs.count { it.status != "completed" }
-    val failedWorkflows = runs.count { it.conclusion == "failure" }
+    val activeWorkflows = remember(runs) { runs.count { it.status != "completed" } }
+    val failedWorkflows = remember(runs) {
+        runs.count { it.displayState() == WorkflowDisplayState.Failed }
+    }
+    val workflowRepositoryLabel = repositories.firstOrNull()?.name
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -48,15 +53,15 @@ fun HomeScreen(
     ) {
         item { DashboardHero(mode = mode, profile = profile, rateLimit = rateLimit) }
         item {
-            Text("Workspace health", style = MaterialTheme.typography.titleMedium)
+            Text("Loaded workspace snapshot", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(10.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                item { DashboardMetric("Repositories", repositories.size.toString(), Icons.Default.Folder) }
+                item { DashboardMetric("Loaded repos", repositories.size.toString(), Icons.Default.Folder) }
                 item { DashboardMetric("Followers", (profile?.followers ?: 0).toString(), Icons.Default.People) }
-                item { DashboardMetric("Active builds", activeWorkflows.toString(), Icons.Default.CloudQueue) }
+                item { DashboardMetric(workflowRepositoryLabel?.let { "Active · $it" } ?: "Active workflows", activeWorkflows.toString(), Icons.Default.CloudQueue) }
                 item {
                     DashboardMetric(
-                        "Failed runs",
+                        workflowRepositoryLabel?.let { "Failed · $it" } ?: "Failed workflows",
                         failedWorkflows.toString(),
                         Icons.Default.ErrorOutline,
                         isWarning = failedWorkflows > 0
@@ -275,10 +280,10 @@ private fun WorkflowSummaryCard(run: WorkflowRun) {
 }
 
 @Composable
-private fun workflowColor(run: WorkflowRun) = when (run.displayState().name) {
-    "Success" -> MaterialTheme.colorScheme.tertiary
-    "Failed" -> MaterialTheme.colorScheme.error
-    "Cancelled" -> MaterialTheme.colorScheme.onSurfaceVariant
+private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
+    WorkflowDisplayState.Success -> MaterialTheme.colorScheme.tertiary
+    WorkflowDisplayState.Failed -> MaterialTheme.colorScheme.error
+    WorkflowDisplayState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
     else -> MaterialTheme.colorScheme.primary
 }
 
@@ -297,7 +302,10 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(repo.language ?: "—", style = MaterialTheme.typography.bodyMedium)
                 Icon(
                     Icons.Default.Star,
