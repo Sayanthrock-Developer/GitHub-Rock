@@ -31,12 +31,28 @@ data class RecentRepositoryEntity(
 
 @Dao
 interface RecentRepositoryDao {
+    /**
+     * Inserts a repository record, replacing any existing record with the same ID.
+     *
+     * @param entity The repository record to store.
+     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: RecentRepositoryEntity)
 
+    /**
+     * Observes recently opened repositories in descending order of opening time.
+     *
+     * @param limit The maximum number of repositories to include.
+     * @return A stream of recently opened repositories.
+     */
     @Query("SELECT * FROM recent_repositories ORDER BY lastOpenedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int = 12): Flow<List<RecentRepositoryEntity>>
 
+    /**
+     * Removes older repository records while retaining the most recently opened entries.
+     *
+     * @param keep The maximum number of recent records to retain.
+     */
     @Query("DELETE FROM recent_repositories WHERE id NOT IN (SELECT id FROM recent_repositories ORDER BY lastOpenedAt DESC LIMIT :keep)")
     suspend fun trim(keep: Int = 30)
 }
@@ -47,13 +63,24 @@ interface RecentRepositoryDao {
     exportSchema = true
 )
 abstract class GitHubRockDatabase : RoomDatabase() {
-    abstract fun recentRepositoryDao(): RecentRepositoryDao
+    /**
+ * Provides the DAO for accessing recent repository records.
+ *
+ * @return The recent repository DAO.
+ */
+abstract fun recentRepositoryDao(): RecentRepositoryDao
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    @Provides
+    /**
+         * Provides the application database instance.
+         *
+         * @param context The application context used to create the database.
+         * @return The configured GitHub Rock database.
+         */
+        @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): GitHubRockDatabase =
         Room.databaseBuilder(
@@ -62,7 +89,13 @@ object DatabaseModule {
             "github_rock.db"
         ).fallbackToDestructiveMigration().build()
 
-    @Provides
+    /**
+         * Provides the database's recent repository data access object.
+         *
+         * @param database The application database.
+         * @return The recent repository DAO.
+         */
+        @Provides
     fun recentRepositoryDao(database: GitHubRockDatabase): RecentRepositoryDao =
         database.recentRepositoryDao()
 }

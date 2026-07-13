@@ -34,6 +34,14 @@ import androidx.core.net.toUri
 import com.sayanthrock.githubrock.ui.theme.GlassCard
 import com.sayanthrock.githubrock.ui.theme.LiquidBackground
 
+/**
+ * Displays the GitHub authentication screen with login, verification, guest, and demo options.
+ *
+ * @param state The current authentication UI state.
+ * @param onLogin Invoked when the user starts GitHub login.
+ * @param onGuest Invoked when the user continues as a guest.
+ * @param onDemo Invoked when the user opens demo mode.
+ */
 @Composable
 fun LoginScreen(
     state: AuthUiState,

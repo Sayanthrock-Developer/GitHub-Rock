@@ -29,6 +29,12 @@ data class ApkInspection(
 )
 
 class ApkInspector(private val context: Context) {
+    /**
+     * Inspects an APK and extracts its metadata, permissions, checksums, and signing details.
+     *
+     * @param file The APK file to inspect.
+     * @return The inspection results for the APK.
+     */
     fun inspect(file: File): ApkInspection {
         require(file.exists() && file.extension.equals("apk", ignoreCase = true)) {
             "Select a valid APK file."
@@ -61,6 +67,11 @@ class ApkInspector(private val context: Context) {
         )
     }
 
+    /**
+     * Opens the APK file in the system installer.
+     *
+     * @param file The APK file to install.
+     */
     fun install(file: File) {
         val uri: Uri = FileProvider.getUriForFile(
             context,
@@ -75,7 +86,14 @@ class ApkInspector(private val context: Context) {
         context.startActivity(intent)
     }
 
-    @Suppress("DEPRECATION")
+    /**
+         * Reads package information and signing certificate details from an APK archive.
+         *
+         * @param packageManager The package manager used to parse the archive.
+         * @param file The APK file to inspect.
+         * @return The archive's package information, or `null` if it cannot be parsed.
+         */
+        @Suppress("DEPRECATION")
     private fun archiveInfo(packageManager: PackageManager, file: File): PackageInfo? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManager.getPackageArchiveInfo(
@@ -86,7 +104,14 @@ class ApkInspector(private val context: Context) {
             packageManager.getPackageArchiveInfo(file.absolutePath, PackageManager.GET_SIGNING_CERTIFICATES)
         }
 
-    @Suppress("DEPRECATION")
+    /**
+         * Retrieves the SHA-256 fingerprint of the installed application's signing certificate.
+         *
+         * @param packageManager The package manager used to retrieve application information.
+         * @param packageName The package name of the installed application.
+         * @return The signing certificate fingerprint, or `null` if it cannot be retrieved.
+         */
+        @Suppress("DEPRECATION")
     private fun installedFingerprint(packageManager: PackageManager, packageName: String): String? =
         runCatching {
             val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -100,7 +125,13 @@ class ApkInspector(private val context: Context) {
             info.signingInfo?.apkContentsSigners?.firstOrNull()?.toByteArray()?.let(::fingerprint)
         }.getOrNull()
 
-    private fun fingerprint(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+    /**
+         * Computes a colon-separated uppercase SHA-256 fingerprint for the provided bytes.
+         *
+         * @param bytes The bytes to fingerprint.
+         * @return The SHA-256 digest formatted as uppercase hexadecimal pairs separated by colons.
+         */
+        private fun fingerprint(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
         .digest(bytes)
         .joinToString(":") { "%02X".format(it) }
 }

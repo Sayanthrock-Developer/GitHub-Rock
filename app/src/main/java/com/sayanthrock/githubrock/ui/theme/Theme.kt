@@ -64,6 +64,13 @@ private val LightColors = lightColorScheme(
     error = Color(0xFFCF222E)
 )
 
+/**
+ * Applies the GitHub Rock Material theme and configures system bar appearance.
+ *
+ * @param darkTheme Whether to use a dark color scheme.
+ * @param dynamicColor Whether to use the system dynamic color scheme when supported.
+ * @param content The composable content to display with the theme.
+ */
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -94,6 +101,11 @@ fun GitHubRockTheme(
     MaterialTheme(colorScheme = scheme, content = content)
 }
 
+/**
+ * Displays content over a full-screen radial gradient background based on the current theme.
+ *
+ * @param content The content to display inside the background container.
+ */
 @Composable
 fun LiquidBackground(content: @Composable BoxScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
@@ -114,6 +126,12 @@ fun LiquidBackground(content: @Composable BoxScope.() -> Unit) {
     )
 }
 
+/**
+ * Renders content in a rounded, bordered card with a translucent surface.
+ *
+ * @param modifier Modifier applied to the card.
+ * @param content Content displayed inside the card.
+ */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,

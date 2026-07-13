@@ -28,6 +28,12 @@ class ProfileViewModel @Inject constructor(
     private val _state = MutableStateFlow(ProfileUiState())
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 
+    /**
+     * Loads profile and rate-limit data into the UI state.
+     *
+     * @param demoMode Whether to use predefined demo data instead of repository data.
+     * @param guestMode Whether to load only rate-limit data without a user profile.
+     */
     fun load(demoMode: Boolean, guestMode: Boolean) {
         viewModelScope.launch {
             if (demoMode) {

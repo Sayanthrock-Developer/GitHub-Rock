@@ -46,6 +46,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Starts the GitHub device authentication flow and updates the UI state with its progress.
+     */
     fun startDeviceFlow() {
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
@@ -100,6 +103,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Logs out the current user and resets the authentication state.
+     */
     fun logout() {
         pollingJob?.cancel()
         repository.logout()

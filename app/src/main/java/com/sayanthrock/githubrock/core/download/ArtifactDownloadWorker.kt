@@ -28,6 +28,11 @@ class ArtifactDownloadWorker @AssistedInject constructor(
     @Named("downloadClient") private val client: OkHttpClient
 ) : CoroutineWorker(appContext, workerParams) {
 
+    /**
+     * Downloads an HTTPS artifact, optionally verifies its SHA-256 checksum, and reports the result.
+     *
+     * @return A successful result containing the downloaded file metadata, a retry result for recoverable I/O failures, or a failure result with an error message.
+     */
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val url = inputData.getString(KEY_URL).orEmpty()
         val expectedSha = inputData.getString(KEY_EXPECTED_SHA)?.trim()?.lowercase().orEmpty()
@@ -91,6 +96,13 @@ class ArtifactDownloadWorker @AssistedInject constructor(
         }
     }
 
+    /**
+     * Creates a file path that avoids overwriting an existing file.
+     *
+     * @param directory The directory in which to create the file path.
+     * @param name The proposed file name.
+     * @return The original file path if it is unused; otherwise, a timestamped file path.
+     */
     private fun uniqueFile(directory: File, name: String): File {
         val original = File(directory, name)
         if (!original.exists()) return original
@@ -100,8 +112,20 @@ class ArtifactDownloadWorker @AssistedInject constructor(
         return File(directory, "$base-${System.currentTimeMillis()}$suffix")
     }
 
-    private fun failure(message: String): Result = Result.failure(workDataOf(KEY_ERROR to message))
+    /**
+ * Creates a failed work result containing an error message.
+ *
+ * @param message The error message to include in the result.
+ * @return A failed work result with the specified error message.
+ */
+private fun failure(message: String): Result = Result.failure(workDataOf(KEY_ERROR to message))
 
+    /**
+     * Updates the download notification with the current progress.
+     *
+     * @param progress The download progress percentage.
+     * @param fileName The name of the file being downloaded.
+     */
     private fun showProgressNotification(progress: Int, fileName: String) {
         val manager = notificationManager()
         manager.notify(
@@ -116,6 +140,11 @@ class ArtifactDownloadWorker @AssistedInject constructor(
         )
     }
 
+    /**
+     * Shows a notification indicating that the download is complete.
+     *
+     * @param fileName The name of the downloaded file.
+     */
     private fun showCompletedNotification(fileName: String) {
         notificationManager().notify(
             id.hashCode(),
@@ -128,6 +157,11 @@ class ArtifactDownloadWorker @AssistedInject constructor(
         )
     }
 
+    /**
+     * Retrieves the notification manager and ensures the artifact download notification channel exists.
+     *
+     * @return The application's notification manager.
+     */
     private fun notificationManager(): NotificationManager {
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(
@@ -149,6 +183,13 @@ class ArtifactDownloadWorker @AssistedInject constructor(
         const val KEY_ERROR = "error"
         private const val CHANNEL_ID = "artifact_downloads"
 
+        /**
+         * Creates the input data required to configure an artifact download.
+         *
+         * @param url The HTTPS URL of the artifact to download.
+         * @param expectedSha The expected SHA-256 checksum, or an empty string to skip verification.
+         * @return WorkManager input data containing the download URL and expected checksum.
+         */
         fun input(url: String, expectedSha: String): Data = workDataOf(
             KEY_URL to url,
             KEY_EXPECTED_SHA to expectedSha

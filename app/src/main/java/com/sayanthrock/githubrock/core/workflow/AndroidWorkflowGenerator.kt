@@ -9,6 +9,14 @@ enum class AndroidArtifactType(val label: String, val task: String, val outputPa
 object AndroidWorkflowGenerator {
     private val modulePattern = Regex("[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*")
 
+    /**
+     * Generates a GitHub Actions workflow for building an Android artifact.
+     *
+     * @param module The Android module path, with optional colon separators.
+     * @param artifactType The type of Android artifact to build and upload.
+     * @return A YAML workflow definition for the specified module and artifact.
+     * @throws IllegalArgumentException If the module contains invalid characters or separators.
+     */
     fun generate(module: String, artifactType: AndroidArtifactType): String {
         val normalizedModule = module.trim().removePrefix(":")
         require(modulePattern.matches(normalizedModule)) {

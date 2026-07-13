@@ -62,6 +62,9 @@ val bottomDestinations = listOf(
     BottomDestination("profile", "Profile", Icons.Default.AccountCircle)
 )
 
+/**
+ * Provides the app's root UI and switches between authentication, loading, and session navigation states.
+ */
 @Composable
 fun GitHubRockRoot(authViewModel: AuthViewModel = hiltViewModel()) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
@@ -100,6 +103,12 @@ fun GitHubRockRoot(authViewModel: AuthViewModel = hiltViewModel()) {
     }
 }
 
+/**
+ * Displays the application navigation graph for the selected session mode.
+ *
+ * @param mode The current session mode, which determines demo and guest behavior.
+ * @param onLogout Callback invoked when the user logs out from the profile screen.
+ */
 @Composable
 private fun GitHubRockNavigation(mode: SessionMode, onLogout: () -> Unit) {
     val navController = rememberNavController()
@@ -184,6 +193,11 @@ private fun GitHubRockNavigation(mode: SessionMode, onLogout: () -> Unit) {
     }
 }
 
+/**
+ * Displays bottom navigation items and navigates between the configured destinations.
+ *
+ * @param navController The navigation controller used to observe and change destinations.
+ */
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val backStack by navController.currentBackStackEntryAsState()
@@ -208,6 +222,12 @@ fun BottomNavigationBar(navController: NavHostController) {
     }
 }
 
+/**
+ * Displays a button for opening a GitHub link.
+ *
+ * @param title The title shown in the button label.
+ * @param url The GitHub URL to open.
+ */
 @Composable
 private fun DeepLinkScreen(title: String, url: String) {
     val context = LocalContext.current
@@ -218,6 +238,12 @@ private fun DeepLinkScreen(title: String, url: String) {
     }
 }
 
+/**
+ * Opens a URL in a Chrome Custom Tab.
+ *
+ * @param context The context used to launch the browser.
+ * @param url The URL to open.
+ */
 private fun openUrl(context: Context, url: String) {
     CustomTabsIntent.Builder().build().launchUrl(context, url.toUri())
 }

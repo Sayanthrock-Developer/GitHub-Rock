@@ -14,6 +14,12 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use(::load)
 }
 
+/**
+ * Formats a value as a quoted string literal for a build configuration field.
+ *
+ * @param value The value to quote and escape.
+ * @return The quoted value with backslashes and double quotes escaped.
+ */
 fun quotedBuildConfig(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {

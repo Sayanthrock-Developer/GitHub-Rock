@@ -54,6 +54,9 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
+/**
+ * Displays the download screen for enqueueing, monitoring, and inspecting HTTPS artifacts.
+ */
 @Composable
 fun DownloadsScreen() {
     val context = LocalContext.current

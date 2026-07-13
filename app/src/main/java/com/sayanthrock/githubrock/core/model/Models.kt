@@ -38,6 +38,12 @@ enum class DeviceFlowResult {
 }
 
 object DeviceFlowInterpreter {
+    /**
+     * Classifies the outcome of a device authorization token response.
+     *
+     * @param response The token response to classify.
+     * @return The corresponding device flow result.
+     */
     fun classify(response: AccessTokenResponse): DeviceFlowResult = when {
         !response.accessToken.isNullOrBlank() -> DeviceFlowResult.SUCCESS
         response.error == "authorization_pending" -> DeviceFlowResult.AUTHORIZATION_PENDING
@@ -96,6 +102,11 @@ data class RepositorySummary(
     val updatedAt: String?
 )
 
+/**
+ * Converts repository data into a flattened summary.
+ *
+ * @return A repository summary containing the repository and owner details.
+ */
 fun RepositoryDto.toSummary(): RepositorySummary = RepositorySummary(
     id = id,
     name = name,
@@ -156,6 +167,13 @@ data class GraphQlResponse(
 enum class WorkflowVisualState { QUEUED, RUNNING, SUCCESS, FAILED, CANCELLED, UNKNOWN }
 
 object WorkflowStatusMapper {
+    /**
+     * Maps workflow status and conclusion values to a visual workflow state.
+     *
+     * @param status The workflow status value.
+     * @param conclusion The workflow conclusion value.
+     * @return The corresponding visual workflow state.
+     */
     fun map(status: String?, conclusion: String?): WorkflowVisualState = when {
         status == "queued" || status == "waiting" || status == "requested" -> WorkflowVisualState.QUEUED
         status == "in_progress" || status == "pending" -> WorkflowVisualState.RUNNING
