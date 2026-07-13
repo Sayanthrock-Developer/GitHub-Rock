@@ -6,9 +6,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
@@ -24,18 +27,44 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val openGitHubUrl = remember(context, snackbar, scope) {
+    val verificationUri = state.auth.code?.verificationUri
+    var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(state.auth.code == null) {
+        if (state.auth.code == null) {
+            awaitingVerificationBrowserReturn = false
+        }
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (AuthReturnPolicy.shouldCheckAuthorization(
+                awaitingVerificationBrowserReturn = awaitingVerificationBrowserReturn,
+                hasPendingDeviceCode = state.auth.code != null
+            )
+        ) {
+            awaitingVerificationBrowserReturn = false
+            viewModel.checkLoginStatus()
+        }
+    }
+
+    val openGitHubUrl = remember(context, snackbar, scope, verificationUri) {
         { url: String ->
-            if (!GitHubExternalLinkLauncher.open(context, url)) {
+            val opened = GitHubExternalLinkLauncher.open(context, url)
+            if (opened && url == verificationUri) {
+                awaitingVerificationBrowserReturn = true
+            }
+            if (!opened) {
                 scope.launch {
                     val result = snackbar.showSnackbar(
                         message = "No browser could open GitHub. Install or enable a browser and try again.",
                         actionLabel = "Retry"
                     )
-                    if (result == SnackbarResult.ActionPerformed &&
-                        !GitHubExternalLinkLauncher.open(context, url)
-                    ) {
-                        snackbar.showSnackbar("GitHub still could not be opened. Check your browser settings.")
+                    if (result == SnackbarResult.ActionPerformed) {
+                        val reopened = GitHubExternalLinkLauncher.open(context, url)
+                        if (reopened && url == verificationUri) {
+                            awaitingVerificationBrowserReturn = true
+                        } else if (!reopened) {
+                            snackbar.showSnackbar("GitHub still could not be opened. Check your browser settings.")
+                        }
                     }
                 }
             }
