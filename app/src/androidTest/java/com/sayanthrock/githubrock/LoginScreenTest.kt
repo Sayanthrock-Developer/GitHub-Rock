@@ -134,6 +134,9 @@ class LoginScreenTest {
             }
         }
 
+        compose.onNodeWithText(
+            "After GitHub says you’re all set, return with Android Back or the app switcher. GitHub Rock checks automatically; the button below is a backup."
+        ).assertIsDisplayed()
         compose.onNodeWithText("I’ve authorized — check now").performClick()
         compose.runOnIdle {
             assertTrue(checked)
