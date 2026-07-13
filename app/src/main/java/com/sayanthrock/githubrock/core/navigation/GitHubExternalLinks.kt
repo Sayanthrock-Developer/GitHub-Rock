@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsClient
 import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
@@ -37,6 +38,11 @@ object GitHubUrlPolicy {
     }
 }
 
+internal fun isExternalBrowserPackage(
+    candidatePackage: String?,
+    applicationPackage: String
+): Boolean = !candidatePackage.isNullOrBlank() && candidatePackage != applicationPackage
+
 object GitHubExternalLinkLauncher {
     fun open(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
@@ -53,12 +59,16 @@ object GitHubExternalLinkLauncher {
                 }
             }
 
-        if (runCatching {
-                customTab.launchUrl(context, uri)
-                true
-            }.getOrDefault(false)
-        ) {
-            return true
+        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
+        if (isExternalBrowserPackage(customTabsPackage, context.packageName)) {
+            customTab.intent.setPackage(customTabsPackage)
+            if (runCatching {
+                    customTab.launchUrl(context, uri)
+                    true
+                }.getOrDefault(false)
+            ) {
+                return true
+            }
         }
 
         val baseIntent = Intent(Intent.ACTION_VIEW, uri).apply {
