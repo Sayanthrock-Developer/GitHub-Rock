@@ -38,19 +38,20 @@ class LoginScreenTest {
         }
         compose.onNodeWithContentDescription("Login with GitHub").assertIsDisplayed()
         compose.onNodeWithContentDescription("Create GitHub account").assertIsDisplayed()
-        compose.onNodeWithText("Continue as guest").assertIsDisplayed()
+        compose.onNodeWithText("Continue with public repositories").assertIsDisplayed()
         compose.onNodeWithText("Explore isolated demo mode").assertIsDisplayed()
     }
 
-    @Test fun createAccountButtonOpensOfficialSignupPage() {
+    @Test fun createAccountButtonOpensOfficialSignupPageAndOffersConnection() {
         var openedUrl: String? = null
+        var loginStarted = false
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 LoginScreen(
                     configured = true,
                     loading = false,
                     auth = DeviceAuthState(),
-                    onLogin = {},
+                    onLogin = { loginStarted = true },
                     onOpenGitHubUrl = { openedUrl = it },
                     onCheckAuthorization = {},
                     onGuest = {},
@@ -62,6 +63,10 @@ class LoginScreenTest {
         compose.onNodeWithContentDescription("Create GitHub account").performClick()
         compose.runOnIdle {
             assertEquals(GITHUB_SIGN_UP_URL, openedUrl)
+        }
+        compose.onNodeWithContentDescription("Connect new GitHub account").assertIsDisplayed().performClick()
+        compose.runOnIdle {
+            assertTrue(loginStarted)
         }
     }
 
