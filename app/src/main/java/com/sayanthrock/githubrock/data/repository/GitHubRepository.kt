@@ -25,8 +25,8 @@ class GitHubRepository @Inject constructor(
     }
 
     suspend fun socialConnections(): SocialConnections = coroutineScope {
-        val followers = async { api.followers() }
-        val following = async { api.following() }
+        val followers = async { api.followers(perPage = SOCIAL_PREVIEW_PAGE_SIZE) }
+        val following = async { api.following(perPage = SOCIAL_PREVIEW_PAGE_SIZE) }
         SocialConnections(followers.await(), following.await())
     }
 
@@ -213,3 +213,5 @@ data class SocialConnections(
     val followers: List<Owner>,
     val following: List<Owner>
 )
+
+private const val SOCIAL_PREVIEW_PAGE_SIZE = 12
