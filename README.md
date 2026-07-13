@@ -17,7 +17,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile with follower/following previews, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
-- Background download worker with resume support, SHA-256 verification, retry recovery, duplicate-safe file finalization, and Room history
+- Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
 - GitHub-inspired Liquid Glass dark/light theme with dynamic color and edge-to-edge layout
 - Deep links for repositories, builds, releases, and standard GitHub repository URLs
@@ -33,7 +33,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and Releases sections |
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
-| Downloads | Verified artifact pipeline and download empty state |
+| Downloads | Live artifact progress, pause/resume/cancel/restart controls, verified history, sharing, and APK inspection |
 | Profile | Account/session mode, public repository/follower/following counts and previews, retry states, and token-security information |
 
 PNG screenshots will be added after the first instrumented device capture. No mock screenshot is presented as a running build.
@@ -178,7 +178,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
 - Repository code browsing with base64 decoding, text-file editing/creation, syntax-highlighted previews, safe rename/move/delete operations, branch-protection awareness, and reviewed branch/PR commits
 - Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
-- Recoverable verified downloader and APK inspection core
+- Recoverable verified download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
 - Own-repository CI and manual APK/AAB workflows
 - Signed, versioned GitHub Release workflow with APK signature verification and SHA-256 assets
 
@@ -187,7 +187,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Richer language grammars
 - Issue templates and richer PR diff/conflict presentation
 - Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
-- Complete download queue UI with pause/cancel/retry/mirror selection and Storage Access Framework location selection
+- Mirror selection and Storage Access Framework download-location selection
 - Richer APK permission/certificate presentation and checksum-file matching
 - Biometric lock settings UI, tablet navigation rail, foldable list-detail panes, accessibility audit, and screenshot suite
 - GraphQL batching and Paging-backed large lists
