@@ -43,10 +43,10 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val code = auth.code
-    var hasOpenedVerificationUri by rememberSaveable(code?.verificationUri) {
+    var hasOpenedVerificationUri by rememberSaveable(code?.deviceCode) {
         mutableStateOf(false)
     }
-    LaunchedEffect(code?.verificationUri) {
+    LaunchedEffect(code?.deviceCode) {
         val verificationUri = code?.verificationUri
         if (verificationUri != null && !hasOpenedVerificationUri) {
             hasOpenedVerificationUri = true
