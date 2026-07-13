@@ -96,6 +96,80 @@ class GitHubRepository @Inject constructor(
         return api.createPullRequest(owner, repo, PullRequestRequest(pullTitle, featureBranch, baseBranch, pullBody))
     }
 
+    suspend fun renameOrMoveFileAndOpenPullRequest(
+        owner: String,
+        repo: String,
+        sourcePath: String,
+        destinationPath: String,
+        sourceSha: String,
+        content: String,
+        baseBranch: String,
+        featureBranch: String,
+        commitMessage: String
+    ): PullRequest {
+        validateFileOperationPaths(sourcePath, destinationPath, featureBranch)
+        check(sourcePath != destinationPath) { "Choose a different destination path" }
+        val baseSha = api.branchReference(owner, repo, baseBranch).target.sha
+        check(api.createBranch(owner, repo, GitRefRequest("refs/heads/$featureBranch", baseSha)).isSuccessful) {
+            "Unable to create the review branch"
+        }
+        val encoded = Base64.encodeToString(content.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        check(api.commitFile(owner, repo, destinationPath, FileCommitRequest(commitMessage, encoded, featureBranch)).isSuccessful) {
+            "Unable to create the destination file"
+        }
+        check(api.deleteFile(owner, repo, sourcePath, FileDeleteRequest(commitMessage, featureBranch, sourceSha)).isSuccessful) {
+            "Unable to remove the original file from the review branch"
+        }
+        return api.createPullRequest(
+            owner,
+            repo,
+            PullRequestRequest(
+                "Move $sourcePath to $destinationPath",
+                featureBranch,
+                baseBranch,
+                "Prepared in GitHub Rock on a new review branch. The default branch was not overwritten."
+            )
+        )
+    }
+
+    suspend fun deleteFileAndOpenPullRequest(
+        owner: String,
+        repo: String,
+        path: String,
+        sha: String,
+        baseBranch: String,
+        featureBranch: String,
+        commitMessage: String
+    ): PullRequest {
+        validateFileOperationPaths(path, path, featureBranch)
+        val baseSha = api.branchReference(owner, repo, baseBranch).target.sha
+        check(api.createBranch(owner, repo, GitRefRequest("refs/heads/$featureBranch", baseSha)).isSuccessful) {
+            "Unable to create the review branch"
+        }
+        check(api.deleteFile(owner, repo, path, FileDeleteRequest(commitMessage, featureBranch, sha)).isSuccessful) {
+            "Unable to delete the file from the review branch"
+        }
+        return api.createPullRequest(
+            owner,
+            repo,
+            PullRequestRequest(
+                "Delete $path",
+                featureBranch,
+                baseBranch,
+                "Prepared in GitHub Rock on a new review branch. The default branch was not overwritten."
+            )
+        )
+    }
+
+    private fun validateFileOperationPaths(sourcePath: String, destinationPath: String, featureBranch: String) {
+        check(isSafeRepositoryPath(sourcePath) && isSafeRepositoryPath(destinationPath)) { "Use valid relative file paths" }
+        check(featureBranch.matches(Regex("^[A-Za-z0-9._/-]+$"))) { "Unsafe branch name" }
+    }
+
+    private fun isSafeRepositoryPath(path: String): Boolean =
+        path.matches(Regex("^[A-Za-z0-9._/-]+$")) &&
+            !path.startsWith('/') && !path.endsWith('/') && !path.contains("..") && !path.contains("//")
+
     suspend fun issueComments(owner: String, repo: String, issueNumber: Int) = api.issueComments(owner, repo, issueNumber)
     suspend fun addIssueComment(owner: String, repo: String, issueNumber: Int, body: String) = api.addIssueComment(owner, repo, issueNumber, mapOf("body" to body))
     suspend fun pullReviews(owner: String, repo: String, pullNumber: Int) = api.pullReviews(owner, repo, pullNumber)
