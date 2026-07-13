@@ -75,7 +75,7 @@ GITHUB_CLIENT_ID=your_custom_client_id
 
 The value is exposed through `BuildConfig.GITHUB_CLIENT_ID`. `local.properties` is ignored by Git. The app opens GitHub in a Custom Tab, shows a copyable verification code, and polls only at GitHub's supplied interval.
 
-The official Sayanth Rock Mobile public Client ID (`Iv23Bz9KwjI8S24igW`) is bundled as a safe default so verified CI and release builds can sign in immediately. Forks can override it with a `PUBLIC_GITHUB_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets, private keys, and tokens must never be bundled.
+The official Sayanth Rock Mobile public Client ID (`Iv23liBz9KwjI8S24igW`) is bundled as a safe default so verified CI and release builds can sign in immediately. Forks can override it with a `PUBLIC_GITHUB_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets, private keys, and tokens must never be bundled.
 
 ## Suggested GitHub App permissions
 
