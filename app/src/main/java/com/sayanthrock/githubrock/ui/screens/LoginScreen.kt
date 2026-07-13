@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +49,7 @@ fun LoginScreen(
     var hasOpenedVerificationUri by rememberSaveable(code?.deviceCode) {
         mutableStateOf(false)
     }
+    var showAccountSetup by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(code?.deviceCode) {
         val verificationUri = code?.verificationUri
         if (verificationUri != null && !hasOpenedVerificationUri) {
@@ -64,36 +68,132 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primary.copy(alpha = .16f)) {
-                Icon(Icons.Default.Code, null, Modifier.padding(20.dp).size(42.dp), tint = MaterialTheme.colorScheme.primary)
+            GlassCard {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = .16f)
+                    ) {
+                        Icon(
+                            Icons.Default.Code,
+                            null,
+                            Modifier.padding(20.dp).size(42.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Text("GitHub Rock", style = MaterialTheme.typography.headlineLarge)
+                    Text(
+                        "Your GitHub repositories, workflows and Android builds — from one secure mobile control centre.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        TrustPoint(Icons.Default.Security, "Device Flow")
+                        TrustPoint(Icons.Default.Code, "No password")
+                        TrustPoint(Icons.Default.AccountCircle, "GitHub App")
+                    }
+                }
             }
-            Text("GitHub Rock", style = MaterialTheme.typography.headlineLarge)
-            Text(
-                "Your GitHub repositories, workflows and Android builds — from one secure mobile control centre.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
 
             if (code == null) {
-                Button(
-                    onClick = onLogin,
-                    enabled = configured && !loading,
-                    modifier = Modifier.fillMaxWidth().height(54.dp).semantics { contentDescription = "Login with GitHub" }
-                ) { Text(if (loading) "Connecting…" else "Login with GitHub") }
-                if (!configured) {
-                    Text(
-                        "This build is missing its public GitHub App client ID, so sign-in is unavailable. Guest and demo modes still work.",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                GlassCard {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            if (showAccountSetup) "Create, then connect" else "Connect your GitHub account",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            if (showAccountSetup) {
+                                "GitHub signup opens securely in your browser. After creating the account, return here and connect it with Device Flow."
+                            } else {
+                                "GitHub Rock never asks for your password. GitHub authorizes this app in your browser."
+                            },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        if (showAccountSetup) {
+                            Button(
+                                onClick = onLogin,
+                                enabled = configured && !loading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .semantics { contentDescription = "Connect new GitHub account" }
+                            ) {
+                                Icon(Icons.Default.ArrowForward, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (loading) "Preparing connection…" else "I created an account — connect")
+                            }
+                            OutlinedButton(
+                                onClick = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
+                                modifier = Modifier.fillMaxWidth().height(52.dp)
+                            ) {
+                                Icon(Icons.Default.OpenInBrowser, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Open GitHub signup again")
+                            }
+                            TextButton(
+                                onClick = { showAccountSetup = false },
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) { Text("I already have an account") }
+                        } else {
+                            Button(
+                                onClick = onLogin,
+                                enabled = configured && !loading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .semantics { contentDescription = "Login with GitHub" }
+                            ) {
+                                Icon(Icons.Default.AccountCircle, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (loading) "Connecting…" else "Connect with GitHub")
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    showAccountSetup = true
+                                    onOpenGitHubUrl(GITHUB_SIGN_UP_URL)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                                    .semantics { contentDescription = "Create GitHub account" }
+                            ) {
+                                Icon(Icons.Default.OpenInBrowser, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Create a GitHub account")
+                            }
+                        }
+
+                        if (!configured) {
+                            Text(
+                                "This build is missing its public GitHub App client ID, so account connection is unavailable. Guest and demo modes still work.",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        OutlinedButton(
+                            onClick = onGuest,
+                            modifier = Modifier.fillMaxWidth().height(52.dp)
+                        ) { Text("Continue with public repositories") }
+                        TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) {
+                            Text("Explore isolated demo mode")
+                        }
+                    }
                 }
-                OutlinedButton(
-                    onClick = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
-                    modifier = Modifier.fillMaxWidth().height(52.dp).semantics { contentDescription = "Create GitHub account" }
-                ) { Text("Create GitHub account") }
-                OutlinedButton(onClick = onGuest, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Continue as guest") }
-                TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) { Text("Explore isolated demo mode") }
             } else {
                 DeviceCodeCard(
                     auth = auth,
@@ -111,6 +211,27 @@ fun LoginScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TrustPoint(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
