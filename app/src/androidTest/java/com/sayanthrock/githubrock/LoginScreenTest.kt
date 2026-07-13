@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
@@ -53,7 +54,7 @@ class LoginScreenTest {
 
         compose.onNodeWithContentDescription("Create GitHub account").performClick()
         compose.runOnIdle {
-            assertEquals("https://github.com/signup", openedUrl)
+            assertEquals(GITHUB_SIGN_UP_URL, openedUrl)
         }
     }
 }
