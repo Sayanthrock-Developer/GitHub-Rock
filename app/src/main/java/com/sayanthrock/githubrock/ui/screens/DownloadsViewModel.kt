@@ -7,6 +7,7 @@ import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.await
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.download.DownloadWorker
@@ -37,8 +38,8 @@ class DownloadsViewModel @Inject constructor(
 
     fun pause(download: DownloadEntity) = viewModelScope.launch {
         if (download.status !in ACTIVE_STATUSES) return@launch
+        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         dao.updateStatus(download.id, "paused")
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id))
     }
 
     fun resume(download: DownloadEntity) = viewModelScope.launch {
@@ -49,13 +50,13 @@ class DownloadsViewModel @Inject constructor(
 
     fun cancel(download: DownloadEntity) = viewModelScope.launch {
         if (download.status !in ACTIVE_STATUSES && download.status != "paused") return@launch
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id))
+        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
         dao.updateProgress(download.id, "cancelled", 0, 0, null, null)
     }
 
     fun delete(download: DownloadEntity) = viewModelScope.launch {
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id))
+        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
         dao.delete(download.id)
     }
