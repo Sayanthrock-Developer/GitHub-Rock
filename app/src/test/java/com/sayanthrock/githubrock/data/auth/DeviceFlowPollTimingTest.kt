@@ -25,6 +25,23 @@ class DeviceFlowPollTimingTest {
         )
     }
 
+    @Test fun slowDownTransitionIsPersistedBeforeTheNextPoll() {
+        assertEquals(
+            10,
+            nextPollIntervalSeconds(
+                currentIntervalSeconds = 5,
+                error = "slow_down"
+            )
+        )
+        assertEquals(
+            10,
+            nextPollIntervalSeconds(
+                currentIntervalSeconds = 10,
+                error = "authorization_pending"
+            )
+        )
+    }
+
     @Test fun slowDownUsesTheExpandedInterval() {
         assertEquals(
             7_000L,
