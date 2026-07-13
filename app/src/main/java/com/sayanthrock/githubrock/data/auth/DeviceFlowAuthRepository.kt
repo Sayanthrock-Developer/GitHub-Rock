@@ -49,9 +49,6 @@ class DeviceFlowAuthRepository @Inject constructor(
             when (response.error) {
                 "authorization_pending" -> onStatus("Waiting for approval on GitHub…")
                 "slow_down" -> {
-                    pollMutex.withLock {
-                        requiredIntervalSeconds += SLOW_DOWN_INCREMENT_SECONDS
-                    }
                     onStatus("GitHub requested slower polling. Still waiting…")
                 }
                 "expired_token" -> throw DeviceFlowException("The device code expired. Start login again.")
@@ -93,7 +90,13 @@ class DeviceFlowAuthRepository @Inject constructor(
                 delay(remainingDelay)
             }
             lastTokenRequestAtMillis = elapsedRealtimeMillis()
-            api.requestToken(BuildConfig.GITHUB_CLIENT_ID, device.deviceCode)
+            api.requestToken(BuildConfig.GITHUB_CLIENT_ID, device.deviceCode).also { response ->
+                requiredIntervalSeconds = nextPollIntervalSeconds(
+                    currentIntervalSeconds = requiredIntervalSeconds,
+                    error = response.error,
+                    slowDownIncrementSeconds = SLOW_DOWN_INCREMENT_SECONDS
+                )
+            }
         }
 
     private fun DeviceTokenResponse.toStoredTokens(token: String): StoredTokens {
@@ -123,3 +126,14 @@ internal fun remainingPollDelayMillis(
 }
 
 private fun elapsedRealtimeMillis(): Long = System.nanoTime() / 1_000_000L
+
+
+internal fun nextPollIntervalSeconds(
+    currentIntervalSeconds: Int,
+    error: String?,
+    slowDownIncrementSeconds: Int = 5
+): Int = if (error == "slow_down") {
+    currentIntervalSeconds + slowDownIncrementSeconds
+} else {
+    currentIntervalSeconds
+}
