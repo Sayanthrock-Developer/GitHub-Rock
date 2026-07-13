@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
@@ -21,7 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,6 +40,8 @@ import com.sayanthrock.githubrock.core.model.Workflow
 import com.sayanthrock.githubrock.core.util.DiffLineKind
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
+import com.sayanthrock.githubrock.core.util.SyntaxHighlighter
+import com.sayanthrock.githubrock.core.util.SyntaxTokenKind
 import com.sayanthrock.githubrock.core.util.TextDiff
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
@@ -455,6 +462,7 @@ private fun CodeEditorCard(
     var commitMessage by remember(editor.path) { mutableStateOf("Update ${editor.path}") }
     var showDiff by remember(editor.path) { mutableStateOf(true) }
     var showMarkdownPreview by remember(editor.path) { mutableStateOf(false) }
+    var showSyntaxPreview by remember(editor.path) { mutableStateOf(true) }
     val changed = editor.content != editor.originalContent
     val isMarkdown = editor.path.endsWith(".md", ignoreCase = true) || editor.path.endsWith(".markdown", ignoreCase = true)
     val markdownBlocks = remember(editor.content) { MarkdownRenderer.render(editor.content) }
@@ -481,6 +489,10 @@ private fun CodeEditorCard(
             if (showMarkdownPreview && isMarkdown) {
                 MarkdownPreviewCard(markdownBlocks)
             } else {
+                TextButton(onClick = { showSyntaxPreview = !showSyntaxPreview }) {
+                    Text(if (showSyntaxPreview) "Hide syntax preview" else "Show syntax preview")
+                }
+                if (showSyntaxPreview) SyntaxPreviewCard(editor.path, editor.content)
                 if (changed) {
                     if (!isMarkdown) {
                         TextButton(onClick = { showDiff = !showDiff }) {
@@ -551,6 +563,44 @@ private fun CodeEditorCard(
             }
         }
     }
+}
+
+@Composable
+private fun SyntaxPreviewCard(path: String, source: String) {
+    val spans = remember(path, source) { SyntaxHighlighter.highlight(path, source) }
+    val annotated = AnnotatedString.Builder(source).apply {
+        addStyle(SpanStyle(fontFamily = FontFamily.Monospace), 0, source.length)
+        spans.forEach { span ->
+            addStyle(SpanStyle(color = syntaxColor(span.kind)), span.start, span.end)
+        }
+    }.toAnnotatedString()
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
+    ) {
+        SelectionContainer {
+            Text(
+                annotated,
+                modifier = Modifier.fillMaxWidth().padding(10.dp),
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 18,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun syntaxColor(kind: SyntaxTokenKind): Color = when (kind) {
+    SyntaxTokenKind.Keyword -> MaterialTheme.colorScheme.primary
+    SyntaxTokenKind.String -> MaterialTheme.colorScheme.tertiary
+    SyntaxTokenKind.Comment -> MaterialTheme.colorScheme.onSurfaceVariant
+    SyntaxTokenKind.Number -> MaterialTheme.colorScheme.secondary
+    SyntaxTokenKind.Type -> MaterialTheme.colorScheme.primary.copy(alpha = .9f)
+    SyntaxTokenKind.Tag -> MaterialTheme.colorScheme.primary
+    SyntaxTokenKind.Attribute -> MaterialTheme.colorScheme.secondary
+    SyntaxTokenKind.Property -> MaterialTheme.colorScheme.primary
+    SyntaxTokenKind.Markdown -> MaterialTheme.colorScheme.primary
 }
 
 @Composable
