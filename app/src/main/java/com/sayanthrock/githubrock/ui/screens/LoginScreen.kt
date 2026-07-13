@@ -4,10 +4,13 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,15 +37,16 @@ fun LoginScreen(
     auth: DeviceAuthState,
     onLogin: () -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
+    onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
     onDemo: () -> Unit
 ) {
     val context = LocalContext.current
     val code = auth.code
-    var hasOpenedVerificationUri by rememberSaveable(code?.verificationUri) {
+    var hasOpenedVerificationUri by rememberSaveable(code?.deviceCode) {
         mutableStateOf(false)
     }
-    LaunchedEffect(code?.verificationUri) {
+    LaunchedEffect(code?.deviceCode) {
         val verificationUri = code?.verificationUri
         if (verificationUri != null && !hasOpenedVerificationUri) {
             hasOpenedVerificationUri = true
@@ -52,7 +56,11 @@ fun LoginScreen(
 
     Box(Modifier.fillMaxSize().padding(WindowInsets.safeDrawing.asPaddingValues()), contentAlignment = Alignment.Center) {
         Column(
-            Modifier.fillMaxWidth().widthIn(max = 560.dp).padding(24.dp),
+            Modifier
+                .fillMaxWidth()
+                .widthIn(max = 560.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
@@ -87,30 +95,97 @@ fun LoginScreen(
                 OutlinedButton(onClick = onGuest, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Continue as guest") }
                 TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) { Text("Explore isolated demo mode") }
             } else {
-                DeviceCodeCard(auth, onCopy = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", code.userCode))
-                }, onOpen = {
-                    onOpenGitHubUrl(code.verificationUri)
-                })
+                DeviceCodeCard(
+                    auth = auth,
+                    checking = loading,
+                    onCopy = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", code.userCode))
+                    },
+                    onOpen = {
+                        onOpenGitHubUrl(code.verificationUri)
+                    },
+                    onCheck = onCheckAuthorization,
+                    onRestart = onLogin,
+                    onGuest = onGuest
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DeviceCodeCard(auth: DeviceAuthState, onCopy: () -> Unit, onOpen: () -> Unit) {
+private fun DeviceCodeCard(
+    auth: DeviceAuthState,
+    checking: Boolean,
+    onCopy: () -> Unit,
+    onOpen: () -> Unit,
+    onCheck: () -> Unit,
+    onRestart: () -> Unit,
+    onGuest: () -> Unit
+) {
     val code = requireNotNull(auth.code)
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Verify on GitHub", style = MaterialTheme.typography.titleLarge)
             Text(code.userCode, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black)
+            Text(
+                "You can enter this code at github.com/login/device in any trusted browser.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                "GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+                textAlign = TextAlign.Center
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onCopy) { Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(8.dp)); Text("Copy code") }
-                Button(onClick = onOpen) { Icon(Icons.Default.OpenInBrowser, null); Spacer(Modifier.width(8.dp)); Text("Open GitHub") }
+                OutlinedButton(onClick = onCopy) {
+                    Icon(Icons.Default.ContentCopy, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Copy code")
+                }
+                Button(onClick = onOpen) {
+                    Icon(Icons.Default.OpenInBrowser, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open GitHub")
+                }
             }
-            Text(auth.error ?: auth.status.orEmpty(), color = if (auth.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text(
+                "After GitHub says you’re all set, return here with Android Back or the app switcher. The browser cannot reopen GitHub Rock automatically.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Button(
+                onClick = onCheck,
+                enabled = !checking,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Refresh, null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (checking) "Checking GitHub…" else "I’ve authorized — check now")
+            }
+            TextButton(onClick = onRestart, enabled = !checking) {
+                Text("Get a new verification code")
+            }
+            TextButton(onClick = onGuest, enabled = !checking) {
+                Text("Use guest mode instead")
+            }
+            Text(
+                auth.error ?: auth.status.orEmpty(),
+                color = if (auth.error != null) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                textAlign = TextAlign.Center
+            )
+            if (auth.error == null) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
         }
     }
 }
