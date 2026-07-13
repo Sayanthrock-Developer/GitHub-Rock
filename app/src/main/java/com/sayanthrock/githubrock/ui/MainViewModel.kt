@@ -29,6 +29,10 @@ data class MainUiState(
     val mode: AppMode? = null,
     val isLoading: Boolean = false,
     val profile: GitHubUser? = null,
+    val followers: List<Owner> = emptyList(),
+    val following: List<Owner> = emptyList(),
+    val socialLoading: Boolean = false,
+    val socialError: String? = null,
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val workflowRuns: List<WorkflowRun> = emptyList(),
     val rateLimit: RateLimit? = null,
@@ -110,6 +114,8 @@ class MainViewModel @Inject constructor(
         _state.value = MainUiState(
             mode = AppMode.Demo,
             profile = DemoData.profile,
+            followers = DemoData.followers,
+            following = DemoData.following,
             repositories = DemoData.repositories,
             workflowRuns = DemoData.workflows,
             rateLimit = RateLimit(5_000, 4_862, 0),
@@ -132,6 +138,11 @@ class MainViewModel @Inject constructor(
 
     fun rememberRepository(repository: GitHubRepositoryModel) {
         if (_state.value.mode != AppMode.Demo) viewModelScope.launch { githubRepository.remember(repository) }
+    }
+
+    fun refreshSocialConnections() {
+        if (_state.value.mode != AppMode.Connected) return
+        viewModelScope.launch { loadSocialConnections() }
     }
 
     fun logout() {
@@ -191,13 +202,46 @@ class MainViewModel @Inject constructor(
                         profile = payload.profile,
                         rateLimit = payload.rateLimit,
                         repositories = payload.repositories,
-                        workflowRuns = runs
+                        workflowRuns = runs,
+                        socialLoading = true,
+                        socialError = null
                     )
                 }
+                viewModelScope.launch { loadSocialConnections() }
             }
             .onFailure { error -> _state.update { it.copy(isLoading = false, message = error.userMessage()) } }
     }
+
+    private suspend fun loadSocialConnections() {
+        _state.update { it.copy(socialLoading = true, socialError = null) }
+        runCatching { githubRepository.socialConnections() }
+            .onSuccess { social ->
+                _state.update {
+                    it.copy(
+                        followers = social.followers,
+                        following = social.following,
+                        socialLoading = false,
+                        socialError = null
+                    )
+                }
+            }
+            .onFailure { error ->
+                _state.update {
+                    it.copy(
+                        socialLoading = false,
+                        socialError = error.socialUserMessage()
+                    )
+                }
+            }
+    }
 }
+
+private fun Throwable.socialUserMessage(): String =
+    if (this is retrofit2.HttpException && code() == 403) {
+        "GitHub denied follower access. Set Account permissions → Followers to Read-only and authorize the app again."
+    } else {
+        userMessage()
+    }
 
 private fun Throwable.userMessage(): String = when (this) {
     is retrofit2.HttpException -> when (code()) {
