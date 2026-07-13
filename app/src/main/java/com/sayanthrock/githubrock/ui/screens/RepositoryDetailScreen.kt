@@ -73,6 +73,10 @@ fun RepositoryDetailScreen(
     var newPullHead by remember { mutableStateOf("") }
     var newPullBody by remember { mutableStateOf("") }
     var issueStateAction by remember { mutableStateOf<GitHubIssue?>(null) }
+    var showIssueMetadata by remember { mutableStateOf(false) }
+    var issueLabelsDraft by remember { mutableStateOf("") }
+    var issueAssigneesDraft by remember { mutableStateOf("") }
+    var issueMilestoneDraft by remember { mutableStateOf("") }
     var showForkConfirmation by remember { mutableStateOf(false) }
     var showCreateRelease by remember { mutableStateOf(false) }
     var newReleaseTag by remember { mutableStateOf("") }
@@ -181,7 +185,14 @@ fun RepositoryDetailScreen(
                     item { OutlinedButton(onClick = { showCreateIssue = true }, Modifier.fillMaxWidth()) { Text("New issue") } }
                     items(state.issues, key = { it.id }) { issue ->
                         SummaryCard("#${issue.number} ${issue.title}", "${issue.state} • ${issue.user.login} • ${issue.commentCount} comments")
-                        TextButton(onClick = { selectedIssue = issue; issueCommentDraft = ""; viewModel.loadIssueComments(issue.number) }) { Text("Open issue") }
+                        TextButton(onClick = {
+                            selectedIssue = issue
+                            issueCommentDraft = ""
+                            issueLabelsDraft = issue.labels.joinToString(", ") { it.name }
+                            issueAssigneesDraft = issue.assignees.joinToString(", ") { it.login }
+                            issueMilestoneDraft = issue.milestone?.number?.toString().orEmpty()
+                            viewModel.loadIssueComments(issue.number)
+                        }) { Text("Open issue") }
                     }
                 }
                 RepoSection.Pulls -> {
@@ -282,7 +293,8 @@ fun RepositoryDetailScreen(
             dismissButton = { TextButton(onClick = { dispatchWorkflow = null }) { Text("Cancel") } }
         )
     }
-    selectedIssue?.let { issue ->
+    selectedIssue?.let { selected ->
+        val issue = state.issues.firstOrNull { it.id == selected.id } ?: selected
         AlertDialog(
             onDismissRequest = { selectedIssue = null },
             title = { Text("#${issue.number} ${issue.title}") },
@@ -290,6 +302,17 @@ fun RepositoryDetailScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(issue.body?.ifBlank { "No issue description." } ?: "No issue description.")
                     if (issue.labels.isNotEmpty()) Text("Labels: ${issue.labels.joinToString { it.name }}", style = MaterialTheme.typography.bodySmall)
+                    if (issue.assignees.isNotEmpty()) Text("Assignees: ${issue.assignees.joinToString { it.login }}", style = MaterialTheme.typography.bodySmall)
+                    Text("Milestone: ${issue.milestone?.title ?: "None"}", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "Reactions: +1 ${issue.reactions.plusOne} • heart ${issue.reactions.heart} • rocket ${issue.reactions.rocket} • eyes ${issue.reactions.eyes}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf("+1" to "+1", "heart" to "♥", "rocket" to "🚀", "eyes" to "👀").forEach { (reaction, label) ->
+                            AssistChip(onClick = { viewModel.addIssueReaction(issue.number, reaction) }, label = { Text(label) })
+                        }
+                    }
                     Text("Comments", fontWeight = FontWeight.SemiBold)
                     if (state.issueComments.isEmpty()) Text("No comments yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     state.issueComments.takeLast(4).forEach { comment ->
@@ -304,13 +327,44 @@ fun RepositoryDetailScreen(
                     )
                 }
             },
-            confirmButton = { TextButton(onClick = { viewModel.addIssueComment(issue.number, issueCommentDraft); issueCommentDraft = "" }) { Text("Comment") } },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        issueLabelsDraft = issue.labels.joinToString(", ") { it.name }
+                        issueAssigneesDraft = issue.assignees.joinToString(", ") { it.login }
+                        issueMilestoneDraft = issue.milestone?.number?.toString().orEmpty()
+                        showIssueMetadata = true
+                    }) { Text("Edit metadata") }
+                    TextButton(onClick = { viewModel.addIssueComment(issue.number, issueCommentDraft); issueCommentDraft = "" }) { Text("Comment") }
+                }
+            },
             dismissButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     TextButton(onClick = { issueStateAction = issue }) { Text(if (issue.state == "open") "Close issue" else "Reopen") }
                     TextButton(onClick = { selectedIssue = null }) { Text("Close") }
                 }
             }
+        )
+    }
+    if (showIssueMetadata) {
+        AlertDialog(
+            onDismissRequest = { showIssueMetadata = false },
+            title = { Text("Edit issue metadata") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Leave labels or assignees empty to clear them. Milestone accepts a number; separate multiple values with commas.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(value = issueLabelsDraft, onValueChange = { issueLabelsDraft = it }, label = { Text("Labels") }, singleLine = true)
+                    OutlinedTextField(value = issueAssigneesDraft, onValueChange = { issueAssigneesDraft = it }, label = { Text("Assignees (usernames)") }, singleLine = true)
+                    OutlinedTextField(value = issueMilestoneDraft, onValueChange = { issueMilestoneDraft = it }, label = { Text("Milestone number") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedIssue?.let { issue -> viewModel.updateIssueMetadata(issue.number, issueLabelsDraft, issueAssigneesDraft, issueMilestoneDraft) }
+                    showIssueMetadata = false
+                }) { Text("Save metadata") }
+            },
+            dismissButton = { TextButton(onClick = { showIssueMetadata = false }) { Text("Cancel") } }
         )
     }
     issueStateAction?.let { issue ->
