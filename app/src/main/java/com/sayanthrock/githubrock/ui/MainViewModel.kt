@@ -57,16 +57,40 @@ class MainViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, auth = DeviceAuthState(status = "Requesting a device code…")) }
             try {
                 val code = authRepository.begin()
-                _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code, "Waiting for approval on GitHub…")) }
-                authRepository.poll(code) { status ->
-                    _state.update { current -> current.copy(auth = current.auth.copy(status = status)) }
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        auth = DeviceAuthState(code, "Waiting for approval on GitHub…")
+                    )
                 }
-                _state.update { it.copy(mode = AppMode.Connected, auth = DeviceAuthState(), isLoading = true) }
-                loadConnectedDashboard()
+                completeLogin(code)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _state.update { it.copy(isLoading = false, auth = it.auth.copy(error = error.userMessage())) }
+                reportAuthFailure(error)
+            }
+        }
+    }
+
+    fun checkLoginStatus() {
+        val code = _state.value.auth.code ?: return
+        authJob?.cancel()
+        authJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    auth = it.auth.copy(
+                        status = "Checking GitHub authorization…",
+                        error = null
+                    )
+                )
+            }
+            try {
+                completeLogin(code)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                reportAuthFailure(error)
             }
         }
     }
@@ -118,6 +142,28 @@ class MainViewModel @Inject constructor(
     }
 
     fun dismissMessage() = _state.update { it.copy(message = null) }
+
+    private suspend fun completeLogin(code: DeviceCodeResponse) {
+        authRepository.poll(code) { status ->
+            _state.update { current ->
+                current.copy(
+                    isLoading = false,
+                    auth = current.auth.copy(status = status, error = null)
+                )
+            }
+        }
+        _state.update { it.copy(mode = AppMode.Connected, auth = DeviceAuthState(), isLoading = true) }
+        loadConnectedDashboard()
+    }
+
+    private fun reportAuthFailure(error: Exception) {
+        _state.update {
+            it.copy(
+                isLoading = false,
+                auth = it.auth.copy(error = error.userMessage())
+            )
+        }
+    }
 
     private fun connectExistingSession() {
         viewModelScope.launch {
