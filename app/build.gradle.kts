@@ -17,9 +17,11 @@ val localProperties = Properties().apply {
 fun quotedBuildConfig(value: String): String =
     "\"${value.trim().trim('"').replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
+val bundledGitHubClientId = "Iv23Bz9KwjI8S24igW"
 val githubClientId = sequenceOf(
     localProperties.getProperty("GITHUB_CLIENT_ID"),
-    System.getenv("GITHUB_CLIENT_ID")
+    System.getenv("GITHUB_CLIENT_ID"),
+    bundledGitHubClientId
 ).firstOrNull { !it.isNullOrBlank() }.orEmpty()
 val configuredVersionName = providers.gradleProperty("GITHUB_ROCK_VERSION_NAME").orNull
     ?.trim()?.takeIf(String::isNotBlank) ?: "0.1.0"
