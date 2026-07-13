@@ -39,8 +39,9 @@ class MainActivity : ComponentActivity() {
         if (!GitHubUrlPolicy.isGitHubHttpsUrl(url) || GitHubUrlPolicy.isRepositoryUrl(url)) {
             return false
         }
-        incomingIntent.data = null
-        return GitHubExternalLinkLauncher.open(this, url)
+        val opened = GitHubExternalLinkLauncher.open(this, url)
+        if (opened) incomingIntent.data = null
+        return opened
     }
 }
 
