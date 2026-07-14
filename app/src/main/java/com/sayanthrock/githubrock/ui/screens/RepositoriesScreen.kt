@@ -65,7 +65,7 @@ fun RepositoriesScreen(
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(top = 16.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
