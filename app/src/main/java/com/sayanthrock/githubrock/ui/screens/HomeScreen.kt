@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -57,7 +56,6 @@ fun HomeScreen(
             Spacer(Modifier.height(10.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 item { DashboardMetric("Loaded repos", repositories.size.toString(), Icons.Default.Folder) }
-                item { DashboardMetric("Followers", (profile?.followers ?: 0).toString(), Icons.Default.People) }
                 item { DashboardMetric(workflowRepositoryLabel?.let { "Active · $it" } ?: "Active workflows", activeWorkflows.toString(), Icons.Default.CloudQueue) }
                 item {
                     DashboardMetric(
