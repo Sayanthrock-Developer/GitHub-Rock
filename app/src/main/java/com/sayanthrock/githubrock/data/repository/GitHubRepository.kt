@@ -13,17 +13,23 @@ import javax.inject.Singleton
 @Singleton
 class GitHubRepository @Inject constructor(
     private val api: GitHubRestApi,
-    private val recentDao: RepositoryDao
+    private val recentDao: RepositoryDao,
+    private val artworkResolver: RepositoryArtworkResolver
 ) {
     suspend fun dashboard(): DashboardPayload = withContext(Dispatchers.IO) {
         val profile = api.me()
         val rate = api.rateLimit().rate
-        val repos = api.repositories()
+        val repos = artworkResolver.attach(api.repositories())
         DashboardPayload(profile, rate, repos)
     }
 
-    suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> =
-        api.searchRepositories(query.ifBlank { "android stars:>1000" }, sort = "updated").items
+    suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> = withContext(Dispatchers.IO) {
+        val repositories = api.searchRepositories(
+            query.ifBlank { "android stars:>1000" },
+            sort = "updated"
+        ).items
+        artworkResolver.attach(repositories)
+    }
 
     suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =
         if (starred) api.starRepository(owner, repo).isSuccessful else api.unstarRepository(owner, repo).isSuccessful
