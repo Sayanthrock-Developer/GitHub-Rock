@@ -1,7 +1,6 @@
 package com.sayanthrock.githubrock.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -98,11 +97,9 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 state = state,
                 onSearch = viewModel::searchRepositories,
                 onRememberRepository = viewModel::rememberRepository,
-                onRefreshSocial = viewModel::refreshSocialConnections,
                 onLogout = viewModel::logout
             )
         }
         SnackbarHost(snackbar)
     }
 }
-
