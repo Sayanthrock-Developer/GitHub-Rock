@@ -234,11 +234,23 @@ private fun DashboardMetric(label: String, value: String, icon: ImageVector, isW
 private fun SectionHeading(title: String, supporting: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(supporting, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+        Text(
+            title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            supporting,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -289,12 +301,28 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 
 @Composable
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) {
-                Icon(Icons.Default.Folder, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(repo.fullName, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    repo.fullName,
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
             Text(
                 repo.description ?: "No description",
@@ -328,4 +356,3 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
         }
     }
 }
-

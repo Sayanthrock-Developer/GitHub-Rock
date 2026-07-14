@@ -4,7 +4,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
+import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.core.model.RateLimit
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
@@ -43,5 +45,33 @@ class HomeScreenTest {
         compose.onNodeWithText("4862 / 5000").assertIsDisplayed()
         compose.onNodeWithText("Build APK").performClick()
         compose.runOnIdle { assertTrue(openedBuilds) }
+    }
+
+    @Test fun repositoryDescriptionUsesFullCardTouchTarget() {
+        var openedRepository = false
+        val repository = GitHubRepositoryModel(
+            id = 1,
+            name = "GitHub-Rock",
+            fullName = "SayanthRock/GitHub-Rock",
+            owner = Owner(login = "SayanthRock"),
+            description = "Native Android GitHub control centre"
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                HomeScreen(
+                    mode = AppMode.Connected,
+                    profile = null,
+                    rateLimit = null,
+                    repositories = listOf(repository),
+                    runs = emptyList(),
+                    onOpenRepo = { openedRepository = it.id == repository.id },
+                    onOpenBuilds = {}
+                )
+            }
+        }
+
+        compose.onNodeWithText("Native Android GitHub control centre").performClick()
+        compose.runOnIdle { assertTrue(openedRepository) }
     }
 }

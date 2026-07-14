@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">GitHub Rock</string>
+    <string name="clear_repository_search">Clear repository search</string>
 </resources>
-
