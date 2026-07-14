@@ -40,6 +40,13 @@ private val LightColors = lightColorScheme(
     onSurfaceVariant = Color(0xFF59636E)
 )
 
+/**
+ * Applies the GitHub Rock color scheme and typography to the provided content.
+ *
+ * @param darkTheme Whether to use the dark theme.
+ * @param dynamicColor Whether to use the system dynamic color scheme when supported.
+ * @param content The composable content to theme.
+ */
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

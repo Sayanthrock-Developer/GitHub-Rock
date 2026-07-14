@@ -18,6 +18,14 @@ import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
+/**
+ * Displays a searchable list of repositories with loading and empty states.
+ *
+ * @param repositories The repositories to display.
+ * @param loading Whether repository data is currently loading.
+ * @param onSearch Called with the submitted or cleared search query.
+ * @param onOpen Called when a repository is selected.
+ */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun RepositoriesScreen(
