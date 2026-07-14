@@ -41,11 +41,11 @@ private val LightColors = lightColorScheme(
 )
 
 /**
- * Applies the GitHub Rock color scheme and typography to the provided content.
+ * Applies the GitHub Rock Material theme to the provided content.
  *
- * @param darkTheme Whether to use the dark theme.
- * @param dynamicColor Whether to use the system dynamic color scheme when supported.
- * @param content The composable content to theme.
+ * @param darkTheme Whether to use the dark color scheme.
+ * @param dynamicColor Whether to use system-provided dynamic colors on Android 12 and later.
+ * @param content The composable content to display within the theme.
  */
 @Composable
 fun GitHubRockTheme(
