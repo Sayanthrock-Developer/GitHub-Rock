@@ -78,7 +78,7 @@ fun RepositoryShowcaseScreen(
     }
 
     val displayedRepository = state.repository ?: repository
-    val openGitHub = {
+    val openGitHub: () -> Unit = {
         displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
