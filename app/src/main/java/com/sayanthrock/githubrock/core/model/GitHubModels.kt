@@ -28,6 +28,7 @@ data class GitHubRepositoryModel(
     val description: String? = null,
     val private: Boolean = false,
     val fork: Boolean = false,
+    @SerialName("is_template") val isTemplate: Boolean = false,
     @SerialName("html_url") val htmlUrl: String = "",
     @SerialName("clone_url") val cloneUrl: String = "",
     @SerialName("default_branch") val defaultBranch: String = "main",
