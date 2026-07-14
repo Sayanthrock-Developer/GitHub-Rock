@@ -29,10 +29,6 @@ data class MainUiState(
     val mode: AppMode? = null,
     val isLoading: Boolean = false,
     val profile: GitHubUser? = null,
-    val followers: List<Owner> = emptyList(),
-    val following: List<Owner> = emptyList(),
-    val socialLoading: Boolean = false,
-    val socialError: String? = null,
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val workflowRuns: List<WorkflowRun> = emptyList(),
     val rateLimit: RateLimit? = null,
@@ -50,7 +46,6 @@ class MainViewModel @Inject constructor(
     val state: StateFlow<MainUiState> = _state.asStateFlow()
     val loginConfigured: Boolean get() = authRepository.isConfigured
     private var authJob: Job? = null
-    private var socialJob: Job? = null
 
     init {
         if (authRepository.hasSession) connectExistingSession()
@@ -102,7 +97,6 @@ class MainViewModel @Inject constructor(
 
     fun continueAsGuest() {
         authJob?.cancel()
-        socialJob?.cancel()
         _state.update { MainUiState(mode = AppMode.Guest, isLoading = true) }
         viewModelScope.launch {
             runCatching { githubRepository.publicRepositories("") }
@@ -113,12 +107,9 @@ class MainViewModel @Inject constructor(
 
     fun enterDemo() {
         authJob?.cancel()
-        socialJob?.cancel()
         _state.value = MainUiState(
             mode = AppMode.Demo,
             profile = DemoData.profile,
-            followers = DemoData.followers,
-            following = DemoData.following,
             repositories = DemoData.repositories,
             workflowRuns = DemoData.workflows,
             rateLimit = RateLimit(5_000, 4_862, 0),
@@ -143,15 +134,8 @@ class MainViewModel @Inject constructor(
         if (_state.value.mode != AppMode.Demo) viewModelScope.launch { githubRepository.remember(repository) }
     }
 
-    fun refreshSocialConnections() {
-        if (_state.value.mode != AppMode.Connected) return
-        socialJob?.cancel()
-        socialJob = viewModelScope.launch { loadSocialConnections() }
-    }
-
     fun logout() {
         authJob?.cancel()
-        socialJob?.cancel()
         monitorScheduler.cancelAll()
         authRepository.logout()
         _state.value = MainUiState()
@@ -207,53 +191,13 @@ class MainViewModel @Inject constructor(
                         profile = payload.profile,
                         rateLimit = payload.rateLimit,
                         repositories = payload.repositories,
-                        workflowRuns = runs,
-                        socialLoading = true,
-                        socialError = null
+                        workflowRuns = runs
                     )
                 }
-                socialJob?.cancel()
-                socialJob = viewModelScope.launch { loadSocialConnections() }
             }
             .onFailure { error -> _state.update { it.copy(isLoading = false, message = error.userMessage()) } }
     }
-
-    private suspend fun loadSocialConnections() {
-        if (_state.value.mode != AppMode.Connected) return
-        _state.update { it.copy(socialLoading = true, socialError = null) }
-        try {
-            val social = githubRepository.socialConnections()
-            if (_state.value.mode == AppMode.Connected) {
-                _state.update {
-                    it.copy(
-                        followers = social.followers,
-                        following = social.following,
-                        socialLoading = false,
-                        socialError = null
-                    )
-                }
-            }
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            if (_state.value.mode == AppMode.Connected) {
-                _state.update {
-                    it.copy(
-                        socialLoading = false,
-                        socialError = error.socialUserMessage()
-                    )
-                }
-            }
-        }
-    }
 }
-
-private fun Throwable.socialUserMessage(): String =
-    if (this is retrofit2.HttpException && code() == 403) {
-        "GitHub denied follower access. Set Account permissions → Followers to Read-only and authorize the app again."
-    } else {
-        userMessage()
-    }
 
 private fun Throwable.userMessage(): String = when (this) {
     is retrofit2.HttpException -> when (code()) {

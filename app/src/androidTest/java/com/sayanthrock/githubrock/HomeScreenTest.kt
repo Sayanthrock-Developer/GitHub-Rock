@@ -27,8 +27,7 @@ class HomeScreenTest {
                     profile = GitHubUser(
                         login = "SayanthRock",
                         id = 202829406,
-                        name = "Sayanth Rock",
-                        followers = 248
+                        name = "Sayanth Rock"
                     ),
                     rateLimit = RateLimit(limit = 5_000, remaining = 4_862, reset = 0),
                     repositories = emptyList(),

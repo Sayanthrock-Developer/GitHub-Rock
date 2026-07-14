@@ -15,7 +15,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Android 10+ (`minSdk 29`), `compileSdk` / `targetSdk` 36
 - GitHub App Device Flow with pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
 - Guest access for public repositories and a fully isolated demo workspace
-- Connected profile with follower/following previews, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
+- Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
 - Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
@@ -29,12 +29,12 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Screen | What it shows |
 | --- | --- |
 | Login | GitHub Device Flow, guest access, and clearly labelled demo mode |
-| Home | Premium profile hero, API health, follower/repository/build metrics, quick actions, workflow status, and repositories |
+| Home | Premium profile hero, API health, repository/build metrics, quick actions, workflow status, and repositories |
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and Releases sections |
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
 | Downloads | Live artifact progress, pause/resume/cancel/restart controls, verified history, sharing, and APK inspection |
-| Profile | Account/session mode, public repository/follower/following counts and previews, retry states, and token-security information |
+| Profile | Account/session mode, public repository count, and token-security information |
 
 PNG screenshots will be added after the first instrumented device capture. No mock screenshot is presented as a running build.
 
@@ -98,11 +98,10 @@ Recommended account permissions:
 
 | Permission | Access | Used for |
 | --- | --- | --- |
-| Followers | Read-only | Follower/following previews on Profile and follower metrics on Home |
 | Email addresses | Read-only only if enabled later | Private email display; not required by the current UI |
 | Starring | Read & write only if star controls are enabled | Star/unstar repositories |
 
-After changing an account permission, save the GitHub App settings and re-authorize the user so GitHub can grant the updated account access. Repository or organization permission changes instead require approval from the GitHub App installation owner. Permissions should only be enabled when their corresponding UI is active. GitHub Rock never asks for a GitHub password.
+The Followers account permission is not required. After changing an account permission, save the GitHub App settings and re-authorize the user so GitHub can grant the updated account access. Repository or organization permission changes instead require approval from the GitHub App installation owner. Permissions should only be enabled when their corresponding UI is active. GitHub Rock never asks for a GitHub password.
 
 ## Build
 
@@ -170,7 +169,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 - GitHub Device Flow session acquisition/storage/refresh/logout foundation
 - Guest and isolated demo entry
-- Connected dashboard request with API health, follower reach, active/failed workflow metrics, and authorized repository listing
+- Connected dashboard request with API health, active/failed workflow metrics, and authorized repository listing
 - Public repository search
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
 - Issue metadata editing for labels, assignees, milestones, and reactions

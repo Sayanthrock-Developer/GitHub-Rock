@@ -5,9 +5,9 @@ import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class GitHubUserSocialCountsTest {
-    @Test fun authenticatedProfileDecodesFollowerDistributionCounts() {
-        val user = Json.decodeFromString<GitHubUser>(
+class GitHubUserProfileTest {
+    @Test fun profileIgnoresUnusedSocialFields() {
+        val user = Json { ignoreUnknownKeys = true }.decodeFromString<GitHubUser>(
             """
             {
               "login": "SayanthRock",
@@ -20,8 +20,7 @@ class GitHubUserSocialCountsTest {
             """.trimIndent()
         )
 
-        assertEquals(120, user.followers)
-        assertEquals(73, user.following)
+        assertEquals("SayanthRock", user.login)
         assertEquals(24, user.publicRepos)
     }
 }
