@@ -336,7 +336,13 @@ private fun RepositoryReleasePanel(
     initialTag: String?,
     onDownload: (ReleaseAsset) -> Unit
 ) {
-    var filter by rememberSaveable { mutableStateOf(ReleaseFilter.Stable) }
+    var filter by rememberSaveable(initialTag, releases) {
+        mutableStateOf(
+            releases.firstOrNull { it.tagName == initialTag && it.prerelease }
+                ?.let { ReleaseFilter.PreRelease }
+                ?: ReleaseFilter.Stable
+        )
+    }
     val visibleReleases = releases.filterNot { it.draft }.filter { release ->
         when (filter) {
             ReleaseFilter.Stable -> !release.prerelease
