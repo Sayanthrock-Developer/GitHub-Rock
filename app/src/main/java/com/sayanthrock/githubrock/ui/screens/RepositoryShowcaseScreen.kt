@@ -365,9 +365,16 @@ private fun RepositoryProjectIcon(repository: GitHubRepositoryModel, modifier: M
 
 @Composable
 private fun RepositoryTypeBadge(repository: GitHubRepositoryModel) {
+    val applicationTopic = repository.topics.any { topic ->
+        topic.equals("android", ignoreCase = true) ||
+            topic.equals("app", ignoreCase = true) ||
+            topic.equals("application", ignoreCase = true) ||
+            topic.endsWith("-app", ignoreCase = true) ||
+            topic.endsWith("-application", ignoreCase = true)
+    }
     val label = when {
         repository.isTemplate -> "Template"
-        repository.topics.any { it.equals("android", true) || it.contains("app", true) } -> "Application"
+        applicationTopic -> "Application"
         else -> "Repository"
     }
     Surface(
