@@ -230,6 +230,12 @@ private fun DashboardMetric(label: String, value: String, icon: ImageVector, isW
     }
 }
 
+/**
+ * Displays a section title alongside supporting text.
+ *
+ * @param title The section title.
+ * @param supporting The supporting text displayed beside the title.
+ */
 @Composable
 private fun SectionHeading(title: String, supporting: String) {
     Row(
@@ -299,6 +305,12 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
     else -> MaterialTheme.colorScheme.primary
 }
 
+/**
+ * Displays a repository summary card that invokes the click handler when selected.
+ *
+ * @param repo The repository whose details are displayed.
+ * @param onClick The action to invoke when the card is selected.
+ */
 @Composable
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     GlassCard(
