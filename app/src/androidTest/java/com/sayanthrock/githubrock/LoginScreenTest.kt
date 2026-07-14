@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -147,6 +148,38 @@ class LoginScreenTest {
         compose.onNodeWithText("Secure authentication via GitHub").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("OPEN GITHUB").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(opened) }
+    }
+
+    @Test fun expiredCodeDisablesAuthorizationActionsAndOffersRestart() {
+        var restarted = false
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                LoginScreen(
+                    configured = true,
+                    loading = false,
+                    auth = DeviceAuthState(
+                        code = DeviceCodeResponse(
+                            deviceCode = "expired-device-code",
+                            userCode = "ABCD-EFGH",
+                            verificationUri = "https://github.com/login/device",
+                            expiresIn = 0,
+                            interval = 5
+                        )
+                    ),
+                    onLogin = { restarted = true },
+                    onOpenGitHubUrl = {},
+                    onCheckAuthorization = {},
+                    onGuest = {},
+                    onDemo = {}
+                )
+            }
+        }
+
+        compose.onNodeWithText("Code expired — request a new one").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("OPEN GITHUB").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("I’ve authorized — check now").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Get a new verification code").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(restarted) }
     }
 
     @Test fun authorizedUserCanRequestAnImmediateStatusCheck() {
