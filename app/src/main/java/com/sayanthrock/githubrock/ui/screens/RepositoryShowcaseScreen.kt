@@ -23,12 +23,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -64,15 +62,12 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
-/**
- * Visual landing page shown before the advanced repository management workspace.
- */
+/** Premium repository preview without a separate workspace entry. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositoryShowcaseScreen(
     repository: GitHubRepositoryModel?,
     onBack: () -> Unit,
-    onOpenWorkspace: () -> Unit,
     viewModel: RepositoryShowcaseViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -83,6 +78,11 @@ fun RepositoryShowcaseScreen(
     }
 
     val displayedRepository = state.repository ?: repository
+    val openGitHub: () -> Unit = {
+        displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -94,9 +94,9 @@ fun RepositoryShowcaseScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        displayedRepository?.owner?.login?.let {
+                        displayedRepository?.owner?.login?.let { owner ->
                             Text(
-                                "@$it",
+                                "@$owner",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -109,13 +109,12 @@ fun RepositoryShowcaseScreen(
                     }
                 },
                 actions = {
-                    displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
-                        IconButton(
-                            onClick = {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                            }
-                        ) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = "Open repository on GitHub")
+                    if (!displayedRepository?.htmlUrl.isNullOrBlank()) {
+                        IconButton(onClick = openGitHub) {
+                            Icon(
+                                Icons.Default.OpenInNew,
+                                contentDescription = "Open repository on GitHub"
+                            )
                         }
                     }
                 },
@@ -133,12 +132,7 @@ fun RepositoryShowcaseScreen(
             error = state.error,
             readmeError = state.readmeError,
             onRetry = viewModel::retry,
-            onOpenWorkspace = onOpenWorkspace,
-            onOpenGitHub = {
-                displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                }
-            },
+            onOpenGitHub = openGitHub,
             modifier = Modifier.padding(padding)
         )
     }
@@ -153,7 +147,6 @@ fun RepositoryShowcaseContent(
     error: String?,
     readmeError: String?,
     onRetry: () -> Unit,
-    onOpenWorkspace: () -> Unit,
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -170,7 +163,11 @@ fun RepositoryShowcaseContent(
             item {
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            Icons.Default.ErrorOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
                         Text(message, color = MaterialTheme.colorScheme.error)
                         OutlinedButton(onClick = onRetry) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
@@ -186,27 +183,15 @@ fun RepositoryShowcaseContent(
             item { RepositoryIdentityHero(repo) }
             item { RepositoryDescriptionCard(repo) }
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                OutlinedButton(
+                    onClick = onOpenGitHub,
+                    enabled = repo.htmlUrl.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
-                    Button(
-                        onClick = onOpenWorkspace,
-                        modifier = Modifier.weight(1f).height(54.dp)
-                    ) {
-                        Icon(Icons.Default.Code, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Developer workspace")
-                    }
-                    OutlinedButton(
-                        onClick = onOpenGitHub,
-                        enabled = repo.htmlUrl.isNotBlank(),
-                        modifier = Modifier.height(54.dp)
-                    ) {
-                        Icon(Icons.Default.OpenInNew, contentDescription = null)
-                        Spacer(Modifier.width(7.dp))
-                        Text("GitHub")
-                    }
+                    Icon(Icons.Default.OpenInNew, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open on GitHub", fontWeight = FontWeight.Bold)
                 }
             }
             item { RepositoryDetailsGrid(repo) }
@@ -215,34 +200,7 @@ fun RepositoryShowcaseContent(
             }
         }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("README.md", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Project documentation",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Surface(
-                    shape = RoundedCornerShape(999.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
-                ) {
-                    Text(
-                        "Rendered",
-                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
+        item { ReadmeHeader() }
 
         when {
             readmeLoading -> item {
@@ -253,16 +211,18 @@ fun RepositoryShowcaseContent(
                     }
                 }
             }
-            readme != null -> item {
-                RepositoryReadmeCard(readme)
-            }
+            readme != null -> item { RepositoryReadmeCard(readme) }
             readmeError != null -> item {
                 GlassCard {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -316,7 +276,9 @@ private fun RepositoryIdentityHero(repository: GitHubRepositoryModel) {
                     if (repository.private) MiniBadge("Private")
                     if (repository.fork) MiniBadge("Fork")
                     if (repository.isTemplate) MiniBadge("Template")
-                    if (!repository.private && !repository.fork && !repository.isTemplate) MiniBadge("Public")
+                    if (!repository.private && !repository.fork && !repository.isTemplate) {
+                        MiniBadge("Public")
+                    }
                 }
             }
         }
@@ -357,7 +319,10 @@ private fun RepositoryProjectIcon(repository: GitHubRepositoryModel, modifier: M
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Folder, contentDescription = "${repository.name} application icon")
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = "${repository.name} application icon"
+                )
             }
         }
     }
@@ -411,7 +376,11 @@ private fun MiniBadge(label: String) {
 private fun RepositoryDescriptionCard(repository: GitHubRepositoryModel) {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("About this project", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "About this project",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 repository.description ?: "This repository does not have a description yet.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -430,7 +399,11 @@ private fun RepositoryDescriptionCard(repository: GitHubRepositoryModel) {
 @Composable
 private fun RepositoryDetailsGrid(repository: GitHubRepositoryModel) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Project details", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "Project details",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             DetailTile("Stars", compactCount(repository.stars), Modifier.weight(1f))
             DetailTile("Forks", compactCount(repository.forks), Modifier.weight(1f))
@@ -441,7 +414,11 @@ private fun RepositoryDetailsGrid(repository: GitHubRepositoryModel) {
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             DetailTile("Branch", repository.defaultBranch, Modifier.weight(1f))
-            DetailTile("Updated", repository.updatedAt.take(10).ifBlank { "Unknown" }, Modifier.weight(1f))
+            DetailTile(
+                "Updated",
+                repository.updatedAt.take(10).ifBlank { "Unknown" },
+                Modifier.weight(1f)
+            )
         }
     }
 }
@@ -458,7 +435,11 @@ private fun DetailTile(label: String, value: String, modifier: Modifier = Modifi
             modifier = Modifier.padding(15.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+            Text(
+                label,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge
+            )
             Text(
                 value,
                 style = MaterialTheme.typography.titleLarge,
@@ -496,6 +477,40 @@ private fun RepositoryTopics(topics: List<String>) {
 }
 
 @Composable
+private fun ReadmeHeader() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                "README.md",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "Project documentation",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+        ) {
+            Text(
+                "Rendered",
+                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
 private fun RepositoryReadmeCard(markdown: String) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
@@ -504,7 +519,7 @@ private fun RepositoryReadmeCard(markdown: String) {
             if (blocks.size > MAX_README_BLOCKS) {
                 HorizontalDivider()
                 Text(
-                    "README preview truncated for performance. Open the developer workspace to inspect the complete file.",
+                    "README preview shortened for smooth performance. Open the repository on GitHub to read the complete document.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )

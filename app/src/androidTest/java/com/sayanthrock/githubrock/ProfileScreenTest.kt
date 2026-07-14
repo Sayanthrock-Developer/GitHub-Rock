@@ -3,17 +3,21 @@ package com.sayanthrock.githubrock
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class ProfileScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedProfileShowsRepositoryCountWithoutSocialSections() {
+    @Test fun connectedProfileShowsRepositoryCountAndFeaturePreview() {
+        var openedFeatures = false
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ProfileScreen(
@@ -23,6 +27,7 @@ class ProfileScreenTest {
                         id = 202829406,
                         publicRepos = 24
                     ),
+                    onOpenFeatures = { openedFeatures = true },
                     onLogout = {}
                 )
             }
@@ -30,6 +35,8 @@ class ProfileScreenTest {
 
         compose.onNodeWithText("Public repositories").assertIsDisplayed()
         compose.onNodeWithText("24").assertIsDisplayed()
-        compose.onNodeWithText("Security").assertIsDisplayed()
+        compose.onNodeWithText("Explore all GitHub features").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertTrue(openedFeatures) }
+        compose.onNodeWithText("Security").performScrollTo().assertIsDisplayed()
     }
 }

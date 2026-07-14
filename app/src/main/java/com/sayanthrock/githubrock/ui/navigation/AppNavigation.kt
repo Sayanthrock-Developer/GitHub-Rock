@@ -7,7 +7,12 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -21,9 +26,20 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
-import com.sayanthrock.githubrock.ui.screens.*
+import com.sayanthrock.githubrock.ui.screens.BuildsScreen
+import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
+import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
+import com.sayanthrock.githubrock.ui.screens.HomeScreen
+import com.sayanthrock.githubrock.ui.screens.ProfileScreen
+import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
+import com.sayanthrock.githubrock.ui.screens.RepositoryDetailScreen
+import com.sayanthrock.githubrock.ui.screens.RepositoryShowcaseScreen
 
-sealed class TopDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+sealed class TopDestination(
+    val route: String,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
     data object Home : TopDestination("home", "Home", Icons.Default.Home)
     data object Repositories : TopDestination("repositories", "Repositories", Icons.Default.Folder)
     data object Builds : TopDestination("builds", "Builds", Icons.Default.Build)
@@ -31,7 +47,15 @@ sealed class TopDestination(val route: String, val label: String, val icon: andr
     data object Profile : TopDestination("profile", "Profile", Icons.Default.AccountCircle)
 }
 
-private val topDestinations = listOf(TopDestination.Home, TopDestination.Repositories, TopDestination.Builds, TopDestination.Downloads, TopDestination.Profile)
+private const val FEATURES_PREVIEW_ROUTE = "features-preview"
+
+private val topDestinations = listOf(
+    TopDestination.Home,
+    TopDestination.Repositories,
+    TopDestination.Builds,
+    TopDestination.Downloads,
+    TopDestination.Profile
+)
 
 @Composable
 fun MainNavigation(
@@ -52,27 +76,42 @@ fun MainNavigation(
 
     Scaffold(
         bottomBar = {
-            if (showNavigation) NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .96f)) {
-                topDestinations.forEach { destination ->
-                    NavigationBarItem(
-                        selected = route == destination.route,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(destination.icon, destination.label) },
-                        label = { Text(destination.label) }
-                    )
+            if (showNavigation) {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .96f)) {
+                    topDestinations.forEach { destination ->
+                        NavigationBarItem(
+                            selected = route == destination.route,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(destination.icon, destination.label) },
+                            label = { Text(destination.label) }
+                        )
+                    }
                 }
             }
         }
     ) { padding ->
-        NavHost(navController, startDestination = TopDestination.Home.route, modifier = Modifier.padding(if (showNavigation) padding else androidx.compose.foundation.layout.PaddingValues())) {
+        NavHost(
+            navController = navController,
+            startDestination = TopDestination.Home.route,
+            modifier = Modifier.padding(
+                if (showNavigation) padding else androidx.compose.foundation.layout.PaddingValues()
+            )
+        ) {
             composable(TopDestination.Home.route) {
-                HomeScreen(mode, state.profile, state.rateLimit, state.repositories, state.workflowRuns, openRepo) {
+                HomeScreen(
+                    mode,
+                    state.profile,
+                    state.rateLimit,
+                    state.repositories,
+                    state.workflowRuns,
+                    openRepo
+                ) {
                     navController.navigate(TopDestination.Builds.route)
                 }
             }
@@ -87,15 +126,22 @@ fun MainNavigation(
                 ProfileScreen(
                     mode = mode,
                     profile = state.profile,
+                    onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
                     onLogout = onLogout
                 )
+            }
+            composable(FEATURES_PREVIEW_ROUTE) {
+                FeaturePreviewScreen(onBack = navController::navigateUp)
             }
             composable(
                 route = "repo/{owner}/{repo}?demo={demo}",
                 arguments = listOf(
                     navArgument("owner") { type = NavType.StringType },
                     navArgument("repo") { type = NavType.StringType },
-                    navArgument("demo") { type = NavType.BoolType; defaultValue = false }
+                    navArgument("demo") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
                 ),
                 deepLinks = listOf(
                     navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" },
@@ -104,28 +150,13 @@ fun MainNavigation(
             ) { backStackEntry ->
                 val owner = backStackEntry.arguments?.getString("owner")
                 val repoName = backStackEntry.arguments?.getString("repo")
-                val demo = backStackEntry.arguments?.getBoolean("demo") ?: false
-                val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
+                val repository = state.repositories.firstOrNull {
+                    it.owner.login == owner && it.name == repoName
+                }
                 RepositoryShowcaseScreen(
                     repository = repository,
-                    onBack = navController::navigateUp,
-                    onOpenWorkspace = {
-                        navController.navigate("repo-tools/$owner/$repoName?demo=$demo")
-                    }
+                    onBack = navController::navigateUp
                 )
-            }
-            composable(
-                route = "repo-tools/{owner}/{repo}?demo={demo}",
-                arguments = listOf(
-                    navArgument("owner") { type = NavType.StringType },
-                    navArgument("repo") { type = NavType.StringType },
-                    navArgument("demo") { type = NavType.BoolType; defaultValue = false }
-                )
-            ) { backStackEntry ->
-                val owner = backStackEntry.arguments?.getString("owner")
-                val repoName = backStackEntry.arguments?.getString("repo")
-                val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
-                RepositoryDetailScreen(repository = repository, onBack = navController::navigateUp)
             }
             composable(
                 route = "build/{owner}/{repo}/{runId}",
@@ -134,12 +165,16 @@ fun MainNavigation(
                     navArgument("repo") { type = NavType.StringType },
                     navArgument("runId") { type = NavType.LongType }
                 ),
-                deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" })
+                deepLinks = listOf(
+                    navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" }
+                )
             ) { backStackEntry ->
                 val owner = backStackEntry.arguments?.getString("owner")
                 val repoName = backStackEntry.arguments?.getString("repo")
                 val runId = backStackEntry.arguments?.getLong("runId")
-                val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
+                val repository = state.repositories.firstOrNull {
+                    it.owner.login == owner && it.name == repoName
+                }
                 BuildsScreen(
                     mode = mode,
                     repositories = state.repositories,
@@ -156,11 +191,15 @@ fun MainNavigation(
                     navArgument("repo") { type = NavType.StringType },
                     navArgument("tag") { type = NavType.StringType }
                 ),
-                deepLinks = listOf(navDeepLink { uriPattern = "githubrock://release/{owner}/{repo}/{tag}" })
+                deepLinks = listOf(
+                    navDeepLink { uriPattern = "githubrock://release/{owner}/{repo}/{tag}" }
+                )
             ) { backStackEntry ->
                 val owner = backStackEntry.arguments?.getString("owner")
                 val repoName = backStackEntry.arguments?.getString("repo")
-                val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
+                val repository = state.repositories.firstOrNull {
+                    it.owner.login == owner && it.name == repoName
+                }
                 RepositoryDetailScreen(repository = repository, onBack = navController::navigateUp)
             }
         }

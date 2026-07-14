@@ -4,20 +4,17 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.ui.screens.RepositoryShowcaseContent
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class RepositoryShowcaseScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun applicationRepositoryShowsIdentityDetailsAndWorkspaceAction() {
-        var openedWorkspace = false
+    @Test fun applicationRepositoryShowsCleanPreviewAndGitHubAction() {
         val repository = GitHubRepositoryModel(
             id = 1,
             name = "GitHub-Rock",
@@ -27,6 +24,7 @@ class RepositoryShowcaseScreenTest {
                 avatarUrl = "https://avatars.githubusercontent.com/u/202829406?v=4"
             ),
             description = "Premium GitHub developer control centre",
+            htmlUrl = "https://github.com/SayanthRock/GitHub-Rock",
             language = "Kotlin",
             stars = 386,
             forks = 42,
@@ -45,7 +43,6 @@ class RepositoryShowcaseScreenTest {
                     error = null,
                     readmeError = null,
                     onRetry = {},
-                    onOpenWorkspace = { openedWorkspace = true },
                     onOpenGitHub = {}
                 )
             }
@@ -54,8 +51,7 @@ class RepositoryShowcaseScreenTest {
         compose.onNodeWithContentDescription("GitHub-Rock application icon").assertIsDisplayed()
         compose.onNodeWithText("Application").assertIsDisplayed()
         compose.onNodeWithText("About this project").assertIsDisplayed()
-        compose.onNodeWithText("Developer workspace").performClick()
-        compose.runOnIdle { assertTrue(openedWorkspace) }
+        compose.onNodeWithText("Open on GitHub").assertIsDisplayed()
     }
 
     @Test fun readmeSectionRendersProjectDocumentation() {
@@ -69,7 +65,6 @@ class RepositoryShowcaseScreenTest {
                     error = null,
                     readmeError = null,
                     onRetry = {},
-                    onOpenWorkspace = {},
                     onOpenGitHub = {}
                 )
             }
