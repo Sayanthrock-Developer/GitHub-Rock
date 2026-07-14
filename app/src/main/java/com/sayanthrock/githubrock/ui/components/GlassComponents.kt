@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -59,16 +58,15 @@ fun GlassCard(
     )
 }
 
-fun Modifier.rockBackground(): Modifier = composed {
-    this
-        .background(MaterialTheme.colorScheme.background)
-        .background(
-            Brush.verticalGradient(
-                colors = listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    Color.Transparent,
-                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
-                )
+@Composable
+fun Modifier.rockBackground(): Modifier = this
+    .background(MaterialTheme.colorScheme.background)
+    .background(
+        Brush.verticalGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                Color.Transparent,
+                MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
             )
         )
-}
+    )
