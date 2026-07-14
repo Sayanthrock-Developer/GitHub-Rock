@@ -144,6 +144,7 @@ class LoginScreenTest {
         }
 
         compose.onNodeWithText("Authorize GitHub Rock").assertIsDisplayed()
+        compose.onNodeWithText("ABCD-EFGH", substring = false).assertIsDisplayed()
         compose.onNodeWithContentDescription("Copy GitHub verification code").assertIsDisplayed()
         compose.onNodeWithText("Secure authentication via GitHub").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("OPEN GITHUB").performScrollTo().performClick()
