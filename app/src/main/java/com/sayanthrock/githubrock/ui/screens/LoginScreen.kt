@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -449,14 +451,23 @@ private fun DeviceCodeExperience(
     onGuest: () -> Unit
 ) {
     val code = requireNotNull(auth.code)
-    var remainingSeconds by rememberSaveable(code.deviceCode) {
-        mutableIntStateOf(code.expiresIn.coerceAtLeast(0))
+    val expireAtEpochSeconds by rememberSaveable(code.deviceCode) {
+        mutableStateOf(currentEpochSeconds() + code.expiresIn.coerceAtLeast(0).toLong())
+    }
+    var remainingSeconds by remember(code.deviceCode, expireAtEpochSeconds) {
+        mutableIntStateOf(
+            (expireAtEpochSeconds - currentEpochSeconds())
+                .coerceAtLeast(0L)
+                .toInt()
+        )
     }
 
-    LaunchedEffect(code.deviceCode) {
+    LaunchedEffect(code.deviceCode, expireAtEpochSeconds) {
         while (remainingSeconds > 0) {
             delay(1_000)
-            remainingSeconds -= 1
+            remainingSeconds = (expireAtEpochSeconds - currentEpochSeconds())
+                .coerceAtLeast(0L)
+                .toInt()
         }
     }
 
@@ -465,6 +476,7 @@ private fun DeviceCodeExperience(
     } else {
         0f
     }
+    val isExpired = remainingSeconds <= 0
 
     AuthGlassPanel {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -499,7 +511,7 @@ private fun DeviceCodeExperience(
                 )
                 Text(
                     formatDuration(remainingSeconds),
-                    color = if (remainingSeconds == 0) {
+                    color = if (isExpired) {
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.primary
@@ -546,6 +558,7 @@ private fun DeviceCodeExperience(
 
     Button(
         onClick = onOpen,
+        enabled = !isExpired,
         modifier = Modifier
             .fillMaxWidth()
             .height(74.dp),
@@ -604,9 +617,33 @@ private fun DeviceCodeExperience(
                 textAlign = TextAlign.Center
             )
 
+            if (isExpired) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = .10f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            "Code expired — request a new one",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(onClick = onRestart, enabled = !checking) {
+                            Text("Get a new verification code")
+                        }
+                    }
+                }
+            }
+
             Button(
                 onClick = onCheck,
-                enabled = !checking,
+                enabled = !checking && !isExpired,
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
@@ -619,8 +656,10 @@ private fun DeviceCodeExperience(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                TextButton(onClick = onRestart, enabled = !checking) {
-                    Text("Get a new verification code")
+                if (!isExpired) {
+                    TextButton(onClick = onRestart, enabled = !checking) {
+                        Text("Get a new verification code")
+                    }
                 }
                 TextButton(onClick = onGuest, enabled = !checking) {
                     Text("Use guest mode instead")
@@ -689,7 +728,8 @@ private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
-                code,
+                text = code,
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
                 style = MaterialTheme.typography.headlineMedium,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Black,
@@ -754,3 +794,5 @@ private fun formatDuration(totalSeconds: Int): String {
     val seconds = safeSeconds % 60
     return minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0')
 }
+
+private fun currentEpochSeconds(): Long = System.currentTimeMillis() / 1_000L
