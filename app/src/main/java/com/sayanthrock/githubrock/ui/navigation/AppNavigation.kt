@@ -104,6 +104,26 @@ fun MainNavigation(
             ) { backStackEntry ->
                 val owner = backStackEntry.arguments?.getString("owner")
                 val repoName = backStackEntry.arguments?.getString("repo")
+                val demo = backStackEntry.arguments?.getBoolean("demo") ?: false
+                val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
+                RepositoryShowcaseScreen(
+                    repository = repository,
+                    onBack = navController::navigateUp,
+                    onOpenWorkspace = {
+                        navController.navigate("repo-tools/$owner/$repoName?demo=$demo")
+                    }
+                )
+            }
+            composable(
+                route = "repo-tools/{owner}/{repo}?demo={demo}",
+                arguments = listOf(
+                    navArgument("owner") { type = NavType.StringType },
+                    navArgument("repo") { type = NavType.StringType },
+                    navArgument("demo") { type = NavType.BoolType; defaultValue = false }
+                )
+            ) { backStackEntry ->
+                val owner = backStackEntry.arguments?.getString("owner")
+                val repoName = backStackEntry.arguments?.getString("repo")
                 val repository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
                 RepositoryDetailScreen(repository = repository, onBack = navController::navigateUp)
             }
