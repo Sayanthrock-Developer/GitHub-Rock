@@ -66,6 +66,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
@@ -465,6 +466,7 @@ private fun DeviceCodeExperience(
     } else {
         0f
     }
+    val isExpired = remainingSeconds <= 0
 
     AuthGlassPanel {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -499,7 +501,7 @@ private fun DeviceCodeExperience(
                 )
                 Text(
                     formatDuration(remainingSeconds),
-                    color = if (remainingSeconds == 0) {
+                    color = if (isExpired) {
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.primary
@@ -546,6 +548,7 @@ private fun DeviceCodeExperience(
 
     Button(
         onClick = onOpen,
+        enabled = !isExpired,
         modifier = Modifier
             .fillMaxWidth()
             .height(74.dp),
@@ -604,9 +607,33 @@ private fun DeviceCodeExperience(
                 textAlign = TextAlign.Center
             )
 
+            if (isExpired) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = .10f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            "Code expired — request a new one",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(onClick = onRestart, enabled = !checking) {
+                            Text("Get a new verification code")
+                        }
+                    }
+                }
+            }
+
             Button(
                 onClick = onCheck,
-                enabled = !checking,
+                enabled = !checking && !isExpired,
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
@@ -619,8 +646,10 @@ private fun DeviceCodeExperience(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                TextButton(onClick = onRestart, enabled = !checking) {
-                    Text("Get a new verification code")
+                if (!isExpired) {
+                    TextButton(onClick = onRestart, enabled = !checking) {
+                        Text("Get a new verification code")
+                    }
                 }
                 TextButton(onClick = onGuest, enabled = !checking) {
                     Text("Use guest mode instead")
@@ -694,7 +723,8 @@ private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
         Surface(
