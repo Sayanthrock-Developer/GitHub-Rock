@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 
 /**
@@ -43,6 +44,9 @@ fun RepositoryArtwork(
 ) {
     val artworkHeight = if (compact) 132.dp else 176.dp
     val previewDescription = "${repository.fullName} repository preview image"
+    val ownerFallbackPainter = repository.owner.avatarUrl
+        .takeIf(String::isNotBlank)
+        ?.let { rememberAsyncImagePainter(it) }
 
     Box(
         modifier = modifier
@@ -62,6 +66,9 @@ fun RepositoryArtwork(
             !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
                 model = repository.previewImageUrl,
                 contentDescription = previewDescription,
+                placeholder = ownerFallbackPainter,
+                error = ownerFallbackPainter,
+                fallback = ownerFallbackPainter,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
