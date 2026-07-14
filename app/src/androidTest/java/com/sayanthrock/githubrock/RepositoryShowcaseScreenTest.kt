@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,7 +14,7 @@ import org.junit.Test
 class RepositoryShowcaseScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun applicationRepositoryShowsPreviewWithoutDeveloperWorkspaceOption() {
+    @Test fun applicationRepositoryShowsCleanPreviewAndGitHubAction() {
         val repository = GitHubRepositoryModel(
             id = 1,
             name = "GitHub-Rock",
@@ -53,7 +52,6 @@ class RepositoryShowcaseScreenTest {
         compose.onNodeWithText("Application").assertIsDisplayed()
         compose.onNodeWithText("About this project").assertIsDisplayed()
         compose.onNodeWithText("Open on GitHub").assertIsDisplayed()
-        compose.onNodeWithText("Developer workspace").assertDoesNotExist()
     }
 
     @Test fun readmeSectionRendersProjectDocumentation() {
