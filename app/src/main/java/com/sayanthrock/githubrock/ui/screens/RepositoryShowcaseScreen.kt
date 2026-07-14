@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,7 +47,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -111,12 +109,10 @@ fun RepositoryShowcaseScreen(
                     }
                 },
                 actions = {
-                    if (!displayedRepository?.htmlUrl.isNullOrBlank()) {
+                    displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
                         IconButton(
                             onClick = {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse(displayedRepository?.htmlUrl))
-                                )
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                             }
                         ) {
                             Icon(Icons.Default.OpenInNew, contentDescription = "Open repository on GitHub")
@@ -544,9 +540,13 @@ private fun ReadmeBlock(block: MarkdownBlock) {
         ) {
             Text(
                 block.text,
-                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(12.dp),
                 fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                softWrap = false
             )
         }
         MarkdownBlockKind.Divider -> HorizontalDivider()
@@ -572,4 +572,4 @@ private fun compactCount(value: Int): String = when {
     else -> value.toString()
 }
 
-private const val MAX_README_BLOCKS = 90
+private const val MAX_README_BLOCKS = 20
