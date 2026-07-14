@@ -6,6 +6,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.sayanthrock.githubrock.BuildConfig
 import com.sayanthrock.githubrock.core.network.AuthInterceptor
 import com.sayanthrock.githubrock.core.network.GitHubAuthApi
+import com.sayanthrock.githubrock.core.network.GitHubGraphQlApi
 import com.sayanthrock.githubrock.core.network.GitHubRestApi
 import com.sayanthrock.githubrock.core.security.KeystoreTokenStore
 import com.sayanthrock.githubrock.core.security.TokenStore
@@ -82,6 +83,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun githubGraphQlApi(json: Json, client: OkHttpClient): GitHubGraphQlApi = Retrofit.Builder()
+        .baseUrl("https://api.github.com/")
+        .client(client)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(GitHubGraphQlApi::class.java)
+
+    @Provides
+    @Singleton
     fun authApi(json: Json, @Named("authClient") client: OkHttpClient): GitHubAuthApi = Retrofit.Builder()
         .baseUrl("https://github.com/")
         .client(client)
@@ -100,4 +110,3 @@ object AppModule {
     @Provides fun repositoryDao(database: AppDatabase): RepositoryDao = database.repositoryDao()
     @Provides fun downloadDao(database: AppDatabase): DownloadDao = database.downloadDao()
 }
-

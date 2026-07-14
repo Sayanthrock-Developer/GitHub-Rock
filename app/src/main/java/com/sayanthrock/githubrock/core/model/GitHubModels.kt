@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.core.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 data class GitHubUser(
@@ -36,7 +37,9 @@ data class GitHubRepositoryModel(
     @SerialName("forks_count") val forks: Int = 0,
     @SerialName("open_issues_count") val openIssues: Int = 0,
     @SerialName("updated_at") val updatedAt: String = "",
-    val topics: List<String> = emptyList()
+    val topics: List<String> = emptyList(),
+    @SerialName("is_template") val isTemplate: Boolean = false,
+    @Transient val previewImageUrl: String? = null
 )
 
 @Serializable
