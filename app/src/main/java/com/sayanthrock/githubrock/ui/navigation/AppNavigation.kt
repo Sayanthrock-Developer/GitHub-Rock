@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -40,7 +39,6 @@ fun MainNavigation(
     state: MainUiState,
     onSearch: (String) -> Unit,
     onRememberRepository: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit,
-    onRefreshSocial: () -> Unit,
     onLogout: () -> Unit
 ) {
     val entry by navController.currentBackStackEntryAsState()
@@ -89,11 +87,6 @@ fun MainNavigation(
                 ProfileScreen(
                     mode = mode,
                     profile = state.profile,
-                    followers = state.followers,
-                    following = state.following,
-                    socialLoading = state.socialLoading,
-                    socialError = state.socialError,
-                    onRetrySocial = onRefreshSocial,
                     onLogout = onLogout
                 )
             }
