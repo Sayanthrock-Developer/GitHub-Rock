@@ -11,7 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
@@ -49,7 +52,10 @@ fun RepositoriesScreen(
                                     onSearch("")
                                 }
                             ) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear repository search")
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.clear_repository_search)
+                                )
                             }
                         }
                     }
@@ -84,7 +90,8 @@ fun RepositoriesScreen(
                             )
                             Text(
                                 if (query.isBlank()) "No repositories loaded" else "No repositories found",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center
                             )
                             Text(
                                 if (query.isBlank()) {
@@ -92,7 +99,8 @@ fun RepositoriesScreen(
                                 } else {
                                     "Try another owner, repository name, or keyword."
                                 },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
