@@ -1,14 +1,10 @@
 package com.sayanthrock.githubrock
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasScrollAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToNode
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.ui.screens.RepositoryShowcaseContent
@@ -20,7 +16,7 @@ import org.junit.Test
 class RepositoryShowcaseScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun applicationRepositoryShowsIdentityDetailsAndReadme() {
+    @Test fun applicationRepositoryShowsIdentityDetailsAndWorkspaceAction() {
         var openedWorkspace = false
         val repository = GitHubRepositoryModel(
             id = 1,
@@ -43,9 +39,9 @@ class RepositoryShowcaseScreenTest {
             GitHubRockTheme(dynamicColor = false) {
                 RepositoryShowcaseContent(
                     repository = repository,
-                    readme = "# GitHub Rock\n\nNative Android repository management.",
+                    readme = null,
                     loading = false,
-                    readmeLoading = false,
+                    readmeLoading = true,
                     error = null,
                     readmeError = null,
                     onRetry = {},
@@ -60,9 +56,28 @@ class RepositoryShowcaseScreenTest {
         compose.onNodeWithText("About this project").assertIsDisplayed()
         compose.onNodeWithText("Developer workspace").performClick()
         compose.runOnIdle { assertTrue(openedWorkspace) }
+    }
 
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("README.md"))
+    @Test fun readmeSectionRendersProjectDocumentation() {
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                RepositoryShowcaseContent(
+                    repository = null,
+                    readme = "# GitHub Rock\n\nNative Android repository management.",
+                    loading = false,
+                    readmeLoading = false,
+                    error = null,
+                    readmeError = null,
+                    onRetry = {},
+                    onOpenWorkspace = {},
+                    onOpenGitHub = {}
+                )
+            }
+        }
+
         compose.onNodeWithText("README.md").assertIsDisplayed()
         compose.onNodeWithText("Project documentation").assertIsDisplayed()
+        compose.onNodeWithText("GitHub Rock").assertIsDisplayed()
+        compose.onNodeWithText("Native Android repository management.").assertIsDisplayed()
     }
 }
