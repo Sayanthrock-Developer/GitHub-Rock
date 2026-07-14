@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
 import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
 import com.sayanthrock.githubrock.ui.DeviceAuthState
@@ -36,10 +37,12 @@ class LoginScreenTest {
                 )
             }
         }
+        compose.onNodeWithText("Secure developer access").assertIsDisplayed()
+        compose.onNodeWithText("GitHub Device Flow").assertIsDisplayed()
         compose.onNodeWithContentDescription("Login with GitHub").assertIsDisplayed()
         compose.onNodeWithContentDescription("Create GitHub account").assertIsDisplayed()
-        compose.onNodeWithText("Continue with public repositories").assertIsDisplayed()
-        compose.onNodeWithText("Explore isolated demo mode").assertIsDisplayed()
+        compose.onNodeWithText("Continue with public repositories").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Explore isolated demo mode").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun createAccountButtonOpensOfficialSignupPageAndOffersConnection() {
@@ -113,6 +116,39 @@ class LoginScreenTest {
         }
     }
 
+    @Test fun deviceCodeUsesSecureAuthorizationLayout() {
+        var opened = false
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                LoginScreen(
+                    configured = true,
+                    loading = false,
+                    auth = DeviceAuthState(
+                        code = DeviceCodeResponse(
+                            deviceCode = "device-code",
+                            userCode = "ABCD-EFGH",
+                            verificationUri = "https://github.com/login/device",
+                            expiresIn = 900,
+                            interval = 5
+                        ),
+                        status = "Waiting for approval on GitHub…"
+                    ),
+                    onLogin = {},
+                    onOpenGitHubUrl = { opened = true },
+                    onCheckAuthorization = {},
+                    onGuest = {},
+                    onDemo = {}
+                )
+            }
+        }
+
+        compose.onNodeWithText("Authorize GitHub Rock").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Copy GitHub verification code").assertIsDisplayed()
+        compose.onNodeWithText("Secure authentication via GitHub").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("OPEN GITHUB").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(opened) }
+    }
+
     @Test fun authorizedUserCanRequestAnImmediateStatusCheck() {
         var checked = false
         compose.setContent {
@@ -141,14 +177,14 @@ class LoginScreenTest {
 
         compose.onNodeWithText(
             "After GitHub says you’re all set, return with Android Back or the app switcher. GitHub Rock checks automatically; the button below is a backup."
-        ).assertIsDisplayed()
-        compose.onNodeWithText("I’ve authorized — check now").performClick()
+        ).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("I’ve authorized — check now").performScrollTo().performClick()
         compose.runOnIdle {
             assertTrue(checked)
         }
-        compose.onNodeWithText("Use guest mode instead").assertIsDisplayed()
+        compose.onNodeWithText("Use guest mode instead").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(
             "GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel."
-        ).assertIsDisplayed()
+        ).performScrollTo().assertIsDisplayed()
     }
 }
