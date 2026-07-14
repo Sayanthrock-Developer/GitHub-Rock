@@ -4,8 +4,8 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.network.GitHubGraphQlApi
 import com.sayanthrock.githubrock.core.network.GraphQlRequest
 import com.sayanthrock.githubrock.core.security.TokenStore
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,8 +24,7 @@ class RepositoryArtworkResolver @Inject constructor(
                 graphQlApi.query(GraphQlRequest(buildQuery(batch))).data
             }.getOrNull()?.let { data ->
                 batch.forEachIndexed { index, repository ->
-                    data["repo$index"]
-                        ?.jsonObject
+                    (data["repo$index"] as? JsonObject)
                         ?.get("openGraphImageUrl")
                         ?.jsonPrimitive
                         ?.contentOrNull
