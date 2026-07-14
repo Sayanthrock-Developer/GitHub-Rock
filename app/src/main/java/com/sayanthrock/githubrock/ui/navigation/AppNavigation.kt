@@ -32,8 +32,7 @@ import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
-import com.sayanthrock.githubrock.ui.screens.RepositoryDetailScreen
-import com.sayanthrock.githubrock.ui.screens.RepositoryShowcaseScreen
+import com.sayanthrock.githubrock.ui.screens.RepositoryHubScreen
 
 sealed class TopDestination(
     val route: String,
@@ -153,7 +152,7 @@ fun MainNavigation(
                 val repository = state.repositories.firstOrNull {
                     it.owner.login == owner && it.name == repoName
                 }
-                RepositoryShowcaseScreen(
+                RepositoryHubScreen(
                     repository = repository,
                     onBack = navController::navigateUp
                 )
@@ -197,10 +196,15 @@ fun MainNavigation(
             ) { backStackEntry ->
                 val owner = backStackEntry.arguments?.getString("owner")
                 val repoName = backStackEntry.arguments?.getString("repo")
+                val tag = backStackEntry.arguments?.getString("tag")
                 val repository = state.repositories.firstOrNull {
                     it.owner.login == owner && it.name == repoName
                 }
-                RepositoryDetailScreen(repository = repository, onBack = navController::navigateUp)
+                RepositoryHubScreen(
+                    repository = repository,
+                    onBack = navController::navigateUp,
+                    initialTag = tag
+                )
             }
         }
     }
