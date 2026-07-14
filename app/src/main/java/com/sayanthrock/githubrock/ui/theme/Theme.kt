@@ -43,7 +43,7 @@ private val LightColors = lightColorScheme(
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -55,4 +55,3 @@ fun GitHubRockTheme(
     }
     MaterialTheme(colorScheme = colors, typography = RockTypography, content = content)
 }
-
