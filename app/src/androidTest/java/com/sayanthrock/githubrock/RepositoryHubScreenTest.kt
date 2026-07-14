@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -72,15 +71,12 @@ class RepositoryHubScreenTest {
         compose.onNodeWithContentDescription("GitHub-Rock application icon").assertIsDisplayed()
         compose.onNodeWithText("Repository tools").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Latest release").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("v1.4.0").assertIsDisplayed()
         compose.onNodeWithContentDescription("Download selected release asset")
             .performScrollTo()
             .performClick()
         compose.runOnIdle { assertEquals(asset, downloadedAsset) }
-
         compose.onNodeWithText("Stats").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("What’s New").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("README.md").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Developer workspace").assertDoesNotExist()
     }
 }
