@@ -90,7 +90,7 @@ fun LoginScreen(
     }
     var showAccountSetup by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(code?.deviceCode) {
+    LaunchedEffect(code?.deviceCode, onOpenGitHubUrl) {
         val verificationUri = code?.verificationUri
         if (verificationUri != null && !hasOpenedVerificationUri) {
             hasOpenedVerificationUri = true
@@ -454,7 +454,6 @@ private fun DeviceCodeExperience(
     }
 
     LaunchedEffect(code.deviceCode) {
-        remainingSeconds = code.expiresIn.coerceAtLeast(0)
         while (remainingSeconds > 0) {
             delay(1_000)
             remainingSeconds -= 1
@@ -686,20 +685,20 @@ private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .padding(horizontal = 22.dp),
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
                 code,
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 3.sp,
+                letterSpacing = 2.sp,
                 maxLines = 1
             )
         }
         Surface(
-            modifier = Modifier.width(92.dp).fillMaxHeight(),
+            modifier = Modifier.width(64.dp).fillMaxHeight(),
             color = MaterialTheme.colorScheme.primary,
             shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
         ) {
@@ -713,7 +712,7 @@ private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
                     Icons.Default.ContentCopy,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
