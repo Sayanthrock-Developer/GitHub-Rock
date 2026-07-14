@@ -8,6 +8,7 @@ import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,18 +38,26 @@ class RepositoryShowcaseViewModel @Inject constructor(
     private val _state = MutableStateFlow(RepositoryShowcaseState())
     val state: StateFlow<RepositoryShowcaseState> = _state.asStateFlow()
 
-    private var started = false
+    private var loadJob: Job? = null
+    private var currentRepositoryId: Long? = null
 
     /** Supplies the repository already selected from Home or Repositories for instant first paint. */
     fun start(initialRepository: GitHubRepositoryModel?) {
-        if (started) return
-        started = true
-        _state.update { it.copy(repository = initialRepository, loading = initialRepository == null) }
-        viewModelScope.launch { load(initialRepository) }
+        if (initialRepository?.id == currentRepositoryId && currentRepositoryId != null) return
+        currentRepositoryId = initialRepository?.id
+        _state.update {
+            it.copy(
+                repository = initialRepository ?: it.repository,
+                loading = initialRepository == null && it.repository == null
+            )
+        }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { load(initialRepository) }
     }
 
     fun retry() {
-        viewModelScope.launch { load(_state.value.repository) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { load(_state.value.repository) }
     }
 
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
@@ -56,6 +65,7 @@ class RepositoryShowcaseViewModel @Inject constructor(
             val repository = initialRepository
                 ?: DemoData.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
                 ?: DemoData.repositories.firstOrNull()
+            currentRepositoryId = repository?.id
             _state.value = RepositoryShowcaseState(
                 repository = repository,
                 readme = DEMO_README,
@@ -90,6 +100,7 @@ class RepositoryShowcaseViewModel @Inject constructor(
             return
         }
 
+        currentRepositoryId = resolvedRepository.id
         _state.update { it.copy(repository = resolvedRepository, loading = false) }
 
         val readme = README_CANDIDATES.firstNotNullOfOrNull { path ->
