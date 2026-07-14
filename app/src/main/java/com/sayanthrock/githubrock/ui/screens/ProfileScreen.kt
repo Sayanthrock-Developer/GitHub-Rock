@@ -67,37 +67,39 @@ fun ProfileScreen(
                 }
             }
         }
-        item {
-            GlassCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
+        if (mode != AppMode.Guest) {
+            item {
+                GlassCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(12.dp).size(24.dp)
-                        )
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text("Public repositories", style = MaterialTheme.typography.titleMedium)
+                        Surface(
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
+                        ) {
+                            Icon(
+                                Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(12.dp).size(24.dp)
+                            )
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("Public repositories", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Repositories visible on this GitHub profile",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                         Text(
-                            "Repositories visible on this GitHub profile",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
+                            (profile?.publicRepos ?: 0).toString(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    Text(
-                        (profile?.publicRepos ?: 0).toString(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
             }
         }
