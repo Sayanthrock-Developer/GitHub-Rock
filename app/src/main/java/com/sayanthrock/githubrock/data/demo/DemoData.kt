@@ -13,7 +13,7 @@ object DemoData {
 
     val repositories = listOf(
         repository(1, "GitHub-Rock", "Premium GitHub developer control centre", "Kotlin", 386),
-        repository(2, "Rock-Wedding", "Digital wedding invitation studio", "TypeScript", 174),
+        repository(2, "Rock-Wedding", "Digital wedding invitation studio", "TypeScript", 174, isTemplate = true),
         repository(3, "OTA-ROCK", "Android OTA update explorer", "Kotlin", 92),
         repository(4, "Rock-Screen", "Device mockup and screenshot studio", "Kotlin", 61)
     )
@@ -47,20 +47,30 @@ object DemoData {
         ContentEntry("README.md", "README.md", "demo-4", 4_250, "file")
     )
 
-    private fun repository(id: Long, name: String, description: String, language: String, stars: Int) =
-        GitHubRepositoryModel(
-            id = -id,
-            name = name,
-            fullName = "SayanthRock/$name",
-            owner = Owner("SayanthRock"),
-            description = description,
-            htmlUrl = "https://github.com/SayanthRock/$name",
-            cloneUrl = "https://github.com/SayanthRock/$name.git",
-            language = language,
-            stars = stars,
-            forks = stars / 9,
-            openIssues = id.toInt() * 3,
-            updatedAt = "2026-07-11T10:00:00Z",
-            topics = listOf("android", "github", "open-source")
-        )
+    private fun repository(
+        id: Long,
+        name: String,
+        description: String,
+        language: String,
+        stars: Int,
+        isTemplate: Boolean = false
+    ) = GitHubRepositoryModel(
+        id = -id,
+        name = name,
+        fullName = "SayanthRock/$name",
+        owner = Owner(
+            login = "SayanthRock",
+            avatarUrl = "https://avatars.githubusercontent.com/u/202829406?v=4"
+        ),
+        description = description,
+        isTemplate = isTemplate,
+        htmlUrl = "https://github.com/SayanthRock/$name",
+        cloneUrl = "https://github.com/SayanthRock/$name.git",
+        language = language,
+        stars = stars,
+        forks = stars / 9,
+        openIssues = id.toInt() * 3,
+        updatedAt = "2026-07-11T10:00:00Z",
+        topics = listOf("android", "github", if (isTemplate) "template" else "open-source")
+    )
 }
