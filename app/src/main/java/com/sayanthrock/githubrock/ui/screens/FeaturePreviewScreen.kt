@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
@@ -94,7 +92,7 @@ private data class CustomerWorkflow(
 @Composable
 fun FeaturePreviewScreen(onBack: () -> Unit) {
     var filter by rememberSaveable { mutableStateOf(FeatureFilter.All) }
-    val categories = featureCategories()
+    val categories = featureCategories
 
     Box(
         modifier = Modifier
@@ -357,7 +355,7 @@ private fun availabilityColor(availability: FeatureAvailability): Color = when (
 
 @Composable
 private fun CustomerWorkflowSection() {
-    val workflows = customerWorkflows()
+    val workflows = customerWorkflows
     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         Text("Customer workflows", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
         Text(
@@ -425,7 +423,7 @@ private fun HonestPreviewNote() {
     }
 }
 
-private fun featureCategories(): List<FeatureCategory> = listOf(
+private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Access & identity",
         subtitle = "Secure entry points for every customer mode",
@@ -506,7 +504,7 @@ private fun featureCategories(): List<FeatureCategory> = listOf(
     )
 )
 
-private fun customerWorkflows(): List<CustomerWorkflow> = listOf(
+private val customerWorkflows: List<CustomerWorkflow> = listOf(
     CustomerWorkflow(
         title = "Individual developer",
         description = "Manage personal repositories, edit code, review workflows, and download builds from a phone.",
