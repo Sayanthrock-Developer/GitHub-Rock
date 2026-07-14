@@ -122,16 +122,27 @@ class RepositoryHubViewModel @Inject constructor(
                 runCatching { githubRepository.releases(owner, repoName) }
             }
             val readmeDeferred = async {
-                README_CANDIDATES.firstNotNullOfOrNull { path ->
-                    runCatching {
+                runCatching {
+                    val rootEntries = githubRepository.contents(
+                        owner = owner,
+                        repo = repoName,
+                        path = "",
+                        ref = resolvedRepository.defaultBranch
+                    )
+                    val readmePath = rootEntries.firstOrNull { entry ->
+                        README_CANDIDATES.any { candidate ->
+                            entry.name.equals(candidate, ignoreCase = true)
+                        }
+                    }?.path
+                    readmePath?.let { path ->
                         githubRepository.file(
                             owner = owner,
                             repo = repoName,
                             path = path,
                             ref = resolvedRepository.defaultBranch
                         ).let(SourceFileDecoder::decode)
-                    }.getOrNull()?.takeIf(String::isNotBlank)
-                }
+                    }
+                }.getOrNull()?.takeIf(String::isNotBlank)
             }
 
             val releasesResult = releasesDeferred.await()
