@@ -10,6 +10,7 @@ import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -69,9 +70,22 @@ class RepositoryHubViewModel @Inject constructor(
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
         if (demo) {
             val repository = initialRepository
-                ?: DemoData.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
-                ?: DemoData.repositories.firstOrNull()
-            currentRepositoryId = repository?.id
+                ?: DemoData.repositories.firstOrNull {
+                    it.owner.login.equals(owner, ignoreCase = true) &&
+                        it.name.equals(repoName, ignoreCase = true)
+                }
+
+            if (repository == null) {
+                _state.value = RepositoryHubState(
+                    loading = false,
+                    releasesLoading = false,
+                    readmeLoading = false,
+                    error = "This repository is unavailable in demo mode."
+                )
+                return
+            }
+
+            currentRepositoryId = repository.id
             _state.value = RepositoryHubState(
                 repository = repository,
                 releases = DEMO_RELEASES,
@@ -94,7 +108,7 @@ class RepositoryHubViewModel @Inject constructor(
             )
         }
 
-        val resolvedRepository = initialRepository ?: runCatching {
+        val resolvedRepository = initialRepository ?: runCatchingPreservingCancellation {
             githubRepository.publicRepositories("$repoName user:$owner")
                 .firstOrNull {
                     it.owner.login.equals(owner, ignoreCase = true) &&
@@ -119,10 +133,12 @@ class RepositoryHubViewModel @Inject constructor(
 
         coroutineScope {
             val releasesDeferred = async {
-                runCatching { githubRepository.releases(owner, repoName) }
+                runCatchingPreservingCancellation {
+                    githubRepository.releases(owner, repoName)
+                }
             }
             val readmeDeferred = async {
-                runCatching {
+                runCatchingPreservingCancellation {
                     val rootEntries = githubRepository.contents(
                         owner = owner,
                         repo = repoName,
@@ -165,6 +181,16 @@ class RepositoryHubViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    private suspend fun <T> runCatchingPreservingCancellation(
+        block: suspend () -> T
+    ): Result<T> = try {
+        Result.success(block())
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (throwable: Throwable) {
+        Result.failure(throwable)
     }
 
     private companion object {
