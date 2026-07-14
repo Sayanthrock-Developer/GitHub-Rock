@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,6 +27,7 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
 @Composable
 fun HomeScreen(
@@ -304,7 +304,7 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 }
 
 /**
- * Displays a repository summary card that invokes the click handler when selected.
+ * Displays a visual repository summary card with GitHub social-preview artwork.
  *
  * @param repo The repository whose details are displayed.
  * @param onClick The action to invoke when the card is selected.
@@ -313,56 +313,84 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(0.dp),
         onClick = onClick
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Column {
+            RepositoryArtwork(repository = repo, compact = true)
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
-                Icon(
-                    Icons.Default.Folder,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
                 Text(
-                    repo.fullName,
-                    modifier = Modifier.weight(1f),
+                    repo.name,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-            Text(
-                repo.description ?: "No description",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(repo.language ?: "—", style = MaterialTheme.typography.bodyMedium)
-                Icon(
-                    Icons.Default.Star,
-                    contentDescription = "Stars",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    repo.description ?: "No repository description.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Text(repo.stars.toString(), style = MaterialTheme.typography.bodyMedium)
-                Text("Forks ${repo.forks}", style = MaterialTheme.typography.bodyMedium)
-                if (repo.private) {
-                    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)) {
-                        Text(
-                            "Private",
-                            Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RepositoryInfoPill(repo.language ?: "Repository")
+                    repo.topics.firstOrNull()?.takeIf { it.isNotBlank() }?.let { RepositoryInfoPill(it) }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .7f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "★ ${compactCount(repo.stars)}  •  Forks ${compactCount(repo.forks)}  •  Issues ${compactCount(repo.openIssues)}",
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "Open ›",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RepositoryInfoPill(label: String) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = .11f)
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun compactCount(value: Int): String = when {
+    value >= 1_000_000 -> "${value / 1_000_000}M"
+    value >= 1_000 -> {
+        val whole = value / 1_000
+        val decimal = (value % 1_000) / 100
+        if (decimal == 0) "${whole}k" else "$whole.${decimal}k"
+    }
+    else -> value.toString()
 }
