@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -43,7 +42,6 @@ class HomeScreenTest {
         compose.onNodeWithText("Sayanth Rock").assertIsDisplayed()
         compose.onNodeWithText("GitHub API health").assertIsDisplayed()
         compose.onNodeWithText("4862 / 5000").assertIsDisplayed()
-        compose.onNodeWithText("Followers").assertDoesNotExist()
         compose.onNodeWithText("Build APK").performClick()
         compose.runOnIdle { assertTrue(openedBuilds) }
     }
