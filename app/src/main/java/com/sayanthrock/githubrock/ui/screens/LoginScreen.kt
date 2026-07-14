@@ -462,7 +462,7 @@ private fun DeviceCodeExperience(
         )
     }
 
-    LaunchedEffect(expireAtEpochSeconds) {
+    LaunchedEffect(code.deviceCode, expireAtEpochSeconds) {
         while (remainingSeconds > 0) {
             delay(1_000)
             remainingSeconds = (expireAtEpochSeconds - currentEpochSeconds())
