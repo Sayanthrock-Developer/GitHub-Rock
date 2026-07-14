@@ -184,11 +184,15 @@ fun MainNavigation(
                 )
             }
             composable(
-                route = "release/{owner}/{repo}/{tag}",
+                route = "release/{owner}/{repo}/{tag}?demo={demo}",
                 arguments = listOf(
                     navArgument("owner") { type = NavType.StringType },
                     navArgument("repo") { type = NavType.StringType },
-                    navArgument("tag") { type = NavType.StringType }
+                    navArgument("tag") { type = NavType.StringType },
+                    navArgument("demo") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
                 ),
                 deepLinks = listOf(
                     navDeepLink { uriPattern = "githubrock://release/{owner}/{repo}/{tag}" }
