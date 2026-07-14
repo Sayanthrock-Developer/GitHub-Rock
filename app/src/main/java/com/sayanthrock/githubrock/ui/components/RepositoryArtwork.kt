@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
@@ -33,8 +32,8 @@ import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 
 /**
- * Branded repository artwork that uses GitHub's public social-preview image when available.
- * Private repositories fall back to a subdued owner avatar so no private preview is requested.
+ * Branded repository artwork that displays GitHub's signed social-preview image when available.
+ * A subdued owner-avatar treatment remains visible when GraphQL artwork is unavailable.
  */
 @Composable
 fun RepositoryArtwork(
@@ -43,6 +42,7 @@ fun RepositoryArtwork(
     compact: Boolean = false
 ) {
     val artworkHeight = if (compact) 132.dp else 176.dp
+    val previewDescription = "${repository.fullName} repository preview image"
 
     Box(
         modifier = modifier
@@ -58,19 +58,18 @@ fun RepositoryArtwork(
                 )
             )
     ) {
-        if (!repository.private) {
-            AsyncImage(
-                model = repository.socialPreviewUrl(),
-                contentDescription = "${repository.fullName} repository preview image",
+        when {
+            !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
+                model = repository.previewImageUrl,
+                contentDescription = previewDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-        } else if (repository.owner.avatarUrl.isNotBlank()) {
-            AsyncImage(
+            repository.owner.avatarUrl.isNotBlank() -> AsyncImage(
                 model = repository.owner.avatarUrl,
-                contentDescription = null,
+                contentDescription = previewDescription,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().alpha(.22f)
+                modifier = Modifier.fillMaxSize().alpha(.24f)
             )
         }
 
@@ -94,10 +93,8 @@ fun RepositoryArtwork(
                 .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            when {
-                repository.isTemplate -> RepositoryArtworkBadge("Template")
-                repository.fork -> RepositoryArtworkBadge("Fork")
-            }
+            if (repository.isTemplate) RepositoryArtworkBadge("Template")
+            if (repository.fork) RepositoryArtworkBadge("Fork")
             if (repository.private) RepositoryArtworkBadge("Private")
         }
 
@@ -170,9 +167,4 @@ private fun RepositoryArtworkBadge(label: String) {
             fontWeight = FontWeight.Bold
         )
     }
-}
-
-private fun GitHubRepositoryModel.socialPreviewUrl(): String {
-    val cacheKey = "${id}-${updatedAt.hashCode()}"
-    return "https://opengraph.githubassets.com/github-rock-$cacheKey/$fullName"
 }
