@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,7 +68,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
@@ -450,14 +451,23 @@ private fun DeviceCodeExperience(
     onGuest: () -> Unit
 ) {
     val code = requireNotNull(auth.code)
-    var remainingSeconds by rememberSaveable(code.deviceCode) {
-        mutableIntStateOf(code.expiresIn.coerceAtLeast(0))
+    val expireAtEpochSeconds by rememberSaveable(code.deviceCode) {
+        mutableStateOf(currentEpochSeconds() + code.expiresIn.coerceAtLeast(0).toLong())
+    }
+    var remainingSeconds by remember(code.deviceCode, expireAtEpochSeconds) {
+        mutableIntStateOf(
+            (expireAtEpochSeconds - currentEpochSeconds())
+                .coerceAtLeast(0L)
+                .toInt()
+        )
     }
 
-    LaunchedEffect(code.deviceCode) {
+    LaunchedEffect(expireAtEpochSeconds) {
         while (remainingSeconds > 0) {
             delay(1_000)
-            remainingSeconds -= 1
+            remainingSeconds = (expireAtEpochSeconds - currentEpochSeconds())
+                .coerceAtLeast(0L)
+                .toInt()
         }
     }
 
@@ -718,13 +728,13 @@ private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
-                code,
+                text = code,
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
                 style = MaterialTheme.typography.headlineMedium,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 1
             )
         }
         Surface(
@@ -784,3 +794,5 @@ private fun formatDuration(totalSeconds: Int): String {
     val seconds = safeSeconds % 60
     return minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0')
 }
+
+private fun currentEpochSeconds(): Long = System.currentTimeMillis() / 1_000L
