@@ -20,11 +20,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
- * Displays a full-width glass-styled card with optional click handling.
+ * Renders a full-width glass-styled card with optional click handling.
  *
- * @param contentPadding The padding applied around the card content.
- * @param onClick The callback invoked when the card is clicked, or `null` to disable clicking.
- * @param content The composable content displayed inside the card.
+ * @param contentPadding Padding applied around the card content.
+ * @param onClick Callback invoked when the card is clicked, or `null` for a non-clickable card.
+ * @param content Content displayed inside the card.
  */
 @Composable
 fun GlassCard(
@@ -66,9 +66,9 @@ fun GlassCard(
 }
 
 /**
-     * Applies the theme background color with a vertical primary-to-secondary gradient overlay.
+     * Applies the themed background and a vertical primary-to-secondary gradient.
      *
-     * @return A modifier with the rock background styling applied.
+     * @return The modifier with the background styling applied.
      */
     @Composable
 fun Modifier.rockBackground(): Modifier = this
