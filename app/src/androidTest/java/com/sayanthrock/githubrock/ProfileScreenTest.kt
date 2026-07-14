@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -31,7 +30,6 @@ class ProfileScreenTest {
 
         compose.onNodeWithText("Public repositories").assertIsDisplayed()
         compose.onNodeWithText("24").assertIsDisplayed()
-        compose.onNodeWithText("Followers").assertDoesNotExist()
-        compose.onNodeWithText("Following").assertDoesNotExist()
+        compose.onNodeWithText("Security").assertIsDisplayed()
     }
 }
