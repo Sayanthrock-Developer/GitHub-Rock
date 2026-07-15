@@ -196,8 +196,8 @@ class GitHubRepository @Inject constructor(
     suspend fun pullReviews(owner: String, repo: String, pullNumber: Int) = api.pullReviews(owner, repo, pullNumber)
     suspend fun submitPullReview(owner: String, repo: String, pullNumber: Int, event: String, body: String) = api.submitPullReview(owner, repo, pullNumber, ReviewRequest(body, event))
     suspend fun mergePullRequest(owner: String, repo: String, pullNumber: Int, method: String): MergeResponse = api.mergePullRequest(owner, repo, pullNumber, mapOf("merge_method" to method))
-    suspend fun workflowJobs(owner: String, repo: String, runId: Long) = api.workflowJobs(owner, repo, runId)["jobs"].orEmpty()
-    suspend fun workflowArtifacts(owner: String, repo: String, runId: Long) = api.workflowArtifacts(owner, repo, runId)["artifacts"].orEmpty()
+    suspend fun workflowJobs(owner: String, repo: String, runId: Long) = api.workflowJobs(owner, repo, runId).jobs
+    suspend fun workflowArtifacts(owner: String, repo: String, runId: Long) = api.workflowArtifacts(owner, repo, runId).artifacts
     suspend fun workflowJobLogs(owner: String, repo: String, jobId: Long): String = api.workflowJobLogs(owner, repo, jobId).body()?.string().orEmpty()
 }
 
