@@ -157,6 +157,11 @@ fun MainNavigation(
                 ProfileScreen(
                     mode = mode,
                     profile = state.profile,
+                    onOpenRepositories = {
+                        navController.navigate(TopDestination.Repositories.route) {
+                            launchSingleTop = true
+                        }
+                    },
                     onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
                     onLogout = onLogout
                 )
