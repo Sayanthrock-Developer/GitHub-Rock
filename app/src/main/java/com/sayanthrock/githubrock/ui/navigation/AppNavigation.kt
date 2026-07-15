@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
@@ -11,11 +13,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -40,9 +46,9 @@ sealed class TopDestination(
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
     data object Home : TopDestination("home", "Home", Icons.Default.Home)
-    data object Repositories : TopDestination("repositories", "Repositories", Icons.Default.Folder)
+    data object Repositories : TopDestination("repositories", "Repos", Icons.Default.Folder)
     data object Builds : TopDestination("builds", "Builds", Icons.Default.Build)
-    data object Downloads : TopDestination("downloads", "Downloads", Icons.Default.Download)
+    data object Downloads : TopDestination("downloads", "Files", Icons.Default.Download)
     data object Profile : TopDestination("profile", "Profile", Icons.Default.AccountCircle)
 }
 
@@ -76,10 +82,15 @@ fun MainNavigation(
     Scaffold(
         bottomBar = {
             if (showNavigation) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .96f)) {
+                NavigationBar(
+                    modifier = Modifier.height(78.dp),
+                    containerColor = MaterialTheme.colorScheme.background,
+                    tonalElevation = 0.dp
+                ) {
                     topDestinations.forEach { destination ->
+                        val selected = route == destination.route
                         NavigationBarItem(
-                            selected = route == destination.route,
+                            selected = selected,
                             onClick = {
                                 navController.navigate(destination.route) {
                                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -87,8 +98,29 @@ fun MainNavigation(
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(destination.icon, destination.label) },
-                            label = { Text(destination.label) }
+                            icon = {
+                                Icon(
+                                    destination.icon,
+                                    destination.label,
+                                    modifier = Modifier.size(23.dp)
+                                )
+                            },
+                            label = {
+                                Text(
+                                    destination.label,
+                                    maxLines = 1,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            alwaysShowLabel = true,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .14f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }
