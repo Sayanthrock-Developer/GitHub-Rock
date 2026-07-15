@@ -25,7 +25,9 @@ class ProfileScreenTest {
                     profile = GitHubUser(
                         login = "SayanthRock",
                         id = 202829406,
-                        publicRepos = 24
+                        publicRepos = 24,
+                        followers = 120,
+                        following = 48
                     ),
                     onOpenFeatures = { openedFeatures = true },
                     onLogout = {}
@@ -33,8 +35,13 @@ class ProfileScreenTest {
             }
         }
 
-        compose.onNodeWithText("Public repositories").assertIsDisplayed()
+        compose.onNodeWithText("Repositories").assertIsDisplayed()
         compose.onNodeWithText("24").assertIsDisplayed()
+        compose.onNodeWithText("Followers").assertIsDisplayed()
+        compose.onNodeWithText("120").assertIsDisplayed()
+        compose.onNodeWithText("Following").assertIsDisplayed()
+        compose.onNodeWithText("48").assertIsDisplayed()
+        compose.onNodeWithText("Follow on GitHub").assertIsDisplayed()
         compose.onNodeWithText("Explore all GitHub features").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
         compose.onNodeWithText("Security").performScrollTo().assertIsDisplayed()

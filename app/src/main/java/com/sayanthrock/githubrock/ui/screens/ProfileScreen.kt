@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.Icon
@@ -26,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,6 +41,8 @@ fun ProfileScreen(
     onOpenFeatures: () -> Unit,
     onLogout: () -> Unit
 ) {
+    val uriHandler = LocalUriHandler.current
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 18.dp, top = 18.dp, end = 18.dp, bottom = 120.dp),
@@ -85,38 +87,26 @@ fun ProfileScreen(
                 }
             }
         }
-        if (mode != AppMode.Guest) {
+        if (mode != AppMode.Guest && profile != null) {
             item {
                 GlassCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            shape = MaterialTheme.shapes.large,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Icon(
-                                Icons.Default.Folder,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(12.dp).size(24.dp)
-                            )
+                            ProfileStat(profile.publicRepos, "Repositories")
+                            ProfileStat(profile.followers, "Followers")
+                            ProfileStat(profile.following, "Following")
                         }
-                        Column(Modifier.weight(1f)) {
-                            Text("Public repositories", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "Repositories visible on this GitHub profile",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                        OutlinedButton(
+                            onClick = { uriHandler.openUri("https://github.com/${profile.login}") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Follow on GitHub")
+                            Spacer(Modifier.size(8.dp))
+                            Icon(Icons.Default.ArrowForward, contentDescription = null)
                         }
-                        Text(
-                            (profile?.publicRepos ?: 0).toString(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                 }
             }
@@ -206,5 +196,22 @@ private fun ProfileAvatar(profile: GitHubUser?) {
                 Text(profile?.login?.take(2)?.uppercase() ?: "GR")
             }
         }
+    }
+}
+
+@Composable
+private fun ProfileStat(value: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
