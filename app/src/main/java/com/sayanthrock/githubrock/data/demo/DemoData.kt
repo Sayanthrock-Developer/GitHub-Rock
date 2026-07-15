@@ -8,7 +8,9 @@ object DemoData {
         id = -1,
         name = "Sayanth Rock",
         bio = "Demo workspace — no GitHub account data is used.",
-        publicRepos = 12
+        publicRepos = 12,
+        followers = 248,
+        following = 86
     )
 
     val repositories = listOf(
