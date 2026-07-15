@@ -150,10 +150,10 @@ interface GitHubRestApi {
     suspend fun mergePullRequest(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, String>): MergeResponse
 
     @GET("repos/{owner}/{repo}/actions/runs/{runId}/jobs")
-    suspend fun workflowJobs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Map<String, List<WorkflowJob>>
+    suspend fun workflowJobs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): WorkflowJobsResponse
 
     @GET("repos/{owner}/{repo}/actions/runs/{runId}/artifacts")
-    suspend fun workflowArtifacts(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Map<String, List<WorkflowArtifact>>
+    suspend fun workflowArtifacts(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): WorkflowArtifactsResponse
 
     @GET("repos/{owner}/{repo}/actions/jobs/{jobId}/logs")
     suspend fun workflowJobLogs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("jobId") jobId: Long): Response<ResponseBody>

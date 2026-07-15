@@ -308,12 +308,24 @@ data class WorkflowJob(
 data class WorkflowStep(val name: String, val status: String, val conclusion: String? = null)
 
 @Serializable
+data class WorkflowJobsResponse(
+    @SerialName("total_count") val totalCount: Int = 0,
+    val jobs: List<WorkflowJob> = emptyList()
+)
+
+@Serializable
 data class WorkflowArtifact(
     val id: Long,
     val name: String,
     @SerialName("archive_download_url") val archiveDownloadUrl: String,
     @SerialName("expired") val expired: Boolean = false,
     @SerialName("size_in_bytes") val sizeBytes: Long = 0
+)
+
+@Serializable
+data class WorkflowArtifactsResponse(
+    @SerialName("total_count") val totalCount: Int = 0,
+    val artifacts: List<WorkflowArtifact> = emptyList()
 )
 
 @Serializable
