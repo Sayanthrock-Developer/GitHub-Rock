@@ -1,7 +1,6 @@
 package com.sayanthrock.githubrock.ui.theme
 
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -13,50 +12,55 @@ import androidx.compose.ui.platform.LocalContext
 
 private val DarkColors = darkColorScheme(
     primary = RockBlue,
+    onPrimary = Color(0xFF260C0A),
+    primaryContainer = Color(0xFF3D1C1A),
+    onPrimaryContainer = Color(0xFFFFDAD6),
     secondary = RockPurple,
     tertiary = RockGreen,
     background = RockBackground,
     surface = RockSurface,
-    surfaceVariant = Color(0xFF21262D),
+    surfaceVariant = Color(0xFF171719),
+    surfaceContainer = Color(0xFF111113),
+    surfaceContainerHigh = Color(0xFF19191C),
     outline = RockBorder,
+    outlineVariant = Color(0xFF202024),
     error = RockRed,
-    onPrimary = Color.White,
     onBackground = RockText,
     onSurface = RockText,
     onSurfaceVariant = RockMuted
 )
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF0969DA),
-    secondary = Color(0xFF8250DF),
-    tertiary = Color(0xFF1A7F37),
-    background = Color(0xFFF6F8FA),
-    surface = Color.White,
-    surfaceVariant = Color(0xFFEAEEF2),
-    outline = Color(0xFFD0D7DE),
-    error = Color(0xFFCF222E),
-    onBackground = Color(0xFF1F2328),
-    onSurface = Color(0xFF1F2328),
-    onSurfaceVariant = Color(0xFF59636E)
+    primary = Color(0xFFB3261E),
+    onPrimary = Color.White,
+    secondary = Color(0xFF8C1D18),
+    tertiary = Color(0xFF147A4B),
+    background = Color(0xFFFFF8F7),
+    surface = Color(0xFFFFFBFF),
+    surfaceVariant = Color(0xFFF5E7E5),
+    outline = Color(0xFFD8C2BF),
+    error = Color(0xFFBA1A1A),
+    onBackground = Color(0xFF241918),
+    onSurface = Color(0xFF241918),
+    onSurfaceVariant = Color(0xFF665A58)
 )
 
 /**
- * Applies the GitHub Rock color scheme and typography to the provided content.
- *
- * @param darkTheme Whether to use the dark theme.
- * @param dynamicColor Whether to use the system dynamic color scheme when supported.
- * @param content The composable content to theme.
+ * Dark-first GitHub Rock visual system. Dynamic color remains opt-in so the
+ * product keeps its distinct Obsidian Coral identity by default.
  */
 @Composable
 fun GitHubRockTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
     val colors = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme -> dynamicDarkColorScheme(context)
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme ->
+            dynamicDarkColorScheme(context)
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            dynamicLightColorScheme(context)
         darkTheme -> DarkColors
         else -> LightColors
     }
