@@ -15,16 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
- * Displays a full-width glass-styled card with optional click handling.
- *
- * @param contentPadding The padding applied around the card content.
- * @param onClick The callback invoked when the card is clicked, or `null` to disable clicking.
- * @param content The composable content displayed inside the card.
+ * The shared Obsidian panel. The legacy name is retained so every screen
+ * adopts the new visual system without duplicating card implementations.
  */
 @Composable
 fun GlassCard(
@@ -33,7 +29,7 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(20.dp)
     val interactionModifier = if (onClick == null) {
         Modifier
     } else {
@@ -45,18 +41,11 @@ fun GlassCard(
             .fillMaxWidth()
             .clip(shape)
             .then(interactionModifier)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surface)
             .border(
                 BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.58f)
+                    MaterialTheme.colorScheme.outline.copy(alpha = .92f)
                 ),
                 shape
             )
@@ -65,20 +54,16 @@ fun GlassCard(
     )
 }
 
-/**
-     * Applies the theme background color with a vertical primary-to-secondary gradient overlay.
-     *
-     * @return A modifier with the rock background styling applied.
-     */
-    @Composable
+/** Adds a restrained coral glow while keeping content on a true-black base. */
+@Composable
 fun Modifier.rockBackground(): Modifier = this
     .background(MaterialTheme.colorScheme.background)
     .background(
         Brush.verticalGradient(
-            colors = listOf(
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                Color.Transparent,
-                MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
+            listOf(
+                MaterialTheme.colorScheme.primary.copy(alpha = .045f),
+                MaterialTheme.colorScheme.background,
+                MaterialTheme.colorScheme.background
             )
         )
     )
