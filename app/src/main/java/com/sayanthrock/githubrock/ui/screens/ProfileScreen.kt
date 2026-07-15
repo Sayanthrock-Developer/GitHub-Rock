@@ -44,6 +44,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 fun ProfileScreen(
     mode: AppMode,
     profile: GitHubUser?,
+    onOpenRepositories: () -> Unit,
     onOpenFeatures: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -85,7 +86,7 @@ fun ProfileScreen(
                     icon = Icons.Default.Folder,
                     title = "Repository library",
                     subtitle = "Browse projects connected to this profile",
-                    onClick = { profileUrl?.let { uriHandler.openUri("$it?tab=repositories") } }
+                    onClick = onOpenRepositories
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ProfileMenuItem(
@@ -171,6 +172,20 @@ private fun ProfileHero(mode: AppMode, profile: GitHubUser?) {
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+
+            if (profile != null && (!profile.location.isNullOrBlank() || !profile.blog.isNullOrBlank())) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    profile.location?.takeIf(String::isNotBlank)?.let {
+                        ProfileFact("Location", it, Modifier.weight(1f))
+                    }
+                    profile.blog?.takeIf(String::isNotBlank)?.let {
+                        ProfileFact("Website", it, Modifier.weight(1f))
+                    }
+                }
             }
 
             if (mode != AppMode.Guest && profile != null) {
@@ -310,5 +325,25 @@ private fun ProfileMenuItem(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
+    }
+}
+
+@Composable
+private fun ProfileFact(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            Text(
+                value,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
