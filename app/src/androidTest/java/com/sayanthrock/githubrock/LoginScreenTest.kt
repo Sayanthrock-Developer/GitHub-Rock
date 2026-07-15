@@ -41,7 +41,8 @@ class LoginScreenTest {
         compose.onNodeWithText("Secure developer access").assertIsDisplayed()
         compose.onNodeWithText("GitHub Device Flow").assertIsDisplayed()
         compose.onNodeWithContentDescription("Sign in to GitHub").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Create GitHub account").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Sign up for GitHub").assertIsDisplayed()
+        compose.onNodeWithText("Google, Apple, or email").assertIsDisplayed()
         compose.onNodeWithText("Continue with public repositories").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Explore isolated demo mode").performScrollTo().assertIsDisplayed()
     }
@@ -69,7 +70,7 @@ class LoginScreenTest {
         }
     }
 
-    @Test fun createAccountButtonOpensOfficialSignupPageAndOffersConnection() {
+    @Test fun signUpButtonOpensOfficialGitHubPageAndOffersConnection() {
         var openedUrl: String? = null
         var loginStarted = false
         compose.setContent {
@@ -87,13 +88,38 @@ class LoginScreenTest {
             }
         }
 
-        compose.onNodeWithContentDescription("Create GitHub account").performClick()
+        compose.onNodeWithContentDescription("Sign up for GitHub").performClick()
         compose.runOnIdle {
             assertEquals(GITHUB_SIGN_UP_URL, openedUrl)
         }
+        compose.onNodeWithText("Finish signup, then connect").assertIsDisplayed()
         compose.onNodeWithContentDescription("Connect new GitHub account").assertIsDisplayed().performClick()
         compose.runOnIdle {
             assertTrue(loginStarted)
+        }
+    }
+
+    @Test fun signupRemainsAvailableWhenGitHubAppClientIdIsMissing() {
+        var openedUrl: String? = null
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                LoginScreen(
+                    configured = false,
+                    loading = false,
+                    auth = DeviceAuthState(),
+                    onLogin = {},
+                    onOpenGitHubUrl = { openedUrl = it },
+                    onCheckAuthorization = {},
+                    onGuest = {},
+                    onDemo = {}
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription("Sign in to GitHub").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Sign up for GitHub").performClick()
+        compose.runOnIdle {
+            assertEquals(GITHUB_SIGN_UP_URL, openedUrl)
         }
     }
 
