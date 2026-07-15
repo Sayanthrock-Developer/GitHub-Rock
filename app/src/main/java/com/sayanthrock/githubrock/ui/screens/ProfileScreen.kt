@@ -83,7 +83,7 @@ fun ProfileScreen(
             ProfileMenuGroup {
                 ProfileMenuItem(
                     icon = Icons.Default.Folder,
-                    title = "Repositories",
+                    title = "Repository library",
                     subtitle = "Browse projects connected to this profile",
                     onClick = { profileUrl?.let { uriHandler.openUri("$it?tab=repositories") } }
                 )
