@@ -29,6 +29,7 @@ class ProfileScreenTest {
                         followers = 120,
                         following = 48
                     ),
+                    onOpenRepositories = {},
                     onOpenFeatures = { openedFeatures = true },
                     onLogout = {}
                 )
