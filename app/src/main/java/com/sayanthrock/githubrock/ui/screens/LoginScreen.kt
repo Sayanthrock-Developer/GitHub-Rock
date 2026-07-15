@@ -298,7 +298,7 @@ private fun AccountAccessPanel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(68.dp)
-                        .semantics { contentDescription = "Login with GitHub" },
+                        .semantics { contentDescription = "Sign in to GitHub" },
                     shape = RoundedCornerShape(22.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -320,7 +320,7 @@ private fun AccountAccessPanel(
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        if (loading) "Connecting…" else "Connect with GitHub",
+                        if (loading) "Preparing sign-in…" else "Sign in to GitHub",
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Start,
                         fontWeight = FontWeight.Black,

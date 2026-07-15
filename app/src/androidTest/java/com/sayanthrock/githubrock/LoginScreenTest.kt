@@ -40,10 +40,33 @@ class LoginScreenTest {
         }
         compose.onNodeWithText("Secure developer access").assertIsDisplayed()
         compose.onNodeWithText("GitHub Device Flow").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Login with GitHub").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Sign in to GitHub").assertIsDisplayed()
         compose.onNodeWithContentDescription("Create GitHub account").assertIsDisplayed()
         compose.onNodeWithText("Continue with public repositories").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Explore isolated demo mode").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun signInButtonStartsGitHubDeviceFlow() {
+        var loginStarted = false
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                LoginScreen(
+                    configured = true,
+                    loading = false,
+                    auth = DeviceAuthState(),
+                    onLogin = { loginStarted = true },
+                    onOpenGitHubUrl = {},
+                    onCheckAuthorization = {},
+                    onGuest = {},
+                    onDemo = {}
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription("Sign in to GitHub").performClick()
+        compose.runOnIdle {
+            assertTrue(loginStarted)
+        }
     }
 
     @Test fun createAccountButtonOpensOfficialSignupPageAndOffersConnection() {
