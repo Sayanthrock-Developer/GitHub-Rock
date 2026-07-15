@@ -16,7 +16,7 @@ import org.junit.Test
 class RepositoryCardTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun templateRepositoryShowsPreviewAndUsesWholeCardAction() {
+    @Test fun repositoryShowsOwnerMetricsAndUsesWholeCardAction() {
         var opened = false
         val repository = GitHubRepositoryModel(
             id = 1,
@@ -41,8 +41,9 @@ class RepositoryCardTest {
             }
         }
 
-        compose.onNodeWithContentDescription("SayanthRock/Rock-Wedding repository preview image").assertIsDisplayed()
-        compose.onNodeWithText("Template").assertIsDisplayed()
+        compose.onNodeWithContentDescription("SayanthRock avatar").assertIsDisplayed()
+        compose.onNodeWithText("TypeScript", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("174", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Premium digital wedding invitation studio").performClick()
         compose.runOnIdle { assertTrue(opened) }
     }
