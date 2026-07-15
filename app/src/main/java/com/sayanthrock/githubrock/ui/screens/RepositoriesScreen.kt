@@ -36,10 +36,19 @@ fun RepositoriesScreen(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
-        Text("Repositories", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(14.dp))
+        Text(
+            "Repositories",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
+        )
+        Text(
+            if (repositories.isEmpty()) "Search the GitHub ecosystem" else "${repositories.size} projects ready",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(Modifier.height(16.dp))
         SearchBar(
             inputField = {
                 SearchBarDefaults.InputField(
@@ -48,7 +57,7 @@ fun RepositoriesScreen(
                     onSearch = { onSearch(query.trim()) },
                     expanded = false,
                     onExpandedChange = {},
-                    placeholder = { Text("Search repositories") },
+                    placeholder = { Text("Search repo, owner or description…") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
@@ -81,7 +90,7 @@ fun RepositoriesScreen(
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(top = 16.dp, bottom = 110.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (!loading && repositories.isEmpty()) {
                 item {
