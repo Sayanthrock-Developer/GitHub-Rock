@@ -242,13 +242,13 @@ private fun AccountAccessPanel(
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(
-                    if (showAccountSetup) "Create, then connect" else "Connect your GitHub account",
+                    if (showAccountSetup) "Finish signup, then connect" else "Connect your GitHub account",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     if (showAccountSetup) {
-                        "GitHub signup opens securely in your browser. After creating the account, return here and connect it with Device Flow."
+                        "GitHub’s official signup page lets you continue with Google, Apple, or email. Finish there, return here, then connect the new account securely."
                     } else {
                         "Authorize GitHub Rock in your trusted browser. Your GitHub password is never entered or stored inside this app."
                     },
@@ -272,7 +272,7 @@ private fun AccountAccessPanel(
                     Icon(Icons.Default.ArrowForward, contentDescription = null)
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        if (loading) "Preparing connection…" else "I created an account — connect",
+                        if (loading) "Preparing sign-in…" else "Continue with my new account",
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -332,13 +332,24 @@ private fun AccountAccessPanel(
                     onClick = onShowAccountSetup,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(54.dp)
-                        .semantics { contentDescription = "Create GitHub account" },
+                        .height(76.dp)
+                        .semantics { contentDescription = "Sign up for GitHub" },
                     shape = RoundedCornerShape(18.dp)
                 ) {
                     Icon(Icons.Default.OpenInBrowser, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Create a GitHub account")
+                    Spacer(Modifier.width(12.dp))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Google, Apple, or email",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(Icons.Default.ArrowForward, contentDescription = null)
                 }
             }
 
