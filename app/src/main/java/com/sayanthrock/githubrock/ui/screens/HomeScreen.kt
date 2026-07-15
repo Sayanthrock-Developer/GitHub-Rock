@@ -1,10 +1,12 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -27,7 +29,6 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
-import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
 @Composable
 fun HomeScreen(
@@ -301,55 +302,86 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(0.dp),
+        contentPadding = PaddingValues(18.dp),
         onClick = onClick
     ) {
-        Column {
-            RepositoryArtwork(repository = repo, compact = true)
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(11.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(13.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    repo.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    repo.description ?: "No repository description.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    modifier = Modifier.size(50.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    RepositoryInfoPill(repo.language ?: "Repository")
-                    repo.topics.firstOrNull()?.takeIf { it.isNotBlank() }?.let { RepositoryInfoPill(it) }
+                    if (repo.owner.avatarUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = repo.owner.avatarUrl,
+                            contentDescription = "${repo.owner.login} avatar",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                repo.owner.login.take(2).uppercase(),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .7f))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column(Modifier.weight(1f)) {
                     Text(
-                        "★ ${compactCount(repo.stars)}  •  Forks ${compactCount(repo.forks)}  •  Issues ${compactCount(repo.openIssues)}",
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge,
+                        repo.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "Open ›",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        repo.owner.login,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Open ${repo.name}",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Text(
+                repo.description ?: "No repository description.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RepositoryMetaChip("★", compactCount(repo.stars))
+                RepositoryMetaChip("⑂", compactCount(repo.forks))
+                RepositoryMetaChip("!", compactCount(repo.openIssues))
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RepositoryMetaChip("<>", repo.language ?: "Repository", accent = true)
+                repo.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let {
+                    RepositoryMetaChip("#", it)
                 }
             }
         }
@@ -357,16 +389,37 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RepositoryInfoPill(label: String) {
+private fun RepositoryMetaChip(
+    symbol: String,
+    value: String,
+    accent: Boolean = false
+) {
+    val foreground = if (accent) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = .11f)
+        color = if (accent) {
+            MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (accent) {
+                MaterialTheme.colorScheme.primary.copy(alpha = .28f)
+            } else {
+                MaterialTheme.colorScheme.outline
+            }
+        )
     ) {
         Text(
-            label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.labelSmall,
+            text = "$symbol  $value",
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+            color = foreground,
+            style = MaterialTheme.typography.labelLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
