@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -17,18 +18,30 @@ class FeaturePreviewScreenTest {
 
     @Test fun featureCatalogueShowsCoreWorkspacesAndBackNavigation() {
         var wentBack = false
+        var openedUrl: String? = null
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
-                FeaturePreviewScreen(onBack = { wentBack = true })
+                FeaturePreviewScreen(
+                    login = "SayanthRock",
+                    onOpenGitHubUrl = { openedUrl = it },
+                    onBack = { wentBack = true }
+                )
             }
         }
 
-        compose.onNodeWithText("One mobile control centre for the complete GitHub workflow").assertIsDisplayed()
-        compose.onNodeWithText("Access & identity").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Repositories & code").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Actions & Android builds").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Customer workflows").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Clear feature status").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Native tools plus the complete GitHub website").assertIsDisplayed()
+        compose.onNodeWithText("Complete access, safely").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Open GitHub.com").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("https://github.com/", openedUrl) }
+
+        compose.onNodeWithText("Notifications").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals("https://github.com/notifications", openedUrl) }
+
+        compose.onNodeWithText("Create & code").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Codespaces").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Password and authentication").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Billing and plans").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Native product coverage").performScrollTo().assertIsDisplayed()
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.runOnIdle { assertTrue(wentBack) }

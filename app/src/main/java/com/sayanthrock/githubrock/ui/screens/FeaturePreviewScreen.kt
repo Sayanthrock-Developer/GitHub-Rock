@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,9 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -53,6 +56,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.sayanthrock.githubrock.core.navigation.GITHUB_HOME_URL
+import com.sayanthrock.githubrock.core.navigation.GitHubWebDestination
+import com.sayanthrock.githubrock.core.navigation.GitHubWebSection
+import com.sayanthrock.githubrock.core.navigation.githubWebSections
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
 private enum class FeatureAvailability(val label: String) {
@@ -90,9 +97,14 @@ private data class CustomerWorkflow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeaturePreviewScreen(onBack: () -> Unit) {
+fun FeaturePreviewScreen(
+    login: String?,
+    onOpenGitHubUrl: (String) -> Unit,
+    onBack: () -> Unit
+) {
     var filter by rememberSaveable { mutableStateOf(FeatureFilter.All) }
     val categories = featureCategories
+    val webSections = githubWebSections(login)
 
     Box(
         modifier = Modifier
@@ -111,7 +123,7 @@ fun FeaturePreviewScreen(onBack: () -> Unit) {
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
-                    title = { Text("GitHub features") },
+                    title = { Text("All GitHub") },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -130,7 +142,37 @@ fun FeaturePreviewScreen(onBack: () -> Unit) {
                 contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 44.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                item { FeaturePreviewHero() }
+                item {
+                    FeaturePreviewHero(
+                        webDestinationCount = webSections.sumOf { it.destinations.size },
+                        onOpenGitHubUrl = onOpenGitHubUrl
+                    )
+                }
+                item { GitHubWebAccessNote() }
+
+                webSections.forEach { section ->
+                    item(key = "web-${section.id}") {
+                        GitHubWebSectionCard(
+                            section = section,
+                            onOpenGitHubUrl = onOpenGitHubUrl
+                        )
+                    }
+                }
+
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(
+                            "Native product coverage",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black
+                        )
+                        Text(
+                            "See which workflows are native today, require a connected account, or remain on the native roadmap.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
                 item { FeatureFilterRow(selected = filter, onSelected = { filter = it }) }
 
                 categories.forEach { category ->
@@ -157,7 +199,10 @@ fun FeaturePreviewScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun FeaturePreviewHero() {
+private fun FeaturePreviewHero(
+    webDestinationCount: Int,
+    onOpenGitHubUrl: (String) -> Unit
+) {
     val shape = RoundedCornerShape(30.dp)
     Column(
         modifier = Modifier
@@ -194,18 +239,26 @@ private fun FeaturePreviewHero() {
             )
         }
         Text(
-            text = "One mobile control centre for the complete GitHub workflow",
+            text = "Native tools plus the complete GitHub website",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Black
         )
         Text(
-            text = "Browse repositories, edit code safely, manage collaboration, run automation, build Android apps, publish releases, and download verified artifacts from a single premium workspace.",
+            text = "Use GitHub Rock's native developer workflows, then open any remaining GitHub service securely on its official website without hunting through browser menus.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyLarge
         )
+        Button(
+            onClick = { onOpenGitHubUrl(GITHUB_HOME_URL) },
+            modifier = Modifier.fillMaxWidth().height(52.dp)
+        ) {
+            Text("Open GitHub.com", fontWeight = FontWeight.Bold)
+            Spacer(Modifier.size(8.dp))
+            Icon(Icons.Default.OpenInNew, contentDescription = null)
+        }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             item { PreviewMetric("6", "workspaces") }
-            item { PreviewMetric("30+", "feature previews") }
+            item { PreviewMetric(webDestinationCount.toString(), "website tools") }
             item { PreviewMetric("3", "access modes") }
             item { PreviewMetric("Secure", "Device Flow") }
         }
@@ -225,6 +278,153 @@ private fun PreviewMetric(value: String, label: String) {
         ) {
             Text(value, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun GitHubWebAccessNote() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.tertiary.copy(alpha = .09f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .24f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                Icons.Default.Security,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Complete access, safely", fontWeight = FontWeight.Bold)
+                Text(
+                    "Native workflows stay inside GitHub Rock. Billing, passkeys, tokens, Marketplace purchases, Codespaces, and other website-only tools open in a trusted GitHub Custom Tab. GitHub Rock never sees credentials or payment details.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GitHubWebSectionCard(
+    section: GitHubWebSection,
+    onOpenGitHubUrl: (String) -> Unit
+) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(46.dp),
+                    shape = RoundedCornerShape(15.dp),
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = .13f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(section.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+                    Text(
+                        section.description,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Text(
+                    section.destinations.size.toString(),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black
+                )
+            }
+
+            section.destinations.forEachIndexed { index, destination ->
+                if (index > 0) {
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .64f))
+                    )
+                }
+                GitHubWebDestinationRow(
+                    destination = destination,
+                    onOpenGitHubUrl = onOpenGitHubUrl
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GitHubWebDestinationRow(
+    destination: GitHubWebDestination,
+    onOpenGitHubUrl: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onOpenGitHubUrl(destination.url) }
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(MaterialTheme.colorScheme.tertiary, CircleShape)
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                destination.title,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                destination.description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = MaterialTheme.colorScheme.tertiary.copy(alpha = .12f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .24f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "GitHub web",
+                    color = MaterialTheme.colorScheme.tertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    Icons.Default.OpenInNew,
+                    contentDescription = "Open ${destination.title} on GitHub",
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
         }
     }
 }
