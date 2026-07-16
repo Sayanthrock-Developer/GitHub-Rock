@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -73,5 +74,25 @@ class HomeScreenTest {
 
         compose.onNodeWithText("Native Android GitHub control centre").performClick()
         compose.runOnIdle { assertTrue(openedRepository) }
+    }
+
+    @Test fun loadingDashboardShowsProgressInsteadOfFalseEmptyState() {
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                HomeScreen(
+                    mode = AppMode.Connected,
+                    profile = null,
+                    rateLimit = null,
+                    repositories = emptyList(),
+                    runs = emptyList(),
+                    onOpenRepo = {},
+                    onOpenBuilds = {},
+                    isLoading = true
+                )
+            }
+        }
+
+        compose.onNodeWithText("Loading your GitHub workspace…").assertIsDisplayed()
+        compose.onNodeWithText("No repositories to show. Pull down to refresh.").assertDoesNotExist()
     }
 }

@@ -7,16 +7,23 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +41,7 @@ import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun HomeScreen(
     mode: AppMode,
     profile: GitHubUser?,
@@ -41,7 +49,10 @@ fun HomeScreen(
     repositories: List<GitHubRepositoryModel>,
     runs: List<WorkflowRun>,
     onOpenRepo: (GitHubRepositoryModel) -> Unit,
-    onOpenBuilds: () -> Unit
+    onOpenBuilds: () -> Unit,
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {}
 ) {
     val activeWorkflows = remember(runs) { runs.count { it.status != "completed" } }
     val failedWorkflows = remember(runs) {
@@ -49,79 +60,117 @@ fun HomeScreen(
     }
     val workflowRepositoryLabel = repositories.firstOrNull()?.name
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = StandardScreenPadding,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
     ) {
-        item {
-            StandardScreenHeader(
-                title = "Home",
-                subtitle = "Your repositories, workflows, and GitHub API status"
-            )
-        }
-        item { DashboardHero(mode = mode, profile = profile, rateLimit = rateLimit) }
-        item {
-            StandardSectionHeader("Workspace overview")
-            Spacer(Modifier.height(10.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                item { DashboardMetric("Loaded repos", repositories.size.toString(), Icons.Default.Folder) }
-                item { DashboardMetric(workflowRepositoryLabel?.let { "Active · $it" } ?: "Active workflows", activeWorkflows.toString(), Icons.Default.CloudQueue) }
-                item {
-                    DashboardMetric(
-                        workflowRepositoryLabel?.let { "Failed · $it" } ?: "Failed workflows",
-                        failedWorkflows.toString(),
-                        Icons.Default.ErrorOutline,
-                        isWarning = failedWorkflows > 0
-                    )
-                }
-            }
-        }
-        item {
-            StandardSectionHeader("Quick actions")
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onOpenBuilds, modifier = Modifier.weight(1f).height(52.dp)) {
-                    Icon(Icons.Default.Build, contentDescription = null)
-                    Spacer(Modifier.width(7.dp))
-                    Text("Build APK")
-                }
-                FilledTonalButton(
-                    onClick = { repositories.firstOrNull()?.let(onOpenRepo) },
-                    enabled = repositories.isNotEmpty(),
-                    modifier = Modifier.weight(1f).height(52.dp)
-                ) {
-                    Icon(Icons.Default.Folder, contentDescription = null)
-                    Spacer(Modifier.width(7.dp))
-                    Text("Open repo")
-                }
-            }
-        }
-        if (runs.isNotEmpty()) {
-            item { StandardSectionHeader("Workflow activity", "${runs.size} recent") }
-            items(runs.take(4), key = { it.id }) { run -> WorkflowSummaryCard(run) }
-        }
-        item {
-            StandardSectionHeader(
-                "Recently updated repositories",
-                if (repositories.isEmpty()) "No repositories" else "${repositories.size} available"
-            )
-        }
-        if (repositories.isEmpty()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = StandardScreenPadding,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             item {
-                GlassCard {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null)
-                        Text("No repositories to show.")
+                StandardScreenHeader(
+                    title = "Home",
+                    subtitle = "Your repositories, workflows, and GitHub API status"
+                )
+            }
+            item { DashboardHero(mode = mode, profile = profile, rateLimit = rateLimit) }
+            if (isLoading) {
+                item {
+                    LoadingWorkspaceCard()
+                }
+            }
+            item {
+                StandardSectionHeader("Workspace overview")
+                Spacer(Modifier.height(10.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    item { DashboardMetric("Loaded repos", repositories.size.toString(), Icons.Default.Folder) }
+                    item { DashboardMetric(workflowRepositoryLabel?.let { "Active · $it" } ?: "Active workflows", activeWorkflows.toString(), Icons.Default.CloudQueue) }
+                    item {
+                        DashboardMetric(
+                            workflowRepositoryLabel?.let { "Failed · $it" } ?: "Failed workflows",
+                            failedWorkflows.toString(),
+                            Icons.Default.ErrorOutline,
+                            isWarning = failedWorkflows > 0
+                        )
                     }
                 }
             }
+            item {
+                StandardSectionHeader("Quick actions")
+                Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = onOpenBuilds, modifier = Modifier.weight(1f).height(52.dp)) {
+                        Icon(Icons.Default.Build, contentDescription = null)
+                        Spacer(Modifier.width(7.dp))
+                        Text("Build APK")
+                    }
+                    FilledTonalButton(
+                        onClick = { repositories.firstOrNull()?.let(onOpenRepo) },
+                        enabled = repositories.isNotEmpty(),
+                        modifier = Modifier.weight(1f).height(52.dp)
+                    ) {
+                        Icon(Icons.Default.Folder, contentDescription = null)
+                        Spacer(Modifier.width(7.dp))
+                        Text("Open repo")
+                    }
+                }
+            }
+            if (runs.isNotEmpty()) {
+                item { StandardSectionHeader("Workflow activity", "${runs.size} recent") }
+                items(runs.take(4), key = { it.id }) { run -> WorkflowSummaryCard(run) }
+            }
+            item {
+                StandardSectionHeader(
+                    "Recently updated repositories",
+                    when {
+                        isLoading -> "Loading"
+                        repositories.isEmpty() -> "No repositories"
+                        else -> "${repositories.size} available"
+                    }
+                )
+            }
+            if (!isLoading && repositories.isEmpty()) {
+                item {
+                    GlassCard {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.ErrorOutline, contentDescription = null)
+                            Text("No repositories to show. Pull down to refresh.")
+                        }
+                    }
+                }
+            }
+            items(repositories.take(6), key = { it.id }) { repo ->
+                RepositoryCard(repo = repo, onClick = { onOpenRepo(repo) })
+            }
         }
-        items(repositories.take(6), key = { it.id }) { repo ->
-            RepositoryCard(repo = repo, onClick = { onOpenRepo(repo) })
+    }
+}
+
+@Composable
+private fun LoadingWorkspaceCard() {
+    GlassCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = "Loading your GitHub workspace" },
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Loading your GitHub workspace…", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Fetching account, repository, and API status.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
@@ -284,6 +333,7 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
@@ -357,16 +407,17 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RepositoryMetaChip("★", compactCount(repo.stars))
-                RepositoryMetaChip("⑂", compactCount(repo.forks))
-                RepositoryMetaChip("!", compactCount(repo.openIssues))
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RepositoryMetaChip("<>", repo.language ?: "Repository", accent = true)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                RepositoryMetaChip(Icons.Default.Star, "Stars", compactCount(repo.stars))
+                RepositoryMetaChip(Icons.Default.CallSplit, "Forks", compactCount(repo.forks))
+                RepositoryMetaChip(Icons.Default.ErrorOutline, "Open issues", compactCount(repo.openIssues))
+                RepositoryMetaChip(Icons.Default.Code, "Language", repo.language ?: "Repository", accent = true)
                 repo.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let {
-                    RepositoryMetaChip("#", it)
+                    RepositoryMetaChip(Icons.Default.Tag, "Topic", it)
                 }
             }
         }
@@ -375,7 +426,8 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
 
 @Composable
 private fun RepositoryMetaChip(
-    symbol: String,
+    icon: ImageVector,
+    label: String,
     value: String,
     accent: Boolean = false
 ) {
@@ -385,6 +437,7 @@ private fun RepositoryMetaChip(
         MaterialTheme.colorScheme.onSurface
     }
     Surface(
+        modifier = Modifier.semantics { contentDescription = "$label: $value" },
         shape = MaterialTheme.shapes.large,
         color = if (accent) {
             MaterialTheme.colorScheme.primary.copy(alpha = .10f)
@@ -400,14 +453,20 @@ private fun RepositoryMetaChip(
             }
         )
     ) {
-        Text(
-            text = "$symbol  $value",
+        Row(
             modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
-            color = foreground,
-            style = MaterialTheme.typography.labelLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
+            Text(
+                text = value,
+                color = foreground,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 

@@ -2,14 +2,16 @@
 
 This file separates working alpha functionality from roadmap scope so the application never represents an unfinished action as complete.
 
-## Implemented in 0.1.0 alpha
+## Implemented in the current alpha
 
 - Native Android project, package `com.sayanthrock.githubrock`, API 29–36
 - GitHub App Device Flow request/poll/refresh/logout foundation
 - Android Keystore-backed encrypted token storage and redacted HTTP logging
 - Connected, public guest, and isolated demo data modes
 - Home, Repositories, Builds, Downloads, Profile, and repository-detail navigation
-- App-wide clean Material 3 design system with persistent mode, accent, true-black, and dynamic-color controls
+- App-wide adaptive Material 3 design system with phone bottom navigation, tablet/landscape navigation rail, bounded wide-screen content, and persistent appearance controls
+- Pull-to-refresh dashboard, progressive connected-account loading, concurrent account/API/repository requests, and honest loading/empty/error feedback
+- Working profile repository, follower, and following destinations through the allow-listed GitHub browser launcher
 - All GitHub services hub with 39 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases
 - Five-platform release-asset picker for Android, Windows, Linux, iOS, and macOS with deterministic format and architecture classification
@@ -22,10 +24,9 @@ This file separates working alpha functionality from roadmap scope so the applic
 
 ## Next implementation milestones
 
-1. Code viewer/editor and reviewed branch/commit/pull-request mutation flow.
-2. Complete issue, pull-request review, checks, and confirmed merge UI.
-3. Build wizard, workflow preview/branch commit/PR, run logs, and artifact picker.
-4. Download queue controls, APK inspection presentation, and system installer launch.
-5. Draft release editor, asset upload, release notes, and destructive confirmations.
-6. Continue moving high-value web-hub destinations into native screens where GitHub App permissions and REST/GraphQL coverage allow it.
-7. Paging-backed large lists, GraphQL batching, biometric lock, adaptive panes, and accessibility/device screenshot validation.
+1. Richer language grammars plus PR diff and conflict presentation.
+2. Dynamic `workflow_dispatch` input forms and workflow failure annotations.
+3. Storage Access Framework download locations, mirror selection, and trusted checksum-file matching.
+4. Biometric lock controls, foldable list-detail panes, and Paging-backed large lists.
+5. Complete TalkBack, large-font, keyboard, contrast, and physical-device screenshot validation.
+6. Continue moving high-value web-hub destinations into native screens when GitHub permissions and APIs support them safely.

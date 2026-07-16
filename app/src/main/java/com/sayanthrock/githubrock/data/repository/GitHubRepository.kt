@@ -6,6 +6,8 @@ import com.sayanthrock.githubrock.core.network.GitHubRestApi
 import com.sayanthrock.githubrock.data.local.RepositoryDao
 import com.sayanthrock.githubrock.data.local.RepositoryEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,10 +19,16 @@ class GitHubRepository @Inject constructor(
     private val artworkResolver: RepositoryArtworkResolver
 ) {
     suspend fun dashboard(): DashboardPayload = withContext(Dispatchers.IO) {
-        val profile = api.me()
-        val rate = api.rateLimit().rate
-        val repos = artworkResolver.attach(api.repositories())
-        DashboardPayload(profile, rate, repos)
+        coroutineScope {
+            val profile = async { api.me() }
+            val rate = async { api.rateLimit().rate }
+            val repositories = async { api.repositories() }
+            DashboardPayload(
+                profile = profile.await(),
+                rateLimit = rate.await(),
+                repositories = artworkResolver.attach(repositories.await())
+            )
+        }
     }
 
     suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> = withContext(Dispatchers.IO) {

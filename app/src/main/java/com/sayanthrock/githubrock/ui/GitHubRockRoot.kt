@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.WindowInsets
@@ -84,9 +85,14 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
         }
     }
 
-    androidx.compose.foundation.layout.Box(
+    BoxWithConstraints(
         Modifier.fillMaxSize().rockBackground()
     ) {
+        val navigationChromePadding = when {
+            state.mode == null -> 20.dp
+            maxWidth < 600.dp -> 80.dp
+            else -> 20.dp
+        }
         if (state.mode == null) {
             LoginScreen(
                 configured = viewModel.loginConfigured,
@@ -105,6 +111,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 onSearch = viewModel::searchRepositories,
                 onRememberRepository = viewModel::rememberRepository,
                 onOpenGitHubUrl = openGitHubUrl,
+                onRefresh = viewModel::refresh,
                 onLogout = viewModel::logout
             )
         }
@@ -115,7 +122,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 .padding(
                     start = 16.dp,
                     end = 16.dp,
-                    bottom = navigationBarPadding + if (state.mode == null) 20.dp else 80.dp
+                    bottom = navigationBarPadding + navigationChromePadding
                 )
         )
     }

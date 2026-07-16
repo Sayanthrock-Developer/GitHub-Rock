@@ -28,6 +28,7 @@ data class DeviceAuthState(
 data class MainUiState(
     val mode: AppMode? = null,
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val profile: GitHubUser? = null,
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val workflowRuns: List<WorkflowRun> = emptyList(),
@@ -130,6 +131,41 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun refresh() {
+        val mode = _state.value.mode ?: return
+        if (_state.value.isLoading || _state.value.isRefreshing) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isRefreshing = true, message = null) }
+            when (mode) {
+                AppMode.Connected -> loadConnectedDashboard()
+                AppMode.Guest -> runCatching { githubRepository.publicRepositories("") }
+                    .onSuccess { repositories ->
+                        _state.update {
+                            it.copy(
+                                repositories = repositories,
+                                isRefreshing = false
+                            )
+                        }
+                    }
+                    .onFailure { error ->
+                        _state.update {
+                            it.copy(
+                                isRefreshing = false,
+                                message = error.userMessage()
+                            )
+                        }
+                    }
+                AppMode.Demo -> _state.update {
+                    it.copy(
+                        isRefreshing = false,
+                        message = "Demo data is already up to date."
+                    )
+                }
+            }
+        }
+    }
+
     fun rememberRepository(repository: GitHubRepositoryModel) {
         if (_state.value.mode != AppMode.Demo) viewModelScope.launch { githubRepository.remember(repository) }
     }
@@ -181,21 +217,34 @@ class MainViewModel @Inject constructor(
     private suspend fun loadConnectedDashboard() {
         runCatching { githubRepository.dashboard() }
             .onSuccess { payload ->
-                val runs = payload.repositories.firstOrNull()?.let { repo ->
-                    runCatching { githubRepository.runs(repo.owner.login, repo.name) }.getOrDefault(emptyList())
-                }.orEmpty()
                 _state.update {
                     it.copy(
                         mode = AppMode.Connected,
                         isLoading = false,
                         profile = payload.profile,
                         rateLimit = payload.rateLimit,
-                        repositories = payload.repositories,
-                        workflowRuns = runs
+                        repositories = payload.repositories
+                    )
+                }
+                val runs = payload.repositories.firstOrNull()?.let { repo ->
+                    runCatching { githubRepository.runs(repo.owner.login, repo.name) }.getOrNull()
+                }
+                _state.update { current ->
+                    current.copy(
+                        workflowRuns = runs ?: current.workflowRuns,
+                        isRefreshing = false
                     )
                 }
             }
-            .onFailure { error -> _state.update { it.copy(isLoading = false, message = error.userMessage()) } }
+            .onFailure { error ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false,
+                        message = error.userMessage()
+                    )
+                }
+            }
     }
 }
 
