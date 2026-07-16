@@ -248,7 +248,7 @@ private fun AccountAccessPanel(
                 )
                 Text(
                     if (showAccountSetup) {
-                        "GitHub’s official signup page lets you continue with Google, Apple, or email. Finish there, return here, then connect the new account securely."
+                        "GitHub Rock opens signup in an isolated browser session, so an account already signed in cannot redirect you to Dashboard. Choose Google, Apple, or email, then return here."
                     } else {
                         "Authorize GitHub Rock in your trusted browser. Your GitHub password is never entered or stored inside this app."
                     },
@@ -344,7 +344,7 @@ private fun AccountAccessPanel(
                     ) {
                         Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
                         Text(
-                            "Google, Apple, or email",
+                            "Private signup · Google, Apple, or email",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
