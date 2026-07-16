@@ -42,7 +42,7 @@ class LoginScreenTest {
         compose.onNodeWithText("GitHub Device Flow").assertIsDisplayed()
         compose.onNodeWithContentDescription("Sign in to GitHub").assertIsDisplayed()
         compose.onNodeWithContentDescription("Sign up for GitHub").assertIsDisplayed()
-        compose.onNodeWithText("Google, Apple, or email").assertIsDisplayed()
+        compose.onNodeWithText("Private signup · Google, Apple, or email").assertIsDisplayed()
         compose.onNodeWithText("Continue with public repositories").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Explore isolated demo mode").performScrollTo().assertIsDisplayed()
     }
