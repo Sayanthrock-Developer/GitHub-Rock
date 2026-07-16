@@ -21,7 +21,8 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
 - Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 fingerprinting and expected-checksum verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
-- Clean Material 3 visual system with consistent spacing, typography, grouped settings, edge-to-edge system bars, system/light/dark modes, true black, five accent choices, and optional dynamic color
+- Clean adaptive Material 3 visual system with consistent spacing, typography, grouped settings, edge-to-edge system bars, phone bottom navigation, tablet/landscape navigation rail, system/light/dark modes, true black, five accent choices, and optional dynamic color
+- Pull-to-refresh dashboard with honest initial-loading, refreshing, empty, and offline feedback; account, rate-limit, and repository requests are loaded concurrently
 - Deep links for repositories, builds, releases, and standard GitHub repository URLs
 - Unit tests for authentication responses, workflow status, Android workflow generation, project detection, release-asset classification, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
@@ -31,12 +32,12 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Screen | What it shows |
 | --- | --- |
 | Login | Explicit sign-in, official signup (Google, Apple, or email), GitHub Device Flow, guest access, and demo mode |
-| Home | Premium profile hero, API health, repository/build metrics, quick actions, workflow status, and repositories |
+| Home | Profile hero, API health, repository/build metrics, quick actions, workflow status, pull-to-refresh, and honest loading/empty states |
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and a five-platform Release asset picker |
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
 | Downloads | Live artifact progress, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
-| Profile | Compact account summary, repository/download shortcuts, GitHub security, appearance, feature status, and session controls |
+| Profile | Compact account summary with working repository/follower/following links, shortcuts, GitHub security, appearance, feature status, and session controls |
 | Appearance | System/light/dark mode, true black, dynamic color, and five persistent accent choices |
 | All GitHub | Native feature status plus secure access to every major GitHub.com workspace and account tool |
 
@@ -179,6 +180,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
 - Platform-aware release selection for Android, Windows, Linux, iOS, and macOS assets; non-Android files are downloaded for sharing or transfer and are not run on the Android device
 - Persistent clean-standard appearance controls with immediate app-wide theme updates and correct system-bar contrast
+- Adaptive phone/tablet navigation, bounded wide-screen content, and pull-to-refresh dashboard feedback
 - Issue metadata editing for labels, assignees, milestones, and reactions
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
 - Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
@@ -196,7 +198,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Workflow failure annotations and dynamic `workflow_dispatch` inputs UI
 - Mirror selection and Storage Access Framework download-location selection
 - Richer APK permission/certificate presentation and checksum-file matching
-- Biometric lock settings UI, tablet navigation rail, foldable list-detail panes, accessibility audit, and screenshot suite
+- Biometric lock settings UI, foldable list-detail panes, complete accessibility audit, and screenshot suite
 - GraphQL batching and Paging-backed large lists
 
 These items remain visible here as roadmap work rather than being represented by fake buttons or success states.

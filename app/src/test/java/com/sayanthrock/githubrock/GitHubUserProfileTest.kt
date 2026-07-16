@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class GitHubUserProfileTest {
-    @Test fun profileIgnoresUnusedSocialFields() {
+    @Test fun profileDecodesRepositoryAndSocialCounts() {
         val user = Json { ignoreUnknownKeys = true }.decodeFromString<GitHubUser>(
             """
             {
@@ -22,5 +22,7 @@ class GitHubUserProfileTest {
 
         assertEquals("SayanthRock", user.login)
         assertEquals(24, user.publicRepos)
+        assertEquals(120, user.followers)
+        assertEquals(73, user.following)
     }
 }

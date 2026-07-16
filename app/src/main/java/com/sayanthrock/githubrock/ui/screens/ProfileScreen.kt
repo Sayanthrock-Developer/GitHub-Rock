@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,11 +32,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.navigation.GITHUB_ACCOUNT_SECURITY_URL
+import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
@@ -57,7 +62,12 @@ fun ProfileScreen(
     onOpenGitHubUrl: (String) -> Unit,
     onLogout: () -> Unit
 ) {
-    val profileUrl = profile?.login?.let { "https://github.com/$it" }
+    val connectedLogin = if (mode == AppMode.Connected) {
+        normalizedGitHubLogin(profile?.login)
+    } else {
+        null
+    }
+    val profileUrl = connectedLogin?.let { "https://github.com/$it" }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -75,7 +85,21 @@ fun ProfileScreen(
             )
         }
 
-        item { ProfileHero(mode = mode, profile = profile) }
+        item {
+            ProfileHero(
+                mode = mode,
+                profile = profile,
+                onOpenRepositories = connectedLogin?.let { login ->
+                    { onOpenGitHubUrl("https://github.com/$login?tab=repositories") }
+                },
+                onOpenFollowers = connectedLogin?.let { login ->
+                    { onOpenGitHubUrl("https://github.com/$login?tab=followers") }
+                },
+                onOpenFollowing = connectedLogin?.let { login ->
+                    { onOpenGitHubUrl("https://github.com/$login?tab=following") }
+                }
+            )
+        }
 
         if (profileUrl != null) {
             item {
@@ -163,7 +187,13 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileHero(mode: AppMode, profile: GitHubUser?) {
+private fun ProfileHero(
+    mode: AppMode,
+    profile: GitHubUser?,
+    onOpenRepositories: (() -> Unit)?,
+    onOpenFollowers: (() -> Unit)?,
+    onOpenFollowing: (() -> Unit)?
+) {
     GlassCard(contentPadding = PaddingValues(20.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(
@@ -225,11 +255,26 @@ private fun ProfileHero(mode: AppMode, profile: GitHubUser?) {
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ProfileStat(profile.publicRepos, "Repositories", Modifier.weight(1f))
+                    ProfileStat(
+                        profile.publicRepos,
+                        "Repositories",
+                        Modifier.weight(1f),
+                        onClick = onOpenRepositories
+                    )
                     StatDivider()
-                    ProfileStat(profile.followers, "Followers", Modifier.weight(1f))
+                    ProfileStat(
+                        profile.followers,
+                        "Followers",
+                        Modifier.weight(1f),
+                        onClick = onOpenFollowers
+                    )
                     StatDivider()
-                    ProfileStat(profile.following, "Following", Modifier.weight(1f))
+                    ProfileStat(
+                        profile.following,
+                        "Following",
+                        Modifier.weight(1f),
+                        onClick = onOpenFollowing
+                    )
                 }
             }
         }
@@ -263,9 +308,23 @@ private fun ProfileAvatar(profile: GitHubUser?) {
 }
 
 @Composable
-private fun ProfileStat(value: Int, label: String, modifier: Modifier = Modifier) {
+private fun ProfileStat(
+    value: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val interactionModifier = if (onClick == null) {
+        Modifier
+    } else {
+        Modifier
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(role = Role.Button, onClick = onClick)
+    }
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .then(interactionModifier)
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -278,7 +337,8 @@ private fun ProfileStat(value: Int, label: String, modifier: Modifier = Modifier
             label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
+            textAlign = TextAlign.Center,
+            maxLines = 2
         )
     }
 }

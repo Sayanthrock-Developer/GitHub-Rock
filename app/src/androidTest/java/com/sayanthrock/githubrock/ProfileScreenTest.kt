@@ -10,6 +10,7 @@ import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -19,6 +20,7 @@ class ProfileScreenTest {
     @Test fun connectedProfileShowsRepositoryCountAndFeaturePreview() {
         var openedFeatures = false
         var openedAppearance = false
+        var openedGitHubUrl: String? = null
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ProfileScreen(
@@ -34,7 +36,7 @@ class ProfileScreenTest {
                     onOpenDownloads = {},
                     onOpenFeatures = { openedFeatures = true },
                     onOpenAppearance = { openedAppearance = true },
-                    onOpenGitHubUrl = {},
+                    onOpenGitHubUrl = { openedGitHubUrl = it },
                     onLogout = {}
                 )
             }
@@ -46,6 +48,10 @@ class ProfileScreenTest {
         compose.onNodeWithText("120").assertIsDisplayed()
         compose.onNodeWithText("Following").assertIsDisplayed()
         compose.onNodeWithText("48").assertIsDisplayed()
+        compose.onNodeWithText("Followers").performClick()
+        compose.runOnIdle {
+            assertEquals("https://github.com/SayanthRock?tab=followers", openedGitHubUrl)
+        }
         compose.onNodeWithText("View on GitHub").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }

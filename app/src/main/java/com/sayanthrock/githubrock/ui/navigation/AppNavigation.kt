@@ -1,22 +1,16 @@
 package com.sayanthrock.githubrock.ui.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +58,11 @@ private val topDestinations = listOf(
     TopDestination.Profile
 )
 
+internal enum class MainNavigationLayout { BottomBar, NavigationRail }
+
+internal fun mainNavigationLayout(widthDp: Float): MainNavigationLayout =
+    if (widthDp >= 600f) MainNavigationLayout.NavigationRail else MainNavigationLayout.BottomBar
+
 @Composable
 fun MainNavigation(
     navController: NavHostController,
@@ -71,6 +70,7 @@ fun MainNavigation(
     onSearch: (String) -> Unit,
     onRememberRepository: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
+    onRefresh: () -> Unit,
     onLogout: () -> Unit
 ) {
     val entry by navController.currentBackStackEntryAsState()
@@ -81,83 +81,62 @@ fun MainNavigation(
         onRememberRepository(repo)
         navController.navigate("repo/${repo.owner.login}/${repo.name}?demo=${mode == AppMode.Demo}")
     }
+    val navigateToTopDestination: (TopDestination) -> Unit = { destination ->
+        navController.navigate(destination.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            if (showNavigation) {
-                val borderColor = MaterialTheme.colorScheme.outlineVariant
-                NavigationBar(
-                    modifier = Modifier
-                        .drawBehind {
-                            drawLine(
-                                color = borderColor,
-                                start = androidx.compose.ui.geometry.Offset.Zero,
-                                end = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                                strokeWidth = 1.dp.toPx()
-                            )
-                        },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    tonalElevation = 0.dp
-                ) {
-                    topDestinations.forEach { destination ->
-                        val selected = route == destination.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    destination.icon,
-                                    destination.label,
-                                    modifier = Modifier.size(23.dp)
-                                )
-                            },
-                            label = {
-                                Text(
-                                    destination.label,
-                                    maxLines = 1,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                                )
-                            },
-                            alwaysShowLabel = true,
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                    }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val navigationLayout = mainNavigationLayout(maxWidth.value)
+        val useNavigationRail = navigationLayout == MainNavigationLayout.NavigationRail
+
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = {
+                if (showNavigation && !useNavigationRail) {
+                    AppNavigationBar(
+                        selectedRoute = route,
+                        onDestinationSelected = navigateToTopDestination
+                    )
                 }
             }
-        }
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = TopDestination.Home.route,
-            modifier = Modifier.padding(
-                if (showNavigation) padding else androidx.compose.foundation.layout.PaddingValues()
-            )
-        ) {
+        ) { scaffoldPadding ->
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(if (showNavigation) scaffoldPadding else PaddingValues())
+            ) {
+                if (showNavigation && useNavigationRail) {
+                    AppNavigationRail(
+                        selectedRoute = route,
+                        onDestinationSelected = navigateToTopDestination
+                    )
+                }
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = TopDestination.Home.route,
+                        modifier = Modifier.widthIn(max = 1200.dp).fillMaxSize()
+                    ) {
             composable(TopDestination.Home.route) {
                 HomeScreen(
-                    mode,
-                    state.profile,
-                    state.rateLimit,
-                    state.repositories,
-                    state.workflowRuns,
-                    openRepo
-                ) {
-                    navController.navigate(TopDestination.Builds.route)
-                }
+                    mode = mode,
+                    profile = state.profile,
+                    rateLimit = state.rateLimit,
+                    repositories = state.repositories,
+                    runs = state.workflowRuns,
+                    onOpenRepo = openRepo,
+                    onOpenBuilds = { navController.navigate(TopDestination.Builds.route) },
+                    isLoading = state.isLoading,
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = onRefresh
+                )
             }
             composable(TopDestination.Repositories.route) {
                 RepositoriesScreen(state.repositories, state.isLoading, onSearch, openRepo)
@@ -274,6 +253,126 @@ fun MainNavigation(
                     initialTag = tag
                 )
             }
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun AppNavigationBar(
+    selectedRoute: String?,
+    onDestinationSelected: (TopDestination) -> Unit
+) {
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
+    NavigationBar(
+        modifier = Modifier.drawBehind {
+            drawLine(
+                color = borderColor,
+                start = androidx.compose.ui.geometry.Offset.Zero,
+                end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                strokeWidth = 1.dp.toPx()
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp
+    ) {
+        topDestinations.forEach { destination ->
+            val selected = selectedRoute == destination.route
+            NavigationBarItem(
+                selected = selected,
+                onClick = { onDestinationSelected(destination) },
+                icon = {
+                    Icon(
+                        destination.icon,
+                        destination.label,
+                        modifier = Modifier.size(23.dp)
+                    )
+                },
+                label = {
+                    NavigationLabel(destination.label, selected)
+                },
+                alwaysShowLabel = true,
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppNavigationRail(
+    selectedRoute: String?,
+    onDestinationSelected: (TopDestination) -> Unit
+) {
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
+    NavigationRail(
+        modifier = Modifier.fillMaxHeight().drawBehind {
+            drawLine(
+                color = borderColor,
+                start = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        },
+        header = {
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        "GR",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        windowInsets = WindowInsets(0, 0, 0, 0)
+    ) {
+        Spacer(Modifier.height(8.dp))
+        topDestinations.forEach { destination ->
+            val selected = selectedRoute == destination.route
+            NavigationRailItem(
+                selected = selected,
+                onClick = { onDestinationSelected(destination) },
+                icon = {
+                    Icon(
+                        destination.icon,
+                        destination.label,
+                        modifier = Modifier.size(23.dp)
+                    )
+                },
+                label = { NavigationLabel(destination.label, selected) },
+                alwaysShowLabel = true,
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavigationLabel(label: String, selected: Boolean) {
+    Text(
+        label,
+        maxLines = 1,
+        fontSize = 11.sp,
+        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+    )
 }
