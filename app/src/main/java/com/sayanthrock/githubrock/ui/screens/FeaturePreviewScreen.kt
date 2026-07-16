@@ -678,7 +678,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     ),
     FeatureCategory(
         title = "Releases & distribution",
-        subtitle = "Prepare, inspect, download, and install project releases",
+        subtitle = "Choose, inspect, download, and distribute project releases",
         icon = Icons.Default.Download,
         features = listOf(
             GitHubFeature("Release management", "Create draft releases and edit or delete existing release metadata.", FeatureAvailability.Connected),
@@ -686,7 +686,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
             GitHubFeature("Managed downloads", "Track artifacts and release files in one download workspace.", FeatureAvailability.Ready),
             GitHubFeature("APK inspection", "Review package details, permissions, version data, and signing information before install.", FeatureAvailability.Ready),
             GitHubFeature("Secure Android install handoff", "Open inspected APK files through the Android package installer.", FeatureAvailability.Ready),
-            GitHubFeature("Desktop installer catalogue", "Surface Windows, macOS, and Linux release assets by platform.", FeatureAvailability.Roadmap)
+            GitHubFeature("Cross-platform download picker", "Select Android, Windows, Linux, iOS, or macOS assets with format, architecture, and protection guidance.", FeatureAvailability.Ready)
         )
     ),
     FeatureCategory(

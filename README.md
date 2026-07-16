@@ -1,6 +1,6 @@
 # GitHub Rock
 
-GitHub Rock is a native Android developer control centre for GitHub. It combines secure GitHub authentication, repository browsing, issues and pull-request visibility, Actions monitoring, Android build workflow generation, verified artifact downloads, and APK inspection in one Kotlin/Compose application.
+GitHub Rock is a native Android developer control centre for GitHub. It combines secure GitHub authentication, repository browsing, issues and pull-request visibility, Actions monitoring, Android build workflow generation, managed artifact downloads, and APK inspection in one Kotlin/Compose application.
 
 > Status: **first functional alpha**. The implemented screens and API calls are real. Demo mode is clearly labelled and isolated. Features listed under “Planned next” are intentionally not presented as complete in the app.
 
@@ -17,12 +17,13 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Complete GitHub services hub with 39 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, security, billing, settings, and community features
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
+- Platform-aware GitHub Release picker for Android, Windows, Linux, iOS, and macOS assets, with file-format and architecture guidance
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
-- Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 verification, duplicate-safe file finalization, and Room recovery
+- Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 fingerprinting and expected-checksum verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
 - GitHub-inspired Liquid Glass dark/light theme with dynamic color and edge-to-edge layout
 - Deep links for repositories, builds, releases, and standard GitHub repository URLs
-- Unit tests for authentication responses, workflow status, Android workflow generation, project detection, dispatched-run matching, completion notification policy, safe refs, and checksums
+- Unit tests for authentication responses, workflow status, Android workflow generation, project detection, release-asset classification, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
 
 ## Screenshots
@@ -32,9 +33,9 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Login | Explicit sign-in, official signup (Google, Apple, or email), GitHub Device Flow, guest access, and demo mode |
 | Home | Premium profile hero, API health, repository/build metrics, quick actions, workflow status, and repositories |
 | Repositories | Public/authorized repository search and repository cards |
-| Repository | Overview, Code, Issues, Pull Requests, Actions, and Releases sections |
+| Repository | Overview, Code, Issues, Pull Requests, Actions, and a five-platform Release asset picker |
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
-| Downloads | Live artifact progress, pause/resume/cancel/restart controls, verified history, sharing, and APK inspection |
+| Downloads | Live artifact progress, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
 | Profile | Account/session mode, public repository count, and token-security information |
 | All GitHub | Native feature status plus secure access to every major GitHub.com workspace and account tool |
 
@@ -160,7 +161,7 @@ If Android reports an incompatible signature, the installed copy was signed with
 - The central GitHub REST version header is `BuildConfig.GITHUB_API_VERSION`.
 - The network stack rejects cleartext traffic.
 - APK installation is delegated to Android's official package installer; there is no silent install or security bypass.
-- SHA-256 is calculated locally before an artifact is trusted.
+- SHA-256 is calculated locally for every completed file. Publisher identity is established only when that fingerprint is compared with a trusted checksum or signature.
 - Destructive GitHub operations require an explicit confirmation in the product flow.
 - Website-only actions open through an allow-listed HTTPS GitHub host in a Custom Tab. Credentials, passkeys, tokens, billing details, and Marketplace purchases remain on GitHub's pages and are never collected by GitHub Rock.
 - Demo records use negative IDs, are loaded from an isolated provider, and are never merged with connected account data.
@@ -175,12 +176,13 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Connected dashboard request with API health, active/failed workflow metrics, and authorized repository listing
 - Public repository search
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
+- Platform-aware release selection for Android, Windows, Linux, iOS, and macOS assets; non-Android files are downloaded for sharing or transfer and are not run on the Android device
 - Issue metadata editing for labels, assignees, milestones, and reactions
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
 - Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
 - Repository code browsing with base64 decoding, text-file editing/creation, syntax-highlighted previews, safe rename/move/delete operations, branch-protection awareness, and reviewed branch/PR commits
 - Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
-- Recoverable verified download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
+- Recoverable fingerprinted download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
 - Own-repository CI and manual APK/AAB workflows
 - Signed, versioned GitHub Release workflow with APK signature verification and SHA-256 assets
 - Actionable All GitHub hub covering 39 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, Marketplace, security settings, billing, and community discovery

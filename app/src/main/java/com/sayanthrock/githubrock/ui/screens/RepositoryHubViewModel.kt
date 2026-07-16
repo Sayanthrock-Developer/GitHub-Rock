@@ -201,7 +201,7 @@ class RepositoryHubViewModel @Inject constructor(
                 id = 1,
                 tagName = "v1.4.0",
                 name = "GitHub Rock 1.4",
-                body = "## What changed\n\n- Unified repository page\n- Verified APK download flow\n- Improved release and README presentation",
+                body = "## What changed\n\n- Cross-platform release picker\n- Fingerprinted download flow\n- Improved release and README presentation",
                 publishedAt = "2026-07-14T00:00:00Z",
                 assets = listOf(
                     ReleaseAsset(
@@ -215,6 +215,30 @@ class RepositoryHubViewModel @Inject constructor(
                         name = "github-rock-universal.apk",
                         size = 31_400_000,
                         downloadUrl = "https://example.com/github-rock-universal.apk"
+                    ),
+                    ReleaseAsset(
+                        id = 13,
+                        name = "github-rock-windows-x64.msi",
+                        size = 46_800_000,
+                        downloadUrl = "https://example.com/github-rock-windows-x64.msi"
+                    ),
+                    ReleaseAsset(
+                        id = 14,
+                        name = "github-rock-linux-x86_64.AppImage",
+                        size = 52_300_000,
+                        downloadUrl = "https://example.com/github-rock-linux-x86_64.AppImage"
+                    ),
+                    ReleaseAsset(
+                        id = 15,
+                        name = "github-rock-ios-arm64.ipa",
+                        size = 39_700_000,
+                        downloadUrl = "https://example.com/github-rock-ios-arm64.ipa"
+                    ),
+                    ReleaseAsset(
+                        id = 16,
+                        name = "github-rock-macos-universal.dmg",
+                        size = 55_100_000,
+                        downloadUrl = "https://example.com/github-rock-macos-universal.dmg"
                     )
                 )
             ),
@@ -231,7 +255,7 @@ class RepositoryHubViewModel @Inject constructor(
         const val DEMO_README = """
 # GitHub Rock Demo
 
-A premium Android developer control centre for repository management, Actions, releases, verified downloads, and APK inspection.
+A premium Android developer control centre for repository management, Actions, releases, managed downloads, and APK inspection.
 
 ## Highlights
 

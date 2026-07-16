@@ -21,15 +21,23 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.LaptopMac
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PhoneIphone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -64,6 +73,9 @@ import com.sayanthrock.githubrock.core.model.ReleaseAsset
 import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
+import com.sayanthrock.githubrock.core.util.ReleaseAssetClassifier
+import com.sayanthrock.githubrock.core.util.ReleaseAssetInfo
+import com.sayanthrock.githubrock.core.util.ReleasePlatform
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
@@ -358,14 +370,30 @@ private fun RepositoryReleasePanel(
     }
     val selectedRelease = visibleReleases.firstOrNull { it.tagName == selectedTag }
         ?: visibleReleases.firstOrNull()
-    var selectedAssetId by rememberSaveable(selectedRelease?.id) {
-        mutableStateOf(preferredAsset(selectedRelease?.assets.orEmpty())?.id)
+    val releaseAssets = selectedRelease?.assets.orEmpty()
+    var selectedPlatformName by rememberSaveable(selectedRelease?.id) {
+        mutableStateOf(ReleaseAssetClassifier.preferredPlatform(releaseAssets).name)
     }
-    val selectedAsset = selectedRelease?.assets?.firstOrNull { it.id == selectedAssetId }
-        ?: preferredAsset(selectedRelease?.assets.orEmpty())
+    val selectedPlatform = ReleasePlatform.entries
+        .firstOrNull { it.name == selectedPlatformName }
+        ?: ReleasePlatform.Other
+    val platformAssets = ReleaseAssetClassifier.assetsForPlatform(releaseAssets, selectedPlatform)
+    var selectedAssetId by rememberSaveable(selectedRelease?.id, selectedPlatformName) {
+        mutableStateOf(ReleaseAssetClassifier.preferredAsset(releaseAssets, selectedPlatform)?.id)
+    }
+    val selectedAsset = platformAssets.firstOrNull { it.id == selectedAssetId }
+        ?: ReleaseAssetClassifier.preferredAsset(releaseAssets, selectedPlatform)
+    val selectedAssetInfo = selectedAsset?.let { ReleaseAssetClassifier.classify(it.name) }
 
     Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
-        Text("Latest release", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Get the app", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Text(
+                "Choose a platform, version, and file from the publisher's GitHub Release.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -396,27 +424,38 @@ private fun RepositoryReleasePanel(
                 }
             }
             else -> GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ReleaseDropdown(
-                            label = "Asset",
-                            value = selectedAsset?.name ?: "No asset",
-                            modifier = Modifier.weight(1.35f),
-                            options = selectedRelease?.assets.orEmpty().map { it.name },
-                            onSelected = { name ->
-                                selectedAssetId = selectedRelease?.assets?.firstOrNull { it.name == name }?.id
+                val activeRelease = requireNotNull(selectedRelease)
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    ReleasePickerHeader(activeRelease)
+                    ReleaseDropdown(
+                        label = "Version",
+                        value = activeRelease.tagName,
+                        options = visibleReleases.map { it.tagName },
+                        onSelected = { selectedTag = it }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    ReleasePlatformSelector(
+                        assets = releaseAssets,
+                        selected = selectedPlatform,
+                        onSelected = { selectedPlatformName = it.name }
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Text(
+                            "Choose a file",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (platformAssets.isEmpty()) {
+                            EmptyPlatformDownload(platform = selectedPlatform)
+                        } else {
+                            platformAssets.forEach { asset ->
+                                ReleaseAssetOption(
+                                    asset = asset,
+                                    selected = asset.id == selectedAsset?.id,
+                                    onSelected = { selectedAssetId = asset.id }
+                                )
                             }
-                        )
-                        ReleaseDropdown(
-                            label = "Version",
-                            value = selectedRelease?.tagName.orEmpty(),
-                            modifier = Modifier.weight(.9f),
-                            options = visibleReleases.map { it.tagName },
-                            onSelected = { selectedTag = it }
-                        )
+                        }
                     }
                     Button(
                         onClick = { selectedAsset?.let(onDownload) },
@@ -430,24 +469,307 @@ private fun RepositoryReleasePanel(
                         Icon(Icons.Default.Download, contentDescription = null)
                         Spacer(Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Download & inspect", fontWeight = FontWeight.Black)
                             Text(
-                                selectedAsset?.let { "${assetArchitecture(it.name)} · ${formatBytes(it.size)}" }
-                                    ?: "No installable asset",
+                                selectedAsset?.let { "Download for ${selectedPlatform.label}" }
+                                    ?: "No ${selectedPlatform.label} download",
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                selectedAsset?.let { asset ->
+                                    listOfNotNull(
+                                        selectedAssetInfo?.format,
+                                        selectedAssetInfo?.architecture,
+                                        formatBytes(asset.size)
+                                    ).joinToString(" · ")
+                                } ?: "Try another platform or version",
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        Icon(Icons.Default.Lock, contentDescription = null)
                     }
-                    Text(
-                        "Downloaded APK files are verified and inspected before Android's installer opens.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    ReleaseProtectionCard(
+                        platform = selectedPlatform,
+                        assetInfo = selectedAssetInfo
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ReleasePickerHeader(release: Release) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(48.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = .13f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Default.Download,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                release.name?.takeIf(String::isNotBlank) ?: release.tagName,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                release.publishedAt?.take(10)?.let { "Published $it" } ?: release.tagName,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = if (release.prerelease) {
+                MaterialTheme.colorScheme.secondary.copy(alpha = .13f)
+            } else {
+                MaterialTheme.colorScheme.tertiary.copy(alpha = .13f)
+            }
+        ) {
+            Text(
+                if (release.prerelease) "Pre-release" else "Stable",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                color = if (release.prerelease) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.tertiary
+                },
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReleasePlatformSelector(
+    assets: List<ReleaseAsset>,
+    selected: ReleasePlatform,
+    onSelected: (ReleasePlatform) -> Unit
+) {
+    val visiblePlatforms = ReleasePlatform.entries.filter { platform ->
+        platform != ReleasePlatform.Other ||
+            ReleaseAssetClassifier.assetsForPlatform(assets, ReleasePlatform.Other).isNotEmpty()
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text("Choose your platform", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            "Available files are detected from the release asset names.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            visiblePlatforms.forEach { platform ->
+                val count = ReleaseAssetClassifier.assetsForPlatform(assets, platform).size
+                ReleasePlatformTile(
+                    platform = platform,
+                    count = count,
+                    selected = selected == platform,
+                    onClick = { onSelected(platform) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReleasePlatformTile(
+    platform: ReleasePlatform,
+    count: Int,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .width(126.dp)
+            .semantics { contentDescription = "Select ${platform.label} downloads" },
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = .13f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .46f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = .55f)
+            else MaterialTheme.colorScheme.outline.copy(alpha = .42f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(platformIcon(platform), contentDescription = null, tint = color)
+                if (selected) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            Text(platform.label, color = color, fontWeight = FontWeight.Bold)
+            Text(
+                "$count ${if (count == 1) "file" else "files"}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyPlatformDownload(platform: ReleasePlatform) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .36f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("No ${platform.label} file in this release", fontWeight = FontWeight.Bold)
+            Text(
+                "Choose another platform or version. GitHub Rock only shows files the publisher actually uploaded.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReleaseAssetOption(
+    asset: ReleaseAsset,
+    selected: Boolean,
+    onSelected: () -> Unit
+) {
+    val info = ReleaseAssetClassifier.classify(asset.name)
+    Surface(
+        onClick = onSelected,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = .1f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .38f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = .48f)
+            else MaterialTheme.colorScheme.outline.copy(alpha = .34f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                if (selected) Icons.Default.CheckCircle else Icons.Default.InsertDriveFile,
+                contentDescription = null,
+                tint = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(
+                    asset.name,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    MiniPill(info.format)
+                    MiniPill(info.architecture)
+                    MiniPill(formatBytes(asset.size))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReleaseProtectionCard(
+    platform: ReleasePlatform,
+    assetInfo: ReleaseAssetInfo?
+) {
+    val explanation = when {
+        assetInfo?.isSupportFile == true ->
+            "This publisher-supplied checksum or signature file is saved beside your other downloads."
+        platform == ReleasePlatform.Android && assetInfo?.format == "APK" ->
+            "A SHA-256 fingerprint is recorded after download. APK package details, permissions, SDK levels, and signing certificate are inspected before Android's installer opens."
+        platform == ReleasePlatform.Android && assetInfo?.format == "AAB" ->
+            "A SHA-256 fingerprint is recorded after download. Android App Bundles are publishing artifacts and cannot be installed directly on a device."
+        assetInfo != null ->
+            "A SHA-256 fingerprint is recorded after download. ${platform.label} files are saved for sharing or transfer and cannot run on this Android device."
+        else ->
+            "Select a published file to enable the protected background download queue."
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.tertiary.copy(alpha = .08f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .24f))
+    ) {
+        Row(
+            modifier = Modifier.padding(15.dp),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Standard download protection", fontWeight = FontWeight.Bold)
+                Text(
+                    explanation,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    "A local fingerprint proves file consistency, not publisher identity, unless it is compared with a trusted checksum or signature.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+}
+
+private fun platformIcon(platform: ReleasePlatform): ImageVector = when (platform) {
+    ReleasePlatform.Android -> Icons.Default.Android
+    ReleasePlatform.Windows -> Icons.Default.DesktopWindows
+    ReleasePlatform.Linux -> Icons.Default.Terminal
+    ReleasePlatform.IOS -> Icons.Default.PhoneIphone
+    ReleasePlatform.MacOS -> Icons.Default.LaptopMac
+    ReleasePlatform.Other -> Icons.Default.InsertDriveFile
 }
 
 @Composable
@@ -704,20 +1026,6 @@ private fun RepositoryErrorCard(message: String, onRetry: () -> Unit) {
             }
         }
     }
-}
-
-private fun preferredAsset(assets: List<ReleaseAsset>): ReleaseAsset? =
-    assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) && it.name.contains("arm64", true) }
-        ?: assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
-        ?: assets.firstOrNull { it.name.endsWith(".aab", ignoreCase = true) }
-        ?: assets.firstOrNull()
-
-private fun assetArchitecture(name: String): String = when {
-    name.contains("arm64", true) || name.contains("aarch64", true) -> "arm64-v8a"
-    name.contains("armeabi", true) || name.contains("armv7", true) -> "armeabi-v7a"
-    name.contains("x86_64", true) -> "x86_64"
-    name.contains("universal", true) -> "universal"
-    else -> "release asset"
 }
 
 private fun formatBytes(bytes: Long): String = when {
