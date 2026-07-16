@@ -18,6 +18,7 @@ class ProfileScreenTest {
 
     @Test fun connectedProfileShowsRepositoryCountAndFeaturePreview() {
         var openedFeatures = false
+        var openedAppearance = false
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ProfileScreen(
@@ -30,7 +31,10 @@ class ProfileScreenTest {
                         following = 48
                     ),
                     onOpenRepositories = {},
+                    onOpenDownloads = {},
                     onOpenFeatures = { openedFeatures = true },
+                    onOpenAppearance = { openedAppearance = true },
+                    onOpenGitHubUrl = {},
                     onLogout = {}
                 )
             }
@@ -42,9 +46,11 @@ class ProfileScreenTest {
         compose.onNodeWithText("120").assertIsDisplayed()
         compose.onNodeWithText("Following").assertIsDisplayed()
         compose.onNodeWithText("48").assertIsDisplayed()
-        compose.onNodeWithText("Follow on GitHub").assertIsDisplayed()
+        compose.onNodeWithText("View on GitHub").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
-        compose.onNodeWithText("Security").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertTrue(openedAppearance) }
+        compose.onNodeWithText("GitHub security").performScrollTo().assertIsDisplayed()
     }
 }

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -60,8 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -103,30 +100,9 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.primary.copy(alpha = .08f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
             .padding(WindowInsets.safeDrawing.asPaddingValues())
     ) {
-        AmbientGlow(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 90.dp, y = (-100).dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        AmbientGlow(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-120).dp, y = 100.dp),
-            color = MaterialTheme.colorScheme.secondary
-        )
-
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -172,20 +148,6 @@ fun LoginScreen(
             }
         }
     }
-}
-
-@Composable
-private fun AmbientGlow(modifier: Modifier, color: Color) {
-    Box(
-        modifier = modifier
-            .size(280.dp)
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(color.copy(alpha = .24f), Color.Transparent)
-                ),
-                shape = CircleShape
-            )
-    )
 }
 
 @Composable
@@ -710,23 +672,16 @@ private fun DeviceCodeExperience(
 
 @Composable
 private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = MaterialTheme.shapes.large
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(96.dp)
+            .height(88.dp)
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .78f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = .94f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = .62f),
+                color = MaterialTheme.colorScheme.outlineVariant,
                 shape = shape
             ),
         verticalAlignment = Alignment.CenterVertically
@@ -751,7 +706,7 @@ private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
         Surface(
             modifier = Modifier.width(64.dp).fillMaxHeight(),
             color = MaterialTheme.colorScheme.primary,
-            shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
+            shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
         ) {
             IconButton(
                 onClick = onCopy,
@@ -776,22 +731,15 @@ private fun AuthGlassPanel(
     contentPadding: PaddingValues = PaddingValues(20.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = MaterialTheme.shapes.extraLarge
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.surface.copy(alpha = .94f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .68f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = .56f),
+                color = MaterialTheme.colorScheme.outlineVariant,
                 shape = shape
             )
             .padding(contentPadding),

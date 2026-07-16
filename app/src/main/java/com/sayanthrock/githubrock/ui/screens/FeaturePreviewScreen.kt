@@ -50,7 +50,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -109,18 +108,10 @@ fun FeaturePreviewScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.primary.copy(alpha = .08f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 TopAppBar(
                     title = { Text("All GitHub") },
@@ -130,7 +121,7 @@ fun FeaturePreviewScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = .92f)
+                        containerColor = MaterialTheme.colorScheme.background
                     )
                 )
             }
@@ -203,23 +194,15 @@ private fun FeaturePreviewHero(
     webDestinationCount: Int,
     onOpenGitHubUrl: (String) -> Unit
 ) {
-    val shape = RoundedCornerShape(30.dp)
+    val shape = MaterialTheme.shapes.extraLarge
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = .34f),
-                        MaterialTheme.colorScheme.secondary.copy(alpha = .18f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = .94f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = .34f),
+                color = MaterialTheme.colorScheme.outlineVariant,
                 shape = shape
             )
             .padding(22.dp),
@@ -257,6 +240,7 @@ private fun FeaturePreviewHero(
             Icon(Icons.Default.OpenInNew, contentDescription = null)
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            item { PreviewMetric("5", "main tabs") }
             item { PreviewMetric("6", "workspaces") }
             item { PreviewMetric(webDestinationCount.toString(), "website tools") }
             item { PreviewMetric("3", "access modes") }
@@ -269,8 +253,8 @@ private fun FeaturePreviewHero(
 private fun PreviewMetric(value: String, label: String) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = .72f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .35f))
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),

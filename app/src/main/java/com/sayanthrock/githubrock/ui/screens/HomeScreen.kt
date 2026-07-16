@@ -6,8 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
@@ -29,6 +29,9 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
+import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
+import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 
 @Composable
 fun HomeScreen(
@@ -48,12 +51,18 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 110.dp),
+        contentPadding = StandardScreenPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        item {
+            StandardScreenHeader(
+                title = "Home",
+                subtitle = "Your repositories, workflows, and GitHub API status"
+            )
+        }
         item { DashboardHero(mode = mode, profile = profile, rateLimit = rateLimit) }
         item {
-            Text("Loaded workspace snapshot", style = MaterialTheme.typography.titleMedium)
+            StandardSectionHeader("Workspace overview")
             Spacer(Modifier.height(10.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 item { DashboardMetric("Loaded repos", repositories.size.toString(), Icons.Default.Folder) }
@@ -69,7 +78,7 @@ fun HomeScreen(
             }
         }
         item {
-            Text("Quick actions", style = MaterialTheme.typography.titleMedium)
+            StandardSectionHeader("Quick actions")
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(onClick = onOpenBuilds, modifier = Modifier.weight(1f).height(52.dp)) {
@@ -89,11 +98,11 @@ fun HomeScreen(
             }
         }
         if (runs.isNotEmpty()) {
-            item { SectionHeading("Workflow activity", "${runs.size} recent") }
+            item { StandardSectionHeader("Workflow activity", "${runs.size} recent") }
             items(runs.take(4), key = { it.id }) { run -> WorkflowSummaryCard(run) }
         }
         item {
-            SectionHeading(
+            StandardSectionHeader(
                 "Recently updated repositories",
                 if (repositories.isEmpty()) "No repositories" else "${repositories.size} available"
             )
@@ -230,30 +239,6 @@ private fun DashboardMetric(label: String, value: String, icon: ImageVector, isW
 }
 
 @Composable
-private fun SectionHeading(title: String, supporting: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            supporting,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
 private fun WorkflowSummaryCard(run: WorkflowRun) {
     val state = run.displayState()
     val color = workflowColor(run)
@@ -302,7 +287,7 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(18.dp),
+        contentPadding = PaddingValues(16.dp),
         onClick = onClick
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -335,8 +320,8 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         repo.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -355,7 +340,7 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Default.ArrowForward,
+                            Icons.Default.ChevronRight,
                             contentDescription = "Open ${repo.name}",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)

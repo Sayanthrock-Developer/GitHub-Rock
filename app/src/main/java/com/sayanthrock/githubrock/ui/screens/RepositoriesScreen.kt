@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 
 /**
  * Displays a searchable list of repositories with loading and empty states.
@@ -38,15 +39,13 @@ fun RepositoriesScreen(
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
-        Text(
-            "Repositories",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
-        )
-        Text(
-            if (repositories.isEmpty()) "Search the GitHub ecosystem" else "${repositories.size} projects ready",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
+        StandardScreenHeader(
+            title = "Repositories",
+            subtitle = if (repositories.isEmpty()) {
+                "Search the GitHub ecosystem"
+            } else {
+                "${repositories.size} projects available"
+            }
         )
         Spacer(Modifier.height(16.dp))
         SearchBar(
@@ -89,8 +88,8 @@ fun RepositoriesScreen(
 
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 110.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (!loading && repositories.isEmpty()) {
                 item {

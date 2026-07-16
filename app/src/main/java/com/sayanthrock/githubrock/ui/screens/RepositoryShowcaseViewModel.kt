@@ -138,7 +138,7 @@ A premium Android developer control centre for repository management, Actions, r
 - Kotlin and Jetpack Compose
 - GitHub Device Flow authentication
 - Repository, issue, pull request, workflow, and release tools
-- Liquid Glass dark and light themes
+- Clean Material 3 themes with persistent appearance controls
 
 > Demo mode uses isolated sample data and never writes to GitHub.
 """

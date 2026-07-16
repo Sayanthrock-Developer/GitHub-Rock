@@ -8,6 +8,7 @@ import android.os.Build as AndroidBuild
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,6 +40,9 @@ import com.sayanthrock.githubrock.core.util.AndroidWorkflowGenerator
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
+import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
+import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -70,10 +74,15 @@ fun BuildsScreen(
     }
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 110.dp),
+        contentPadding = StandardScreenPadding,
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item { Text("Android Builds", style = MaterialTheme.typography.headlineSmall) }
+        item {
+            StandardScreenHeader(
+                title = "Builds",
+                subtitle = "Create and monitor Android builds with GitHub Actions"
+            )
+        }
         item {
             GlassCard {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -87,14 +96,35 @@ fun BuildsScreen(
                 }
             }
         }
-        item { Text("Choose a repository", style = MaterialTheme.typography.titleMedium) }
-        items(repositories.take(8), key = { it.id }) { repo ->
-            OutlinedButton(
-                onClick = { selectedRepository = repo },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = if (selectedRepository?.id == repo.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
-            ) {
-                Icon(Icons.Default.Build, null); Spacer(Modifier.width(8.dp)); Text(if (selectedRepository?.id == repo.id) "Selected • ${repo.fullName}" else repo.fullName)
+        item { StandardSectionHeader("Choose a repository") }
+        if (repositories.isEmpty()) {
+            item {
+                GlassCard {
+                    Text(
+                        "No repositories are available in this workspace.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repositories.take(8).forEach { repo ->
+                        FilterChip(
+                            selected = selectedRepository?.id == repo.id,
+                            onClick = { selectedRepository = repo },
+                            label = { Text(repo.name) },
+                            leadingIcon = if (selectedRepository?.id == repo.id) {
+                                { Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else {
+                                null
+                            }
+                        )
+                    }
+                }
             }
         }
         selectedRepository?.let { repo ->
@@ -133,7 +163,7 @@ fun BuildsScreen(
                 }
             )
         }
-        item { Text("Recent runs", style = MaterialTheme.typography.titleMedium) }
+        item { StandardSectionHeader("Recent runs") }
         if (runs.isEmpty()) item {
             GlassCard { Text("No workflow runs loaded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
