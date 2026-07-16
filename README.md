@@ -28,7 +28,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 
 | Screen | What it shows |
 | --- | --- |
-| Login | GitHub Device Flow, guest access, and clearly labelled demo mode |
+| Login | Explicit sign-in, official signup (Google, Apple, or email), GitHub Device Flow, guest access, and demo mode |
 | Home | Premium profile hero, API health, repository/build metrics, quick actions, workflow status, and repositories |
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and Releases sections |
@@ -75,7 +75,7 @@ sdk.dir=/absolute/path/to/Android/Sdk
 GITHUB_CLIENT_ID=your_custom_client_id
 ```
 
-The value is exposed through `BuildConfig.GITHUB_CLIENT_ID`. `local.properties` is ignored by Git. New users can open GitHub's official signup page and return to the explicit **I created an account — connect** action. The app then opens GitHub in a Custom Tab with a browser fallback, shows a copyable verification code, and polls only at GitHub's supplied interval. GitHub's Device Flow completion page cannot reopen an Android app automatically; when the user returns with Android Back or the app switcher, GitHub Rock automatically performs a rate-safe authorization check. The login card also retains **I've authorized — check now**, fresh-code, and guest fallback actions.
+The value is exposed through `BuildConfig.GITHUB_CLIENT_ID`. `local.properties` is ignored by Git. New users can tap **Sign up for GitHub** to open GitHub's official signup page, choose Google, Apple, or email, then return to **Continue with my new account**. The app then opens GitHub in a Custom Tab with a browser fallback, shows a copyable verification code, and polls only at GitHub's supplied interval. GitHub's Device Flow completion page cannot reopen an Android app automatically; when the user returns with Android Back or the app switcher, GitHub Rock automatically performs a rate-safe authorization check. The login card also retains **I've authorized — check now**, fresh-code, and guest fallback actions.
 
 The official Sayanth Rock Mobile public Client ID (`Iv23liBz9KwjI8S24igW`) is bundled as a safe default so verified CI and release builds can sign in immediately. Forks can override it with a `PUBLIC_GITHUB_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets, private keys, and tokens must never be bundled.
 
