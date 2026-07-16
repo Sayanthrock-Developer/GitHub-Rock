@@ -68,6 +68,7 @@ fun MainNavigation(
     state: MainUiState,
     onSearch: (String) -> Unit,
     onRememberRepository: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit,
+    onOpenGitHubUrl: (String) -> Unit,
     onLogout: () -> Unit
 ) {
     val entry by navController.currentBackStackEntryAsState()
@@ -167,7 +168,11 @@ fun MainNavigation(
                 )
             }
             composable(FEATURES_PREVIEW_ROUTE) {
-                FeaturePreviewScreen(onBack = navController::navigateUp)
+                FeaturePreviewScreen(
+                    login = state.profile?.login,
+                    onOpenGitHubUrl = onOpenGitHubUrl,
+                    onBack = navController::navigateUp
+                )
             }
             composable(
                 route = "repo/{owner}/{repo}?demo={demo}",

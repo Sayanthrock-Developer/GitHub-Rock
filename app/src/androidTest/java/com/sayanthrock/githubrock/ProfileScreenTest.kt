@@ -43,7 +43,7 @@ class ProfileScreenTest {
         compose.onNodeWithText("Following").assertIsDisplayed()
         compose.onNodeWithText("48").assertIsDisplayed()
         compose.onNodeWithText("Follow on GitHub").assertIsDisplayed()
-        compose.onNodeWithText("Explore all GitHub features").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
         compose.onNodeWithText("Security").performScrollTo().assertIsDisplayed()
     }

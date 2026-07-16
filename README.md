@@ -14,6 +14,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Hilt, Retrofit/OkHttp, Kotlin Serialization, Room, DataStore, Paging dependencies, WorkManager, Coil, and Navigation Compose
 - Android 10+ (`minSdk 29`), `compileSdk` / `targetSdk` 36
 - GitHub App Device Flow with pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
+- Complete GitHub services hub with 39 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, security, billing, settings, and community features
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
@@ -35,6 +36,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
 | Downloads | Live artifact progress, pause/resume/cancel/restart controls, verified history, sharing, and APK inspection |
 | Profile | Account/session mode, public repository count, and token-security information |
+| All GitHub | Native feature status plus secure access to every major GitHub.com workspace and account tool |
 
 PNG screenshots will be added after the first instrumented device capture. No mock screenshot is presented as a running build.
 
@@ -160,6 +162,7 @@ If Android reports an incompatible signature, the installed copy was signed with
 - APK installation is delegated to Android's official package installer; there is no silent install or security bypass.
 - SHA-256 is calculated locally before an artifact is trusted.
 - Destructive GitHub operations require an explicit confirmation in the product flow.
+- Website-only actions open through an allow-listed HTTPS GitHub host in a Custom Tab. Credentials, passkeys, tokens, billing details, and Marketplace purchases remain on GitHub's pages and are never collected by GitHub Rock.
 - Demo records use negative IDs, are loaded from an isolated provider, and are never merged with connected account data.
 - Build notification permission is requested only when the user starts a monitored build; denying it does not block the workflow.
 
@@ -180,6 +183,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Recoverable verified download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
 - Own-repository CI and manual APK/AAB workflows
 - Signed, versioned GitHub Release workflow with APK signature verification and SHA-256 assets
+- Actionable All GitHub hub covering 39 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, Marketplace, security settings, billing, and community discovery
 
 ## Planned next
 

@@ -9,6 +9,7 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Android Keystore-backed encrypted token storage and redacted HTTP logging
 - Connected, public guest, and isolated demo data modes
 - Home, Repositories, Builds, Downloads, Profile, and repository-detail navigation
+- All GitHub services hub with 39 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases
 - Verified workflow dispatch/cancel/rerun repository methods
 - Android project detection and safe APK/AAB workflow YAML generation
@@ -24,5 +25,5 @@ This file separates working alpha functionality from roadmap scope so the applic
 3. Build wizard, workflow preview/branch commit/PR, run logs, and artifact picker.
 4. Download queue controls, APK inspection presentation, and system installer launch.
 5. Draft release editor, asset upload, release notes, and destructive confirmations.
-6. Paging-backed large lists, GraphQL batching, biometric lock, adaptive panes, and accessibility/device screenshot validation.
-
+6. Continue moving high-value web-hub destinations into native screens where GitHub App permissions and REST/GraphQL coverage allow it.
+7. Paging-backed large lists, GraphQL batching, biometric lock, adaptive panes, and accessibility/device screenshot validation.

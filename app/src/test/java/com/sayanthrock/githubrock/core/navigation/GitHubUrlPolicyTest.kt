@@ -36,6 +36,12 @@ class GitHubUrlPolicyTest {
         assertTrue(GitHubUrlPolicy.isRepositoryUrl("https://github.com/SayanthRock/GitHub-Rock/issues"))
     }
 
+    @Test fun officialGistsOpenSafelyButAreNotRepositoryDeepLinks() {
+        assertTrue(GitHubUrlPolicy.isGitHubHttpsUrl("https://gist.github.com/SayanthRock"))
+        assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://gist.github.com/SayanthRock/abc123"))
+        assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("https://gist.github.com.example.com/SayanthRock"))
+    }
+
     @Test fun nonGitHubAndLookalikeHostsAreRejected() {
         assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("http://github.com/signup"))
         assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("https://github.com.example.com/signup"))

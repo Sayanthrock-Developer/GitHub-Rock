@@ -103,8 +103,8 @@ fun ProfileScreen(
             ProfileMenuGroup {
                 ProfileMenuItem(
                     icon = Icons.Default.Code,
-                    title = "Explore all GitHub features",
-                    subtitle = "Code, collaboration, Actions and releases",
+                    title = "All GitHub services",
+                    subtitle = "Notifications, Codespaces, settings, Marketplace and more",
                     onClick = onOpenFeatures
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

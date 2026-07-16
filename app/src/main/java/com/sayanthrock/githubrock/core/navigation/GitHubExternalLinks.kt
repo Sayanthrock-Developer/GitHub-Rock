@@ -30,7 +30,8 @@ internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHub
 
 object GitHubUrlPolicy {
     private val repositorySegment = Regex("[A-Za-z0-9_.-]+")
-    private val trustedHosts = setOf("github.com", "www.github.com")
+    private val repositoryHosts = setOf("github.com", "www.github.com")
+    private val trustedHosts = repositoryHosts + "gist.github.com"
     private val reservedRoots = setOf(
         "about", "account", "apps", "collections", "contact", "customer-stories",
         "enterprise", "events", "explore", "features", "gist", "issues", "login",
@@ -49,6 +50,7 @@ object GitHubUrlPolicy {
     fun isRepositoryUrl(rawUrl: String): Boolean {
         if (!isGitHubHttpsUrl(rawUrl)) return false
         val uri = runCatching { URI(rawUrl) }.getOrNull() ?: return false
+        if (uri.host?.lowercase() !in repositoryHosts) return false
         val segments = uri.path.orEmpty().split('/').filter(String::isNotBlank)
         if (segments.size < 2 || segments.first().lowercase() in reservedRoots) return false
         return repositorySegment.matches(segments[0]) &&
