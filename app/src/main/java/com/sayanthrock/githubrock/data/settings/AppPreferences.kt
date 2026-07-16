@@ -58,7 +58,7 @@ class AppPreferences @Inject constructor(
             trueBlack = preferences[TRUE_BLACK] ?: false
         )
     }
-    val dynamicColor: Flow<Boolean> = appearance.map(AppearancePreferences::dynamicColor)
+    val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
 
     suspend fun setThemeMode(mode: ThemeMode) {
