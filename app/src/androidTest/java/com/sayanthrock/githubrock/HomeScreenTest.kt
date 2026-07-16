@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.Owner
@@ -42,7 +43,7 @@ class HomeScreenTest {
         compose.onNodeWithText("Sayanth Rock").assertIsDisplayed()
         compose.onNodeWithText("GitHub API health").assertIsDisplayed()
         compose.onNodeWithText("4862 / 5000").assertIsDisplayed()
-        compose.onNodeWithText("Build APK").performClick()
+        compose.onNodeWithText("Build APK").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(openedBuilds) }
     }
 

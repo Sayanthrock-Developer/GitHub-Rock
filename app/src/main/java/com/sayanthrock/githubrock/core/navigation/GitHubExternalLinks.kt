@@ -10,6 +10,7 @@ import java.net.URI
 
 const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
 const val GITHUB_ADD_ACCOUNT_URL = "https://github.com/login?add_account=1"
+const val GITHUB_ACCOUNT_SECURITY_URL = "https://github.com/settings/security"
 
 internal data class GitHubSignupLaunchPlan(
     val primaryUrl: String,

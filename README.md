@@ -21,7 +21,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
 - Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 fingerprinting and expected-checksum verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
-- GitHub-inspired Liquid Glass dark/light theme with dynamic color and edge-to-edge layout
+- Clean Material 3 visual system with consistent spacing, typography, grouped settings, edge-to-edge system bars, system/light/dark modes, true black, five accent choices, and optional dynamic color
 - Deep links for repositories, builds, releases, and standard GitHub repository URLs
 - Unit tests for authentication responses, workflow status, Android workflow generation, project detection, release-asset classification, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
@@ -36,7 +36,8 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and a five-platform Release asset picker |
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
 | Downloads | Live artifact progress, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
-| Profile | Account/session mode, public repository count, and token-security information |
+| Profile | Compact account summary, repository/download shortcuts, GitHub security, appearance, feature status, and session controls |
+| Appearance | System/light/dark mode, true black, dynamic color, and five persistent accent choices |
 | All GitHub | Native feature status plus secure access to every major GitHub.com workspace and account tool |
 
 PNG screenshots will be added after the first instrumented device capture. No mock screenshot is presented as a running build.
@@ -177,6 +178,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Public repository search
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
 - Platform-aware release selection for Android, Windows, Linux, iOS, and macOS assets; non-Android files are downloaded for sharing or transfer and are not run on the Android device
+- Persistent clean-standard appearance controls with immediate app-wide theme updates and correct system-bar contrast
 - Issue metadata editing for labels, assignees, milestones, and reactions
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
 - Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff

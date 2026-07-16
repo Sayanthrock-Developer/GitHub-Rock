@@ -31,6 +31,8 @@ import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.ApkInspector
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
+import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import java.io.File
 
 /**
@@ -49,15 +51,20 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 110.dp),
+        contentPadding = StandardScreenPadding,
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item { Text("Downloads", style = MaterialTheme.typography.headlineSmall) }
+        item {
+            StandardScreenHeader(
+                title = "Downloads",
+                subtitle = "Track release files and workflow artifacts"
+            )
+        }
         item {
             GlassCard {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.tertiary)
-                    Text("Verified artifact pipeline", style = MaterialTheme.typography.titleLarge)
+                    Text("Protected download queue", style = MaterialTheme.typography.titleLarge)
                     Text(
                         "Downloads continue through WorkManager, resume from partial files, calculate SHA-256 for every file, and expose APK inspection for Android packages.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant

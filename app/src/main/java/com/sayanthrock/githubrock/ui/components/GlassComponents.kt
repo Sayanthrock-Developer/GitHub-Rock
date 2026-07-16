@@ -14,22 +14,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
- * The shared Obsidian panel. The legacy name is retained so every screen
- * adopts the new visual system without duplicating card implementations.
+ * The standard application panel. The legacy name is retained so existing
+ * screens receive the clean visual system without duplicating card code.
  */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(18.dp),
+    contentPadding: PaddingValues = PaddingValues(16.dp),
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(16.dp)
     val interactionModifier = if (onClick == null) {
         Modifier
     } else {
@@ -41,11 +40,11 @@ fun GlassCard(
             .fillMaxWidth()
             .clip(shape)
             .then(interactionModifier)
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outline.copy(alpha = .92f)
+                    MaterialTheme.colorScheme.outlineVariant
                 ),
                 shape
             )
@@ -54,16 +53,7 @@ fun GlassCard(
     )
 }
 
-/** Adds a restrained coral glow while keeping content on a true-black base. */
+/** Applies the standard neutral app background. */
 @Composable
 fun Modifier.rockBackground(): Modifier = this
     .background(MaterialTheme.colorScheme.background)
-    .background(
-        Brush.verticalGradient(
-            listOf(
-                MaterialTheme.colorScheme.primary.copy(alpha = .045f),
-                MaterialTheme.colorScheme.background,
-                MaterialTheme.colorScheme.background
-            )
-        )
-    )

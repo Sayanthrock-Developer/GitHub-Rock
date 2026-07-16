@@ -1,10 +1,8 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,11 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -30,37 +31,47 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.sayanthrock.githubrock.core.navigation.GITHUB_ACCOUNT_SECURITY_URL
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
+import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
+import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
+import com.sayanthrock.githubrock.ui.components.StandardSettingsDivider
+import com.sayanthrock.githubrock.ui.components.StandardSettingsGroup
+import com.sayanthrock.githubrock.ui.components.StandardSettingsRow
 
 @Composable
 fun ProfileScreen(
     mode: AppMode,
     profile: GitHubUser?,
     onOpenRepositories: () -> Unit,
+    onOpenDownloads: () -> Unit,
     onOpenFeatures: () -> Unit,
+    onOpenAppearance: () -> Unit,
+    onOpenGitHubUrl: (String) -> Unit,
     onLogout: () -> Unit
 ) {
-    val uriHandler = LocalUriHandler.current
     val profileUrl = profile?.login?.let { "https://github.com/$it" }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, top = 22.dp, end = 16.dp, bottom = 112.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        contentPadding = StandardScreenPadding,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(
-                "Profile",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold
+            StandardScreenHeader(
+                title = "Profile",
+                subtitle = when (mode) {
+                    AppMode.Connected -> "Your GitHub account and app preferences"
+                    AppMode.Guest -> "Public browsing session"
+                    AppMode.Demo -> "Isolated demonstration workspace"
+                }
             )
         }
 
@@ -69,62 +80,81 @@ fun ProfileScreen(
         if (profileUrl != null) {
             item {
                 Button(
-                    onClick = { uriHandler.openUri(profileUrl) },
+                    onClick = { onOpenGitHubUrl(profileUrl) },
                     modifier = Modifier.fillMaxWidth().height(52.dp)
                 ) {
-                    Text("Follow on GitHub", fontWeight = FontWeight.Bold)
+                    Text("View on GitHub", fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null)
+                    Icon(Icons.Default.OpenInNew, contentDescription = null)
                 }
             }
         }
 
-        item { ProfileSectionTitle("Library") }
+        item { StandardSectionHeader("Library") }
         item {
-            ProfileMenuGroup {
-                ProfileMenuItem(
+            StandardSettingsGroup {
+                StandardSettingsRow(
                     icon = Icons.Default.Folder,
                     title = "Repository library",
                     subtitle = "Browse projects connected to this profile",
                     onClick = onOpenRepositories
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                ProfileMenuItem(
-                    icon = Icons.Default.Code,
-                    title = "Developer workspace",
-                    subtitle = "Builds, releases and repository tools",
-                    onClick = onOpenFeatures
+                StandardSettingsDivider()
+                StandardSettingsRow(
+                    icon = Icons.Default.Download,
+                    title = "Downloads",
+                    subtitle = "Artifacts, release files and APK inspection",
+                    onClick = onOpenDownloads
                 )
             }
         }
 
-        item { ProfileSectionTitle("Developer") }
+        item { StandardSectionHeader("Workspace") }
         item {
-            ProfileMenuGroup {
-                ProfileMenuItem(
+            StandardSettingsGroup {
+                StandardSettingsRow(
                     icon = Icons.Default.Code,
                     title = "All GitHub services",
                     subtitle = "Notifications, Codespaces, settings, Marketplace and more",
                     onClick = onOpenFeatures
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                ProfileMenuItem(
+                StandardSettingsDivider()
+                StandardSettingsRow(
                     icon = Icons.Default.Lock,
-                    title = "Security",
-                    subtitle = "Keystore-encrypted account credentials",
-                    onClick = {}
+                    title = "GitHub security",
+                    subtitle = "Passkeys, two-factor authentication and sessions",
+                    onClick = { onOpenGitHubUrl(GITHUB_ACCOUNT_SECURITY_URL) }
                 )
             }
         }
 
-        item { ProfileSectionTitle("Account") }
+        item { StandardSectionHeader("App") }
         item {
-            GlassCard(contentPadding = PaddingValues(0.dp)) {
-                ProfileMenuItem(
+            StandardSettingsGroup {
+                StandardSettingsRow(
+                    icon = Icons.Default.Palette,
+                    title = "Appearance",
+                    subtitle = "Theme, accent, dynamic color and true black",
+                    onClick = onOpenAppearance
+                )
+                StandardSettingsDivider()
+                StandardSettingsRow(
+                    icon = Icons.Default.Info,
+                    title = "About and feature status",
+                    subtitle = "Native coverage, web tools and roadmap",
+                    onClick = onOpenFeatures
+                )
+            }
+        }
+
+        item { StandardSectionHeader("Account") }
+        item {
+            StandardSettingsGroup {
+                StandardSettingsRow(
                     icon = Icons.Default.Logout,
                     title = if (mode == AppMode.Connected) "Log out and delete token" else "Exit ${mode.name.lowercase()} mode",
                     subtitle = "Remove this session from the device",
-                    accent = true,
+                    destructive = true,
                     onClick = onLogout
                 )
             }
@@ -209,7 +239,7 @@ private fun ProfileHero(mode: AppMode, profile: GitHubUser?) {
 @Composable
 private fun ProfileAvatar(profile: GitHubUser?) {
     Surface(
-        modifier = Modifier.size(88.dp),
+        modifier = Modifier.size(80.dp),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
@@ -259,73 +289,6 @@ private fun StatDivider() {
         modifier = Modifier.width(1.dp).height(38.dp),
         color = MaterialTheme.colorScheme.outlineVariant
     ) {}
-}
-
-@Composable
-private fun ProfileSectionTitle(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 4.dp, start = 2.dp)
-    )
-}
-
-@Composable
-private fun ProfileMenuGroup(content: @Composable ColumnScope.() -> Unit) {
-    GlassCard(contentPadding = PaddingValues(0.dp)) {
-        Column(content = content)
-    }
-}
-
-@Composable
-private fun ProfileMenuItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    accent: Boolean = false,
-    onClick: () -> Unit
-) {
-    val tint = if (accent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            modifier = Modifier.size(42.dp),
-            shape = MaterialTheme.shapes.large,
-            color = tint.copy(alpha = .12f)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(21.dp))
-            }
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = if (accent) tint else MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Icon(
-            Icons.Default.ArrowForward,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-    }
 }
 
 @Composable

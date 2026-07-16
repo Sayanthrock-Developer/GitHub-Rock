@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock.ui.navigation
 
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -19,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +32,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
+import com.sayanthrock.githubrock.ui.screens.AppearanceScreen
 import com.sayanthrock.githubrock.ui.screens.BuildsScreen
 import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
@@ -53,6 +54,7 @@ sealed class TopDestination(
 }
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
+private const val APPEARANCE_ROUTE = "appearance"
 
 private val topDestinations = listOf(
     TopDestination.Home,
@@ -81,11 +83,21 @@ fun MainNavigation(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (showNavigation) {
+                val borderColor = MaterialTheme.colorScheme.outlineVariant
                 NavigationBar(
-                    modifier = Modifier.height(78.dp),
-                    containerColor = MaterialTheme.colorScheme.background,
+                    modifier = Modifier
+                        .drawBehind {
+                            drawLine(
+                                color = borderColor,
+                                start = androidx.compose.ui.geometry.Offset.Zero,
+                                end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     tonalElevation = 0.dp
                 ) {
                     topDestinations.forEach { destination ->
@@ -110,7 +122,7 @@ fun MainNavigation(
                                 Text(
                                     destination.label,
                                     maxLines = 1,
-                                    fontSize = 10.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                                 )
                             },
@@ -118,7 +130,7 @@ fun MainNavigation(
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .14f),
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -163,9 +175,19 @@ fun MainNavigation(
                             launchSingleTop = true
                         }
                     },
+                    onOpenDownloads = {
+                        navController.navigate(TopDestination.Downloads.route) {
+                            launchSingleTop = true
+                        }
+                    },
                     onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
+                    onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
+                    onOpenGitHubUrl = onOpenGitHubUrl,
                     onLogout = onLogout
                 )
+            }
+            composable(APPEARANCE_ROUTE) {
+                AppearanceScreen(onBack = navController::navigateUp)
             }
             composable(FEATURES_PREVIEW_ROUTE) {
                 FeaturePreviewScreen(

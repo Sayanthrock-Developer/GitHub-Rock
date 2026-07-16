@@ -1,13 +1,20 @@
 package com.sayanthrock.githubrock.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateBottomPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -28,6 +35,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()
     val verificationUri = state.auth.code?.verificationUri
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     LaunchedEffect(state.auth.code == null) {
         if (state.auth.code == null) {
@@ -101,6 +109,15 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 onLogout = viewModel::logout
             )
         }
-        SnackbarHost(snackbar)
+        SnackbarHost(
+            hostState = snackbar,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = navigationBarPadding + if (state.mode == null) 20.dp else 80.dp
+                )
+        )
     }
 }

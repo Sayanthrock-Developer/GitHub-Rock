@@ -9,6 +9,7 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Android Keystore-backed encrypted token storage and redacted HTTP logging
 - Connected, public guest, and isolated demo data modes
 - Home, Repositories, Builds, Downloads, Profile, and repository-detail navigation
+- App-wide clean Material 3 design system with persistent mode, accent, true-black, and dynamic-color controls
 - All GitHub services hub with 39 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases
 - Five-platform release-asset picker for Android, Windows, Linux, iOS, and macOS with deterministic format and architecture classification
