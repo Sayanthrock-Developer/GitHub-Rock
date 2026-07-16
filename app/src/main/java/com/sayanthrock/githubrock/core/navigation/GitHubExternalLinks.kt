@@ -9,6 +9,24 @@ import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
 const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
+const val GITHUB_ADD_ACCOUNT_URL = "https://github.com/login?add_account=1"
+
+internal data class GitHubSignupLaunchPlan(
+    val primaryUrl: String,
+    val fallbackUrl: String,
+    val useEphemeralTab: Boolean
+)
+
+internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan =
+    GitHubSignupLaunchPlan(
+        primaryUrl = if (ephemeralBrowsingSupported) {
+            GITHUB_SIGN_UP_URL
+        } else {
+            GITHUB_ADD_ACCOUNT_URL
+        },
+        fallbackUrl = GITHUB_ADD_ACCOUNT_URL,
+        useEphemeralTab = ephemeralBrowsingSupported
+    )
 
 object GitHubUrlPolicy {
     private val repositorySegment = Regex("[A-Za-z0-9_.-]+")
@@ -46,31 +64,89 @@ internal fun isExternalBrowserPackage(
 object GitHubExternalLinkLauncher {
     fun open(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
+        return if (rawUrl == GITHUB_SIGN_UP_URL) {
+            openSignup(context)
+        } else {
+            openStandard(context, rawUrl)
+        }
+    }
 
-        val uri = Uri.parse(rawUrl)
+    private fun openSignup(context: Context): Boolean {
+        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
+        val supportsEphemeralBrowsing = customTabsPackage
+            ?.takeIf { isExternalBrowserPackage(it, context.packageName) }
+            ?.let { provider ->
+                runCatching {
+                    CustomTabsClient.isEphemeralBrowsingSupported(context, provider)
+                }.getOrDefault(false)
+            }
+            ?: false
+        val plan = githubSignupLaunchPlan(supportsEphemeralBrowsing)
+
+        if (
+            plan.useEphemeralTab &&
+            customTabsPackage != null &&
+            launchCustomTab(
+                context = context,
+                rawUrl = plan.primaryUrl,
+                browserPackage = customTabsPackage,
+                ephemeral = true
+            )
+        ) {
+            return true
+        }
+
+        return openStandard(context, plan.fallbackUrl)
+    }
+
+    private fun openStandard(context: Context, rawUrl: String): Boolean {
+        if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
+
+        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
+        if (
+            isExternalBrowserPackage(customTabsPackage, context.packageName) &&
+            launchCustomTab(
+                context = context,
+                rawUrl = rawUrl,
+                browserPackage = requireNotNull(customTabsPackage),
+                ephemeral = false
+            )
+        ) {
+            return true
+        }
+
+        return launchBrowserIntent(context, rawUrl)
+    }
+
+    private fun launchCustomTab(
+        context: Context,
+        rawUrl: String,
+        browserPackage: String,
+        ephemeral: Boolean
+    ): Boolean {
         val customTab = CustomTabsIntent.Builder()
             .setShowTitle(true)
             .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+            .apply {
+                if (ephemeral) setEphemeralBrowsingEnabled(true)
+            }
             .build()
             .apply {
                 intent.addCategory(Intent.CATEGORY_BROWSABLE)
+                intent.setPackage(browserPackage)
                 if (context !is Activity) {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             }
 
-        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
-        if (isExternalBrowserPackage(customTabsPackage, context.packageName)) {
-            customTab.intent.setPackage(customTabsPackage)
-            if (runCatching {
-                    customTab.launchUrl(context, uri)
-                    true
-                }.getOrDefault(false)
-            ) {
-                return true
-            }
-        }
+        return runCatching {
+            customTab.launchUrl(context, Uri.parse(rawUrl))
+            true
+        }.getOrDefault(false)
+    }
 
+    private fun launchBrowserIntent(context: Context, rawUrl: String): Boolean {
+        val uri = Uri.parse(rawUrl)
         val baseIntent = Intent(Intent.ACTION_VIEW, uri).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
