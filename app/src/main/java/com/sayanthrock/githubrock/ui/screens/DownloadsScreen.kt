@@ -59,7 +59,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.tertiary)
                     Text("Verified artifact pipeline", style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "Downloads continue through WorkManager, resume from partial files, calculate SHA-256 and expose APK inspection before Android's installer opens.",
+                        "Downloads continue through WorkManager, resume from partial files, calculate SHA-256 for every file, and expose APK inspection for Android packages.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

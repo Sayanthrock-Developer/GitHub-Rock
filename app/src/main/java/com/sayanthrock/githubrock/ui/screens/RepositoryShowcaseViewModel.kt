@@ -131,7 +131,7 @@ class RepositoryShowcaseViewModel @Inject constructor(
         const val DEMO_README = """
 # GitHub Rock Demo
 
-A premium Android developer control centre for repository management, Actions, releases, verified downloads, and APK inspection.
+A premium Android developer control centre for repository management, Actions, releases, managed downloads, and APK inspection.
 
 ## Highlights
 

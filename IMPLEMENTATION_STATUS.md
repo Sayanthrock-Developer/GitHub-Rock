@@ -11,10 +11,11 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Home, Repositories, Builds, Downloads, Profile, and repository-detail navigation
 - All GitHub services hub with 39 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases
+- Five-platform release-asset picker for Android, Windows, Linux, iOS, and macOS with deterministic format and architecture classification
 - Verified workflow dispatch/cancel/rerun repository methods
 - Android project detection and safe APK/AAB workflow YAML generation
 - Room cache schema, DataStore settings, recoverable WorkManager download worker
-- SHA-256 validation and APK/package/signature inspection foundation
+- SHA-256 fingerprinting and expected-checksum validation plus APK/package/signature inspection foundation
 - Deep-link routes and Android-system installer permission model
 - Unit, Compose UI, lint, CI, debug APK, and manually dispatched release workflow configuration
 

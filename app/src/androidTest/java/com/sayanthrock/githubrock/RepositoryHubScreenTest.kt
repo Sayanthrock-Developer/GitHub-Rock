@@ -19,7 +19,7 @@ import org.junit.Test
 class RepositoryHubScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun repositoryUsesOneUnifiedReleaseFirstPage() {
+    @Test fun repositorySelectsAPlatformSpecificReleaseAsset() {
         var downloadedAsset: ReleaseAsset? = null
         val repository = GitHubRepositoryModel(
             id = 1,
@@ -34,11 +34,35 @@ class RepositoryHubScreenTest {
             openIssues = 8,
             topics = listOf("android", "jetpack-compose")
         )
-        val asset = ReleaseAsset(
+        val androidAsset = ReleaseAsset(
             id = 10,
             name = "github-rock-arm64-v8a.apk",
             size = 25_900_000,
             downloadUrl = "https://github.com/SayanthRock/GitHub-Rock/releases/download/v1.4.0/app.apk"
+        )
+        val windowsAsset = ReleaseAsset(
+            id = 11,
+            name = "github-rock-windows-x64.msi",
+            size = 46_800_000,
+            downloadUrl = "https://github.com/SayanthRock/GitHub-Rock/releases/download/v1.4.0/app.msi"
+        )
+        val linuxAsset = ReleaseAsset(
+            id = 12,
+            name = "github-rock-linux-x86_64.AppImage",
+            size = 52_300_000,
+            downloadUrl = "https://github.com/SayanthRock/GitHub-Rock/releases/download/v1.4.0/app.AppImage"
+        )
+        val iosAsset = ReleaseAsset(
+            id = 13,
+            name = "github-rock-ios-arm64.ipa",
+            size = 39_700_000,
+            downloadUrl = "https://github.com/SayanthRock/GitHub-Rock/releases/download/v1.4.0/app.ipa"
+        )
+        val macosAsset = ReleaseAsset(
+            id = 14,
+            name = "github-rock-macos-universal.dmg",
+            size = 55_100_000,
+            downloadUrl = "https://github.com/SayanthRock/GitHub-Rock/releases/download/v1.4.0/app.dmg"
         )
         val release = Release(
             id = 2,
@@ -46,7 +70,7 @@ class RepositoryHubScreenTest {
             name = "GitHub Rock 1.4",
             body = "## What changed\n\n- Unified repository page",
             publishedAt = "2026-07-14T00:00:00Z",
-            assets = listOf(asset)
+            assets = listOf(androidAsset, windowsAsset, linuxAsset, iosAsset, macosAsset)
         )
 
         compose.setContent {
@@ -70,11 +94,15 @@ class RepositoryHubScreenTest {
 
         compose.onNodeWithContentDescription("GitHub-Rock application icon").assertIsDisplayed()
         compose.onNodeWithText("Repository tools").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Latest release").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Get the app").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Select Windows downloads")
+            .performScrollTo()
+            .performClick()
         compose.onNodeWithContentDescription("Download selected release asset")
             .performScrollTo()
             .performClick()
-        compose.runOnIdle { assertEquals(asset, downloadedAsset) }
+        compose.runOnIdle { assertEquals(windowsAsset, downloadedAsset) }
+        compose.onNodeWithText("Standard download protection").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Stats").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("What’s New").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("README.md").performScrollTo().assertIsDisplayed()
