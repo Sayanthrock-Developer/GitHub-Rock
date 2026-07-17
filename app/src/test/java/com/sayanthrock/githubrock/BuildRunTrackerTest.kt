@@ -42,12 +42,20 @@ class BuildRunTrackerTest {
     }
 
     @Test
-    fun `tracking and ref safety reject terminal or unsafe values`() {
+    fun `tracking and ref safety follow Git ref rules`() {
         assertTrue(BuildRunTracker.isActive(run(id = 1, status = "queued")))
         assertFalse(BuildRunTracker.isActive(run(id = 1, status = "completed", conclusion = "success")))
         assertTrue(BuildRunTracker.isSafeRef("release/1.2.0"))
+        assertTrue(BuildRunTracker.isSafeRef("feature/foo+bar"))
+        assertTrue(BuildRunTracker.isSafeRef("feature/foo@bar"))
         assertFalse(BuildRunTracker.isSafeRef("release/../main"))
         assertFalse(BuildRunTracker.isSafeRef("refs heads/main"))
+        assertFalse(BuildRunTracker.isSafeRef("feature/.hidden"))
+        assertFalse(BuildRunTracker.isSafeRef("feature/trailing."))
+        assertFalse(BuildRunTracker.isSafeRef("feature/build.lock"))
+        assertFalse(BuildRunTracker.isSafeRef("feature/build.LOCK"))
+        assertFalse(BuildRunTracker.isSafeRef("feature/foo@{bar"))
+        assertFalse(BuildRunTracker.isSafeRef("@"))
     }
 
     private fun run(

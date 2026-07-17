@@ -84,18 +84,36 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/github-rock-release.jks"
-          [ -s "$RUNNER_TEMP/github-rock-release.jks" ] || {
+          RELEASE_KEYSTORE="$RUNNER_TEMP/github-rock-release.jks"
+          VALIDATION_KEYSTORE="$RUNNER_TEMP/github-rock-validation.p12"
+          trap 'rm -f "$VALIDATION_KEYSTORE"' EXIT
+
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RELEASE_KEYSTORE"
+          [ -s "$RELEASE_KEYSTORE" ] || {
             echo "The decoded Android keystore is empty. Replace ANDROID_KEYSTORE_BASE64."
             exit 1
           }
+
           keytool -list \
-            -keystore "$RUNNER_TEMP/github-rock-release.jks" \
+            -keystore "$RELEASE_KEYSTORE" \
             -storepass "$KEYSTORE_PASSWORD" \
             -alias "$KEY_ALIAS" >/dev/null
-          echo "Android signing keystore and alias validated."
+
+          keytool -importkeystore \
+            -srckeystore "$RELEASE_KEYSTORE" \
+            -srcstorepass "$KEYSTORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore "$VALIDATION_KEYSTORE" \
+            -deststoretype PKCS12 \
+            -deststorepass validation-only-password \
+            -destkeypass validation-only-password \
+            -noprompt >/dev/null
+
+          echo "Android signing keystore, alias, and private-key password validated."
       - name: Build signed release APK
         env:
           GITHUB_ROCK_KEYSTORE_PATH: ${{ runner.temp }}/github-rock-release.jks
