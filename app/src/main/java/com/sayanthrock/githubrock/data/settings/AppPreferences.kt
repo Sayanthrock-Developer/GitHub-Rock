@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -89,6 +90,9 @@ class AppPreferences @Inject constructor(
     }
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
+    val favoriteRepositories: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[FAVORITE_REPOSITORIES].orEmpty()
+    }
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
@@ -105,6 +109,16 @@ class AppPreferences @Inject constructor(
     suspend fun setCompactCards(enabled: Boolean) = context.dataStore.edit { it[COMPACT_CARDS] = enabled }
     suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
+
+    suspend fun toggleFavoriteRepository(fullName: String) {
+        val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
+        context.dataStore.edit { preferences ->
+            val current = preferences[FAVORITE_REPOSITORIES].orEmpty().toMutableSet()
+            val existing = current.firstOrNull { it.equals(normalized, ignoreCase = true) }
+            if (existing == null) current += normalized else current -= existing
+            preferences[FAVORITE_REPOSITORIES] = current
+        }
+    }
 
     suspend fun monitoredWorkflowRun(monitorKey: String): Long? =
         context.dataStore.data.first()[longPreferencesKey("workflow_monitor_$monitorKey")]
@@ -133,5 +147,6 @@ class AppPreferences @Inject constructor(
         val FILE_TOOLS = booleanPreferencesKey("file_tools")
         val COMPACT_CARDS = booleanPreferencesKey("compact_cards")
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
+        val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
     }
 }
