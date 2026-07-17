@@ -12,19 +12,19 @@ class GitHubUrlPolicyTest {
         assertFalse(GitHubUrlPolicy.isRepositoryUrl(GITHUB_ADD_ACCOUNT_URL))
     }
 
-    @Test fun signupUsesAnIsolatedSessionWithAccountSwitcherFallback() {
+    @Test fun signupAlwaysOpensTheOfficialSignupPage() {
         assertEquals(
             GitHubSignupLaunchPlan(
                 primaryUrl = GITHUB_SIGN_UP_URL,
-                fallbackUrl = GITHUB_ADD_ACCOUNT_URL,
+                fallbackUrl = GITHUB_SIGN_UP_URL,
                 useEphemeralTab = true
             ),
             githubSignupLaunchPlan(ephemeralBrowsingSupported = true)
         )
         assertEquals(
             GitHubSignupLaunchPlan(
-                primaryUrl = GITHUB_ADD_ACCOUNT_URL,
-                fallbackUrl = GITHUB_ADD_ACCOUNT_URL,
+                primaryUrl = GITHUB_SIGN_UP_URL,
+                fallbackUrl = GITHUB_SIGN_UP_URL,
                 useEphemeralTab = false
             ),
             githubSignupLaunchPlan(ephemeralBrowsingSupported = false)
