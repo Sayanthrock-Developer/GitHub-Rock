@@ -48,9 +48,7 @@ class DeviceFlowAuthRepository @Inject constructor(
             }
             when (response.error) {
                 "authorization_pending" -> onStatus("Waiting for approval on GitHub…")
-                "slow_down" -> {
-                    onStatus("GitHub requested slower polling. Still waiting…")
-                }
+                "slow_down" -> onStatus("GitHub requested slower polling. Still waiting…")
                 "expired_token" -> throw DeviceFlowException("The device code expired. Start login again.")
                 "access_denied" -> throw DeviceFlowException("GitHub login was denied.")
                 "device_flow_disabled" -> throw DeviceFlowException(
@@ -67,10 +65,15 @@ class DeviceFlowAuthRepository @Inject constructor(
 
     suspend fun refreshIfNeeded(): Boolean {
         val stored = tokenStore.read() ?: return false
+        val now = Instant.now().epochSecond
         val expiresAt = stored.accessExpiresAtEpochSeconds ?: return true
-        if (expiresAt > Instant.now().epochSecond + 60) return true
-        val refresh = stored.refreshToken ?: return false
-        val response = api.refreshToken(BuildConfig.GITHUB_CLIENT_ID, refreshToken = refresh)
+        if (expiresAt > now + SESSION_EXPIRY_SKEW_SECONDS) return true
+        if (!isRefreshTokenUsable(stored.refreshToken, stored.refreshExpiresAtEpochSeconds, now)) return false
+
+        val response = api.refreshToken(
+            clientId = BuildConfig.GITHUB_CLIENT_ID,
+            refreshToken = requireNotNull(stored.refreshToken)
+        )
         val token = response.accessToken ?: return false
         tokenStore.save(response.toStoredTokens(token))
         return true
@@ -86,9 +89,7 @@ class DeviceFlowAuthRepository @Inject constructor(
                 nowMillis = now,
                 intervalSeconds = requiredIntervalSeconds
             )
-            if (remainingDelay > 0L) {
-                delay(remainingDelay)
-            }
+            if (remainingDelay > 0L) delay(remainingDelay)
             lastTokenRequestAtMillis = elapsedRealtimeMillis()
             api.requestToken(BuildConfig.GITHUB_CLIENT_ID, device.deviceCode).also { response ->
                 requiredIntervalSeconds = nextPollIntervalSeconds(
@@ -112,6 +113,7 @@ class DeviceFlowAuthRepository @Inject constructor(
     private companion object {
         const val MINIMUM_POLL_INTERVAL_SECONDS = 5
         const val SLOW_DOWN_INCREMENT_SECONDS = 5
+        const val SESSION_EXPIRY_SKEW_SECONDS = 60L
     }
 }
 
@@ -127,7 +129,6 @@ internal fun remainingPollDelayMillis(
 
 private fun elapsedRealtimeMillis(): Long = System.nanoTime() / 1_000_000L
 
-
 internal fun nextPollIntervalSeconds(
     currentIntervalSeconds: Int,
     error: String?,
@@ -137,3 +138,10 @@ internal fun nextPollIntervalSeconds(
 } else {
     currentIntervalSeconds
 }
+
+internal fun isRefreshTokenUsable(
+    refreshToken: String?,
+    refreshExpiresAtEpochSeconds: Long?,
+    nowEpochSeconds: Long
+): Boolean = !refreshToken.isNullOrBlank() &&
+    (refreshExpiresAtEpochSeconds == null || refreshExpiresAtEpochSeconds > nowEpochSeconds + 60L)
