@@ -23,19 +23,19 @@ object BuildRunTracker {
     }
 
     /**
-         * Determines whether a workflow run is still active.
-         *
-         * @param run The workflow run to evaluate.
-         * @return `true` if the run has no conclusion and its status is not completed, `false` otherwise.
-         */
-        fun isActive(run: WorkflowRun): Boolean =
+     * Determines whether a workflow run is still active.
+     *
+     * @param run The workflow run to evaluate.
+     * @return `true` when the run has no conclusion and has not completed.
+     */
+    fun isActive(run: WorkflowRun): Boolean =
         run.conclusion == null && run.status != "completed"
 
     /**
-     * Validates that a ref contains only safe path components and characters.
+     * Checks a branch or tag against Git ref naming constraints used by build operations.
      *
-     * @param ref The ref to validate.
-     * @return `true` if the ref satisfies all safety constraints, `false` otherwise.
+     * @param ref The branch or tag to validate.
+     * @return `true` when the ref can be safely passed to GitHub APIs.
      */
     fun isSafeRef(ref: String): Boolean {
         if (
