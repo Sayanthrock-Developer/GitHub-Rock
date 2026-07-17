@@ -282,15 +282,20 @@ class MainViewModel @Inject constructor(
                         repositories = payload.repositories
                     )
                 }
-                val runs = payload.repositories.firstOrNull()?.let { repo ->
+
+                val runsResult = payload.repositories.firstOrNull()?.let { repo ->
                     runCatchingPreservingCancellation {
                         githubRepository.runs(repo.owner.login, repo.name)
-                    }.getOrNull()
-                }
+                    }
+                } ?: Result.success(emptyList())
+
                 _state.update { current ->
                     current.copy(
-                        workflowRuns = runs ?: current.workflowRuns,
-                        isRefreshing = false
+                        workflowRuns = runsResult.getOrDefault(emptyList()),
+                        isRefreshing = false,
+                        message = runsResult.exceptionOrNull()?.let {
+                            "Repository data refreshed, but workflow activity is temporarily unavailable."
+                        }
                     )
                 }
             }
