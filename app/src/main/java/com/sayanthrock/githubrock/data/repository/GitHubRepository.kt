@@ -369,7 +369,9 @@ class GitHubRepository @Inject constructor(
     private suspend fun cleanupReviewBranch(owner: String, repo: String, featureBranch: String) {
         withContext(NonCancellable) {
             try {
-                api.deleteBranch(owner, repo, featureBranch)
+                check(api.deleteBranch(owner, repo, featureBranch).isSuccessful) {
+                    "Unable to clean up the failed review branch"
+                }
             } catch (_: Exception) {
                 // Preserve the original operation failure; cleanup is best effort.
             }
