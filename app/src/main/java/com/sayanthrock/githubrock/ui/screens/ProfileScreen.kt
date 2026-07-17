@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -29,24 +32,30 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.sayanthrock.githubrock.BuildConfig
+import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.GITHUB_ACCOUNT_SECURITY_URL
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
@@ -63,6 +72,8 @@ import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private const val CREATOR_PROFILE_URL = "https://github.com/SayanthRock"
 
 @Composable
 fun ProfileScreen(
@@ -84,6 +95,7 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var exportMessage by remember(profile?.id) { mutableStateOf<String?>(null) }
+    var showAdvanced by rememberSaveable { mutableStateOf(false) }
 
     val profileExportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -128,7 +140,7 @@ fun ProfileScreen(
             StandardScreenHeader(
                 title = "Profile",
                 subtitle = when (mode) {
-                    AppMode.Connected -> "Your GitHub account and app preferences"
+                    AppMode.Connected -> "Your account, library, and app settings"
                     AppMode.Guest -> "Public browsing session"
                     AppMode.Demo -> "Isolated demonstration workspace"
                 }
@@ -151,6 +163,19 @@ fun ProfileScreen(
             )
         }
 
+        if (profileUrl != null) {
+            item {
+                Button(
+                    onClick = { onOpenGitHubUrl(profileUrl) },
+                    modifier = Modifier.fillMaxWidth().height(54.dp)
+                ) {
+                    Text("View profile on GitHub", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Default.OpenInNew, contentDescription = null)
+                }
+            }
+        }
+
         exportMessage?.let { message ->
             item {
                 GlassCard {
@@ -167,83 +192,108 @@ fun ProfileScreen(
             }
         }
 
-        if (profileUrl != null) {
-            item {
-                Button(
-                    onClick = { onOpenGitHubUrl(profileUrl) },
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) {
-                    Text("View on GitHub", fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Default.OpenInNew, contentDescription = null)
-                }
-            }
-        }
-
-        item { StandardSectionHeader("Library") }
+        item { StandardSectionHeader("Essentials") }
         item {
             StandardSettingsGroup {
                 StandardSettingsRow(
                     icon = Icons.Default.Folder,
                     title = "Repository library",
-                    subtitle = "Browse projects connected to this profile",
+                    subtitle = "Browse connected projects and source code",
                     onClick = onOpenRepositories
                 )
                 StandardSettingsDivider()
                 StandardSettingsRow(
                     icon = Icons.Default.Download,
                     title = "Downloads",
-                    subtitle = "Artifacts, release files and APK inspection",
+                    subtitle = "Artifacts, releases, progress, and APK inspection",
                     onClick = onOpenDownloads
                 )
-                if (profile != null) {
-                    StandardSettingsDivider()
-                    StandardSettingsRow(
-                        icon = Icons.Default.Download,
-                        title = "Download profile",
-                        subtitle = "Save account details, links, and public statistics as JSON",
-                        onClick = downloadProfile
-                    )
+                StandardSettingsDivider()
+                StandardSettingsRow(
+                    icon = Icons.Default.Palette,
+                    title = "Appearance",
+                    subtitle = "Theme, accent, images, card density, and motion",
+                    onClick = onOpenAppearance
+                )
+            }
+        }
+
+        item {
+            GlassCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("More tools", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Advanced GitHub and account controls",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        TextButton(onClick = { showAdvanced = !showAdvanced }) {
+                            Text(if (showAdvanced) "Hide" else "Show")
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null
+                            )
+                        }
+                    }
+
+                    if (showAdvanced) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        StandardSettingsGroup {
+                            StandardSettingsRow(
+                                icon = Icons.Default.Code,
+                                title = "All GitHub services",
+                                subtitle = "Notifications, Codespaces, Marketplace, settings, and more",
+                                onClick = onOpenFeatures
+                            )
+                            StandardSettingsDivider()
+                            StandardSettingsRow(
+                                icon = Icons.Default.Lock,
+                                title = "GitHub security",
+                                subtitle = "Passkeys, two-factor authentication, and sessions",
+                                onClick = { onOpenGitHubUrl(GITHUB_ACCOUNT_SECURITY_URL) }
+                            )
+                            if (profile != null) {
+                                StandardSettingsDivider()
+                                StandardSettingsRow(
+                                    icon = Icons.Default.Download,
+                                    title = "Download profile",
+                                    subtitle = "Save public account details and statistics as JSON",
+                                    onClick = downloadProfile
+                                )
+                            }
+                            StandardSettingsDivider()
+                            StandardSettingsRow(
+                                icon = Icons.Default.Info,
+                                title = "Feature status",
+                                subtitle = "Native coverage, web tools, and roadmap",
+                                onClick = onOpenFeatures
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        item { StandardSectionHeader("Workspace") }
+        item { StandardSectionHeader("About") }
         item {
-            StandardSettingsGroup {
-                StandardSettingsRow(
-                    icon = Icons.Default.Code,
-                    title = "All GitHub services",
-                    subtitle = "Notifications, Codespaces, settings, Marketplace and more",
-                    onClick = onOpenFeatures
-                )
-                StandardSettingsDivider()
-                StandardSettingsRow(
-                    icon = Icons.Default.Lock,
-                    title = "GitHub security",
-                    subtitle = "Passkeys, two-factor authentication and sessions",
-                    onClick = { onOpenGitHubUrl(GITHUB_ACCOUNT_SECURITY_URL) }
-                )
-            }
-        }
-
-        item { StandardSectionHeader("App") }
-        item {
-            StandardSettingsGroup {
-                StandardSettingsRow(
-                    icon = Icons.Default.Palette,
-                    title = "Appearance",
-                    subtitle = "Theme style, images, accent, dynamic color and true black",
-                    onClick = onOpenAppearance
-                )
-                StandardSettingsDivider()
-                StandardSettingsRow(
-                    icon = Icons.Default.Info,
-                    title = "About and feature status",
-                    subtitle = "Native coverage, web tools and roadmap",
-                    onClick = onOpenFeatures
-                )
-            }
+            AboutCreatorCard(onOpenGitHubUrl = onOpenGitHubUrl)
         }
 
         item { StandardSectionHeader("Account") }
@@ -251,11 +301,73 @@ fun ProfileScreen(
             StandardSettingsGroup {
                 StandardSettingsRow(
                     icon = Icons.Default.Logout,
-                    title = if (mode == AppMode.Connected) "Log out and delete token" else "Exit ${mode.name.lowercase()} mode",
+                    title = if (mode == AppMode.Connected) {
+                        "Log out and delete token"
+                    } else {
+                        "Exit ${mode.name.lowercase()} mode"
+                    },
                     subtitle = "Remove this session from the device",
                     destructive = true,
                     onClick = onLogout
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AboutCreatorCard(onOpenGitHubUrl: (String) -> Unit) {
+    GlassCard(contentPadding = PaddingValues(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(64.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = "GitHub Rock application logo",
+                        modifier = Modifier.padding(5.dp)
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("GitHub Rock", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+                    Text(
+                        "Visual developer control centre",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Version ${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("By Sayanth Rock", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    CREATOR_PROFILE_URL,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Button(
+                onClick = { onOpenGitHubUrl(CREATOR_PROFILE_URL) },
+                modifier = Modifier.fillMaxWidth().height(52.dp)
+            ) {
+                Text("Follow me", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.OpenInNew, contentDescription = null)
             }
         }
     }
@@ -345,7 +457,7 @@ private fun ProfileHero(
 private fun ProfileAvatar(profile: GitHubUser?) {
     val showImages = LocalRemoteImagesEnabled.current
     Surface(
-        modifier = Modifier.size(80.dp),
+        modifier = Modifier.size(82.dp),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
@@ -390,8 +502,7 @@ private fun ProfileStat(
             label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            maxLines = 2
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -409,17 +520,11 @@ private fun ProfileFact(label: String, value: String, modifier: Modifier = Modif
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .52f)
     ) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-            Text(
-                value,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 2)
         }
     }
 }

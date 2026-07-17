@@ -40,6 +40,7 @@ class HomeScreenTest {
         }
 
         compose.onNodeWithText("CONNECTED").assertIsDisplayed()
+        compose.onNodeWithText("Show workspace details").performClick()
         compose.onNodeWithText("Sayanth Rock").assertIsDisplayed()
         compose.onNodeWithText("GitHub API health").assertIsDisplayed()
         compose.onNodeWithText("4862 / 5000").assertIsDisplayed()
