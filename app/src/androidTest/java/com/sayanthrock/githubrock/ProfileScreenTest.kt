@@ -52,12 +52,17 @@ class ProfileScreenTest {
         compose.runOnIdle {
             assertEquals("https://github.com/SayanthRock?tab=followers", openedGitHubUrl)
         }
-        compose.onNodeWithText("View on GitHub").performScrollTo().assertIsDisplayed()
+
+        compose.onNodeWithText("View profile on GitHub").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertTrue(openedAppearance) }
+
+        compose.onNodeWithText("Show").performScrollTo().performClick()
         compose.onNodeWithText("Download profile").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
-        compose.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed().performClick()
-        compose.runOnIdle { assertTrue(openedAppearance) }
         compose.onNodeWithText("GitHub security").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("By Sayanth Rock").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Follow me").performScrollTo().assertIsDisplayed()
     }
 }
