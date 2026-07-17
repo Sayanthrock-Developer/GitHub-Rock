@@ -128,7 +128,8 @@ class RepositoryShowcaseViewModel @Inject constructor(
         _state.update { it.copy(repository = resolvedRepository, loading = false) }
 
         var unexpectedFailure: Throwable? = null
-        val readme = README_CANDIDATES.firstNotNullOfOrNull { path ->
+        var readme: String? = null
+        for (path in README_CANDIDATES) {
             val result = runCatchingPreservingCancellation {
                 githubRepository.file(
                     owner = owner,
@@ -142,7 +143,11 @@ class RepositoryShowcaseViewModel @Inject constructor(
                     unexpectedFailure = failure
                 }
             }
-            result.getOrNull()?.takeIf(String::isNotBlank)
+            val candidate = result.getOrNull()?.takeIf(String::isNotBlank)
+            if (candidate != null) {
+                readme = candidate
+                break
+            }
         }
 
         _state.update {
