@@ -3,6 +3,8 @@ package com.sayanthrock.githubrock.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -85,7 +87,16 @@ fun DeveloperToolsScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var termuxInstalled by remember { mutableStateOf(TermuxBridge.isInstalled(context)) }
+    var termuxPermissionGranted by remember { mutableStateOf(TermuxBridge.hasRunCommandPermission(context)) }
     var pendingCommand by remember { mutableStateOf<PendingTermuxCommand?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        termuxPermissionGranted = granted
+        scope.launch {
+            snackbar.showSnackbar(
+                if (granted) "Run commands in Termux permission granted" else "Termux command permission was not granted"
+            )
+        }
+    }
 
     val checkoutCommand = DeveloperCommandBuilder.checkout(owner, repository, pullRequest)
     val viewCommand = DeveloperCommandBuilder.viewPullRequest(owner, repository, pullRequest)
@@ -95,6 +106,11 @@ fun DeveloperToolsScreen(
     val sessionKeyCommand = DeveloperCommandBuilder.sessionApiKey(apiVariable)
     val persistentKeyCommand = DeveloperCommandBuilder.persistentApiKey(apiVariable)
     val loadKeyCommand = DeveloperCommandBuilder.loadPersistentApiKey(apiVariable)
+
+    fun refreshTermuxState() {
+        termuxInstalled = TermuxBridge.isInstalled(context)
+        termuxPermissionGranted = TermuxBridge.hasRunCommandPermission(context)
+    }
 
     fun copy(label: String, value: String) {
         if (value.isBlank()) {
@@ -107,9 +123,11 @@ fun DeveloperToolsScreen(
     }
 
     fun requestTermux(label: String, command: String) {
-        termuxInstalled = TermuxBridge.isInstalled(context)
+        refreshTermuxState()
         if (!termuxInstalled) {
             scope.launch { snackbar.showSnackbar("Termux is not installed") }
+        } else if (!termuxPermissionGranted) {
+            scope.launch { snackbar.showSnackbar("Grant GitHub Rock permission to run commands in Termux") }
         } else if (command.isBlank()) {
             scope.launch { snackbar.showSnackbar("Complete the required fields first") }
         } else {
@@ -131,7 +149,7 @@ fun DeveloperToolsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        "Nothing runs silently. Termux must allow external apps.",
+                        "Nothing runs silently. Android permission and Termux external-app access are both required.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -186,11 +204,19 @@ fun DeveloperToolsScreen(
                         Column(Modifier.weight(1f)) {
                             Text("GitHub ↔ Termux bridge", fontWeight = FontWeight.Bold)
                             Text(
-                                if (termuxInstalled) "Termux detected on this device" else "Termux is not installed or cannot be detected",
-                                color = if (termuxInstalled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                                when {
+                                    !termuxInstalled -> "Termux is not installed or cannot be detected"
+                                    !termuxPermissionGranted -> "Termux detected · Android permission required"
+                                    else -> "Termux detected · command permission granted"
+                                },
+                                color = if (termuxInstalled && termuxPermissionGranted) {
+                                    MaterialTheme.colorScheme.tertiary
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                }
                             )
                         }
-                        IconButton(onClick = { termuxInstalled = TermuxBridge.isInstalled(context) }) {
+                        IconButton(onClick = ::refreshTermuxState) {
                             Icon(Icons.Default.Refresh, contentDescription = "Check Termux again")
                         }
                     }
@@ -215,22 +241,29 @@ fun DeveloperToolsScreen(
                             Text("Open Termux")
                         }
                         FilledTonalButton(
-                            onClick = {
-                                copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE)
-                            },
+                            onClick = { permissionLauncher.launch(TermuxBridge.RUN_COMMAND_PERMISSION) },
+                            enabled = termuxInstalled && !termuxPermissionGranted,
                             modifier = Modifier.weight(1f).height(50.dp)
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null)
+                            Icon(Icons.Default.Security, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Copy bridge setup")
+                            Text(if (termuxPermissionGranted) "Granted" else "Grant permission")
                         }
+                    }
+                    OutlinedButton(
+                        onClick = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE) },
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Copy allow-external-apps setup")
                     }
                 }
             }
 
             CommandCard(
-                title = "1. Enable GitHub Rock bridge",
-                description = "Run this once inside Termux, then restart Termux. It enables Termux's official external-command service.",
+                title = "1. Enable external apps in Termux",
+                description = "Run this once inside Termux, restart Termux, then grant GitHub Rock the Android Run commands in Termux permission above. Both protections are required.",
                 command = DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE,
                 onCopy = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE) },
                 onSend = null
@@ -259,7 +292,7 @@ fun DeveloperToolsScreen(
 
             Button(
                 onClick = { requestTermux("Complete GitHub setup", DeveloperCommandBuilder.fullGitHubSetup()) },
-                enabled = termuxInstalled,
+                enabled = termuxInstalled && termuxPermissionGranted,
                 modifier = Modifier.fillMaxWidth().height(54.dp)
             ) {
                 Icon(Icons.Default.CheckCircle, contentDescription = null)
@@ -279,6 +312,11 @@ fun DeveloperToolsScreen(
                         } else {
                             "GitHub Rock is in ${mode.name.lowercase()} mode. Termux can still connect independently with gh auth login."
                         },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Direct command handoff requires both the Android RUN_COMMAND permission and allow-external-apps=true inside Termux.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -378,7 +416,7 @@ fun DeveloperToolsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        "Persistent mode stores the key as plaintext protected by file mode 600 inside Termux. Device compromise or root access can still expose it.",
+                        "Persistent mode stores the key as plaintext and explicitly enforces file mode 600 inside Termux. Device compromise or root access can still expose it.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -393,8 +431,8 @@ fun DeveloperToolsScreen(
                 { requestTermux("Session API-key setup", sessionKeyCommand) }
             )
             CommandCard(
-                "Save API key with mode 600",
-                "Prompts inside Termux and saves a protected environment file without putting the key in command history.",
+                "Save API key with enforced mode 600",
+                "Prompts inside Termux, writes the environment file, forces owner-only permissions and keeps the key out of command history.",
                 persistentKeyCommand,
                 { copy("Persistent API-key command", persistentKeyCommand) },
                 { requestTermux("Persistent API-key setup", persistentKeyCommand) }
