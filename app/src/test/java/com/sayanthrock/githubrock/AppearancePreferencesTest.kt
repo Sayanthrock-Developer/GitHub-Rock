@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock
 import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.ThemeMode
+import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -15,6 +16,12 @@ class AppearancePreferencesTest {
         assertEquals(ThemeMode.System, ThemeMode.fromStored(null))
     }
 
+    @Test fun storedStyleValuesFallBackToClean() {
+        assertEquals(ThemeStyle.LiquidGlass, ThemeStyle.fromStored("LiquidGlass"))
+        assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored("unknown"))
+        assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored(null))
+    }
+
     @Test fun storedAccentValuesFallBackToCleanCyan() {
         assertEquals(AccentColor.Violet, AccentColor.fromStored("Violet"))
         assertEquals(AccentColor.Cyan, AccentColor.fromStored("unknown"))
@@ -24,6 +31,8 @@ class AppearancePreferencesTest {
     @Test fun nativeFeatureControlsUseSafeVisibleDefaults() {
         val preferences = AppearancePreferences()
 
+        assertEquals(ThemeStyle.Clean, preferences.themeStyle)
+        assertTrue(preferences.showImages)
         assertTrue(preferences.workflowPreview)
         assertTrue(preferences.workflowStepDetails)
         assertTrue(preferences.statusColors)
