@@ -38,6 +38,13 @@ class SourceFileDecoderTest {
         )
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `decoder rejects malformed Base64 characters`() {
+        SourceFileDecoder.decode(
+            ContentEntry(name = "bad-base64.txt", path = "bad-base64.txt", content = "YQ$==", encoding = "base64")
+        )
+    }
+
     @Test(expected = java.nio.charset.CharacterCodingException::class)
     fun `decoder rejects malformed UTF-8`() {
         val encoded = java.util.Base64.getEncoder().encodeToString(byteArrayOf(0xC3.toByte(), 0x28))
