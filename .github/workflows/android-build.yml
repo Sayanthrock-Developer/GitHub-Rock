@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: android-artifact-${{ github.ref }}-${{ inputs.artifact_type }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,21 +41,52 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ "${{ inputs.artifact_type }}" != "debug-apk" ]; then
-            [ -n "$GITHUB_CLIENT_ID" ] || { echo "Set the GITHUB_CLIENT_ID Actions variable before building a release."; exit 1; }
-            for value in "$KEYSTORE_BASE64" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD"; do
-              [ -n "$value" ] || { echo "All Android signing secrets are required for release artifacts."; exit 1; }
-            done
+          set -euo pipefail
+
+          if [ "${{ inputs.artifact_type }}" = "debug-apk" ]; then
+            echo "Debug APK does not require release signing secrets."
+            exit 0
           fi
-      - name: Prepare signing from repository secrets
+
+          [ -n "$GITHUB_CLIENT_ID" ] || {
+            echo "Set the public GITHUB_CLIENT_ID Actions variable."
+            exit 1
+          }
+
+          missing=()
+          [ -n "${KEYSTORE_BASE64:-}" ] || missing+=(ANDROID_KEYSTORE_BASE64)
+          [ -n "${KEYSTORE_PASSWORD:-}" ] || missing+=(ANDROID_KEYSTORE_PASSWORD)
+          [ -n "${KEY_ALIAS:-}" ] || missing+=(ANDROID_KEY_ALIAS)
+          [ -n "${KEY_PASSWORD:-}" ] || missing+=(ANDROID_KEY_PASSWORD)
+
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing or empty Actions secret: %s\n' "${missing[@]}"
+            echo "Create each secret under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          echo "All required release build settings are present."
+      - name: Prepare and validate signing keystore
         if: ${{ inputs.artifact_type != 'debug-apk' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
+          set -euo pipefail
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/github-rock-release.jks"
+          [ -s "$RUNNER_TEMP/github-rock-release.jks" ] || {
+            echo "The decoded Android keystore is empty. Replace ANDROID_KEYSTORE_BASE64."
+            exit 1
+          }
+          keytool -list \
+            -keystore "$RUNNER_TEMP/github-rock-release.jks" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" >/dev/null
+          echo "Android signing keystore and alias validated."
       - name: Build debug APK
         if: ${{ inputs.artifact_type == 'debug-apk' }}
-        run: gradle :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleDebug --stacktrace
       - name: Build release APK
         if: ${{ inputs.artifact_type == 'release-apk' }}
         env:
@@ -59,7 +94,7 @@ jobs:
           GITHUB_ROCK_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           GITHUB_ROCK_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           GITHUB_ROCK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleRelease --stacktrace
       - name: Build release AAB
         if: ${{ inputs.artifact_type == 'release-aab' }}
         env:
@@ -67,7 +102,7 @@ jobs:
           GITHUB_ROCK_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           GITHUB_ROCK_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           GITHUB_ROCK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle :app:bundleRelease --stacktrace
+        run: ./gradlew :app:bundleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: github-rock-${{ inputs.artifact_type }}
