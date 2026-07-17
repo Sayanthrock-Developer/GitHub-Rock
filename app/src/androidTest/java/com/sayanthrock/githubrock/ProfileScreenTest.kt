@@ -9,15 +9,15 @@ import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class ProfileScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedProfileShowsRepositoryCountAndFeaturePreview() {
+    @Test fun connectedProfileShowsRepositoryCountAndNativeActions() {
         var openedFeatures = false
         var openedAppearance = false
         var openedGitHubUrl: String? = null
@@ -53,6 +53,7 @@ class ProfileScreenTest {
             assertEquals("https://github.com/SayanthRock?tab=followers", openedGitHubUrl)
         }
         compose.onNodeWithText("View on GitHub").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Download profile").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
         compose.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed().performClick()
