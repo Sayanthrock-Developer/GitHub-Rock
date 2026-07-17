@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val appearance by appPreferences.appearance.collectAsStateWithLifecycle(
-                initialValue = AppearancePreferences()
+                initialValue = AppearancePreferences(showImages = false)
             )
             val systemDark = isSystemInDarkTheme()
             val useDarkTheme = when (appearance.themeMode) {
