@@ -95,83 +95,52 @@ fun HomeScreen(
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {}
 ) {
-    val activeWorkflows = remember(runs) {
-        runs.count { it.displayState() == WorkflowDisplayState.Running || it.displayState() == WorkflowDisplayState.Queued }
+    val running = remember(runs) {
+        runs.count { it.displayState() in setOf(WorkflowDisplayState.Running, WorkflowDisplayState.Queued) }
     }
-    val successfulWorkflows = remember(runs) { runs.count { it.displayState() == WorkflowDisplayState.Success } }
-    val failedWorkflows = remember(runs) { runs.count { it.displayState() == WorkflowDisplayState.Failed } }
+    val success = remember(runs) { runs.count { it.displayState() == WorkflowDisplayState.Success } }
+    val failed = remember(runs) { runs.count { it.displayState() == WorkflowDisplayState.Failed } }
     var showAllRuns by rememberSaveable { mutableStateOf(false) }
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = onRefresh,
-        modifier = Modifier.fillMaxSize()
-    ) {
+    PullToRefreshBox(isRefreshing, onRefresh, Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = StandardScreenPadding,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                StandardScreenHeader(
-                    title = "Home",
-                    subtitle = "A clean view of your GitHub workspace"
-                )
+                StandardScreenHeader("Home", "A clean view of your GitHub workspace")
             }
-
-            item {
-                GitHubRockHero(
-                    mode = mode,
-                    profile = profile,
-                    rateLimit = rateLimit
-                )
-            }
-
-            if (isLoading) {
-                item { LoadingWorkspaceCard() }
-            }
-
-            item {
-                WorkflowHealthCard(
-                    total = runs.size,
-                    running = activeWorkflows,
-                    success = successfulWorkflows,
-                    failed = failedWorkflows
-                )
-            }
+            item { GitHubRockHero(mode, profile, rateLimit) }
+            if (isLoading) item { LoadingWorkspaceCard() }
+            item { WorkflowHealthCard(runs.size, running, success, failed) }
 
             item {
                 StandardSectionHeader("Workspace overview")
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     item { DashboardMetric("Repositories", repositories.size.toString(), Icons.Default.Folder) }
-                    item { DashboardMetric("Running", activeWorkflows.toString(), Icons.Default.CloudQueue) }
-                    item { DashboardMetric("Success", successfulWorkflows.toString(), Icons.Default.CheckCircle, success = true) }
-                    item { DashboardMetric("Failed", failedWorkflows.toString(), Icons.Default.ErrorOutline, warning = failedWorkflows > 0) }
+                    item { DashboardMetric("Running", running.toString(), Icons.Default.CloudQueue) }
+                    item { DashboardMetric("Success", success.toString(), Icons.Default.CheckCircle, success = true) }
+                    item { DashboardMetric("Failed", failed.toString(), Icons.Default.ErrorOutline, warning = failed > 0) }
                 }
             }
 
             item {
                 StandardSectionHeader("Quick actions")
                 Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = onOpenBuilds,
-                        modifier = Modifier.weight(1f).height(54.dp)
-                    ) {
-                        Icon(Icons.Default.Build, contentDescription = null)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onOpenBuilds, Modifier.weight(1f).height(54.dp)) {
+                        Icon(Icons.Default.Build, null)
                         Spacer(Modifier.width(8.dp))
                         Text("Build APK", fontWeight = FontWeight.Bold)
                     }
                     FilledTonalButton(
                         onClick = { repositories.firstOrNull()?.let(onOpenRepo) },
-                        enabled = repositories.isNotEmpty(),
-                        modifier = Modifier.weight(1f).height(54.dp)
+                        modifier = Modifier.weight(1f).height(54.dp),
+                        enabled = repositories.isNotEmpty()
                     ) {
-                        Icon(Icons.Default.Folder, contentDescription = null)
+                        Icon(Icons.Default.Folder, null)
                         Spacer(Modifier.width(8.dp))
                         Text("Open repo")
                     }
@@ -179,28 +148,12 @@ fun HomeScreen(
             }
 
             if (runs.isNotEmpty()) {
-                item {
-                    StandardSectionHeader(
-                        title = "Workflow activity",
-                        subtitle = "${runs.size} recent"
-                    )
-                }
-                items(
-                    items = if (showAllRuns) runs else runs.take(3),
-                    key = { it.id }
-                ) { run ->
-                    WorkflowSummaryCard(run)
-                }
+                item { StandardSectionHeader("Workflow activity", "${runs.size} recent") }
+                items(if (showAllRuns) runs else runs.take(3), key = { it.id }) { WorkflowSummaryCard(it) }
                 if (runs.size > 3) {
                     item {
-                        TextButton(
-                            onClick = { showAllRuns = !showAllRuns },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                if (showAllRuns) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = null
-                            )
+                        TextButton({ showAllRuns = !showAllRuns }, Modifier.fillMaxWidth()) {
+                            Icon(if (showAllRuns) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
                             Spacer(Modifier.width(6.dp))
                             Text(if (showAllRuns) "Show fewer workflows" else "See all workflows")
                         }
@@ -210,51 +163,37 @@ fun HomeScreen(
 
             item {
                 StandardSectionHeader(
-                    title = "Recently updated repositories",
-                    subtitle = when {
+                    "Recently updated repositories",
+                    when {
                         isLoading -> "Loading"
                         repositories.isEmpty() -> "No repositories"
                         else -> "${repositories.size} available"
                     }
                 )
             }
-
             if (!isLoading && repositories.isEmpty()) {
                 item {
                     GlassCard {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.ErrorOutline, contentDescription = null)
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.ErrorOutline, null)
                             Text("No repositories to show. Pull down to refresh.")
                         }
                     }
                 }
             }
-
             items(repositories.take(6), key = { it.id }) { repo ->
-                RepositoryCard(repo = repo, onClick = { onOpenRepo(repo) })
+                RepositoryCard(repo) { onOpenRepo(repo) }
             }
         }
     }
 }
 
 @Composable
-private fun GitHubRockHero(
-    mode: AppMode,
-    profile: GitHubUser?,
-    rateLimit: RateLimit?
-) {
+private fun GitHubRockHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLimit?) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-
     GlassCard(contentPadding = PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(66.dp),
                     shape = MaterialTheme.shapes.extraLarge,
@@ -262,33 +201,21 @@ private fun GitHubRockHero(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .30f))
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
-                        contentDescription = "GitHub Rock application logo",
-                        modifier = Modifier.padding(5.dp)
+                        painterResource(R.drawable.ic_launcher_foreground),
+                        "GitHub Rock application logo",
+                        Modifier.padding(5.dp)
                     )
                 }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "GitHub Rock",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        "Visual developer control centre",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                Column(Modifier.weight(1f)) {
+                    Text("GitHub Rock", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+                    Text("Visual developer control centre", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         ModeBadge(mode)
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)
-                        ) {
+                        Surface(MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)) {
                             Text(
                                 "v${BuildConfig.VERSION_NAME}",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -297,16 +224,10 @@ private fun GitHubRockHero(
                 }
             }
 
-            TextButton(
-                onClick = { expanded = !expanded },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            TextButton({ expanded = !expanded }, Modifier.fillMaxWidth()) {
                 Text(if (expanded) "Hide workspace details" else "Show workspace details")
                 Spacer(Modifier.width(4.dp))
-                Icon(
-                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null
-                )
+                Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
             }
 
             if (expanded) {
@@ -317,36 +238,17 @@ private fun GitHubRockHero(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        profile?.login?.let { "@$it" } ?: "Browse public repositories securely",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(profile?.login?.let { "@$it" } ?: "Browse public repositories securely", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     profile?.bio?.takeIf(String::isNotBlank)?.let {
-                        Text(
-                            it,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     }
                     rateLimit?.let {
                         val progress = if (it.limit == 0) 0f else it.remaining.toFloat() / it.limit.toFloat()
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("GitHub API health", style = MaterialTheme.typography.labelLarge)
-                            Text(
-                                "${it.remaining} / ${it.limit}",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("${it.remaining} / ${it.limit}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
-                        LinearProgressIndicator(
-                            progress = { progress.coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        LinearProgressIndicator({ progress.coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -355,46 +257,24 @@ private fun GitHubRockHero(
 }
 
 @Composable
-private fun WorkflowHealthCard(
-    total: Int,
-    running: Int,
-    success: Int,
-    failed: Int
-) {
+private fun WorkflowHealthCard(total: Int, running: Int, success: Int, failed: Int) {
     val finished = (success + failed).coerceAtMost(total)
-    val progress = if (total == 0) 0f else finished.toFloat() / total.toFloat()
-    val percentage = (progress * 100).toInt().coerceIn(0, 100)
-
+    val progress = if (total == 0) 0f else finished.toFloat() / total
+    val percent = (progress * 100).toInt().coerceIn(0, 100)
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text("Build health", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Live workflow status and completion",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("Live workflow status and completion", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("$percentage%", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+                    Text("$percent%", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
                     Text("$finished/$total", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-
-            LinearProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(8.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 WorkflowStateTile("Running", running, WorkflowDisplayState.Running, Modifier.weight(1f))
                 WorkflowStateTile("Success", success, WorkflowDisplayState.Success, Modifier.weight(1f))
                 WorkflowStateTile("Failed", failed, WorkflowDisplayState.Failed, Modifier.weight(1f))
@@ -404,12 +284,7 @@ private fun WorkflowHealthCard(
 }
 
 @Composable
-private fun WorkflowStateTile(
-    label: String,
-    value: Int,
-    state: WorkflowDisplayState,
-    modifier: Modifier = Modifier
-) {
+private fun WorkflowStateTile(label: String, value: Int, state: WorkflowDisplayState, modifier: Modifier) {
     val accent = workflowStateColor(state)
     Surface(
         modifier = modifier,
@@ -417,11 +292,7 @@ private fun WorkflowStateTile(
         color = accent.copy(alpha = .10f),
         border = BorderStroke(1.dp, accent.copy(alpha = .28f))
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
+        Column(Modifier.padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(value.toString(), color = accent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
         }
@@ -436,14 +307,10 @@ private fun LoadingWorkspaceCard() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+            Column {
                 Text("Loading your GitHub workspace…", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Fetching account, repositories, workflow status, and activity time.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text("Fetching account, repositories, workflow status, and activity time.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -456,17 +323,8 @@ private fun ModeBadge(mode: AppMode) {
         AppMode.Guest -> "GUEST"
         AppMode.Demo -> "DEMO"
     }
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
-    ) {
-        Text(
-            label,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold
-        )
+    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)) {
+        Text(label, Modifier.padding(horizontal = 9.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -489,10 +347,10 @@ private fun DashboardMetric(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .50f),
         border = BorderStroke(1.dp, accent.copy(alpha = .20f))
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
-            Text(value, style = MaterialTheme.typography.headlineSmall, color = accent, fontWeight = FontWeight.Black)
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Icon(icon, null, Modifier.size(22.dp), accent)
+            Text(value, color = accent, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -504,80 +362,33 @@ private fun WorkflowSummaryCard(run: WorkflowRun) {
     val progress = when (state) {
         WorkflowDisplayState.Queued -> .08f
         WorkflowDisplayState.Running -> .55f
-        WorkflowDisplayState.Success,
-        WorkflowDisplayState.Failed,
-        WorkflowDisplayState.Cancelled -> 1f
+        WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled -> 1f
         WorkflowDisplayState.Unknown -> 0f
     }
-
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = accent.copy(alpha = .12f)
-                ) {
-                    Icon(
-                        workflowStateIcon(state),
-                        contentDescription = null,
-                        tint = accent,
-                        modifier = Modifier.padding(10.dp).size(22.dp)
-                    )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = MaterialTheme.shapes.large, color = accent.copy(alpha = .12f)) {
+                    Icon(workflowStateIcon(state), null, Modifier.padding(10.dp).size(22.dp), accent)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        run.displayTitle.ifBlank { run.name ?: "Workflow" },
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text(run.displayTitle.ifBlank { run.name ?: "Workflow" }, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         listOf(run.event, run.headBranch.orEmpty()).filter(String::isNotBlank).joinToString(" • "),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
                 StatusBadge(state)
             }
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(6.dp),
-                color = accent
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        formatGitHubTime(run.createdAt),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(6.dp), color = accent)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatGitHubTime(run.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text(
-                    "Run #${run.id}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("Run #${run.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -586,18 +397,8 @@ private fun WorkflowSummaryCard(run: WorkflowRun) {
 @Composable
 private fun StatusBadge(state: WorkflowDisplayState) {
     val accent = workflowStateColor(state)
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = accent.copy(alpha = .12f),
-        border = BorderStroke(1.dp, accent.copy(alpha = .30f))
-    ) {
-        Text(
-            state.name,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-            color = accent,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold
-        )
+    Surface(shape = MaterialTheme.shapes.small, color = accent.copy(alpha = .12f), border = BorderStroke(1.dp, accent.copy(alpha = .30f))) {
+        Text(state.name, Modifier.padding(horizontal = 9.dp, vertical = 5.dp), color = accent, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -606,127 +407,54 @@ private fun workflowStateColor(state: WorkflowDisplayState): Color = when (state
     WorkflowDisplayState.Success -> MaterialTheme.colorScheme.tertiary
     WorkflowDisplayState.Failed -> MaterialTheme.colorScheme.error
     WorkflowDisplayState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
-    WorkflowDisplayState.Queued,
-    WorkflowDisplayState.Running,
-    WorkflowDisplayState.Unknown -> MaterialTheme.colorScheme.primary
+    else -> MaterialTheme.colorScheme.primary
 }
 
 private fun workflowStateIcon(state: WorkflowDisplayState): ImageVector = when (state) {
     WorkflowDisplayState.Success -> Icons.Default.CheckCircle
-    WorkflowDisplayState.Failed -> Icons.Default.ErrorOutline
-    WorkflowDisplayState.Cancelled -> Icons.Default.ErrorOutline
-    WorkflowDisplayState.Queued,
-    WorkflowDisplayState.Running,
-    WorkflowDisplayState.Unknown -> Icons.Default.CloudQueue
+    WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled -> Icons.Default.ErrorOutline
+    else -> Icons.Default.CloudQueue
 }
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     val showImages = LocalRemoteImagesEnabled.current
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        onClick = onClick
-    ) {
+    GlassCard(Modifier.fillMaxWidth(), PaddingValues(16.dp), onClick) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(13.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(50.dp),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(Modifier.size(50.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.surfaceVariant) {
                     if (showImages && repo.owner.avatarUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = repo.owner.avatarUrl,
-                            contentDescription = "${repo.owner.login} avatar",
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        AsyncImage(repo.owner.avatarUrl, "${repo.owner.login} avatar", Modifier.fillMaxSize())
                     } else {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                repo.owner.login.take(2).uppercase(),
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text(repo.owner.login.take(2).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        repo.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        repo.owner.login,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text(repo.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(repo.owner.login, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Surface(
-                    modifier = Modifier.size(42.dp),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
-                ) {
+                Surface(Modifier.size(42.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.primary.copy(alpha = .12f)) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = "Open ${repo.name}",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.ChevronRight, "Open ${repo.name}", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
-
-            Text(
-                repo.description ?: "No repository description.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Text(repo.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 RepositoryMetaChip(Icons.Default.Star, "Stars", compactCount(repo.stars))
                 RepositoryMetaChip(Icons.Default.CallSplit, "Forks", compactCount(repo.forks))
                 RepositoryMetaChip(Icons.Default.ErrorOutline, "Open issues", compactCount(repo.openIssues))
-                RepositoryMetaChip(Icons.Default.Code, "Language", repo.language ?: "Repository", accent = true)
-                repo.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let {
-                    RepositoryMetaChip(Icons.Default.Tag, "Topic", it)
-                }
+                RepositoryMetaChip(Icons.Default.Code, "Language", repo.language ?: "Repository", true)
+                repo.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let { RepositoryMetaChip(Icons.Default.Tag, "Topic", it) }
             }
-
             if (repo.updatedAt.isNotBlank()) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Updated ${formatGitHubTime(repo.updatedAt)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Updated ${formatGitHubTime(repo.updatedAt)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -734,64 +462,32 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RepositoryMetaChip(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    accent: Boolean = false
-) {
+private fun RepositoryMetaChip(icon: ImageVector, label: String, value: String, accent: Boolean = false) {
     val foreground = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Surface(
         modifier = Modifier.semantics { contentDescription = "$label: $value" },
         shape = MaterialTheme.shapes.large,
-        color = if (accent) {
-            MaterialTheme.colorScheme.primary.copy(alpha = .10f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .28f)
-            else MaterialTheme.colorScheme.outline
-        )
+        color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f),
+        border = BorderStroke(1.dp, if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .28f) else MaterialTheme.colorScheme.outline)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
-            Text(
-                value,
-                color = foreground,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+        Row(Modifier.padding(horizontal = 11.dp, vertical = 7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, Modifier.size(15.dp), foreground)
+            Text(value, color = foreground, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 private fun compactCount(value: Int): String = when {
-    value >= 1_000_000 -> {
-        val whole = value / 1_000_000
-        val decimal = (value % 1_000_000) / 100_000
-        if (decimal == 0) "${whole}M" else "$whole.${decimal}M"
-    }
-    value >= 1_000 -> {
-        val whole = value / 1_000
-        val decimal = (value % 1_000) / 100
-        if (decimal == 0) "${whole}k" else "$whole.${decimal}k"
-    }
+    value >= 1_000_000 -> "${value / 1_000_000}M"
+    value >= 1_000 -> "${value / 1_000}k"
     else -> value.toString()
 }
 
-private val githubDateTimeFormatter: DateTimeFormatter = DateTimeFormatter
+private val githubDateTimeFormatter = DateTimeFormatter
     .ofPattern("dd MMM yyyy • hh:mm:ss a", Locale.getDefault())
     .withZone(ZoneId.systemDefault())
 
 private fun formatGitHubTime(value: String): String {
     if (value.isBlank()) return "Time unavailable"
-    return runCatching { githubDateTimeFormatter.format(Instant.parse(value)) }
-        .getOrDefault(value)
+    return runCatching { githubDateTimeFormatter.format(Instant.parse(value)) }.getOrDefault(value)
 }
