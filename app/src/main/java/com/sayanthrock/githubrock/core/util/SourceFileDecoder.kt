@@ -6,15 +6,11 @@ import java.nio.charset.CodingErrorAction
 import java.util.Base64
 
 object SourceFileDecoder {
-    fun decode(entry: ContentEntry): String {
-        val content = entry.content.orEmpty()
-        if (!entry.encoding.equals("base64", ignoreCase = true)) return content
-        return Base64.getMimeDecoder().decode(content).toString(Charsets.UTF_8)
-    }
+    fun decode(entry: ContentEntry): String = decodeStrictText(entry)
 
     fun decodeStrictText(entry: ContentEntry): String {
         val content = requireNotNull(entry.content) {
-            "The file content is unavailable and cannot be copied as text"
+            "The file content is unavailable and cannot be opened as text"
         }
         val text = if (entry.encoding.equals("base64", ignoreCase = true)) {
             val bytes = Base64.getMimeDecoder().decode(content)
@@ -27,7 +23,7 @@ object SourceFileDecoder {
             content
         }
         require(text.none(::isBinaryControlCharacter)) {
-            "The file contains binary control characters and cannot be copied as text"
+            "The file contains binary control characters and cannot be opened as text"
         }
         return text
     }
