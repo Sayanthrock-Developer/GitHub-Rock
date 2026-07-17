@@ -25,6 +25,17 @@ enum class ThemeMode {
     }
 }
 
+enum class ThemeStyle {
+    Clean,
+    LiquidGlass,
+    Studio,
+    HighContrast;
+
+    companion object {
+        fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean
+    }
+}
+
 enum class AccentColor {
     Cyan,
     Blue,
@@ -39,9 +50,11 @@ enum class AccentColor {
 
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
+    val themeStyle: ThemeStyle = ThemeStyle.Clean,
     val accentColor: AccentColor = AccentColor.Cyan,
     val dynamicColor: Boolean = false,
     val trueBlack: Boolean = false,
+    val showImages: Boolean = true,
     val workflowPreview: Boolean = true,
     val workflowStepDetails: Boolean = true,
     val statusColors: Boolean = true,
@@ -59,9 +72,11 @@ class AppPreferences @Inject constructor(
     val appearance: Flow<AppearancePreferences> = context.dataStore.data.map { preferences ->
         AppearancePreferences(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
+            themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
             accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: false,
             trueBlack = preferences[TRUE_BLACK] ?: false,
+            showImages = preferences[SHOW_IMAGES] ?: true,
             workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
             workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true,
             statusColors = preferences[STATUS_COLORS] ?: true,
@@ -76,9 +91,11 @@ class AppPreferences @Inject constructor(
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
+    suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
     suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name }
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
+    suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
     suspend fun setWorkflowPreview(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_PREVIEW] = enabled }
     suspend fun setWorkflowStepDetails(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_STEP_DETAILS] = enabled }
     suspend fun setStatusColors(enabled: Boolean) = context.dataStore.edit { it[STATUS_COLORS] = enabled }
@@ -102,9 +119,11 @@ class AppPreferences @Inject constructor(
 
     private companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val THEME_STYLE = stringPreferencesKey("theme_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
+        val SHOW_IMAGES = booleanPreferencesKey("show_images")
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview")
         val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details")

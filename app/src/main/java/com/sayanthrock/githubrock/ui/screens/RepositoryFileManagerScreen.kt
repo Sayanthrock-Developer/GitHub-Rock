@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
@@ -57,7 +58,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,6 +90,7 @@ fun RepositoryFileManagerScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     var pendingUpload by remember { mutableStateOf<PendingTextUpload?>(null) }
     var uploadPath by remember { mutableStateOf("") }
@@ -98,6 +102,12 @@ fun RepositoryFileManagerScreen(
     }
     LaunchedEffect(state.pullRequestUrl) {
         if (!state.pullRequestUrl.isNullOrBlank()) pendingUpload = null
+    }
+    LaunchedEffect(state.copyBundle) {
+        state.copyBundle?.let { bundle ->
+            clipboard.setText(AnnotatedString(bundle))
+            viewModel.consumeCopyBundle()
+        }
     }
 
     val openUrl: (String) -> Unit = { url ->
@@ -184,14 +194,9 @@ fun RepositoryFileManagerScreen(
                         label = if (state.error == null) "API healthy" else "Needs attention",
                         healthy = state.error == null
                     )
-                    FileStatusFrame(
-                        label = "${state.entries.size} items",
-                        healthy = state.error == null
-                    )
-                    FileStatusFrame(
-                        label = "Review-branch uploads",
-                        healthy = true
-                    )
+                    FileStatusFrame(label = "${state.entries.size} items", healthy = state.error == null)
+                    FileStatusFrame(label = "Bulk copy ready", healthy = true)
+                    FileStatusFrame(label = "Review-branch uploads", healthy = true)
                 }
             }
 
@@ -275,8 +280,17 @@ fun RepositoryFileManagerScreen(
                                 Text("Upload")
                             }
                         }
+                        OutlinedButton(
+                            onClick = viewModel::copyVisibleTextFiles,
+                            enabled = !state.loading && state.entries.any { it.type == "file" },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = null)
+                            Spacer(Modifier.size(7.dp))
+                            Text("Copy visible text files")
+                        }
                         Text(
-                            "View repository files and upload UTF-8 code or text files up to 1 MB. Uploads always create a review branch and pull request.",
+                            "Copy the current folder's visible UTF-8 text/code files, or upload files up to 1 MB on a review branch. Binary files are never copied as text.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -304,6 +318,14 @@ fun RepositoryFileManagerScreen(
                                 TextButton(onClick = viewModel::closeFile) { Text("Close") }
                             }
                             if (file.content != null) {
+                                OutlinedButton(
+                                    onClick = { clipboard.setText(AnnotatedString(file.content)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                                    Spacer(Modifier.size(7.dp))
+                                    Text("Copy file")
+                                }
                                 Surface(
                                     shape = RoundedCornerShape(14.dp),
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .5f)

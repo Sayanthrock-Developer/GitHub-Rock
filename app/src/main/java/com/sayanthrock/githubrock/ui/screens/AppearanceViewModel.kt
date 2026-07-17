@@ -6,6 +6,7 @@ import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.ThemeMode
+import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,9 +25,11 @@ class AppearanceViewModel @Inject constructor(
     )
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
+    fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
     fun setAccentColor(color: AccentColor) = viewModelScope.launch { preferences.setAccentColor(color) }
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { preferences.setDynamicColor(enabled) }
     fun setTrueBlack(enabled: Boolean) = viewModelScope.launch { preferences.setTrueBlack(enabled) }
+    fun setShowImages(enabled: Boolean) = viewModelScope.launch { preferences.setShowImages(enabled) }
     fun setWorkflowPreview(enabled: Boolean) = viewModelScope.launch { preferences.setWorkflowPreview(enabled) }
     fun setWorkflowStepDetails(enabled: Boolean) = viewModelScope.launch { preferences.setWorkflowStepDetails(enabled) }
     fun setStatusColors(enabled: Boolean) = viewModelScope.launch { preferences.setStatusColors(enabled) }

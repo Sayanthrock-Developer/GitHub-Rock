@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MotionPhotosOff
 import androidx.compose.material.icons.filled.Palette
@@ -55,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.ThemeMode
+import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
@@ -72,9 +75,11 @@ fun AppearanceScreen(
         state = state,
         onBack = onBack,
         onThemeMode = viewModel::setThemeMode,
+        onThemeStyle = viewModel::setThemeStyle,
         onAccentColor = viewModel::setAccentColor,
         onDynamicColor = viewModel::setDynamicColor,
         onTrueBlack = viewModel::setTrueBlack,
+        onShowImages = viewModel::setShowImages,
         onWorkflowPreview = viewModel::setWorkflowPreview,
         onWorkflowStepDetails = viewModel::setWorkflowStepDetails,
         onStatusColors = viewModel::setStatusColors,
@@ -95,6 +100,8 @@ fun AppearanceContent(
     onAccentColor: (AccentColor) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
     onTrueBlack: (Boolean) -> Unit,
+    onThemeStyle: (ThemeStyle) -> Unit = {},
+    onShowImages: (Boolean) -> Unit = {},
     onWorkflowPreview: (Boolean) -> Unit = {},
     onWorkflowStepDetails: (Boolean) -> Unit = {},
     onStatusColors: (Boolean) -> Unit = {},
@@ -118,7 +125,7 @@ fun AppearanceContent(
             )
         }
     ) { padding ->
-        LazyColumn(
+        androidx.compose.foundation.lazy.LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -126,11 +133,12 @@ fun AppearanceContent(
             item {
                 StandardScreenHeader(
                     title = "Control the whole app",
-                    subtitle = "Turn major tools and visual behavior on or off. Settings are saved on this device."
+                    subtitle = "Choose a design style and turn major visual or developer tools on and off."
                 )
             }
-            item { StandardSectionHeader("Look & feel") }
-            item { PersonalityPreview() }
+            item { StandardSectionHeader("Theme style") }
+            item { PersonalityPreview(state.themeStyle) }
+            item { ThemeStylePicker(state.themeStyle, onThemeStyle) }
             item {
                 AccentPicker(
                     selected = state.accentColor,
@@ -143,7 +151,8 @@ fun AppearanceContent(
                     state = state,
                     onThemeMode = onThemeMode,
                     onDynamicColor = onDynamicColor,
-                    onTrueBlack = onTrueBlack
+                    onTrueBlack = onTrueBlack,
+                    onShowImages = onShowImages
                 )
             }
             item { StandardSectionHeader("Feature controls") }
@@ -178,11 +187,42 @@ fun AppearanceContent(
             }
             item {
                 Text(
-                    "Theme and feature changes apply immediately. GitHub permissions and API availability still determine which account actions can run.",
+                    "Theme, image, and feature changes apply immediately. GitHub permissions still control account operations.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeStylePicker(selected: ThemeStyle, onSelected: (ThemeStyle) -> Unit) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Design personality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                "Switch the complete shape and surface system without changing your content.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ThemeStyle.entries.forEach { style ->
+                    FilterChip(
+                        selected = selected == style,
+                        onClick = { onSelected(style) },
+                        label = { Text(style.displayName) },
+                        leadingIcon = if (selected == style) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else {
+                            null
+                        }
+                    )
+                }
             }
         }
     }
@@ -244,7 +284,7 @@ private fun FeatureControls(
         FeatureToggleRow(
             icon = Icons.Default.FolderOpen,
             title = "File tools",
-            subtitle = "Allow repository file viewing and review-branch uploads",
+            subtitle = "Allow file viewing, copy, and review-branch uploads",
             checked = state.fileTools,
             onCheckedChange = onFileTools
         )
@@ -290,7 +330,7 @@ private fun FeatureToggleRow(
 }
 
 @Composable
-private fun PersonalityPreview() {
+private fun PersonalityPreview(style: ThemeStyle) {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Personality", style = MaterialTheme.typography.titleMedium)
@@ -315,9 +355,9 @@ private fun PersonalityPreview() {
                         }
                     }
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Clean standard", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(style.previewTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(
-                            "Calm surfaces · clear hierarchy · Material 3",
+                            style.previewSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -391,7 +431,8 @@ private fun ThemeSettings(
     state: AppearancePreferences,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
-    onTrueBlack: (Boolean) -> Unit
+    onTrueBlack: (Boolean) -> Unit,
+    onShowImages: (Boolean) -> Unit
 ) {
     StandardSettingsGroup {
         Column(
@@ -417,6 +458,19 @@ private fun ThemeSettings(
                 }
             }
         }
+        StandardSettingsDivider()
+        StandardSettingsRow(
+            icon = Icons.Default.Image,
+            title = "Show remote images",
+            subtitle = "Load avatars and repository preview artwork",
+            trailing = {
+                Switch(
+                    checked = state.showImages,
+                    onCheckedChange = onShowImages,
+                    modifier = Modifier.semantics { contentDescription = "Toggle Show remote images" }
+                )
+            }
+        )
         StandardSettingsDivider()
         StandardSettingsRow(
             icon = Icons.Default.ColorLens,
@@ -445,6 +499,30 @@ private fun ThemeSettings(
         )
     }
 }
+
+private val ThemeStyle.displayName: String
+    get() = when (this) {
+        ThemeStyle.Clean -> "Clean"
+        ThemeStyle.LiquidGlass -> "Liquid glass"
+        ThemeStyle.Studio -> "Studio"
+        ThemeStyle.HighContrast -> "High contrast"
+    }
+
+private val ThemeStyle.previewTitle: String
+    get() = when (this) {
+        ThemeStyle.Clean -> "Clean standard"
+        ThemeStyle.LiquidGlass -> "Liquid glass"
+        ThemeStyle.Studio -> "Developer studio"
+        ThemeStyle.HighContrast -> "High contrast"
+    }
+
+private val ThemeStyle.previewSubtitle: String
+    get() = when (this) {
+        ThemeStyle.Clean -> "Calm surfaces · clear hierarchy · Material 3"
+        ThemeStyle.LiquidGlass -> "Large curves · layered surfaces · premium spacing"
+        ThemeStyle.Studio -> "Sharper frames · dense developer workspace"
+        ThemeStyle.HighContrast -> "Maximum separation · stronger borders · clear text"
+    }
 
 private val AccentColor.previewColor: Color
     get() = when (this) {
