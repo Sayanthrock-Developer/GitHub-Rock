@@ -91,15 +91,21 @@ class BuildsViewModel @Inject constructor(
                     return@launch
                 }
 
-                val sourceResult = runCatching {
-                    SourceFileDecoder.decode(
-                        repository.file(
-                            selected.owner.login,
-                            selected.name,
-                            workflow.path,
-                            selected.defaultBranch
+                val sourceResult = try {
+                    Result.success(
+                        SourceFileDecoder.decode(
+                            repository.file(
+                                selected.owner.login,
+                                selected.name,
+                                workflow.path,
+                                selected.defaultBranch
+                            )
                         )
                     )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    Result.failure(error)
                 }
                 val latest = requestedRunId?.let {
                     repository.run(selected.owner.login, selected.name, it)
@@ -110,6 +116,7 @@ class BuildsViewModel @Inject constructor(
                 } else {
                     emptyList()
                 }
+                val sourceFailure = sourceResult.exceptionOrNull()
                 _state.update {
                     it.copy(
                         loading = false,
@@ -117,8 +124,8 @@ class BuildsViewModel @Inject constructor(
                         workflowSource = sourceResult.getOrNull(),
                         workflowSourcePath = workflow.path,
                         workflowSourceLoading = false,
-                        workflowSourceError = sourceResult.exceptionOrNull()?.message?.let { message ->
-                            "Unable to load workflow code: $message"
+                        workflowSourceError = sourceFailure?.let { failure ->
+                            "Unable to load workflow code: ${failure.message?.takeIf(String::isNotBlank) ?: "unknown source error"}"
                         },
                         run = latest,
                         jobs = jobs,
@@ -200,9 +207,7 @@ class BuildsViewModel @Inject constructor(
                     }
                     return@launch
                 }
-                _state.update {
-                    it.copy(run = dispatchedRun, message = "Build queued on $ref")
-                }
+                _state.update { it.copy(run = dispatchedRun, message = "Build queued on $ref") }
                 monitorRun(selected, dispatchedRun)
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -319,9 +324,7 @@ class BuildsViewModel @Inject constructor(
                         jobs = jobs,
                         message = if (BuildRunTracker.isActive(current)) {
                             "Build ${current.displayState().name.lowercase()}"
-                        } else {
-                            null
-                        }
+                        } else null
                     )
                 }
 
@@ -334,9 +337,7 @@ class BuildsViewModel @Inject constructor(
             } catch (error: Throwable) {
                 consecutiveFailures += 1
                 if (consecutiveFailures >= MAX_CONSECUTIVE_POLL_FAILURES) throw error
-                _state.update {
-                    it.copy(message = "Run tracking was interrupted. Retrying…", error = null)
-                }
+                _state.update { it.copy(message = "Run tracking was interrupted. Retrying…", error = null) }
             }
             delay(RUN_POLL_INTERVAL_MS)
         }
@@ -349,9 +350,7 @@ class BuildsViewModel @Inject constructor(
     ) {
         val artifacts = if (run.displayState() == WorkflowDisplayState.Success) {
             awaitArtifacts(selected, run.id)
-        } else {
-            emptyList()
-        }
+        } else emptyList()
         val (message, error) = when (run.displayState()) {
             WorkflowDisplayState.Success -> if (artifacts.isNotEmpty()) {
                 "Build succeeded with ${artifacts.size} downloadable artifact${if (artifacts.size == 1) "" else "s"}" to null
