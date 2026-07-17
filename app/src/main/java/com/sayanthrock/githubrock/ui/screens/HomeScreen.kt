@@ -1,7 +1,20 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -15,7 +28,16 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -39,6 +61,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
+import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,9 +78,7 @@ fun HomeScreen(
     onRefresh: () -> Unit = {}
 ) {
     val activeWorkflows = remember(runs) { runs.count { it.status != "completed" } }
-    val failedWorkflows = remember(runs) {
-        runs.count { it.displayState() == WorkflowDisplayState.Failed }
-    }
+    val failedWorkflows = remember(runs) { runs.count { it.displayState() == WorkflowDisplayState.Failed } }
     val workflowRepositoryLabel = repositories.firstOrNull()?.name
 
     PullToRefreshBox(
@@ -76,18 +97,20 @@ fun HomeScreen(
                     subtitle = "Your repositories, workflows, and GitHub API status"
                 )
             }
-            item { DashboardHero(mode = mode, profile = profile, rateLimit = rateLimit) }
-            if (isLoading) {
-                item {
-                    LoadingWorkspaceCard()
-                }
-            }
+            item { DashboardHero(mode, profile, rateLimit) }
+            if (isLoading) item { LoadingWorkspaceCard() }
             item {
                 StandardSectionHeader("Workspace overview")
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     item { DashboardMetric("Loaded repos", repositories.size.toString(), Icons.Default.Folder) }
-                    item { DashboardMetric(workflowRepositoryLabel?.let { "Active · $it" } ?: "Active workflows", activeWorkflows.toString(), Icons.Default.CloudQueue) }
+                    item {
+                        DashboardMetric(
+                            workflowRepositoryLabel?.let { "Active · $it" } ?: "Active workflows",
+                            activeWorkflows.toString(),
+                            Icons.Default.CloudQueue
+                        )
+                    }
                     item {
                         DashboardMetric(
                             workflowRepositoryLabel?.let { "Failed · $it" } ?: "Failed workflows",
@@ -156,9 +179,7 @@ fun HomeScreen(
 private fun LoadingWorkspaceCard() {
     GlassCard {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics { contentDescription = "Loading your GitHub workspace" },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Loading your GitHub workspace" },
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -177,6 +198,7 @@ private fun LoadingWorkspaceCard() {
 
 @Composable
 private fun DashboardHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLimit?) {
+    val showImages = LocalRemoteImagesEnabled.current
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
@@ -188,7 +210,7 @@ private fun DashboardHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLi
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
                 ) {
-                    if (!profile?.avatarUrl.isNullOrBlank()) {
+                    if (showImages && !profile?.avatarUrl.isNullOrBlank()) {
                         AsyncImage(
                             model = profile?.avatarUrl,
                             contentDescription = "Connected GitHub profile avatar",
@@ -199,7 +221,8 @@ private fun DashboardHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLi
                             Text(
                                 profile?.login?.take(2)?.uppercase() ?: "GR",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -230,10 +253,7 @@ private fun DashboardHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLi
             rateLimit?.let {
                 val progress = if (it.limit == 0) 0f else it.remaining.toFloat() / it.limit
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("GitHub API health", style = MaterialTheme.typography.labelLarge)
                     Text(
                         "${it.remaining} / ${it.limit}",
@@ -257,10 +277,7 @@ private fun ModeBadge(mode: AppMode) {
         AppMode.Guest -> "GUEST · PUBLIC ONLY"
         AppMode.Demo -> "DEMO · ISOLATED DATA"
     }
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
-    ) {
+    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)) {
         Text(
             label,
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
@@ -335,6 +352,7 @@ private fun workflowColor(run: WorkflowRun) = when (run.displayState()) {
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
 fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
+    val showImages = LocalRemoteImagesEnabled.current
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -351,7 +369,7 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    if (repo.owner.avatarUrl.isNotBlank()) {
+                    if (showImages && repo.owner.avatarUrl.isNotBlank()) {
                         AsyncImage(
                             model = repo.owner.avatarUrl,
                             contentDescription = "${repo.owner.login} avatar",
@@ -431,26 +449,16 @@ private fun RepositoryMetaChip(
     value: String,
     accent: Boolean = false
 ) {
-    val foreground = if (accent) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
+    val foreground = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Surface(
         modifier = Modifier.semantics { contentDescription = "$label: $value" },
         shape = MaterialTheme.shapes.large,
-        color = if (accent) {
-            MaterialTheme.colorScheme.primary.copy(alpha = .10f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
-        },
+        color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f),
         border = BorderStroke(
             1.dp,
-            if (accent) {
-                MaterialTheme.colorScheme.primary.copy(alpha = .28f)
-            } else {
-                MaterialTheme.colorScheme.outline
-            }
+            if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .28f)
+            else MaterialTheme.colorScheme.outline
         )
     ) {
         Row(
@@ -460,7 +468,7 @@ private fun RepositoryMetaChip(
         ) {
             Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
             Text(
-                text = value,
+                value,
                 color = foreground,
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
