@@ -18,14 +18,17 @@ internal data class GitHubSignupLaunchPlan(
     val useEphemeralTab: Boolean
 )
 
+/**
+ * The signup action must always remain a signup action.
+ *
+ * Ephemeral Custom Tabs are preferred because they avoid an existing GitHub browser session.
+ * When a browser cannot provide an ephemeral tab, the official signup page is still opened
+ * instead of silently changing the action to GitHub's add-account login page.
+ */
 internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan =
     GitHubSignupLaunchPlan(
-        primaryUrl = if (ephemeralBrowsingSupported) {
-            GITHUB_SIGN_UP_URL
-        } else {
-            GITHUB_ADD_ACCOUNT_URL
-        },
-        fallbackUrl = GITHUB_ADD_ACCOUNT_URL,
+        primaryUrl = GITHUB_SIGN_UP_URL,
+        fallbackUrl = GITHUB_SIGN_UP_URL,
         useEphemeralTab = ephemeralBrowsingSupported
     )
 
