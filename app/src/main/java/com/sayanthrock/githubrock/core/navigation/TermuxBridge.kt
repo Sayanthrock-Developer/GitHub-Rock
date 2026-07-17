@@ -2,10 +2,12 @@ package com.sayanthrock.githubrock.core.navigation
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 
 /** Explicit, user-confirmed bridge to Termux's RUN_COMMAND service. */
 object TermuxBridge {
     const val PACKAGE_NAME = "com.termux"
+    const val RUN_COMMAND_PERMISSION = "com.termux.permission.RUN_COMMAND"
     private const val RUN_COMMAND_ACTION = "com.termux.RUN_COMMAND"
     private const val RUN_COMMAND_SERVICE = "com.termux.app.RunCommandService"
     private const val COMMAND_PATH = "/data/data/com.termux/files/usr/bin/bash"
@@ -15,6 +17,9 @@ object TermuxBridge {
 
     fun isInstalled(context: Context): Boolean =
         context.packageManager.getLaunchIntentForPackage(PACKAGE_NAME) != null
+
+    fun hasRunCommandPermission(context: Context): Boolean =
+        context.checkSelfPermission(RUN_COMMAND_PERMISSION) == PackageManager.PERMISSION_GRANTED
 
     fun open(context: Context): Result<Unit> = runCatching {
         val intent = checkNotNull(context.packageManager.getLaunchIntentForPackage(PACKAGE_NAME)) {
@@ -28,6 +33,9 @@ object TermuxBridge {
         require(command.isNotBlank()) { "The command is empty" }
         require(command.length <= MAX_COMMAND_LENGTH) { "The command is too long" }
         check(isInstalled(context)) { "Termux is not installed" }
+        check(hasRunCommandPermission(context)) {
+            "Grant GitHub Rock permission to run commands in Termux"
+        }
 
         val intent = Intent(RUN_COMMAND_ACTION).apply {
             setClassName(PACKAGE_NAME, RUN_COMMAND_SERVICE)
@@ -43,8 +51,8 @@ object TermuxBridge {
     }
 
     fun userFacingError(error: Throwable): String = when (error) {
-        is SecurityException -> "Termux blocked external commands. In Termux, set allow-external-apps=true in ~/.termux/termux.properties, then restart Termux."
+        is SecurityException -> "Android or Termux blocked the command. Grant GitHub Rock the Run commands in Termux permission and enable allow-external-apps=true in Termux."
         is IllegalStateException, is IllegalArgumentException -> error.message ?: "Unable to send the command to Termux"
-        else -> "Unable to connect to Termux. Open Termux once, verify its external-app setting, and retry."
+        else -> "Unable to connect to Termux. Open Termux once, verify permission and external-app settings, then retry."
     }
 }
