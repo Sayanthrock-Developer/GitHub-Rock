@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.ui.screens
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -83,6 +84,7 @@ fun RepositoryHubScreen(
 
     when (workspacePage) {
         "manager" -> {
+            BackHandler { workspacePage = "overview" }
             RepositoryDetailScreen(
                 repository = displayedRepository,
                 onBack = { workspacePage = "overview" }
@@ -90,6 +92,7 @@ fun RepositoryHubScreen(
             return
         }
         "files" -> {
+            BackHandler { workspacePage = "overview" }
             RepositoryFileManagerScreen(
                 repository = displayedRepository,
                 onBack = { workspacePage = "overview" }
@@ -110,8 +113,10 @@ fun RepositoryHubScreen(
         }
     }
 
+    val repositoryHealthy = displayedRepository != null && !state.loading && state.error == null
+    val fileToolsHealthy = repositoryHealthy
     val loadProgress = RepositoryWorkspacePolicy.loadProgress(
-        repositoryReady = displayedRepository != null && !state.loading,
+        repositoryReady = repositoryHealthy,
         releasesLoading = state.releasesLoading,
         readmeLoading = state.readmeLoading
     )
@@ -161,6 +166,8 @@ fun RepositoryHubScreen(
                 RepositoryWorkspacePanel(
                     repository = repo,
                     progress = loadProgress,
+                    repositoryHealthy = repositoryHealthy,
+                    fileToolsHealthy = fileToolsHealthy,
                     onOpenManager = { workspacePage = "manager" },
                     onOpenFiles = { workspacePage = "files" },
                     onOpenUrl = openUrl
@@ -197,6 +204,8 @@ fun RepositoryHubScreen(
 private fun RepositoryWorkspacePanel(
     repository: GitHubRepositoryModel,
     progress: Int,
+    repositoryHealthy: Boolean,
+    fileToolsHealthy: Boolean,
     onOpenManager: () -> Unit,
     onOpenFiles: () -> Unit,
     onOpenUrl: (String) -> Unit
@@ -239,24 +248,38 @@ private fun RepositoryWorkspacePanel(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            WorkspaceHealthFrame("Repository ready", healthy = true)
+            WorkspaceHealthFrame(
+                if (repositoryHealthy) "Repository ready" else "Repository loading or failed",
+                healthy = repositoryHealthy
+            )
             WorkspaceHealthFrame(
                 if (issueHealthy) "No open issues" else "${repository.openIssues} open issues",
                 healthy = issueHealthy
             )
-            WorkspaceHealthFrame("File tools ready", healthy = true)
+            WorkspaceHealthFrame(
+                if (fileToolsHealthy) "File tools ready" else "File tools unavailable",
+                healthy = fileToolsHealthy
+            )
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(onClick = onOpenManager, modifier = Modifier.weight(1f).height(48.dp)) {
+            Button(
+                onClick = onOpenManager,
+                enabled = repositoryHealthy,
+                modifier = Modifier.weight(1f).height(48.dp)
+            ) {
                 Icon(Icons.Default.Code, contentDescription = null)
                 Spacer(Modifier.size(6.dp))
                 Text("Manage")
             }
-            OutlinedButton(onClick = onOpenFiles, modifier = Modifier.weight(1f).height(48.dp)) {
+            OutlinedButton(
+                onClick = onOpenFiles,
+                enabled = fileToolsHealthy,
+                modifier = Modifier.weight(1f).height(48.dp)
+            ) {
                 Icon(Icons.Default.FolderOpen, contentDescription = null)
                 Spacer(Modifier.size(6.dp))
                 Text("Files")
