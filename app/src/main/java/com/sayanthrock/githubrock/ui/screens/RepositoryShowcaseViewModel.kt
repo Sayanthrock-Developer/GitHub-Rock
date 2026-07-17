@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.util.RepositoryReadmePolicy
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
+import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -63,15 +65,25 @@ class RepositoryShowcaseViewModel @Inject constructor(
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
         if (demo) {
             val repository = initialRepository
-                ?: DemoData.repositories.firstOrNull { it.owner.login == owner && it.name == repoName }
-                ?: DemoData.repositories.firstOrNull()
+                ?: DemoData.repositories.firstOrNull {
+                    it.owner.login.equals(owner, ignoreCase = true) &&
+                        it.name.equals(repoName, ignoreCase = true)
+                }
             currentRepositoryId = repository?.id
-            _state.value = RepositoryShowcaseState(
-                repository = repository,
-                readme = DEMO_README,
-                loading = false,
-                readmeLoading = false
-            )
+            _state.value = if (repository == null) {
+                RepositoryShowcaseState(
+                    loading = false,
+                    readmeLoading = false,
+                    error = "This repository is unavailable in demo mode."
+                )
+            } else {
+                RepositoryShowcaseState(
+                    repository = repository,
+                    readme = DEMO_README,
+                    loading = false,
+                    readmeLoading = false
+                )
+            }
             return
         }
 
@@ -84,17 +96,29 @@ class RepositoryShowcaseViewModel @Inject constructor(
             )
         }
 
-        val resolvedRepository = initialRepository ?: runCatching {
-            githubRepository.publicRepositories("$repoName user:$owner")
-                .firstOrNull { it.owner.login.equals(owner, ignoreCase = true) && it.name.equals(repoName, ignoreCase = true) }
-        }.getOrNull()
+        val repositoryResult = if (initialRepository != null) {
+            Result.success(initialRepository)
+        } else {
+            runCatchingPreservingCancellation {
+                githubRepository.publicRepositories("$repoName user:$owner")
+                    .firstOrNull {
+                        it.owner.login.equals(owner, ignoreCase = true) &&
+                            it.name.equals(repoName, ignoreCase = true)
+                    }
+            }
+        }
+        val resolvedRepository = repositoryResult.getOrNull()
 
         if (resolvedRepository == null) {
             _state.update {
                 it.copy(
                     loading = false,
                     readmeLoading = false,
-                    error = "Unable to load this repository. Open it again from the repository list."
+                    error = if (repositoryResult.isFailure) {
+                        "Repository information is temporarily unavailable. Retry when the connection is stable."
+                    } else {
+                        "Unable to find this repository. Open it again from the repository list."
+                    }
                 )
             }
             return
@@ -103,26 +127,34 @@ class RepositoryShowcaseViewModel @Inject constructor(
         currentRepositoryId = resolvedRepository.id
         _state.update { it.copy(repository = resolvedRepository, loading = false) }
 
+        var unexpectedFailure: Throwable? = null
         val readme = README_CANDIDATES.firstNotNullOfOrNull { path ->
-            runCatching {
+            val result = runCatchingPreservingCancellation {
                 githubRepository.file(
                     owner = owner,
                     repo = repoName,
                     path = path,
                     ref = resolvedRepository.defaultBranch
                 ).let(SourceFileDecoder::decode)
-            }.getOrNull()?.takeIf(String::isNotBlank)
+            }
+            result.exceptionOrNull()?.let { failure ->
+                if (!RepositoryReadmePolicy.isMissing(failure) && unexpectedFailure == null) {
+                    unexpectedFailure = failure
+                }
+            }
+            result.getOrNull()?.takeIf(String::isNotBlank)
         }
 
         _state.update {
-            if (readme == null) {
-                it.copy(
-                    readmeLoading = false,
-                    readmeError = "No readable README file was found on ${resolvedRepository.defaultBranch}."
+            it.copy(
+                readme = readme,
+                readmeLoading = false,
+                readmeError = RepositoryReadmePolicy.errorMessage(
+                    readme = readme,
+                    failure = unexpectedFailure,
+                    branch = resolvedRepository.defaultBranch
                 )
-            } else {
-                it.copy(readme = readme, readmeLoading = false, readmeError = null)
-            }
+            )
         }
     }
 
