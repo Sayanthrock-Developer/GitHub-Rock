@@ -13,7 +13,9 @@ object SourceFileDecoder {
     }
 
     fun decodeStrictText(entry: ContentEntry): String {
-        val content = entry.content.orEmpty()
+        val content = requireNotNull(entry.content) {
+            "The file content is unavailable and cannot be copied as text"
+        }
         val text = if (entry.encoding.equals("base64", ignoreCase = true)) {
             val bytes = Base64.getMimeDecoder().decode(content)
             Charsets.UTF_8.newDecoder()
