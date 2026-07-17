@@ -72,7 +72,7 @@ object DeveloperCommandBuilder {
         return "mkdir -p \"\$HOME/.config/github-rock\" && " +
             "umask 077 && read -rsp 'Paste $safeVariable: ' _GR_KEY && " +
             "printf 'export $safeVariable=%q\\n' \"\$_GR_KEY\" > \"$file\" && " +
-            "unset _GR_KEY && echo && source \"$file\" && " +
+            "chmod 600 \"$file\" && unset _GR_KEY && echo && source \"$file\" && " +
             "echo '$safeVariable configured for this shell'"
     }
 
