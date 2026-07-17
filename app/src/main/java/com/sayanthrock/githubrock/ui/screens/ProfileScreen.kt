@@ -1,5 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,18 +32,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.GITHUB_ACCOUNT_SECURITY_URL
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
-import com.sayanthrock.githubrock.core.model.GitHubUser
+import com.sayanthrock.githubrock.core.util.ProfileExportFormatter
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -50,6 +59,10 @@ import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 import com.sayanthrock.githubrock.ui.components.StandardSettingsDivider
 import com.sayanthrock.githubrock.ui.components.StandardSettingsGroup
 import com.sayanthrock.githubrock.ui.components.StandardSettingsRow
+import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ProfileScreen(
@@ -68,6 +81,39 @@ fun ProfileScreen(
         null
     }
     val profileUrl = connectedLogin?.let { "https://github.com/$it" }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pendingExport by remember(profile?.id) { mutableStateOf<String?>(null) }
+    var exportMessage by remember(profile?.id) { mutableStateOf<String?>(null) }
+
+    val profileExportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        val content = pendingExport
+        pendingExport = null
+        if (uri == null || content == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
+                        writer.write(content)
+                    } ?: error("Unable to create the profile file")
+                }
+            }.onSuccess {
+                exportMessage = "Profile downloaded successfully"
+            }.onFailure { error ->
+                exportMessage = error.message ?: "Unable to download this profile"
+            }
+        }
+    }
+
+    val downloadProfile: () -> Unit = {
+        profile?.let { user ->
+            pendingExport = ProfileExportFormatter.toJson(user)
+            exportMessage = null
+            profileExportLauncher.launch(ProfileExportFormatter.fileName(user))
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -101,6 +147,22 @@ fun ProfileScreen(
             )
         }
 
+        exportMessage?.let { message ->
+            item {
+                GlassCard {
+                    Text(
+                        message,
+                        color = if (message.contains("success", ignoreCase = true)) {
+                            MaterialTheme.colorScheme.tertiary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
         if (profileUrl != null) {
             item {
                 Button(
@@ -130,6 +192,15 @@ fun ProfileScreen(
                     subtitle = "Artifacts, release files and APK inspection",
                     onClick = onOpenDownloads
                 )
+                if (profile != null) {
+                    StandardSettingsDivider()
+                    StandardSettingsRow(
+                        icon = Icons.Default.Download,
+                        title = "Download profile",
+                        subtitle = "Save account details, links, and public statistics as JSON",
+                        onClick = downloadProfile
+                    )
+                }
             }
         }
 
@@ -158,7 +229,7 @@ fun ProfileScreen(
                 StandardSettingsRow(
                     icon = Icons.Default.Palette,
                     title = "Appearance",
-                    subtitle = "Theme, accent, dynamic color and true black",
+                    subtitle = "Theme style, images, accent, dynamic color and true black",
                     onClick = onOpenAppearance
                 )
                 StandardSettingsDivider()
@@ -255,26 +326,11 @@ private fun ProfileHero(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ProfileStat(
-                        profile.publicRepos,
-                        "Repositories",
-                        Modifier.weight(1f),
-                        onClick = onOpenRepositories
-                    )
+                    ProfileStat(profile.publicRepos, "Repositories", Modifier.weight(1f), onOpenRepositories)
                     StatDivider()
-                    ProfileStat(
-                        profile.followers,
-                        "Followers",
-                        Modifier.weight(1f),
-                        onClick = onOpenFollowers
-                    )
+                    ProfileStat(profile.followers, "Followers", Modifier.weight(1f), onOpenFollowers)
                     StatDivider()
-                    ProfileStat(
-                        profile.following,
-                        "Following",
-                        Modifier.weight(1f),
-                        onClick = onOpenFollowing
-                    )
+                    ProfileStat(profile.following, "Following", Modifier.weight(1f), onOpenFollowing)
                 }
             }
         }
@@ -283,12 +339,13 @@ private fun ProfileHero(
 
 @Composable
 private fun ProfileAvatar(profile: GitHubUser?) {
+    val showImages = LocalRemoteImagesEnabled.current
     Surface(
         modifier = Modifier.size(80.dp),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        if (!profile?.avatarUrl.isNullOrBlank()) {
+        if (showImages && !profile?.avatarUrl.isNullOrBlank()) {
             AsyncImage(
                 model = profile?.avatarUrl,
                 contentDescription = "GitHub avatar",
@@ -317,22 +374,14 @@ private fun ProfileStat(
     val interactionModifier = if (onClick == null) {
         Modifier
     } else {
-        Modifier
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(role = Role.Button, onClick = onClick)
+        Modifier.clip(MaterialTheme.shapes.medium).clickable(role = Role.Button, onClick = onClick)
     }
     Column(
-        modifier = modifier
-            .then(interactionModifier)
-            .padding(vertical = 8.dp),
+        modifier = modifier.then(interactionModifier).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(
-            value.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold
-        )
+        Text(value.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
