@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillParentMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -78,9 +77,9 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     var deleteTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var cancelTarget by remember { mutableStateOf<DownloadEntity?>(null) }
 
-    val activeCount = downloads.count { it.status in setOf("queued", "downloading", "retrying") }
-    val completedCount = downloads.count { it.status == "completed" }
-    val failedCount = downloads.count { it.status == "failed" }
+    val active = downloads.count { it.status in setOf("queued", "downloading", "retrying") }
+    val completed = downloads.count { it.status == "completed" }
+    val failed = downloads.count { it.status == "failed" }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -93,19 +92,12 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 subtitle = "Artifacts, releases, exact progress, and file safety"
             )
         }
-
-        item {
-            DownloadOverviewCard(
-                active = activeCount,
-                completed = completedCount,
-                failed = failedCount
-            )
-        }
+        item { DownloadOverviewCard(active, completed, failed) }
 
         if (downloads.isEmpty()) {
             item {
                 Box(
-                    modifier = Modifier.fillParentMaxHeight(.62f).fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(320.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -118,12 +110,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                             color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.Download,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Icon(Icons.Default.Download, null, Modifier.size(32.dp), MaterialTheme.colorScheme.primary)
                             }
                         }
                         Text("No downloads yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -165,12 +152,8 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     Text("Signing: ${apk.signingSha256 ?: "Unavailable"}", style = MaterialTheme.typography.bodySmall)
                     Text("Installed signing match: ${apk.installedSignatureMatches?.toString() ?: "Not installed"}")
                     Text("Requested permissions: ${apk.permissions.size}")
-                    apk.permissions.take(5).forEach {
-                        Text("• $it", style = MaterialTheme.typography.bodySmall)
-                    }
-                    if (apk.permissions.size > 5) {
-                        Text("+${apk.permissions.size - 5} more", style = MaterialTheme.typography.bodySmall)
-                    }
+                    apk.permissions.take(5).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                    if (apk.permissions.size > 5) Text("+${apk.permissions.size - 5} more")
                 }
             },
             confirmButton = {
@@ -194,12 +177,9 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         AlertDialog(
             onDismissRequest = { cancelTarget = null },
             title = { Text("Cancel download?") },
-            text = { Text("The partial file will be removed. The cancelled item remains in history and can be restarted.") },
+            text = { Text("The partial file will be removed. The item remains in history and can be restarted.") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.cancel(item)
-                    cancelTarget = null
-                }) { Text("Cancel download") }
+                TextButton(onClick = { viewModel.cancel(item); cancelTarget = null }) { Text("Cancel download") }
             },
             dismissButton = { TextButton(onClick = { cancelTarget = null }) { Text("Keep downloading") } }
         )
@@ -211,10 +191,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
             title = { Text("Delete download?") },
             text = { Text("This removes the local file and its download history. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.delete(item)
-                    deleteTarget = null
-                }) { Text("Delete") }
+                TextButton(onClick = { viewModel.delete(item); deleteTarget = null }) { Text("Delete") }
             },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Keep") } }
         )
@@ -225,18 +202,14 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
 private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int) {
     GlassCard(contentPadding = PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.tertiary.copy(alpha = .12f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                        Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.tertiary)
                     }
                 }
                 Column(Modifier.weight(1f)) {
@@ -248,11 +221,7 @@ private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int) {
                     )
                 }
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DownloadMetric("Active", active, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                 DownloadMetric("Completed", completed, MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
                 DownloadMetric("Failed", failed, MaterialTheme.colorScheme.error, Modifier.weight(1f))
@@ -262,16 +231,9 @@ private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int) {
 }
 
 @Composable
-private fun DownloadMetric(label: String, value: Int, accent: Color, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.large,
-        color = accent.copy(alpha = .09f)
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 11.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+private fun DownloadMetric(label: String, value: Int, accent: Color, modifier: Modifier) {
+    Surface(modifier, MaterialTheme.shapes.large, accent.copy(alpha = .09f)) {
+        Column(Modifier.padding(vertical = 11.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(value.toString(), color = accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
         }
@@ -290,61 +252,41 @@ private fun DownloadCard(
     onDelete: () -> Unit
 ) {
     val controls = downloadControls(item.status)
-    val active = item.status in setOf("queued", "downloading", "retrying")
+    val isActive = item.status in setOf("queued", "downloading", "retrying")
     val progress = if (item.totalBytes > 0) {
         (item.downloadedBytes.toFloat() / item.totalBytes.toFloat()).coerceIn(0f, 1f)
-    } else {
-        0f
-    }
+    } else 0f
     val percent = (progress * 100).toInt().coerceIn(0, 100)
     val accent = downloadStatusColor(item.status)
-    var showMore by rememberSaveable(item.id) { mutableStateOf(false) }
+    var expanded by rememberSaveable(item.id) { mutableStateOf(false) }
 
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(46.dp),
                     shape = MaterialTheme.shapes.large,
                     color = accent.copy(alpha = .12f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(downloadStatusIcon(item.status), contentDescription = null, tint = accent)
+                        Icon(downloadStatusIcon(item.status), null, tint = accent)
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        item.fileName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        item.status.replaceFirstChar { it.uppercase() },
-                        color = accent,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(item.fileName, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(item.status.replaceFirstChar { it.uppercase() }, color = accent, fontWeight = FontWeight.Bold)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        if (item.totalBytes > 0) "$percent%" else if (active) "…" else "—",
+                        if (item.totalBytes > 0) "$percent%" else if (isActive) "…" else "—",
                         color = accent,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black
                     )
                     if (item.downloadedBytes > 0) {
                         Text(
-                            if (item.totalBytes > 0) {
-                                "${formatBytes(item.downloadedBytes)} / ${formatBytes(item.totalBytes)}"
-                            } else {
-                                formatBytes(item.downloadedBytes)
-                            },
+                            if (item.totalBytes > 0) "${formatBytes(item.downloadedBytes)} / ${formatBytes(item.totalBytes)}"
+                            else formatBytes(item.downloadedBytes),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -353,104 +295,53 @@ private fun DownloadCard(
             }
 
             when {
-                item.totalBytes > 0 -> {
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(8.dp),
-                        color = accent
-                    )
-                }
-                active -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(8.dp))
+                item.totalBytes > 0 -> LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                    color = accent
+                )
+                isActive -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(8.dp))
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when {
-                    DownloadControl.Pause in controls -> {
-                        OutlinedButton(onClick = onPause, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Default.Pause, contentDescription = null)
-                            Spacer(Modifier.width(5.dp))
-                            Text("Pause")
-                        }
+                    DownloadControl.Pause in controls -> OutlinedButton(onPause, Modifier.weight(1f)) {
+                        Icon(Icons.Default.Pause, null); Spacer(Modifier.width(5.dp)); Text("Pause")
                     }
-                    DownloadControl.Resume in controls -> {
-                        Button(onClick = onResume, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            Spacer(Modifier.width(5.dp))
-                            Text("Resume")
-                        }
+                    DownloadControl.Resume in controls -> Button(onResume, Modifier.weight(1f)) {
+                        Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(5.dp)); Text("Resume")
                     }
-                    DownloadControl.Retry in controls -> {
-                        Button(onClick = onRetry, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            Spacer(Modifier.width(5.dp))
-                            Text(if (item.status == "cancelled") "Restart" else "Retry")
-                        }
+                    DownloadControl.Retry in controls -> Button(onRetry, Modifier.weight(1f)) {
+                        Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(5.dp)); Text(if (item.status == "cancelled") "Restart" else "Retry")
                     }
                     else -> Spacer(Modifier.weight(1f))
                 }
-
-                OutlinedButton(onClick = { showMore = !showMore }, modifier = Modifier.weight(1f)) {
-                    Text(if (showMore) "Less" else "Options")
+                OutlinedButton({ expanded = !expanded }, Modifier.weight(1f)) {
+                    Text(if (expanded) "Less" else "Options")
                     Spacer(Modifier.width(4.dp))
-                    Icon(
-                        if (showMore) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null
-                    )
+                    Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
                 }
             }
 
-            if (showMore) {
+            if (expanded) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
                 if (DownloadControl.Cancel in controls) {
-                    TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Cancel, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Cancel download")
-                    }
+                    DownloadOption(Icons.Default.Cancel, "Cancel download", onCancel)
                 }
-
-                if (item.status == "completed") {
-                    if (item.localPath?.endsWith(".apk", true) == true) {
-                        TextButton(onClick = onInspect, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Default.Security, contentDescription = null)
-                            Spacer(Modifier.width(6.dp))
-                            Text("Inspect APK")
-                        }
-                    }
-                    if (item.localPath != null) {
-                        TextButton(onClick = onShare, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Default.Share, contentDescription = null)
-                            Spacer(Modifier.width(6.dp))
-                            Text("Share file")
-                        }
-                    }
+                if (item.status == "completed" && item.localPath?.endsWith(".apk", true) == true) {
+                    DownloadOption(Icons.Default.Security, "Inspect APK", onInspect)
                 }
-
-                if (!active && item.status != "paused") {
-                    TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Delete history and file", color = MaterialTheme.colorScheme.error)
-                    }
+                if (item.status == "completed" && item.localPath != null) {
+                    DownloadOption(Icons.Default.Share, "Share file", onShare)
+                }
+                if (!isActive && item.status != "paused") {
+                    DownloadOption(Icons.Default.Delete, "Delete history and file", onDelete, destructive = true)
                 }
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Schedule,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     "Added ${formatDownloadTime(item.createdAt)}",
                     style = MaterialTheme.typography.labelSmall,
@@ -458,6 +349,16 @@ private fun DownloadCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun DownloadOption(icon: ImageVector, label: String, onClick: () -> Unit, destructive: Boolean = false) {
+    TextButton(onClick, Modifier.fillMaxWidth()) {
+        val tint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+        Icon(icon, null, tint = tint)
+        Spacer(Modifier.width(6.dp))
+        Text(label, color = tint)
     }
 }
 
@@ -501,7 +402,7 @@ private fun formatBytes(bytes: Long): String = when {
     else -> "$bytes B"
 }
 
-private val downloadTimeFormatter: DateTimeFormatter = DateTimeFormatter
+private val downloadTimeFormatter = DateTimeFormatter
     .ofPattern("dd MMM yyyy • hh:mm:ss a", Locale.getDefault())
     .withZone(ZoneId.systemDefault())
 
