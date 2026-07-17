@@ -5,12 +5,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +47,93 @@ fun GitHubRepositoryModel.repositoryPreviewImageUrl(): String {
 
     val cacheKey = updatedAt.ifBlank { id.toString() }.hashCode().toUInt()
     return "https://opengraph.githubassets.com/$cacheKey/$fullName"
+}
+
+/** Premium repository card with preview image, owner logo, template state, and metrics. */
+@Composable
+@OptIn(ExperimentalLayoutApi::class)
+fun RepositoryGalleryCard(
+    repository: GitHubRepositoryModel,
+    onClick: () -> Unit
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(14.dp),
+        onClick = onClick
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            RepositoryPreview(
+                repository = repository,
+                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GitHubAvatar(
+                    imageUrl = repository.owner.avatarUrl,
+                    fallbackText = repository.owner.login,
+                    contentDescription = "${repository.owner.login} profile logo",
+                    modifier = Modifier.size(50.dp),
+                    shape = MaterialTheme.shapes.large
+                )
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = repository.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = repository.owner.login,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Open ${repository.name}",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Text(
+                text = repository.description ?: "No repository description.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                RepositoryMetaPill(Icons.Default.Star, "Stars", compactCount(repository.stars))
+                RepositoryMetaPill(Icons.Default.CallSplit, "Forks", compactCount(repository.forks))
+                RepositoryMetaPill(Icons.Default.ErrorOutline, "Open issues", compactCount(repository.openIssues))
+                RepositoryMetaPill(Icons.Default.Code, "Language", repository.language ?: "Repository", accent = true)
+                repository.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let { topic ->
+                    RepositoryMetaPill(Icons.Default.Tag, "Topic", topic)
+                }
+            }
+        }
+    }
 }
 
 /** Displays a repository preview image with accessible template and privacy labels. */
@@ -186,16 +283,61 @@ private fun RepositoryVisualBadge(label: String, accent: Boolean = false) {
         color = container,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Row(
+        Text(
+            text = label,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            color = foreground,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun RepositoryMetaPill(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    accent: Boolean = false
+) {
+    val foreground = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    Surface(
+        modifier = Modifier.semantics { contentDescription = "$label: $value" },
+        shape = MaterialTheme.shapes.large,
+        color = if (accent) {
+            MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
+        },
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
             Text(
-                text = label,
+                text = value,
                 color = foreground,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
+}
+
+private fun compactCount(value: Int): String = when {
+    value >= 1_000_000 -> {
+        val whole = value / 1_000_000
+        val decimal = (value % 1_000_000) / 100_000
+        if (decimal == 0) "${whole}M" else "$whole.${decimal}M"
+    }
+    value >= 1_000 -> {
+        val whole = value / 1_000
+        val decimal = (value % 1_000) / 100
+        if (decimal == 0) "${whole}k" else "$whole.${decimal}k"
+    }
+    else -> value.toString()
 }
