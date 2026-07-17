@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -116,8 +114,9 @@ fun RepositoryFileManagerScreen(
                     )?.use { cursor ->
                         if (cursor.moveToFirst()) cursor.getString(0) else null
                     } ?: "uploaded-file.txt"
-                    val bytes = context.contentResolver.openInputStream(uri)?.use(::readLimited)
-                        ?: error("Unable to read the selected file")
+                    val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
+                        readLimited(input)
+                    } ?: error("Unable to read the selected file")
                     PendingTextUpload(sanitizeFileName(displayName), bytes)
                 }
             }.onSuccess { upload ->
