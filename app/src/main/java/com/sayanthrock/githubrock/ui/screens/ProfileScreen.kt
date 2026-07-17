@@ -83,15 +83,18 @@ fun ProfileScreen(
     val profileUrl = connectedLogin?.let { "https://github.com/$it" }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var pendingExport by remember(profile?.id) { mutableStateOf<String?>(null) }
     var exportMessage by remember(profile?.id) { mutableStateOf<String?>(null) }
 
     val profileExportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        val content = pendingExport
-        pendingExport = null
-        if (uri == null || content == null) return@rememberLauncherForActivityResult
+        if (uri == null) return@rememberLauncherForActivityResult
+        val user = profile
+        if (user == null) {
+            exportMessage = "Profile data is no longer available. Refresh and try again."
+            return@rememberLauncherForActivityResult
+        }
+        val content = ProfileExportFormatter.toJson(user)
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
@@ -109,9 +112,10 @@ fun ProfileScreen(
 
     val downloadProfile: () -> Unit = {
         profile?.let { user ->
-            pendingExport = ProfileExportFormatter.toJson(user)
             exportMessage = null
             profileExportLauncher.launch(ProfileExportFormatter.fileName(user))
+        } ?: run {
+            exportMessage = "Profile data is unavailable. Refresh and try again."
         }
     }
 
