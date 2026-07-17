@@ -47,6 +47,18 @@ class RepositoryCopyBundleTest {
         )
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun `oversized combined text is rejected`() {
+        RepositoryCopyBundle.build(
+            listOf(
+                CopyableRepositoryFile(
+                    "large.txt",
+                    "x".repeat(RepositoryCopyBundle.MAX_CHARACTERS + 1)
+                )
+            )
+        )
+    }
+
     @Test
     fun `single file keeps trailing newline`() {
         val result = RepositoryCopyBundle.build(listOf(CopyableRepositoryFile("a.txt", "hello")))
