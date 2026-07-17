@@ -29,13 +29,14 @@ class DeveloperCommandBuilderTest {
     }
 
     @Test
-    fun `API key commands never contain a secret value`() {
+    fun `API key commands never contain a secret value and enforce mode 600`() {
         val session = DeveloperCommandBuilder.sessionApiKey("OPENAI_API_KEY")
         val persistent = DeveloperCommandBuilder.persistentApiKey("OPENAI_API_KEY")
 
         assertTrue(session.contains("read -rsp"))
         assertTrue(persistent.contains("read -rsp"))
         assertTrue(persistent.contains("umask 077"))
+        assertTrue(persistent.contains("chmod 600"))
         assertFalse(session.contains("PASTE_KEY_HERE"))
         assertFalse(persistent.contains("PASTE_KEY_HERE"))
     }
