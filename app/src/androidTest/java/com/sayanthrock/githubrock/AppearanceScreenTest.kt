@@ -23,6 +23,8 @@ class AppearanceScreenTest {
         var selectedAccent: AccentColor? = null
         var dynamicColor = false
         var trueBlack = false
+        var workflowPreview = true
+        var fileTools = true
 
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
@@ -32,7 +34,9 @@ class AppearanceScreenTest {
                     onThemeMode = { selectedMode = it },
                     onAccentColor = { selectedAccent = it },
                     onDynamicColor = { dynamicColor = it },
-                    onTrueBlack = { trueBlack = it }
+                    onTrueBlack = { trueBlack = it },
+                    onWorkflowPreview = { workflowPreview = it },
+                    onFileTools = { fileTools = it }
                 )
             }
         }
@@ -42,12 +46,16 @@ class AppearanceScreenTest {
         compose.onNodeWithContentDescription("Use Violet accent").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle dynamic color").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle true black").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Toggle Workflow code preview").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Toggle File tools").performScrollTo().performClick()
 
         compose.runOnIdle {
             assertEquals(ThemeMode.Dark, selectedMode)
             assertEquals(AccentColor.Violet, selectedAccent)
             assertEquals(true, dynamicColor)
             assertEquals(true, trueBlack)
+            assertEquals(false, workflowPreview)
+            assertEquals(false, fileTools)
         }
     }
 }
