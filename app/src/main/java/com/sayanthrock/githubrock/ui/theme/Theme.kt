@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock.ui.theme
 
 import android.os.Build
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -8,11 +10,15 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.data.settings.AccentColor
+import com.sayanthrock.githubrock.data.settings.ThemeStyle
+
+val LocalRemoteImagesEnabled = staticCompositionLocalOf { true }
 
 private data class AccentPalette(
     val dark: Color,
@@ -81,23 +87,75 @@ private fun lightColors(accentColor: AccentColor) = accentColor.palette().let { 
     )
 }
 
-private val RockShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(9.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(24.dp)
-)
+private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
+    ThemeStyle.Clean -> Shapes(
+        extraSmall = RoundedCornerShape(6.dp),
+        small = RoundedCornerShape(9.dp),
+        medium = RoundedCornerShape(12.dp),
+        large = RoundedCornerShape(16.dp),
+        extraLarge = RoundedCornerShape(24.dp)
+    )
+    ThemeStyle.LiquidGlass -> Shapes(
+        extraSmall = RoundedCornerShape(12.dp),
+        small = RoundedCornerShape(16.dp),
+        medium = RoundedCornerShape(20.dp),
+        large = RoundedCornerShape(26.dp),
+        extraLarge = RoundedCornerShape(34.dp)
+    )
+    ThemeStyle.Studio -> Shapes(
+        extraSmall = RoundedCornerShape(4.dp),
+        small = RoundedCornerShape(7.dp),
+        medium = RoundedCornerShape(10.dp),
+        large = RoundedCornerShape(13.dp),
+        extraLarge = RoundedCornerShape(18.dp)
+    )
+    ThemeStyle.HighContrast -> Shapes(
+        extraSmall = RoundedCornerShape(2.dp),
+        small = RoundedCornerShape(4.dp),
+        medium = RoundedCornerShape(6.dp),
+        large = RoundedCornerShape(8.dp),
+        extraLarge = RoundedCornerShape(12.dp)
+    )
+}
 
-/**
- * Clean Material 3 visual system with restrained surfaces and one selectable accent.
- */
+private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): ColorScheme = when (style) {
+    ThemeStyle.Clean -> this
+    ThemeStyle.LiquidGlass -> copy(
+        surface = surface.copy(alpha = .94f),
+        surfaceContainer = surfaceContainer.copy(alpha = .90f),
+        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f),
+        surfaceVariant = surfaceVariant.copy(alpha = .88f),
+        outlineVariant = primary.copy(alpha = .20f)
+    )
+    ThemeStyle.Studio -> copy(
+        background = if (darkTheme) Color(0xFF0B0E12) else Color(0xFFF6F7F9),
+        surface = if (darkTheme) Color(0xFF11161D) else Color.White,
+        surfaceContainer = if (darkTheme) Color(0xFF151B23) else Color(0xFFF0F2F5),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF1B222C) else Color(0xFFE7EBF0),
+        outlineVariant = if (darkTheme) Color(0xFF313A46) else Color(0xFFD4D9E0)
+    )
+    ThemeStyle.HighContrast -> copy(
+        background = if (darkTheme) Color.Black else Color.White,
+        surface = if (darkTheme) Color(0xFF050505) else Color.White,
+        surfaceContainer = if (darkTheme) Color(0xFF0D0D0D) else Color(0xFFF4F4F4),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF161616) else Color(0xFFEAEAEA),
+        outline = if (darkTheme) Color.White else Color.Black,
+        outlineVariant = if (darkTheme) Color(0xFFBDBDBD) else Color(0xFF2B2B2B),
+        onBackground = if (darkTheme) Color.White else Color.Black,
+        onSurface = if (darkTheme) Color.White else Color.Black,
+        onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222)
+    )
+}
+
+/** Material 3 visual system with selectable personality, accent, and image loading policy. */
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     trueBlack: Boolean = false,
     accentColor: AccentColor = AccentColor.Cyan,
+    themeStyle: ThemeStyle = ThemeStyle.Clean,
+    showImages: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -108,7 +166,7 @@ fun GitHubRockTheme(
             dynamicLightColorScheme(context)
         darkTheme -> darkColors(accentColor)
         else -> lightColors(accentColor)
-    }.let { scheme ->
+    }.applyStyle(themeStyle, darkTheme).let { scheme ->
         if (darkTheme && trueBlack) {
             scheme.copy(
                 background = Color.Black,
@@ -121,10 +179,13 @@ fun GitHubRockTheme(
             scheme
         }
     }
-    MaterialTheme(
-        colorScheme = colors,
-        typography = RockTypography,
-        shapes = RockShapes,
-        content = content
-    )
+
+    CompositionLocalProvider(LocalRemoteImagesEnabled provides showImages) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = RockTypography,
+            shapes = shapesFor(themeStyle),
+            content = content
+        )
+    }
 }
