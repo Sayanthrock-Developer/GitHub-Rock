@@ -1,9 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build as AndroidBuild
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -73,8 +72,8 @@ fun BuildsScreen(
     val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
 
     LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
-        if (mode == AppMode.Connected) {
-            selectedRepository?.let { viewModel.loadAndroidBuild(it, requestedRunId) }
+        if (mode == AppMode.Connected && selectedRepository != null) {
+            viewModel.loadAndroidBuild(requireNotNull(selectedRepository), requestedRunId)
         } else {
             viewModel.resetBuild()
         }
@@ -345,16 +344,25 @@ private fun WorkflowCodeViewer(source: String, compact: Boolean) {
             "${(index + 1).toString().padStart(3, ' ')}  $line"
         }.joinToString("\n")
     }
+    val verticalState = rememberScrollState()
+    val horizontalState = rememberScrollState()
     Surface(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background.copy(alpha = .88f)) {
-        SelectionContainer {
-            Text(
-                numbered,
-                Modifier.padding(if (compact) 12.dp else 16.dp),
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = if (compact) 26 else 36,
-                overflow = TextOverflow.Ellipsis
-            )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = if (compact) 360.dp else 520.dp)
+                .verticalScroll(verticalState)
+                .horizontalScroll(horizontalState)
+        ) {
+            SelectionContainer {
+                Text(
+                    numbered,
+                    Modifier.padding(if (compact) 12.dp else 16.dp),
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodySmall,
+                    softWrap = false
+                )
+            }
         }
     }
 }
@@ -370,6 +378,7 @@ private fun BuildExecutionCard(
     onDownload: (WorkflowArtifact) -> Unit
 ) {
     var ref by remember(repository?.id) { mutableStateOf(repository?.defaultBranch ?: "main") }
+    var expandedJobs by remember(actionState.run?.id) { mutableStateOf<Set<Long>>(emptySet()) }
     val refIsSafe = remember(ref) { BuildRunTracker.isSafeRef(ref) }
     val context = LocalContext.current
     val notificationManager = remember(context) { NotificationManagerCompat.from(context) }
@@ -427,11 +436,12 @@ private fun BuildExecutionCard(
             if (actionState.tracking && !preferences.reduceMotion) LinearProgressIndicator(Modifier.fillMaxWidth())
             else if (actionState.tracking) Text("Workflow is running", color = MaterialTheme.colorScheme.primary)
 
-            actionState.run?.let { RunFrame(it, preferences, context) }
+            actionState.run?.let { RunFrame(it, preferences) }
             actionState.jobs.forEach { job ->
                 val failed = job.conclusion in failureConclusions
                 val passed = job.conclusion == "success"
                 val accent = statusColor(failed, passed, preferences)
+                val expanded = job.id in expandedJobs
                 Surface(
                     Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -440,20 +450,39 @@ private fun BuildExecutionCard(
                 ) {
                     Column(Modifier.padding(if (preferences.compactCards) 9.dp else 11.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         StatusRow(job.name, job.conclusion ?: job.status, failed, passed, accent)
-                        if (preferences.workflowStepDetails) {
-                            job.steps.forEach { step ->
-                                val stepFailed = step.conclusion in failureConclusions
-                                val stepPassed = step.conclusion == "success"
-                                StatusRow(
-                                    step.name,
-                                    step.conclusion ?: step.status,
-                                    stepFailed,
-                                    stepPassed,
-                                    statusColor(stepFailed, stepPassed, preferences),
-                                    small = true
-                                )
+                        if (preferences.workflowStepDetails && job.steps.isNotEmpty()) {
+                            TextButton(
+                                onClick = {
+                                    expandedJobs = if (expanded) expandedJobs - job.id else expandedJobs + job.id
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
+                                Spacer(Modifier.width(6.dp))
+                                Text(if (expanded) "Hide ${job.steps.size} steps" else "Show ${job.steps.size} steps")
                             }
-                        } else Text("${job.steps.size} steps hidden by Customization settings", style = MaterialTheme.typography.bodySmall)
+                            if (expanded) {
+                                job.steps.forEach { step ->
+                                    val stepFailed = step.conclusion in failureConclusions
+                                    val stepPassed = step.conclusion == "success"
+                                    StatusRow(
+                                        step.name,
+                                        step.conclusion ?: step.status,
+                                        stepFailed,
+                                        stepPassed,
+                                        statusColor(stepFailed, stepPassed, preferences),
+                                        small = true
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                if (preferences.workflowStepDetails) "No steps were returned by GitHub"
+                                else "${job.steps.size} steps hidden by Customization settings",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -469,7 +498,7 @@ private fun BuildExecutionCard(
 }
 
 @Composable
-private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences, context: android.content.Context) {
+private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences) {
     val state = run.displayState()
     val accent = runColor(state, preferences)
     HorizontalDivider()
@@ -482,13 +511,6 @@ private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences, conte
         Column(Modifier.padding(if (preferences.compactCards) 10.dp else 12.dp)) {
             Text(run.displayTitle.ifBlank { run.name ?: "Android build" }, fontWeight = FontWeight.SemiBold)
             Text("${state.name} • ${run.headBranch.orEmpty()} • run ${run.id}", color = accent)
-            if (run.htmlUrl.isNotBlank() && preferences.actionsControls) {
-                TextButton({ context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))) }) {
-                    Icon(Icons.Default.OpenInNew, null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Open run details")
-                }
-            }
         }
     }
 }
