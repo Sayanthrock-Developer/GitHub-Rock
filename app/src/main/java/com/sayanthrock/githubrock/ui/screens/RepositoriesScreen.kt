@@ -16,11 +16,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.ui.components.AppBrandBanner
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.RepositoryGalleryCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 
 /**
- * Displays a searchable list of repositories with loading and empty states.
+ * Displays a searchable visual library of repositories with loading and empty states.
  *
  * @param repositories The repositories to display.
  * @param loading Whether repository data is currently loading.
@@ -39,12 +41,14 @@ fun RepositoriesScreen(
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
+        AppBrandBanner()
+        Spacer(Modifier.height(16.dp))
         StandardScreenHeader(
             title = "Repositories",
             subtitle = if (repositories.isEmpty()) {
                 "Search the GitHub ecosystem"
             } else {
-                "${repositories.size} projects available"
+                "${repositories.size} visual projects available"
             }
         )
         Spacer(Modifier.height(16.dp))
@@ -89,7 +93,7 @@ fun RepositoriesScreen(
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (!loading && repositories.isEmpty()) {
                 item {
@@ -124,7 +128,7 @@ fun RepositoriesScreen(
             }
 
             items(repositories, key = { it.id }) { repository ->
-                RepositoryCard(repository) { onOpen(repository) }
+                RepositoryGalleryCard(repository) { onOpen(repository) }
             }
         }
     }
