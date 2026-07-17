@@ -31,22 +31,23 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
-/**
- * Branded repository artwork that displays GitHub's signed social-preview image when available.
- * A subdued owner-avatar treatment remains visible when GraphQL artwork is unavailable.
- */
+/** Branded repository artwork with a privacy-aware image fallback. */
 @Composable
 fun RepositoryArtwork(
     repository: GitHubRepositoryModel,
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
+    val showImages = LocalRemoteImagesEnabled.current
     val artworkHeight = if (compact) 132.dp else 176.dp
     val previewDescription = "${repository.fullName} repository preview image"
-    val ownerFallbackPainter = repository.owner.avatarUrl
-        .takeIf(String::isNotBlank)
-        ?.let { rememberAsyncImagePainter(it) }
+    val ownerFallbackPainter = if (showImages) {
+        repository.owner.avatarUrl.takeIf(String::isNotBlank)?.let { rememberAsyncImagePainter(it) }
+    } else {
+        null
+    }
 
     Box(
         modifier = modifier
@@ -63,7 +64,7 @@ fun RepositoryArtwork(
             )
     ) {
         when {
-            !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
+            showImages && !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
                 model = repository.previewImageUrl,
                 contentDescription = previewDescription,
                 placeholder = ownerFallbackPainter,
@@ -72,7 +73,7 @@ fun RepositoryArtwork(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            repository.owner.avatarUrl.isNotBlank() -> AsyncImage(
+            showImages && repository.owner.avatarUrl.isNotBlank() -> AsyncImage(
                 model = repository.owner.avatarUrl,
                 contentDescription = previewDescription,
                 contentScale = ContentScale.Crop,
@@ -95,9 +96,7 @@ fun RepositoryArtwork(
         )
 
         Row(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(12.dp),
+            modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (repository.isTemplate) RepositoryArtworkBadge("Template")
@@ -118,7 +117,7 @@ fun RepositoryArtwork(
                 color = MaterialTheme.colorScheme.surface.copy(alpha = .94f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .72f))
             ) {
-                if (repository.owner.avatarUrl.isNotBlank()) {
+                if (showImages && repository.owner.avatarUrl.isNotBlank()) {
                     AsyncImage(
                         model = repository.owner.avatarUrl,
                         contentDescription = "${repository.owner.login} avatar",
@@ -130,11 +129,7 @@ fun RepositoryArtwork(
                         modifier = Modifier.size(if (compact) 42.dp else 48.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
