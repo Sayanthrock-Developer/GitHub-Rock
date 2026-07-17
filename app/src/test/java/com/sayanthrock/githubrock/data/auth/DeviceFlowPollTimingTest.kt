@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock.data.auth
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DeviceFlowPollTimingTest {
@@ -51,5 +53,15 @@ class DeviceFlowPollTimingTest {
                 intervalSeconds = 10
             )
         )
+    }
+
+    @Test fun refreshTokenMustExistAndRemainValidBeyondTheSafetyWindow() {
+        val now = 10_000L
+
+        assertFalse(isRefreshTokenUsable(null, null, now))
+        assertFalse(isRefreshTokenUsable("", null, now))
+        assertFalse(isRefreshTokenUsable("refresh", now + 60L, now))
+        assertTrue(isRefreshTokenUsable("refresh", now + 61L, now))
+        assertTrue(isRefreshTokenUsable("refresh", null, now))
     }
 }

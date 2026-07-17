@@ -104,6 +104,13 @@ interface GitHubRestApi {
         @Body request: GitRefRequest
     ): Response<Unit>
 
+    @DELETE("repos/{owner}/{repo}/git/refs/heads/{branch}")
+    suspend fun deleteBranch(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "branch", encoded = true) branch: String
+    ): Response<Unit>
+
     @GET("repos/{owner}/{repo}/git/ref/heads/{branch}")
     suspend fun branchReference(
         @Path("owner") owner: String,

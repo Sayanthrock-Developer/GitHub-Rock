@@ -22,34 +22,41 @@ class SourceFileDecoderTest {
     }
 
     @Test
-    fun `strict decoder preserves a legitimate empty file`() {
+    fun `decoder preserves a legitimate empty file`() {
         assertEquals(
             "",
-            SourceFileDecoder.decodeStrictText(
+            SourceFileDecoder.decode(
                 ContentEntry(name = "empty.txt", path = "empty.txt", content = "", encoding = "base64")
             )
         )
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun `strict decoder rejects unavailable content`() {
-        SourceFileDecoder.decodeStrictText(
+    fun `decoder rejects unavailable content`() {
+        SourceFileDecoder.decode(
             ContentEntry(name = "missing.txt", path = "missing.txt", content = null, encoding = "base64")
         )
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `decoder rejects malformed Base64 characters`() {
+        SourceFileDecoder.decode(
+            ContentEntry(name = "bad-base64.txt", path = "bad-base64.txt", content = "YQ$==", encoding = "base64")
+        )
+    }
+
     @Test(expected = java.nio.charset.CharacterCodingException::class)
-    fun `strict decoder rejects malformed UTF-8`() {
+    fun `decoder rejects malformed UTF-8`() {
         val encoded = java.util.Base64.getEncoder().encodeToString(byteArrayOf(0xC3.toByte(), 0x28))
-        SourceFileDecoder.decodeStrictText(
+        SourceFileDecoder.decode(
             ContentEntry(name = "bad.txt", path = "bad.txt", content = encoded, encoding = "base64")
         )
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun `strict decoder rejects binary controls`() {
+    fun `decoder rejects binary controls`() {
         val encoded = java.util.Base64.getEncoder().encodeToString(byteArrayOf('A'.code.toByte(), 0, 'B'.code.toByte()))
-        SourceFileDecoder.decodeStrictText(
+        SourceFileDecoder.decode(
             ContentEntry(name = "binary.json", path = "binary.json", content = encoded, encoding = "base64")
         )
     }

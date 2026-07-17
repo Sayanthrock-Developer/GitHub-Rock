@@ -4,6 +4,7 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.network.GitHubGraphQlApi
 import com.sayanthrock.githubrock.core.network.GraphQlRequest
 import com.sayanthrock.githubrock.core.security.TokenStore
+import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -20,7 +21,7 @@ class RepositoryArtworkResolver @Inject constructor(
 
         val previews = mutableMapOf<String, String>()
         repositories.chunked(GRAPHQL_BATCH_SIZE).forEach { batch ->
-            runCatching {
+            runCatchingPreservingCancellation {
                 graphQlApi.query(GraphQlRequest(buildQuery(batch))).data
             }.getOrNull()?.let { data ->
                 batch.forEachIndexed { index, repository ->
