@@ -5,7 +5,7 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 
 object BuildRunTracker {
     private const val GENERATED_WORKFLOW_PATH = ".github/workflows/android-build.yml"
-    private val safeRefCharacters = Regex("^[A-Za-z0-9._/-]+$")
+    private val forbiddenRefCharacters = setOf('~', '^', ':', '?', '*', '[', '\\')
 
     fun findAndroidWorkflow(workflows: List<Workflow>): Workflow? =
         workflows.firstOrNull {
@@ -28,11 +28,17 @@ object BuildRunTracker {
     fun isSafeRef(ref: String): Boolean {
         if (
             ref.isBlank() ||
-            !safeRefCharacters.matches(ref) ||
+            ref == "@" ||
             ref.startsWith('/') ||
             ref.endsWith('/') ||
             ref.contains("..") ||
-            ref.contains("//")
+            ref.contains("//") ||
+            ref.contains("@{") ||
+            ref.any { character ->
+                character.code <= 0x20 ||
+                    character.code == 0x7f ||
+                    character in forbiddenRefCharacters
+            }
         ) {
             return false
         }
