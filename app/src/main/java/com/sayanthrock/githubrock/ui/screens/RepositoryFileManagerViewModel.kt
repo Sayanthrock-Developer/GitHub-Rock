@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 data class ViewedRepositoryFile(
@@ -46,38 +47,53 @@ class RepositoryFileManagerViewModel @Inject constructor(
     private val repo: String = checkNotNull(savedStateHandle["repo"])
     private val demo: Boolean = savedStateHandle["demo"] ?: false
     private var defaultBranch: String = "main"
+    private var browseRequestId: Long = 0
 
     private val _state = MutableStateFlow(RepositoryFileManagerState())
     val state: StateFlow<RepositoryFileManagerState> = _state.asStateFlow()
 
     fun start(branch: String) {
-        if (branch.isNotBlank()) defaultBranch = branch
-        if (_state.value.entries.isEmpty() && !_state.value.loading) loadDirectory("")
+        val normalizedBranch = branch.trim().ifBlank { "main" }
+        val branchChanged = normalizedBranch != defaultBranch
+        defaultBranch = normalizedBranch
+        if (branchChanged || _state.value.entries.isEmpty()) {
+            loadDirectory(_state.value.currentPath)
+        }
     }
 
     fun loadDirectory(path: String) = viewModelScope.launch {
+        val requestId = ++browseRequestId
         val normalized = path.trim('/')
         if (normalized.isNotEmpty() && !isSafePath(normalized)) {
-            _state.update { it.copy(error = "Use a valid repository path") }
+            if (requestId == browseRequestId) reportError("Use a valid repository path")
             return@launch
         }
         updateProgress(0, "Opening repository files")
-        runCatching {
-            if (demo) DemoData.contents else repository.contents(owner, repo, normalized, defaultBranch)
-        }.onSuccess { entries ->
+        try {
+            val entries = if (demo) {
+                DemoData.contents
+            } else {
+                repository.contents(owner, repo, normalized, defaultBranch)
+            }
+            if (requestId != browseRequestId) return@launch
             updateProgress(75, "Preparing file list")
             _state.update {
                 it.copy(
                     currentPath = normalized,
-                    entries = entries.sortedWith(compareByDescending<ContentEntry> { entry -> entry.type == "dir" }.thenBy { entry -> entry.name.lowercase() }),
+                    entries = entries.sortedWith(
+                        compareByDescending<ContentEntry> { entry -> entry.type == "dir" }
+                            .thenBy { entry -> entry.name.lowercase() }
+                    ),
                     selectedFile = null,
                     error = null,
                     message = null
                 )
             }
             finishProgress("${entries.size} items loaded")
-        }.onFailure { error ->
-            failProgress(error.message ?: "Unable to load repository files")
+        } catch (error: Throwable) {
+            if (requestId == browseRequestId) {
+                failProgress(error.message ?: "Unable to load repository files")
+            }
         }
     }
 
@@ -88,8 +104,10 @@ class RepositoryFileManagerViewModel @Inject constructor(
 
     fun openFile(entry: ContentEntry) = viewModelScope.launch {
         if (entry.type != "file") return@launch
+        val requestId = ++browseRequestId
         updateProgress(0, "Opening ${entry.name}")
         if (!isTextFile(entry.name) || entry.size > MAX_VIEWABLE_TEXT_BYTES) {
+            if (requestId != browseRequestId) return@launch
             _state.update {
                 it.copy(
                     selectedFile = ViewedRepositoryFile(entry.path, null, entry.downloadUrl, entry.size),
@@ -100,13 +118,13 @@ class RepositoryFileManagerViewModel @Inject constructor(
             return@launch
         }
 
-        runCatching {
-            if (demo) {
+        try {
+            val content = if (demo) {
                 "# Demo file\n\nDemo mode does not download repository contents.\n"
             } else {
                 SourceFileDecoder.decode(repository.file(owner, repo, entry.path, defaultBranch))
             }
-        }.onSuccess { content ->
+            if (requestId != browseRequestId) return@launch
             _state.update {
                 it.copy(
                     selectedFile = ViewedRepositoryFile(entry.path, content, entry.downloadUrl, entry.size),
@@ -114,12 +132,27 @@ class RepositoryFileManagerViewModel @Inject constructor(
                 )
             }
             finishProgress("File opened")
-        }.onFailure { error ->
-            failProgress(error.message ?: "Unable to open this file")
+        } catch (error: Throwable) {
+            if (requestId == browseRequestId) {
+                failProgress(error.message ?: "Unable to open this file")
+            }
         }
     }
 
     fun closeFile() = _state.update { it.copy(selectedFile = null) }
+
+    fun prepareUpload() = _state.update {
+        it.copy(error = null, message = null, pullRequestUrl = null)
+    }
+
+    fun reportError(message: String) = _state.update {
+        it.copy(
+            loading = false,
+            progress = 100,
+            progressLabel = "Needs attention",
+            error = message
+        )
+    }
 
     fun uploadTextFile(
         path: String,
@@ -128,43 +161,51 @@ class RepositoryFileManagerViewModel @Inject constructor(
         commitMessage: String
     ) = viewModelScope.launch {
         if (demo) {
-            _state.update { it.copy(error = "Demo mode does not upload files") }
+            reportError("Demo mode does not upload files")
             return@launch
         }
         if (!isSafePath(path)) {
-            _state.update { it.copy(error = "Use a valid relative file path") }
+            reportError("Use a valid relative file path")
             return@launch
         }
         if (bytes.isEmpty() || bytes.size > MAX_UPLOAD_BYTES) {
-            _state.update { it.copy(error = "Choose a UTF-8 text or code file up to 1 MB") }
+            reportError("Choose a UTF-8 text or code file up to 1 MB")
             return@launch
         }
         if (!BuildRunTracker.isSafeRef(featureBranch) || commitMessage.isBlank()) {
-            _state.update { it.copy(error = "Use a valid review branch and commit message") }
+            reportError("Use a valid review branch and commit message")
             return@launch
         }
 
         val content = runCatching { decodeUtf8(bytes) }.getOrElse {
-            _state.update { current -> current.copy(error = "Only valid UTF-8 text and code files can be uploaded") }
+            reportError("Only valid UTF-8 text and code files can be uploaded")
             return@launch
         }
 
         updateProgress(0, "Preparing upload")
-        runCatching {
-            updateProgress(25, "Creating review branch")
-            repository.commitFileAndOpenPullRequest(
+        try {
+            updateProgress(15, "Checking destination path")
+            val existingEntry = try {
+                repository.file(owner, repo, path, defaultBranch)
+            } catch (error: HttpException) {
+                if (error.code() == 404) null else throw error
+            }
+            existingEntry?.let { check(it.type == "file") { "The destination path is not a file" } }
+            val currentSha = existingEntry?.sha?.takeIf(String::isNotBlank)
+
+            updateProgress(35, "Creating review branch")
+            val pull = repository.commitFileAndOpenPullRequest(
                 owner = owner,
                 repo = repo,
                 path = path,
                 content = content,
-                currentSha = null,
+                currentSha = currentSha,
                 baseBranch = defaultBranch,
                 featureBranch = featureBranch,
                 commitMessage = commitMessage.trim(),
-                pullTitle = "Upload $path",
+                pullTitle = if (currentSha == null) "Upload $path" else "Update $path",
                 pullBody = "Uploaded from GitHub Rock on a review branch. The default branch was not overwritten."
             )
-        }.onSuccess { pull ->
             _state.update {
                 it.copy(
                     message = "Pull request #${pull.number} created for $path",
@@ -173,8 +214,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
                 )
             }
             finishProgress("Upload complete")
-            loadDirectory(_state.value.currentPath)
-        }.onFailure { error ->
+        } catch (error: Throwable) {
             failProgress(error.message ?: "Unable to upload this file")
         }
     }
@@ -199,7 +239,14 @@ class RepositoryFileManagerViewModel @Inject constructor(
     }
 
     private fun failProgress(message: String) {
-        _state.update { it.copy(loading = false, progress = 100, progressLabel = "Needs attention", error = message) }
+        _state.update {
+            it.copy(
+                loading = false,
+                progress = 100,
+                progressLabel = "Needs attention",
+                error = message
+            )
+        }
     }
 
     private fun decodeUtf8(bytes: ByteArray): String = Charsets.UTF_8.newDecoder()
