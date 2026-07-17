@@ -12,6 +12,7 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.core.util.AndroidArtifactType
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
+import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -35,6 +36,10 @@ data class BuildsActionState(
     val pullRequestUrl: String? = null,
     val selectedRepositoryId: Long? = null,
     val workflow: Workflow? = null,
+    val workflowSource: String? = null,
+    val workflowSourcePath: String? = null,
+    val workflowSourceLoading: Boolean = false,
+    val workflowSourceError: String? = null,
     val run: WorkflowRun? = null,
     val jobs: List<WorkflowJob> = emptyList(),
     val artifacts: List<WorkflowArtifact> = emptyList()
@@ -62,6 +67,10 @@ class BuildsViewModel @Inject constructor(
                     pullRequestUrl = null,
                     selectedRepositoryId = selected.id,
                     workflow = null,
+                    workflowSource = null,
+                    workflowSourcePath = null,
+                    workflowSourceLoading = true,
+                    workflowSourceError = null,
                     run = null,
                     jobs = emptyList(),
                     artifacts = emptyList()
@@ -75,12 +84,23 @@ class BuildsViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             loading = false,
+                            workflowSourceLoading = false,
                             message = "No merged Android build workflow was found. Merge its pull request, then refresh."
                         )
                     }
                     return@launch
                 }
 
+                val sourceResult = runCatching {
+                    SourceFileDecoder.decode(
+                        repository.file(
+                            selected.owner.login,
+                            selected.name,
+                            workflow.path,
+                            selected.defaultBranch
+                        )
+                    )
+                }
                 val latest = requestedRunId?.let {
                     repository.run(selected.owner.login, selected.name, it)
                 } ?: repository.runsForWorkflow(selected.owner.login, selected.name, workflow.id).firstOrNull()
@@ -94,6 +114,12 @@ class BuildsViewModel @Inject constructor(
                     it.copy(
                         loading = false,
                         workflow = workflow,
+                        workflowSource = sourceResult.getOrNull(),
+                        workflowSourcePath = workflow.path,
+                        workflowSourceLoading = false,
+                        workflowSourceError = sourceResult.exceptionOrNull()?.message?.let { message ->
+                            "Unable to load workflow code: $message"
+                        },
                         run = latest,
                         jobs = jobs,
                         artifacts = artifacts,
@@ -109,6 +135,7 @@ class BuildsViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         loading = false,
+                        workflowSourceLoading = false,
                         tracking = false,
                         error = error.message ?: "Unable to inspect the Android build workflow"
                     )
@@ -205,6 +232,10 @@ class BuildsViewModel @Inject constructor(
                 pullRequestUrl = null,
                 selectedRepositoryId = null,
                 workflow = null,
+                workflowSource = null,
+                workflowSourcePath = null,
+                workflowSourceLoading = false,
+                workflowSourceError = null,
                 run = null,
                 jobs = emptyList(),
                 artifacts = emptyList()
