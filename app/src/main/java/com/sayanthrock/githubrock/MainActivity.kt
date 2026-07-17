@@ -10,6 +10,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.GitHubUrlPolicy
 import com.sayanthrock.githubrock.data.settings.AppPreferences
@@ -18,7 +19,6 @@ import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.ui.GitHubRockRoot
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -53,7 +53,9 @@ class MainActivity : ComponentActivity() {
                 darkTheme = useDarkTheme,
                 dynamicColor = appearance.dynamicColor,
                 trueBlack = appearance.trueBlack,
-                accentColor = appearance.accentColor
+                accentColor = appearance.accentColor,
+                themeStyle = appearance.themeStyle,
+                showImages = appearance.showImages
             ) {
                 GitHubRockRoot()
             }
