@@ -68,6 +68,11 @@ class RepositoryHubViewModel @Inject constructor(
         loadJob = viewModelScope.launch { load(_state.value.repository) }
     }
 
+    /**
+     * Loads repository metadata, releases, and README content into the screen state.
+     *
+     * @param initialRepository An already resolved repository to use instead of searching for it.
+     */
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
         if (demo) {
             val repository = initialRepository

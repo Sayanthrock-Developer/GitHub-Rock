@@ -58,6 +58,9 @@ class MainViewModel @Inject constructor(
         if (authRepository.hasSession) connectExistingSession()
     }
 
+    /**
+     * Starts device-flow authentication and updates the UI with the authorization progress.
+     */
     fun startLogin() {
         cancelDataJobs()
         authJob?.cancel()
@@ -87,6 +90,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Checks the current device-code authorization status and completes login when approved.
+     */
     fun checkLoginStatus() {
         val code = _state.value.auth.code ?: return
         authJob?.cancel()
@@ -110,6 +116,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Enters guest mode and loads public repositories.
+     */
     fun continueAsGuest() {
         cancelAllJobs()
         _state.value = MainUiState(mode = AppMode.Guest, isLoading = true)
@@ -124,6 +133,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Enters demo mode with isolated sample data.
+     */
     fun enterDemo() {
         cancelAllJobs()
         _state.value = MainUiState(
@@ -136,6 +148,11 @@ class MainViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Searches repositories using the active application mode.
+     *
+     * @param query The repository search query.
+     */
     fun searchRepositories(query: String) {
         val mode = _state.value.mode ?: return
         searchJob?.cancel()
@@ -160,6 +177,11 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Refreshes data for the active application mode.
+     *
+     * Connected mode reloads the dashboard, guest mode reloads public repositories, and demo mode reports that its sample data is already current.
+     */
     fun refresh() {
         val mode = _state.value.mode ?: return
         if (_state.value.isLoading || _state.value.isRefreshing) return
@@ -197,6 +219,11 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Saves a repository to the user's recent repositories.
+     *
+     * @param repository The repository to save.
+     */
     fun rememberRepository(repository: GitHubRepositoryModel) {
         if (_state.value.mode == AppMode.Demo) return
         rememberJob?.cancel()
@@ -208,6 +235,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Signs out the current user and resets the UI state.
+     */
     fun logout() {
         cancelAllJobs()
         monitorScheduler.cancelAll()
@@ -217,6 +247,11 @@ class MainViewModel @Inject constructor(
 
     fun dismissMessage() = _state.update { it.copy(message = null) }
 
+    /**
+     * Completes device authentication and loads the connected account dashboard.
+     *
+     * @param code The device authorization code used to authenticate.
+     */
     private suspend fun completeLogin(code: DeviceCodeResponse) {
         authRepository.poll(code) { status ->
             _state.update { current ->
@@ -238,6 +273,11 @@ class MainViewModel @Inject constructor(
         loadConnectedDashboard()
     }
 
+    /**
+     * Updates the UI state with an authentication failure.
+     *
+     * @param error The exception that caused authentication to fail.
+     */
     private fun reportAuthFailure(error: Exception) {
         _state.update {
             it.copy(
@@ -247,6 +287,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Restores an existing GitHub session and loads the connected dashboard.
+     */
     private fun connectExistingSession() {
         sessionJob?.cancel()
         sessionJob = viewModelScope.launch {
@@ -276,6 +319,12 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Loads the connected dashboard data and updates the UI state.
+     *
+     * If the session is unauthorized, expires the session; otherwise, reports data-loading
+     * failures through the UI state.
+     */
     private suspend fun loadConnectedDashboard() {
         runCatchingPreservingCancellation { githubRepository.dashboard() }
             .onSuccess { payload ->
@@ -321,12 +370,20 @@ class MainViewModel @Inject constructor(
             }
     }
 
+    /**
+     * Ends the current session and resets the UI state with the supplied message.
+     *
+     * @param message The message to display after the session expires.
+     */
     private fun expireSession(message: String) {
         monitorScheduler.cancelAll()
         authRepository.logout()
         _state.value = MainUiState(message = message)
     }
 
+    /**
+     * Cancels active data-related jobs and clears their references.
+     */
     private fun cancelDataJobs() {
         searchJob?.cancel()
         refreshJob?.cancel()
@@ -338,6 +395,9 @@ class MainViewModel @Inject constructor(
         rememberJob = null
     }
 
+    /**
+     * Cancels all active authentication and data-related jobs.
+     */
     private fun cancelAllJobs() {
         authJob?.cancel()
         authJob = null
@@ -345,6 +405,11 @@ class MainViewModel @Inject constructor(
     }
 }
 
+/**
+ * Converts an exception into a user-facing error message.
+ *
+ * @return A message describing the failure and, when applicable, the recommended action.
+ */
 private fun Throwable.userMessage(): String = when (this) {
     is retrofit2.HttpException -> when (code()) {
         401 -> "GitHub rejected this session. Please sign in again."

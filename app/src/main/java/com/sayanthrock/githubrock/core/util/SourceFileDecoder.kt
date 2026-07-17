@@ -6,8 +6,22 @@ import java.nio.charset.CodingErrorAction
 import java.util.Base64
 
 object SourceFileDecoder {
-    fun decode(entry: ContentEntry): String = decodeStrictText(entry)
+    /**
+ * Decodes a content entry into validated text.
+ *
+ * @param entry The content entry to decode.
+ * @return The decoded text.
+ */
+fun decode(entry: ContentEntry): String = decodeStrictText(entry)
 
+    /**
+     * Decodes file content as strict text and rejects unavailable content or binary control characters.
+     *
+     * @param entry The file entry containing the content and its encoding.
+     * @return The decoded and validated text.
+     * @throws NullPointerException If the file content is unavailable.
+     * @throws IllegalArgumentException If the content is invalid Base64 or contains binary control characters.
+     */
     fun decodeStrictText(entry: ContentEntry): String {
         val content = requireNotNull(entry.content) {
             "The file content is unavailable and cannot be opened as text"

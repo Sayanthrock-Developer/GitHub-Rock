@@ -39,6 +39,14 @@ class DeviceFlowAuthRepository @Inject constructor(
         }
     }
 
+    /**
+     * Polls GitHub until the device authorization succeeds or expires.
+     *
+     * @param device The device authorization details used for polling.
+     * @param onStatus Called with user-facing status updates while authorization is pending.
+     * @return The stored tokens returned after successful authorization.
+     * @throws DeviceFlowException If authorization fails or the device code expires.
+     */
     suspend fun poll(device: DeviceCodeResponse, onStatus: (String) -> Unit = {}): StoredTokens {
         val deadline = Instant.now().epochSecond + device.expiresIn
         while (Instant.now().epochSecond < deadline) {
@@ -63,6 +71,11 @@ class DeviceFlowAuthRepository @Inject constructor(
         throw DeviceFlowException("The device code expired. Start login again.")
     }
 
+    /**
+     * Refreshes the stored access token when it is expired or nearing expiration.
+     *
+     * @return `true` if the session is usable or the access token is refreshed successfully, `false` otherwise.
+     */
     suspend fun refreshIfNeeded(): Boolean {
         val stored = tokenStore.read() ?: return false
         val now = Instant.now().epochSecond
@@ -81,7 +94,13 @@ class DeviceFlowAuthRepository @Inject constructor(
 
     fun logout() = tokenStore.clear()
 
-    private suspend fun requestTokenAtAllowedInterval(device: DeviceCodeResponse): DeviceTokenResponse =
+    /**
+         * Requests a device token after waiting for the currently required polling interval.
+         *
+         * @param device The device code used to request the token.
+         * @return The device token response from GitHub.
+         */
+        private suspend fun requestTokenAtAllowedInterval(device: DeviceCodeResponse): DeviceTokenResponse =
         pollMutex.withLock {
             val now = elapsedRealtimeMillis()
             val remainingDelay = remainingPollDelayMillis(
@@ -127,8 +146,21 @@ internal fun remainingPollDelayMillis(
     return (intervalMillis - (nowMillis - lastRequestAtMillis)).coerceAtLeast(0L)
 }
 
+/**
+ * Returns monotonic elapsed time in milliseconds.
+ *
+ * @return The elapsed monotonic time in milliseconds.
+ */
 private fun elapsedRealtimeMillis(): Long = System.nanoTime() / 1_000_000L
 
+/**
+ * Calculates the polling interval for the next token request.
+ *
+ * @param currentIntervalSeconds The current polling interval in seconds.
+ * @param error The token request error, if any.
+ * @param slowDownIncrementSeconds The number of seconds to add when the server requests slower polling.
+ * @return The polling interval for the next request in seconds.
+ */
 internal fun nextPollIntervalSeconds(
     currentIntervalSeconds: Int,
     error: String?,
@@ -139,7 +171,15 @@ internal fun nextPollIntervalSeconds(
     currentIntervalSeconds
 }
 
-internal fun isRefreshTokenUsable(
+/**
+     * Determines whether a refresh token can be used at the specified time.
+     *
+     * @param refreshToken The refresh token to evaluate.
+     * @param refreshExpiresAtEpochSeconds The token expiration time, or null when it does not expire.
+     * @param nowEpochSeconds The current time in epoch seconds.
+     * @return `true` if the token has content and remains valid beyond the 60-second safety window, `false` otherwise.
+     */
+    internal fun isRefreshTokenUsable(
     refreshToken: String?,
     refreshExpiresAtEpochSeconds: Long?,
     nowEpochSeconds: Long

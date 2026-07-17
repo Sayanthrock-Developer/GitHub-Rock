@@ -16,6 +16,14 @@ class RepositoryArtworkResolver @Inject constructor(
     private val graphQlApi: GitHubGraphQlApi,
     private val tokenStore: TokenStore
 ) {
+    /**
+     * Attaches available Open Graph preview image URLs to the repositories.
+     *
+     * Returns the input list unchanged when it is empty or no access token is available.
+     *
+     * @param repositories The repositories to enrich with preview image URLs.
+     * @return Repositories with their available preview image URLs attached.
+     */
     suspend fun attach(repositories: List<GitHubRepositoryModel>): List<GitHubRepositoryModel> {
         if (repositories.isEmpty() || tokenStore.read()?.accessToken.isNullOrBlank()) return repositories
 

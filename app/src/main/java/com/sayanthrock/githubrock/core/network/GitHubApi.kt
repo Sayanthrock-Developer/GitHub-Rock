@@ -97,6 +97,12 @@ interface GitHubRestApi {
         @Path(value = "branch", encoded = true) branch: String
     ): Response<Unit>
 
+    /**
+     * Creates a branch reference in a repository.
+     *
+     * @param request The branch reference data.
+     * @return The HTTP response for the branch creation request.
+     */
     @POST("repos/{owner}/{repo}/git/refs")
     suspend fun createBranch(
         @Path("owner") owner: String,
@@ -104,6 +110,14 @@ interface GitHubRestApi {
         @Body request: GitRefRequest
     ): Response<Unit>
 
+    /**
+     * Deletes a branch reference from a repository.
+     *
+     * @param owner The repository owner's login.
+     * @param repo The repository name.
+     * @param branch The encoded branch name.
+     * @return The HTTP response for the deletion request.
+     */
     @DELETE("repos/{owner}/{repo}/git/refs/heads/{branch}")
     suspend fun deleteBranch(
         @Path("owner") owner: String,
@@ -111,6 +125,12 @@ interface GitHubRestApi {
         @Path(value = "branch", encoded = true) branch: String
     ): Response<Unit>
 
+    /**
+     * Retrieves a branch reference from a repository.
+     *
+     * @param branch The encoded branch name.
+     * @return The Git reference for the branch.
+     */
     @GET("repos/{owner}/{repo}/git/ref/heads/{branch}")
     suspend fun branchReference(
         @Path("owner") owner: String,
