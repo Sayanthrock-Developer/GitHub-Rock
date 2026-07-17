@@ -46,8 +46,12 @@ class BuildRunTrackerTest {
         assertTrue(BuildRunTracker.isActive(run(id = 1, status = "queued")))
         assertFalse(BuildRunTracker.isActive(run(id = 1, status = "completed", conclusion = "success")))
         assertTrue(BuildRunTracker.isSafeRef("release/1.2.0"))
+        assertTrue(BuildRunTracker.isSafeRef("feature/github-rock"))
         assertFalse(BuildRunTracker.isSafeRef("release/../main"))
         assertFalse(BuildRunTracker.isSafeRef("refs heads/main"))
+        assertFalse(BuildRunTracker.isSafeRef("feature/.hidden"))
+        assertFalse(BuildRunTracker.isSafeRef("feature/trailing."))
+        assertFalse(BuildRunTracker.isSafeRef("feature/build.lock"))
     }
 
     private fun run(
