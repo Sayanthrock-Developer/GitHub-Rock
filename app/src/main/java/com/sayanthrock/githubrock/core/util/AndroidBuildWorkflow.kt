@@ -69,7 +69,9 @@ object AndroidWorkflowGenerator {
                     shell: bash
                     run: |
                       set -euo pipefail
-                      if [ ! -f ./gradlew ]; then
+                      if [ ! -f ./gradlew ] || \
+                         [ ! -f gradle/wrapper/gradle-wrapper.jar ] || \
+                         [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
                         gradle wrapper --gradle-version $DEFAULT_GRADLE_VERSION
                       fi
                       chmod +x ./gradlew
