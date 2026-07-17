@@ -68,6 +68,7 @@ import com.sayanthrock.githubrock.core.model.ContentEntry
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import java.io.ByteArrayOutputStream
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -95,6 +96,9 @@ fun RepositoryFileManagerScreen(
     LaunchedEffect(repository?.id, repository?.defaultBranch) {
         viewModel.start(repository?.defaultBranch ?: "main")
     }
+    LaunchedEffect(state.pullRequestUrl) {
+        if (!state.pullRequestUrl.isNullOrBlank()) pendingUpload = null
+    }
 
     val openUrl: (String) -> Unit = { url ->
         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
@@ -120,13 +124,14 @@ fun RepositoryFileManagerScreen(
                     PendingTextUpload(sanitizeFileName(displayName), bytes)
                 }
             }.onSuccess { upload ->
+                viewModel.prepareUpload()
                 pendingUpload = upload
                 uploadPath = state.currentPath.takeIf(String::isNotBlank)?.let { "$it/${upload.suggestedPath}" }
                     ?: upload.suggestedPath
-                uploadBranch = "github-rock/upload-${System.currentTimeMillis() / 1000}"
+                uploadBranch = "github-rock/upload-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}"
                 uploadMessage = "Upload ${upload.suggestedPath}"
-            }.onFailure {
-                viewModel.dismissMessage()
+            }.onFailure { error ->
+                viewModel.reportError(error.message ?: "Unable to read the selected file")
             }
         }
     }
@@ -330,6 +335,7 @@ fun RepositoryFileManagerScreen(
             items(state.entries, key = { it.path }) { entry ->
                 FileEntryCard(
                     entry = entry,
+                    enabled = !state.loading,
                     onClick = {
                         if (entry.type == "dir") viewModel.loadDirectory(entry.path) else viewModel.openFile(entry)
                     },
@@ -341,7 +347,7 @@ fun RepositoryFileManagerScreen(
 
     pendingUpload?.let { upload ->
         AlertDialog(
-            onDismissRequest = { pendingUpload = null },
+            onDismissRequest = { if (!state.loading) pendingUpload = null },
             title = { Text("Upload code or text file") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -352,18 +358,21 @@ fun RepositoryFileManagerScreen(
                     OutlinedTextField(
                         value = uploadPath,
                         onValueChange = { uploadPath = it },
+                        enabled = !state.loading,
                         label = { Text("Repository path") },
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = uploadBranch,
                         onValueChange = { uploadBranch = it },
+                        enabled = !state.loading,
                         label = { Text("Review branch") },
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = uploadMessage,
                         onValueChange = { uploadMessage = it },
+                        enabled = !state.loading,
                         label = { Text("Commit message") },
                         singleLine = true
                     )
@@ -371,14 +380,17 @@ fun RepositoryFileManagerScreen(
             },
             confirmButton = {
                 TextButton(
+                    enabled = !state.loading,
                     onClick = {
                         viewModel.uploadTextFile(uploadPath, upload.bytes, uploadBranch, uploadMessage)
-                        pendingUpload = null
                     }
-                ) { Text("Open pull request") }
+                ) { Text(if (state.loading) "Uploading…" else "Open pull request") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingUpload = null }) { Text("Cancel") }
+                TextButton(
+                    enabled = !state.loading,
+                    onClick = { pendingUpload = null }
+                ) { Text("Cancel") }
             }
         )
     }
@@ -440,11 +452,13 @@ private fun FileStatusFrame(label: String, healthy: Boolean) {
 @Composable
 private fun FileEntryCard(
     entry: ContentEntry,
+    enabled: Boolean,
     onClick: () -> Unit,
     onOpenRaw: (() -> Unit)?
 ) {
     Surface(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -476,7 +490,7 @@ private fun FileEntryCard(
                 )
             }
             if (onOpenRaw != null) {
-                IconButton(onClick = onOpenRaw) {
+                IconButton(onClick = onOpenRaw, enabled = enabled) {
                     Icon(Icons.Default.OpenInNew, contentDescription = "Open raw ${entry.name}")
                 }
             }
