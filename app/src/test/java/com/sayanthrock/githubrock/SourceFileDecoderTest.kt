@@ -18,5 +18,22 @@ class SourceFileDecoderTest {
         )
 
         assertEquals("name: GitHub Rock\n", SourceFileDecoder.decode(entry))
+        assertEquals("name: GitHub Rock\n", SourceFileDecoder.decodeStrictText(entry))
+    }
+
+    @Test(expected = java.nio.charset.CharacterCodingException::class)
+    fun `strict decoder rejects malformed UTF-8`() {
+        val encoded = java.util.Base64.getEncoder().encodeToString(byteArrayOf(0xC3.toByte(), 0x28))
+        SourceFileDecoder.decodeStrictText(
+            ContentEntry(name = "bad.txt", path = "bad.txt", content = encoded, encoding = "base64")
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `strict decoder rejects binary controls`() {
+        val encoded = java.util.Base64.getEncoder().encodeToString(byteArrayOf('A'.code.toByte(), 0, 'B'.code.toByte()))
+        SourceFileDecoder.decodeStrictText(
+            ContentEntry(name = "binary.json", path = "binary.json", content = encoded, encoding = "base64")
+        )
     }
 }
