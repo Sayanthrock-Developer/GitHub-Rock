@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -58,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.util.RepositoryHealthState
 import com.sayanthrock.githubrock.core.util.RepositoryWorkspacePolicy
+import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import kotlinx.coroutines.launch
 
 /** Single repository page containing identity, releases, tools, statistics and documentation. */
@@ -68,9 +68,11 @@ fun RepositoryHubScreen(
     onBack: () -> Unit,
     initialTag: String? = null,
     viewModel: RepositoryHubViewModel = hiltViewModel(),
-    downloadsViewModel: DownloadsViewModel = hiltViewModel()
+    downloadsViewModel: DownloadsViewModel = hiltViewModel(),
+    appearanceViewModel: AppearanceViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val preferences by appearanceViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -78,6 +80,10 @@ fun RepositoryHubScreen(
 
     LaunchedEffect(repository?.id) {
         viewModel.start(repository)
+    }
+    LaunchedEffect(preferences.repositoryManager, preferences.fileTools, workspacePage) {
+        if (workspacePage == "manager" && !preferences.repositoryManager) workspacePage = "overview"
+        if (workspacePage == "files" && !preferences.fileTools) workspacePage = "overview"
     }
 
     val displayedRepository = state.repository ?: repository
@@ -114,7 +120,8 @@ fun RepositoryHubScreen(
     }
 
     val repositoryHealthy = displayedRepository != null && !state.loading && state.error == null
-    val fileToolsHealthy = repositoryHealthy
+    val fileToolsHealthy = repositoryHealthy && preferences.fileTools
+    val managerHealthy = repositoryHealthy && preferences.repositoryManager
     val loadProgress = RepositoryWorkspacePolicy.loadProgress(
         repositoryReady = repositoryHealthy,
         releasesLoading = state.releasesLoading,
@@ -146,13 +153,6 @@ fun RepositoryHubScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
-                        IconButton(onClick = { openUrl(url) }) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = "Open repository on GitHub")
-                        }
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background.copy(alpha = .96f)
                 )
@@ -167,10 +167,11 @@ fun RepositoryHubScreen(
                     repository = repo,
                     progress = loadProgress,
                     repositoryHealthy = repositoryHealthy,
+                    managerHealthy = managerHealthy,
                     fileToolsHealthy = fileToolsHealthy,
+                    preferences = preferences,
                     onOpenManager = { workspacePage = "manager" },
-                    onOpenFiles = { workspacePage = "files" },
-                    onOpenUrl = openUrl
+                    onOpenFiles = { workspacePage = "files" }
                 )
             }
             RepositoryHubContent(
@@ -205,20 +206,19 @@ private fun RepositoryWorkspacePanel(
     repository: GitHubRepositoryModel,
     progress: Int,
     repositoryHealthy: Boolean,
+    managerHealthy: Boolean,
     fileToolsHealthy: Boolean,
+    preferences: AppearancePreferences,
     onOpenManager: () -> Unit,
-    onOpenFiles: () -> Unit,
-    onOpenUrl: (String) -> Unit
+    onOpenFiles: () -> Unit
 ) {
-    val base = repository.htmlUrl.trimEnd('/').ifBlank {
-        "https://github.com/${repository.fullName}"
-    }
     val issueHealth = RepositoryWorkspacePolicy.issueHealth(repository.openIssues)
     val issueHealthy = issueHealth == RepositoryHealthState.Healthy
+    val verticalGap = if (preferences.compactCards) 8.dp else 10.dp
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = verticalGap),
+        verticalArrangement = Arrangement.spacedBy(verticalGap)
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -227,20 +227,26 @@ private fun RepositoryWorkspacePanel(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
+                modifier = Modifier.padding(if (preferences.compactCards) 12.dp else 14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Loading repository workspace", fontWeight = FontWeight.Bold)
-                    Text("${progress.coerceIn(0, 100)} / 100", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+                    Text("Repository workspace", fontWeight = FontWeight.Bold)
+                    Text(
+                        "${progress.coerceIn(0, 100)} / 100",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black
+                    )
                 }
-                LinearProgressIndicator(
-                    progress = { progress.coerceIn(0, 100) / 100f },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (!preferences.reduceMotion || progress < 100) {
+                    LinearProgressIndicator(
+                        progress = { progress.coerceIn(0, 100) / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
 
@@ -250,15 +256,23 @@ private fun RepositoryWorkspacePanel(
         ) {
             WorkspaceHealthFrame(
                 if (repositoryHealthy) "Repository ready" else "Repository loading or failed",
-                healthy = repositoryHealthy
+                healthy = repositoryHealthy,
+                preferences = preferences
             )
             WorkspaceHealthFrame(
                 if (issueHealthy) "No open issues" else "${repository.openIssues} open issues",
-                healthy = issueHealthy
+                healthy = issueHealthy,
+                preferences = preferences
             )
             WorkspaceHealthFrame(
-                if (fileToolsHealthy) "File tools ready" else "File tools unavailable",
-                healthy = fileToolsHealthy
+                if (managerHealthy) "Manager enabled" else "Manager off",
+                healthy = managerHealthy,
+                preferences = preferences
+            )
+            WorkspaceHealthFrame(
+                if (fileToolsHealthy) "File tools enabled" else "File tools off",
+                healthy = fileToolsHealthy,
+                preferences = preferences
             )
         }
 
@@ -268,12 +282,12 @@ private fun RepositoryWorkspacePanel(
         ) {
             Button(
                 onClick = onOpenManager,
-                enabled = repositoryHealthy,
+                enabled = managerHealthy,
                 modifier = Modifier.weight(1f).height(48.dp)
             ) {
                 Icon(Icons.Default.Code, contentDescription = null)
                 Spacer(Modifier.size(6.dp))
-                Text("Manage")
+                Text(if (preferences.repositoryManager) "Manage" else "Manager off")
             }
             OutlinedButton(
                 onClick = onOpenFiles,
@@ -282,32 +296,29 @@ private fun RepositoryWorkspacePanel(
             ) {
                 Icon(Icons.Default.FolderOpen, contentDescription = null)
                 Spacer(Modifier.size(6.dp))
-                Text("Files")
+                Text(if (preferences.fileTools) "Files" else "Files off")
             }
         }
 
-        val options = listOf(
-            "Issues" to "$base/issues",
-            "Pull Requests" to "$base/pulls",
-            "Discussions" to "$base/discussions",
-            "Projects" to "$base/projects",
-            "Top Repositories" to "https://github.com/${repository.owner.login}?tab=repositories",
-            "Organization" to "https://github.com/${repository.owner.login}"
+        Text(
+            "Issues, Pull Requests, Actions, Releases, code editing, and file uploads are controlled inside these native tools. Website-only shortcut templates were removed.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall
         )
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            options.forEach { (label, url) ->
-                WorkspaceOptionFrame(label = label, onClick = { onOpenUrl(url) })
-            }
-        }
     }
 }
 
 @Composable
-private fun WorkspaceHealthFrame(label: String, healthy: Boolean) {
-    val accent = if (healthy) HEALTHY_GREEN else MaterialTheme.colorScheme.error
+private fun WorkspaceHealthFrame(
+    label: String,
+    healthy: Boolean,
+    preferences: AppearancePreferences
+) {
+    val accent = when {
+        !preferences.statusColors -> MaterialTheme.colorScheme.primary
+        healthy -> HEALTHY_GREEN
+        else -> MaterialTheme.colorScheme.error
+    }
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = accent.copy(alpha = .10f),
@@ -325,25 +336,6 @@ private fun WorkspaceHealthFrame(label: String, healthy: Boolean) {
                 modifier = Modifier.size(16.dp)
             )
             Text(label, color = accent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun WorkspaceOptionFrame(label: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
         }
     }
 }
