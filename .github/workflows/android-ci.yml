@@ -32,7 +32,9 @@ jobs:
       - name: Generate Gradle wrapper
         run: gradle wrapper --gradle-version 8.13
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest --stacktrace 2>&1 | tee unit-tests.log
       - name: Compile Compose UI tests
         run: ./gradlew assembleDebugAndroidTest --stacktrace
       - name: Lint
@@ -49,6 +51,7 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
+            unit-tests.log
             gradlew
             gradlew.bat
             gradle/wrapper/gradle-wrapper.jar
