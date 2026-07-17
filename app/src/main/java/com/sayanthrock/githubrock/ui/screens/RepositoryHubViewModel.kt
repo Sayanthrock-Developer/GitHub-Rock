@@ -6,11 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
+import com.sayanthrock.githubrock.core.util.RepositoryReadmePolicy
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
+import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -108,13 +109,18 @@ class RepositoryHubViewModel @Inject constructor(
             )
         }
 
-        val resolvedRepository = initialRepository ?: runCatchingPreservingCancellation {
-            githubRepository.publicRepositories("$repoName user:$owner")
-                .firstOrNull {
-                    it.owner.login.equals(owner, ignoreCase = true) &&
-                        it.name.equals(repoName, ignoreCase = true)
-                }
-        }.getOrNull()
+        val repositoryResult = if (initialRepository != null) {
+            Result.success(initialRepository)
+        } else {
+            runCatchingPreservingCancellation {
+                githubRepository.publicRepositories("$repoName user:$owner")
+                    .firstOrNull {
+                        it.owner.login.equals(owner, ignoreCase = true) &&
+                            it.name.equals(repoName, ignoreCase = true)
+                    }
+            }
+        }
+        val resolvedRepository = repositoryResult.getOrNull()
 
         if (resolvedRepository == null) {
             _state.update {
@@ -122,7 +128,11 @@ class RepositoryHubViewModel @Inject constructor(
                     loading = false,
                     releasesLoading = false,
                     readmeLoading = false,
-                    error = "Unable to load this repository. Open it again from the repository list."
+                    error = if (repositoryResult.isFailure) {
+                        "Repository information is temporarily unavailable. Retry when the connection is stable."
+                    } else {
+                        "Unable to find this repository. Open it again from the repository list."
+                    }
                 )
             }
             return
@@ -158,11 +168,12 @@ class RepositoryHubViewModel @Inject constructor(
                             ref = resolvedRepository.defaultBranch
                         ).let(SourceFileDecoder::decode)
                     }
-                }.getOrNull()?.takeIf(String::isNotBlank)
+                }
             }
 
             val releasesResult = releasesDeferred.await()
-            val readme = readmeDeferred.await()
+            val readmeResult = readmeDeferred.await()
+            val readme = readmeResult.getOrNull()?.takeIf(String::isNotBlank)
 
             _state.update { current ->
                 current.copy(
@@ -173,24 +184,14 @@ class RepositoryHubViewModel @Inject constructor(
                     },
                     readme = readme,
                     readmeLoading = false,
-                    readmeError = if (readme == null) {
-                        "No readable README file was found on ${resolvedRepository.defaultBranch}."
-                    } else {
-                        null
-                    }
+                    readmeError = RepositoryReadmePolicy.errorMessage(
+                        readme = readme,
+                        failure = readmeResult.exceptionOrNull(),
+                        branch = resolvedRepository.defaultBranch
+                    )
                 )
             }
         }
-    }
-
-    private suspend fun <T> runCatchingPreservingCancellation(
-        block: suspend () -> T
-    ): Result<T> = try {
-        Result.success(block())
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (throwable: Throwable) {
-        Result.failure(throwable)
     }
 
     private companion object {
