@@ -7,13 +7,21 @@ import org.junit.Test
 
 class RepositoryWorkspacePolicyTest {
     @Test
-    fun `loading progress moves from zero to one hundred by completed phase`() {
+    fun `loading progress stays zero until repository is ready then reaches one hundred`() {
         assertEquals(
             0,
             RepositoryWorkspacePolicy.loadProgress(
                 repositoryReady = false,
                 releasesLoading = true,
                 readmeLoading = true
+            )
+        )
+        assertEquals(
+            0,
+            RepositoryWorkspacePolicy.loadProgress(
+                repositoryReady = false,
+                releasesLoading = false,
+                readmeLoading = false
             )
         )
         assertEquals(
