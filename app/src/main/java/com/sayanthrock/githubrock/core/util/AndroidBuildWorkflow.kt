@@ -14,6 +14,12 @@ data class AndroidProjectDetection(
 )
 
 object AndroidProjectDetector {
+    /**
+     * Detects Gradle and Android project metadata from repository paths.
+     *
+     * @param paths Repository-relative file paths to inspect.
+     * @return Detected project metadata, including Android modules and existing workflow paths.
+     */
     fun detect(paths: Collection<String>): AndroidProjectDetection {
         val normalized = paths.map { it.replace('\\', '/').trimStart('/') }
         val gradle = normalized.any { it == "gradlew" || it == "settings.gradle" || it == "settings.gradle.kts" }
@@ -38,6 +44,15 @@ object AndroidWorkflowGenerator {
     private const val DEFAULT_GRADLE_VERSION = "8.13"
     private val safeModuleSegment = Regex("^[A-Za-z0-9_.-]+$")
 
+    /**
+     * Generates a GitHub Actions workflow for building an Android artifact.
+     *
+     * @param module The Android Gradle module to build.
+     * @param artifact The artifact type and corresponding Gradle task to use.
+     * @param javaVersion The Java version for the workflow; supported values are 17 and 21.
+     * @return The generated GitHub Actions workflow YAML.
+     * @throws IllegalArgumentException If the module is invalid or the Java version is unsupported.
+     */
     fun generate(module: String, artifact: AndroidArtifactType, javaVersion: Int = 17): String {
         val gradleModule = normalizeModule(module)
         require(javaVersion in setOf(17, 21)) { "Unsupported Java version" }
@@ -85,6 +100,13 @@ object AndroidWorkflowGenerator {
         """.trimIndent() + "\n"
     }
 
+    /**
+     * Normalizes an Android module name to Gradle module notation.
+     *
+     * @param module The module name, using slash- or colon-separated segments.
+     * @return The normalized module path with segments joined by colons.
+     * @throws IllegalArgumentException If the module name is blank or contains an invalid segment.
+     */
     private fun normalizeModule(module: String): String {
         val trimmed = module.trim().trim(':', '/')
         require(trimmed.isNotBlank()) { "Android module name is required" }

@@ -22,9 +22,21 @@ object BuildRunTracker {
         it.id !in knownRunIds && it.event == "workflow_dispatch" && it.headBranch == ref
     }
 
-    fun isActive(run: WorkflowRun): Boolean =
+    /**
+         * Determines whether a workflow run is still active.
+         *
+         * @param run The workflow run to evaluate.
+         * @return `true` if the run has no conclusion and its status is not completed, `false` otherwise.
+         */
+        fun isActive(run: WorkflowRun): Boolean =
         run.conclusion == null && run.status != "completed"
 
+    /**
+     * Validates that a ref contains only safe path components and characters.
+     *
+     * @param ref The ref to validate.
+     * @return `true` if the ref satisfies all safety constraints, `false` otherwise.
+     */
     fun isSafeRef(ref: String): Boolean {
         if (
             ref.isBlank() ||
