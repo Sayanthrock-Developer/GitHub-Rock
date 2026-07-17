@@ -39,12 +39,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
 /** Returns an explicit repository preview URL or GitHub's generated Open Graph image. */
 fun GitHubRepositoryModel.repositoryPreviewImageUrl(): String {
     val explicitPreview = previewImageUrl?.trim()?.takeIf { it.startsWith("https://") }
     if (explicitPreview != null) return explicitPreview
-
     val cacheKey = updatedAt.ifBlank { id.toString() }.hashCode().toUInt()
     return "https://opengraph.githubassets.com/$cacheKey/$fullName"
 }
@@ -62,11 +62,7 @@ fun RepositoryGalleryCard(
         onClick = onClick
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            RepositoryPreview(
-                repository = repository,
-                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)
-            )
-
+            RepositoryPreview(repository, Modifier.fillMaxWidth().aspectRatio(16f / 9f))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -81,14 +77,14 @@ fun RepositoryGalleryCard(
                 )
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = repository.name,
+                        repository.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = repository.owner.login,
+                        repository.owner.login,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
@@ -102,7 +98,7 @@ fun RepositoryGalleryCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.ChevronRight,
+                            Icons.Default.ChevronRight,
                             contentDescription = "Open ${repository.name}",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -112,7 +108,7 @@ fun RepositoryGalleryCard(
             }
 
             Text(
-                text = repository.description ?: "No repository description.",
+                repository.description ?: "No repository description.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 3,
@@ -136,48 +132,44 @@ fun RepositoryGalleryCard(
     }
 }
 
-/** Displays a repository preview image with accessible template and privacy labels. */
+/** Displays a repository preview image or a readable local fallback when images are disabled. */
 @Composable
-fun RepositoryPreview(
-    repository: GitHubRepositoryModel,
-    modifier: Modifier = Modifier
-) {
+fun RepositoryPreview(repository: GitHubRepositoryModel, modifier: Modifier = Modifier) {
+    val showImages = LocalRemoteImagesEnabled.current
     Surface(
-        modifier = modifier.semantics {
-            contentDescription = "${repository.fullName} repository preview image"
-        },
+        modifier = modifier.semantics { contentDescription = "${repository.fullName} repository preview image" },
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Box {
-            SubcomposeAsyncImage(
-                model = repository.repositoryPreviewImageUrl(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                loading = { RepositoryPreviewFallback(repository, showProgress = true) },
-                error = { RepositoryPreviewFallback(repository) },
-                success = { SubcomposeAsyncImageContent() }
-            )
+            if (showImages) {
+                SubcomposeAsyncImage(
+                    model = repository.repositoryPreviewImageUrl(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    loading = { RepositoryPreviewFallback(repository, showProgress = true) },
+                    error = { RepositoryPreviewFallback(repository) },
+                    success = { SubcomposeAsyncImageContent() }
+                )
+            } else {
+                RepositoryPreviewFallback(repository)
+            }
 
             Column(
                 modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (repository.isTemplate) {
-                    RepositoryVisualBadge("Template repository", accent = true)
-                }
-                if (repository.private) {
-                    RepositoryVisualBadge("Private")
-                }
+                if (repository.isTemplate) RepositoryVisualBadge("Template repository", accent = true)
+                if (repository.private) RepositoryVisualBadge("Private")
             }
         }
     }
 }
 
-/** Displays a GitHub avatar while preserving readable initials during loading or errors. */
+/** Displays a GitHub avatar while preserving readable initials when images are off. */
 @Composable
 fun GitHubAvatar(
     imageUrl: String?,
@@ -186,6 +178,7 @@ fun GitHubAvatar(
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.extraLarge
 ) {
+    val showImages = LocalRemoteImagesEnabled.current
     Surface(
         modifier = modifier.semantics { this.contentDescription = contentDescription },
         shape = shape,
@@ -193,7 +186,7 @@ fun GitHubAvatar(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         val normalizedUrl = imageUrl?.trim()?.takeIf(String::isNotBlank)
-        if (normalizedUrl == null) {
+        if (!showImages || normalizedUrl == null) {
             AvatarFallback(fallbackText)
         } else {
             SubcomposeAsyncImage(
@@ -210,14 +203,9 @@ fun GitHubAvatar(
 }
 
 @Composable
-private fun RepositoryPreviewFallback(
-    repository: GitHubRepositoryModel,
-    showProgress: Boolean = false
-) {
+private fun RepositoryPreviewFallback(repository: GitHubRepositoryModel, showProgress: Boolean = false) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = .08f)),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = .08f)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -228,14 +216,14 @@ private fun RepositoryPreviewFallback(
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
             } else {
                 Icon(
-                    imageVector = Icons.Default.Code,
+                    Icons.Default.Code,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(34.dp)
                 )
             }
             Text(
-                text = repository.name,
+                repository.name,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
@@ -243,7 +231,7 @@ private fun RepositoryPreviewFallback(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = repository.owner.login,
+                repository.owner.login,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
@@ -257,7 +245,7 @@ private fun RepositoryPreviewFallback(
 private fun AvatarFallback(fallbackText: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = fallbackText.trim().take(2).uppercase().ifBlank { "GH" },
+            fallbackText.trim().take(2).uppercase().ifBlank { "GH" },
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.ExtraBold
@@ -267,24 +255,16 @@ private fun AvatarFallback(fallbackText: String) {
 
 @Composable
 private fun RepositoryVisualBadge(label: String, accent: Boolean = false) {
-    val container = if (accent) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = .94f)
-    } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = .94f)
-    }
-    val foreground = if (accent) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-
+    val container = if (accent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .94f)
+    else MaterialTheme.colorScheme.surface.copy(alpha = .94f)
+    val foreground = if (accent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
     Surface(
         shape = MaterialTheme.shapes.large,
         color = container,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Text(
-            text = label,
+            label,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             color = foreground,
             style = MaterialTheme.typography.labelMedium,
@@ -304,11 +284,8 @@ private fun RepositoryMetaPill(
     Surface(
         modifier = Modifier.semantics { contentDescription = "$label: $value" },
         shape = MaterialTheme.shapes.large,
-        color = if (accent) {
-            MaterialTheme.colorScheme.primary.copy(alpha = .10f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
-        },
+        color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
@@ -318,7 +295,7 @@ private fun RepositoryMetaPill(
         ) {
             Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
             Text(
-                text = value,
+                value,
                 color = foreground,
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
