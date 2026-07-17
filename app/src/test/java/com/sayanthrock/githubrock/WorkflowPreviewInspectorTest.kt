@@ -38,6 +38,24 @@ class WorkflowPreviewInspectorTest {
     }
 
     @Test
+    fun `quoted and indented root keys are accepted`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = """
+                  "name": Android CI
+                  'on': [push]
+                  "jobs":
+                    verify:
+                      runs-on: ubuntu-latest
+            """.trimIndent(),
+            run = null,
+            jobs = emptyList()
+        )
+
+        assertEquals(WorkflowPreviewHealth.Healthy, report.health)
+        assertTrue(report.sourceProblems.isEmpty())
+    }
+
+    @Test
     fun `failed step is reported as a problem`() {
         val report = WorkflowPreviewInspector.inspect(
             source = "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest",
@@ -55,6 +73,18 @@ class WorkflowPreviewInspectorTest {
 
         assertEquals(WorkflowPreviewHealth.Problem, report.health)
         assertEquals(1, report.failedSteps)
+    }
+
+    @Test
+    fun `cancelled run is not reported as healthy`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest",
+            run = WorkflowRun(id = 1, status = "completed", conclusion = "cancelled"),
+            jobs = emptyList()
+        )
+
+        assertEquals(WorkflowPreviewHealth.Unknown, report.health)
+        assertEquals("Workflow was cancelled", report.title)
     }
 
     @Test
