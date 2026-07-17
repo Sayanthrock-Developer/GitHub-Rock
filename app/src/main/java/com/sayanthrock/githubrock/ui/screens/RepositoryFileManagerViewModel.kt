@@ -159,7 +159,9 @@ class RepositoryFileManagerViewModel @Inject constructor(
                 val content = if (demo) {
                     "# Demo copy for ${entry.path}\n"
                 } else {
-                    SourceFileDecoder.decode(repository.file(owner, repo, entry.path, defaultBranch))
+                    SourceFileDecoder.decodeStrictText(
+                        repository.file(owner, repo, entry.path, defaultBranch)
+                    )
                 }
                 updateProgress(
                     progress = ((index + 1) * 85 / candidates.size).coerceIn(1, 85),
