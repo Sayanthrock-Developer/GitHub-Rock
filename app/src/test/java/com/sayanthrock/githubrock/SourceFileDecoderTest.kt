@@ -21,6 +21,23 @@ class SourceFileDecoderTest {
         assertEquals("name: GitHub Rock\n", SourceFileDecoder.decodeStrictText(entry))
     }
 
+    @Test
+    fun `strict decoder preserves a legitimate empty file`() {
+        assertEquals(
+            "",
+            SourceFileDecoder.decodeStrictText(
+                ContentEntry(name = "empty.txt", path = "empty.txt", content = "", encoding = "base64")
+            )
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `strict decoder rejects unavailable content`() {
+        SourceFileDecoder.decodeStrictText(
+            ContentEntry(name = "missing.txt", path = "missing.txt", content = null, encoding = "base64")
+        )
+    }
+
     @Test(expected = java.nio.charset.CharacterCodingException::class)
     fun `strict decoder rejects malformed UTF-8`() {
         val encoded = java.util.Base64.getEncoder().encodeToString(byteArrayOf(0xC3.toByte(), 0x28))
