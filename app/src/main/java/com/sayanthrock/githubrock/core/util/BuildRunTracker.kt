@@ -25,12 +25,23 @@ object BuildRunTracker {
     fun isActive(run: WorkflowRun): Boolean =
         run.conclusion == null && run.status != "completed"
 
-    fun isSafeRef(ref: String): Boolean =
-        ref.isNotBlank() &&
-            safeRefCharacters.matches(ref) &&
-            !ref.startsWith('/') &&
-            !ref.endsWith('/') &&
-            !ref.contains("..") &&
-            !ref.contains("//") &&
-            !ref.endsWith(".lock", ignoreCase = true)
+    fun isSafeRef(ref: String): Boolean {
+        if (
+            ref.isBlank() ||
+            !safeRefCharacters.matches(ref) ||
+            ref.startsWith('/') ||
+            ref.endsWith('/') ||
+            ref.contains("..") ||
+            ref.contains("//")
+        ) {
+            return false
+        }
+
+        return ref.split('/').all { component ->
+            component.isNotBlank() &&
+                !component.startsWith('.') &&
+                !component.endsWith('.') &&
+                !component.endsWith(".lock", ignoreCase = true)
+        }
+    }
 }
