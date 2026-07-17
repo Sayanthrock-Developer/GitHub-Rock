@@ -8,7 +8,6 @@ object ProfileExportFormatter {
     private val json = Json {
         prettyPrint = true
         encodeDefaults = true
-        explicitNulls = true
     }
 
     fun toJson(profile: GitHubUser): String = json.encodeToString(profile)
