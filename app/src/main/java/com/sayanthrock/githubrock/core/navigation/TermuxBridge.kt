@@ -11,6 +11,7 @@ object TermuxBridge {
     private const val COMMAND_PATH = "/data/data/com.termux/files/usr/bin/bash"
     private const val HOME_PATH = "/data/data/com.termux/files/home"
     private const val MAX_COMMAND_LENGTH = 8_192
+    private const val SESSION_ACTION_SWITCH_TO_NEW_SESSION = 0
 
     fun isInstalled(context: Context): Boolean =
         context.packageManager.getLaunchIntentForPackage(PACKAGE_NAME) != null
@@ -34,7 +35,7 @@ object TermuxBridge {
             putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf("-lc", command))
             putExtra("com.termux.RUN_COMMAND_WORKDIR", HOME_PATH)
             putExtra("com.termux.RUN_COMMAND_BACKGROUND", false)
-            putExtra("com.termux.RUN_COMMAND_SESSION_ACTION", "0")
+            putExtra("com.termux.RUN_COMMAND_SESSION_ACTION", SESSION_ACTION_SWITCH_TO_NEW_SESSION)
         }
         checkNotNull(context.startService(intent)) {
             "Termux did not accept the command"
