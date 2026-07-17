@@ -10,9 +10,11 @@ import org.junit.Test
 
 class CoroutineResultTest {
     @Test(expected = CancellationException::class)
-    fun cancellationIsRethrown() = runBlocking {
-        runCatchingPreservingCancellation<String> {
-            throw CancellationException("cancelled")
+    fun cancellationIsRethrown() {
+        runBlocking {
+            runCatchingPreservingCancellation<String> {
+                throw CancellationException("cancelled")
+            }
         }
     }
 
