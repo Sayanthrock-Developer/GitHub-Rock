@@ -77,7 +77,13 @@ data class GitHubIssue(
     val milestone: Milestone? = null,
     val reactions: IssueReactionSummary = IssueReactionSummary(),
     @SerialName("comments") val commentCount: Int = 0,
-    @SerialName("updated_at") val updatedAt: String = ""
+    @SerialName("updated_at") val updatedAt: String = "",
+    @SerialName("pull_request") val pullRequest: PullRequestMarker? = null
+)
+
+@Serializable
+data class PullRequestMarker(
+    @SerialName("html_url") val htmlUrl: String? = null
 )
 
 @Serializable
@@ -145,7 +151,10 @@ data class WorkflowRun(
 )
 
 @Serializable
-data class WorkflowRuns(@SerialName("total_count") val totalCount: Int, @SerialName("workflow_runs") val runs: List<WorkflowRun>)
+data class WorkflowRuns(
+    @SerialName("total_count") val totalCount: Int,
+    @SerialName("workflow_runs") val runs: List<WorkflowRun>
+)
 
 @Serializable
 data class Release(
