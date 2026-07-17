@@ -1,25 +1,55 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Intent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillParentMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,12 +64,11 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
-/**
- * Displays the downloads list and provides controls for inspecting, sharing, cancelling, and deleting downloads.
- *
- * @param viewModel The view model that supplies downloads and handles download actions.
- */
 @Composable
 fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
@@ -49,6 +78,10 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     var deleteTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var cancelTarget by remember { mutableStateOf<DownloadEntity?>(null) }
 
+    val activeCount = downloads.count { it.status in setOf("queued", "downloading", "retrying") }
+    val completedCount = downloads.count { it.status == "completed" }
+    val failedCount = downloads.count { it.status == "failed" }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = StandardScreenPadding,
@@ -57,21 +90,18 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         item {
             StandardScreenHeader(
                 title = "Downloads",
-                subtitle = "Track release files and workflow artifacts"
+                subtitle = "Artifacts, releases, exact progress, and file safety"
             )
         }
+
         item {
-            GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.tertiary)
-                    Text("Protected download queue", style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        "Downloads continue through WorkManager, resume from partial files, calculate SHA-256 for every file, and expose APK inspection for Android packages.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            DownloadOverviewCard(
+                active = activeCount,
+                completed = completedCount,
+                failed = failedCount
+            )
         }
+
         if (downloads.isEmpty()) {
             item {
                 Box(
@@ -82,21 +112,30 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Download,
-                            null,
-                            Modifier.size(42.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text("No downloads yet", style = MaterialTheme.typography.titleMedium)
+                        Surface(
+                            modifier = Modifier.size(64.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Text("No downloads yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(
-                            "Queue an Actions artifact or release asset to see real progress here.",
+                            "Queue an Actions artifact or release asset to see live progress here.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
         }
+
         items(downloads, key = { it.id }) { item ->
             DownloadCard(
                 item = item,
@@ -182,18 +221,63 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     }
 }
 
-/**
- * Displays a download's status, progress, and available actions.
- *
- * @param item The download to display.
- * @param onPause Called when pausing the download.
- * @param onResume Called when resuming the download.
- * @param onCancel Called when canceling the download.
- * @param onRetry Called when retrying or restarting the download.
- * @param onInspect Called when inspecting a completed APK.
- * @param onShare Called when sharing the downloaded file.
- * @param onDelete Called when deleting the download.
- */
+@Composable
+private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int) {
+    GlassCard(contentPadding = PaddingValues(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = .12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Protected download queue", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Resumable transfers, SHA-256 verification, and APK inspection",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DownloadMetric("Active", active, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                DownloadMetric("Completed", completed, MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+                DownloadMetric("Failed", failed, MaterialTheme.colorScheme.error, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadMetric(label: String, value: Int, accent: Color, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = accent.copy(alpha = .09f)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 11.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(value.toString(), color = accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
 @Composable
 private fun DownloadCard(
     item: DownloadEntity,
@@ -207,132 +291,193 @@ private fun DownloadCard(
 ) {
     val controls = downloadControls(item.status)
     val active = item.status in setOf("queued", "downloading", "retrying")
+    val progress = if (item.totalBytes > 0) {
+        (item.downloadedBytes.toFloat() / item.totalBytes.toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val percent = (progress * 100).toInt().coerceIn(0, 100)
+    val accent = downloadStatusColor(item.status)
+    var showMore by rememberSaveable(item.id) { mutableStateOf(false) }
+
     GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    modifier = Modifier.size(46.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = accent.copy(alpha = .12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(downloadStatusIcon(item.status), contentDescription = null, tint = accent)
+                    }
+                }
                 Column(Modifier.weight(1f)) {
                     Text(
                         item.fileName,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         item.status.replaceFirstChar { it.uppercase() },
-                        color = downloadStatusColor(item.status),
-                        style = MaterialTheme.typography.labelLarge
+                        color = accent,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-                if (item.downloadedBytes > 0) {
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        if (item.totalBytes > 0) {
-                            "${formatBytes(item.downloadedBytes)} / ${formatBytes(item.totalBytes)}"
-                        } else {
-                            formatBytes(item.downloadedBytes)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        if (item.totalBytes > 0) "$percent%" else if (active) "…" else "—",
+                        color = accent,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black
                     )
+                    if (item.downloadedBytes > 0) {
+                        Text(
+                            if (item.totalBytes > 0) {
+                                "${formatBytes(item.downloadedBytes)} / ${formatBytes(item.totalBytes)}"
+                            } else {
+                                formatBytes(item.downloadedBytes)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             when {
                 item.totalBytes > 0 -> {
                     LinearProgressIndicator(
-                        progress = {
-                            (item.downloadedBytes.toFloat() / item.totalBytes.toFloat()).coerceIn(0f, 1f)
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().height(8.dp),
+                        color = accent
                     )
                 }
-                active -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                active -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(8.dp))
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (DownloadControl.Pause in controls) {
-                    OutlinedButton(onClick = onPause, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Default.Pause, null)
-                        Spacer(Modifier.width(5.dp))
-                        Text("Pause")
+                when {
+                    DownloadControl.Pause in controls -> {
+                        OutlinedButton(onClick = onPause, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.Pause, contentDescription = null)
+                            Spacer(Modifier.width(5.dp))
+                            Text("Pause")
+                        }
                     }
+                    DownloadControl.Resume in controls -> {
+                        Button(onClick = onResume, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.width(5.dp))
+                            Text("Resume")
+                        }
+                    }
+                    DownloadControl.Retry in controls -> {
+                        Button(onClick = onRetry, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.width(5.dp))
+                            Text(if (item.status == "cancelled") "Restart" else "Retry")
+                        }
+                    }
+                    else -> Spacer(Modifier.weight(1f))
                 }
-                if (DownloadControl.Resume in controls) {
-                    Button(onClick = onResume, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Default.PlayArrow, null)
-                        Spacer(Modifier.width(5.dp))
-                        Text("Resume")
-                    }
-                }
-                if (DownloadControl.Retry in controls) {
-                    Button(onClick = onRetry, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Default.PlayArrow, null)
-                        Spacer(Modifier.width(5.dp))
-                        Text(if (item.status == "cancelled") "Restart" else "Retry")
-                    }
-                }
-                if (DownloadControl.Cancel in controls) {
-                    OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Default.Cancel, null)
-                        Spacer(Modifier.width(5.dp))
-                        Text("Cancel")
-                    }
+
+                OutlinedButton(onClick = { showMore = !showMore }, modifier = Modifier.weight(1f)) {
+                    Text(if (showMore) "Less" else "Options")
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        if (showMore) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null
+                    )
                 }
             }
 
-            if (item.status == "completed") {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (showMore) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                if (DownloadControl.Cancel in controls) {
+                    TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Cancel, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Cancel download")
+                    }
+                }
+
+                if (item.status == "completed") {
                     if (item.localPath?.endsWith(".apk", true) == true) {
-                        TextButton(onClick = onInspect) { Text("Inspect APK") }
+                        TextButton(onClick = onInspect, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.Security, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Inspect APK")
+                        }
                     }
                     if (item.localPath != null) {
-                        TextButton(onClick = onShare) {
-                            Icon(Icons.Default.Share, null)
-                            Spacer(Modifier.width(5.dp))
-                            Text("Share")
+                        TextButton(onClick = onShare, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.Share, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Share file")
                         }
                     }
                 }
+
+                if (!active && item.status != "paused") {
+                    TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Delete history and file", color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
 
-            if (!active && item.status != "paused") {
-                TextButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, null)
-                    Spacer(Modifier.width(5.dp))
-                    Text("Delete")
-                }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Schedule,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Added ${formatDownloadTime(item.createdAt)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
 }
 
-/**
- * Selects the theme color associated with a download status.
- *
- * @param status The current download status.
- * @return The color to use when displaying the status.
- */
 @Composable
-private fun downloadStatusColor(status: String) = when (status) {
+private fun downloadStatusColor(status: String): Color = when (status) {
     "completed" -> MaterialTheme.colorScheme.tertiary
     "failed" -> MaterialTheme.colorScheme.error
     "cancelled", "paused" -> MaterialTheme.colorScheme.onSurfaceVariant
     else -> MaterialTheme.colorScheme.primary
 }
 
-/**
- * Shares the downloaded file through the Android share sheet when it exists locally.
- *
- * @param context The context used to create the file URI and launch the share sheet.
- * @param item The download whose local file should be shared.
- */
+private fun downloadStatusIcon(status: String): ImageVector = when (status) {
+    "completed" -> Icons.Default.CheckCircle
+    "failed" -> Icons.Default.ErrorOutline
+    "paused" -> Icons.Default.Pause
+    "cancelled" -> Icons.Default.Cancel
+    "queued", "downloading", "retrying" -> Icons.Default.HourglassTop
+    else -> Icons.Default.Download
+}
+
 private fun shareDownload(context: android.content.Context, item: DownloadEntity) {
     val file = item.localPath?.let(::File) ?: return
     if (!file.exists()) return
@@ -349,15 +494,17 @@ private fun shareDownload(context: android.content.Context, item: DownloadEntity
     )
 }
 
-/**
- * Formats a byte count using a human-readable unit.
- *
- * @param bytes The number of bytes to format.
- * @return The byte count expressed in gigabytes, megabytes, kilobytes, or bytes.
- */
 private fun formatBytes(bytes: Long): String = when {
     bytes >= 1_073_741_824 -> "%.1f GB".format(bytes / 1_073_741_824.0)
     bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
     bytes >= 1_024 -> "%.1f KB".format(bytes / 1_024.0)
     else -> "$bytes B"
 }
+
+private val downloadTimeFormatter: DateTimeFormatter = DateTimeFormatter
+    .ofPattern("dd MMM yyyy • hh:mm:ss a", Locale.getDefault())
+    .withZone(ZoneId.systemDefault())
+
+private fun formatDownloadTime(epochMillis: Long): String = runCatching {
+    downloadTimeFormatter.format(Instant.ofEpochMilli(epochMillis))
+}.getOrDefault("Time unavailable")
