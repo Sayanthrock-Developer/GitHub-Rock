@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.ui.components.AppBrandBanner
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryGalleryCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -39,6 +40,8 @@ fun RepositoriesScreen(
     var query by rememberSaveable { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        Spacer(Modifier.height(16.dp))
+        AppBrandBanner()
         Spacer(Modifier.height(16.dp))
         StandardScreenHeader(
             title = "Repositories",
