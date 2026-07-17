@@ -13,7 +13,8 @@ object SourceFileDecoder {
             "The file content is unavailable and cannot be opened as text"
         }
         val text = if (entry.encoding.equals("base64", ignoreCase = true)) {
-            val bytes = Base64.getMimeDecoder().decode(content)
+            val normalizedBase64 = content.replace("\r", "").replace("\n", "")
+            val bytes = Base64.getDecoder().decode(normalizedBase64)
             Charsets.UTF_8.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT)
