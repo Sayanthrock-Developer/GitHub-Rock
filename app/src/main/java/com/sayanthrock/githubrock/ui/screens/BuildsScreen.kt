@@ -7,29 +7,68 @@ import android.net.Uri
 import android.os.Build as AndroidBuild
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudQueue
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.GlassCard
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.WorkflowArtifact
 import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
@@ -38,13 +77,15 @@ import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.core.util.AndroidArtifactType
 import com.sayanthrock.githubrock.core.util.AndroidWorkflowGenerator
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
+import com.sayanthrock.githubrock.core.util.WorkflowPreviewHealth
+import com.sayanthrock.githubrock.core.util.WorkflowPreviewInspector
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+private val WorkflowHealthyGreen = Color(0xFF2DA44E)
 
 @Composable
 fun BuildsScreen(
@@ -65,6 +106,7 @@ fun BuildsScreen(
         mutableStateOf(requested ?: repositories.firstOrNull())
     }
     val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
+
     LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
         if (mode == AppMode.Connected) {
             selectedRepository?.let { viewModel.loadAndroidBuild(it, requestedRunId) }
@@ -72,27 +114,30 @@ fun BuildsScreen(
             viewModel.resetBuild()
         }
     }
+
     LazyColumn(
-        Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = StandardScreenPadding,
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             StandardScreenHeader(
                 title = "Builds",
-                subtitle = "Create and monitor Android builds with GitHub Actions"
+                subtitle = "Preview workflow code and understand every run status"
             )
         }
         item {
             GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.CloudQueue, null, tint = MaterialTheme.colorScheme.primary)
-                    Text("Cloud builds with GitHub Actions", style = MaterialTheme.typography.titleLarge)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text("GitHub Actions control centre", style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "Select a repository to inspect its workflows and runs. GitHub Rock never compiles large projects on your phone or stores signing secrets.",
+                        "See the exact workflow YAML, basic structure checks, job results, failed steps, and downloadable build artifacts in one place.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (mode == AppMode.Guest) Text("Connect GitHub to dispatch workflows.", color = MaterialTheme.colorScheme.primary)
+                    if (mode == AppMode.Guest) {
+                        Text("Connect GitHub to inspect private workflows and dispatch runs.", color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
         }
@@ -100,10 +145,7 @@ fun BuildsScreen(
         if (repositories.isEmpty()) {
             item {
                 GlassCard {
-                    Text(
-                        "No repositories are available in this workspace.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text("No repositories are available in this workspace.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
@@ -131,10 +173,10 @@ fun BuildsScreen(
             item { TextButton(onClick = { onSelectRepository(repo) }) { Text("Open ${repo.fullName}") } }
         }
         actionState.message?.let { message ->
-            item { GlassCard { Text(message, color = MaterialTheme.colorScheme.tertiary) } }
+            item { StatusMessageCard(message = message, problem = false) }
         }
         actionState.error?.let { error ->
-            item { GlassCard { Text(error, color = MaterialTheme.colorScheme.error) } }
+            item { StatusMessageCard(message = error, problem = true) }
         }
         item {
             WorkflowPreviewCard(
@@ -164,21 +206,26 @@ fun BuildsScreen(
             )
         }
         item { StandardSectionHeader("Recent runs") }
-        if (runs.isEmpty()) item {
-            GlassCard { Text("No workflow runs loaded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        if (runs.isEmpty()) {
+            item { GlassCard { Text("No workflow runs loaded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         }
         items(runs, key = { it.id }) { run ->
-            GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, fontWeight = FontWeight.SemiBold)
-                    Text("${run.event} • ${run.headBranch.orEmpty()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(run.displayState().name, color = when (run.displayState().name) {
-                        "Success" -> MaterialTheme.colorScheme.tertiary
-                        "Failed" -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.primary
-                    })
-                }
-            }
+            RecentRunCard(run)
+        }
+    }
+}
+
+@Composable
+private fun StatusMessageCard(message: String, problem: Boolean) {
+    val accent = if (problem) MaterialTheme.colorScheme.error else WorkflowHealthyGreen
+    GlassCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                if (problem) Icons.Default.ErrorOutline else Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = accent
+            )
+            Text(message, color = accent)
         }
     }
 }
@@ -192,57 +239,286 @@ private fun WorkflowPreviewCard(
 ) {
     var artifact by remember { mutableStateOf(AndroidArtifactType.DebugApk) }
     var module by remember { mutableStateOf("app") }
-    var featureBranch by remember(repository?.id) { mutableStateOf("github-rock/android-build-${System.currentTimeMillis() / 1000}") }
+    var featureBranch by remember(repository?.id) {
+        mutableStateOf("github-rock/android-build-${System.currentTimeMillis()}")
+    }
+    var activeCodeSelected by remember(repository?.id, actionState.workflowSource) {
+        mutableStateOf(!actionState.workflowSource.isNullOrBlank())
+    }
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
-    val yamlResult = remember(module, artifact) { runCatching { AndroidWorkflowGenerator.generate(module, artifact) } }
-    val yaml = yamlResult.getOrDefault("")
+    val generatedResult = remember(module, artifact) { runCatching { AndroidWorkflowGenerator.generate(module, artifact) } }
+    val generatedYaml = generatedResult.getOrDefault("")
+    val activeYaml = actionState.workflowSource.orEmpty()
+    val displayedYaml = if (activeCodeSelected) activeYaml else generatedYaml
+    val sourceError = if (activeCodeSelected) actionState.workflowSourceError else generatedResult.exceptionOrNull()?.message
+    val report = remember(displayedYaml, actionState.run, actionState.jobs, sourceError, activeCodeSelected) {
+        WorkflowPreviewInspector.inspect(
+            source = displayedYaml,
+            run = actionState.run.takeIf { activeCodeSelected },
+            jobs = actionState.jobs.takeIf { activeCodeSelected }.orEmpty(),
+            sourceError = sourceError
+        )
+    }
     val workflowExists = repository?.id == actionState.selectedRepositoryId && actionState.workflow != null
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Workflow preview", style = MaterialTheme.typography.titleLarge)
-            Text("Review the exact YAML before it is committed to a new branch.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Repository: ${repository?.fullName ?: "Select a repository"}", fontWeight = FontWeight.SemiBold)
-            OutlinedTextField(value = module, onValueChange = { module = it }, label = { Text("Android application module") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = featureBranch, onValueChange = { featureBranch = it }, label = { Text("Review branch") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AndroidArtifactType.entries.forEach { option ->
-                    FilterChip(selected = artifact == option, onClick = { artifact = option }, label = { Text(option.name) })
+
+    GlassCard(contentPadding = PaddingValues(0.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
+                    ) {
+                        Icon(
+                            Icons.Default.Code,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Workflow preview", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Read the exact code and see whether GitHub found a problem.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+                Text("Repository: ${repository?.fullName ?: "Select a repository"}", fontWeight = FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = activeCodeSelected,
+                        onClick = { activeCodeSelected = true },
+                        enabled = workflowExists || actionState.workflowSourceLoading,
+                        label = { Text("Active code") }
+                    )
+                    FilterChip(
+                        selected = !activeCodeSelected,
+                        onClick = { activeCodeSelected = false },
+                        label = { Text("New template") }
+                    )
+                    actionState.workflowSourcePath?.takeIf { activeCodeSelected }?.let { path ->
+                        AssistChip(onClick = {}, label = { Text(path, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+                    }
+                }
+                WorkflowHealthFrame(report.health, report.title, report.detail)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CompactMetric("Steps", "${report.completedSteps}/${report.totalSteps}", report.failedSteps == 0)
+                    CompactMetric("Failed", report.failedSteps.toString(), report.failedSteps == 0)
+                    CompactMetric("YAML checks", if (report.sourceProblems.isEmpty()) "Passed" else "${report.sourceProblems.size} problem", report.sourceProblems.isEmpty())
+                }
+                report.sourceProblems.forEach { problem ->
+                    CompactProblemRow(problem)
                 }
             }
-            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.background.copy(alpha = .75f)) {
-                Text(yamlResult.exceptionOrNull()?.message ?: yaml, Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, maxLines = 12, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            }
-            OutlinedButton(onClick = { clipboard.setText(AnnotatedString(yaml)) }, Modifier.fillMaxWidth(), enabled = yaml.isNotBlank()) { Text("Copy workflow YAML") }
-            Button(
-                onClick = { repository?.let { onCreatePullRequest(it, featureBranch, yaml, artifact) } },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = mode == AppMode.Connected &&
-                    repository != null &&
-                    yaml.isNotBlank() &&
-                    !actionState.loading &&
-                    !workflowExists
-            ) {
-                Text(
-                    when {
-                        actionState.creatingPullRequest -> "Creating pull request…"
-                        workflowExists -> "Workflow already exists"
-                        actionState.loading -> "Checking workflow…"
-                        else -> "Create branch and pull request"
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            when {
+                activeCodeSelected && actionState.workflowSourceLoading -> {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text("Loading workflow code…")
                     }
-                )
+                }
+                displayedYaml.isBlank() -> {
+                    Text(
+                        sourceError ?: "No workflow code is available.",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                else -> WorkflowCodeViewer(displayedYaml)
             }
-            if (workflowExists) {
-                Text("Use the run card below for the active workflow.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (mode != AppMode.Connected) Text("Connect GitHub to commit this workflow.", color = MaterialTheme.colorScheme.primary)
-            actionState.pullRequestUrl?.let { url ->
-                TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) { Text("Open pull request") }
+
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { clipboard.setText(AnnotatedString(displayedYaml)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = displayedYaml.isNotBlank()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Copy visible workflow code")
+                }
+
+                if (!activeCodeSelected) {
+                    OutlinedTextField(
+                        value = module,
+                        onValueChange = { module = it },
+                        label = { Text("Android application module") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = featureBranch,
+                        onValueChange = { featureBranch = it },
+                        label = { Text("Review branch") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AndroidArtifactType.entries.forEach { option ->
+                            FilterChip(
+                                selected = artifact == option,
+                                onClick = { artifact = option },
+                                label = { Text(option.name) }
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = { repository?.let { onCreatePullRequest(it, featureBranch, generatedYaml, artifact) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = mode == AppMode.Connected &&
+                            repository != null &&
+                            generatedYaml.isNotBlank() &&
+                            !actionState.loading &&
+                            !workflowExists &&
+                            report.sourceProblems.isEmpty()
+                    ) {
+                        Text(
+                            when {
+                                actionState.creatingPullRequest -> "Creating pull request…"
+                                workflowExists -> "Workflow already exists"
+                                actionState.loading -> "Checking workflow…"
+                                report.sourceProblems.isNotEmpty() -> "Fix workflow problems first"
+                                else -> "Create branch and pull request"
+                            }
+                        )
+                    }
+                    if (workflowExists) {
+                        Text(
+                            "The active workflow already exists. Review its code above before changing it on GitHub.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+                if (mode != AppMode.Connected) {
+                    Text("Connect GitHub to load active workflow code or create a pull request.", color = MaterialTheme.colorScheme.primary)
+                }
+                actionState.pullRequestUrl?.let { url ->
+                    TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) {
+                        Icon(Icons.Default.OpenInNew, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Open pull request")
+                    }
+                }
             }
         }
     }
 }
 
+@Composable
+private fun WorkflowHealthFrame(health: WorkflowPreviewHealth, title: String, detail: String) {
+    val accent = workflowHealthColor(health)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = accent.copy(alpha = .12f),
+        border = BorderStroke(1.dp, accent.copy(alpha = .45f))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                when (health) {
+                    WorkflowPreviewHealth.Healthy -> Icons.Default.CheckCircle
+                    WorkflowPreviewHealth.Problem -> Icons.Default.ErrorOutline
+                    else -> Icons.Default.HourglassTop
+                },
+                contentDescription = null,
+                tint = accent
+            )
+            Column(Modifier.weight(1f)) {
+                Text(title, color = accent, fontWeight = FontWeight.Bold)
+                Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactMetric(label: String, value: String, healthy: Boolean) {
+    val accent = if (healthy) WorkflowHealthyGreen else MaterialTheme.colorScheme.error
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f),
+        border = BorderStroke(1.dp, accent.copy(alpha = .35f))
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(value, color = accent, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun CompactProblemRow(problem: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.error.copy(alpha = .10f)
+    ) {
+        Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun WorkflowCodeViewer(source: String) {
+    val numberedSource = remember(source) {
+        source.lineSequence().mapIndexed { index, line ->
+            "${(index + 1).toString().padStart(3, ' ')}  $line"
+        }.joinToString("\n")
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background.copy(alpha = .88f)
+    ) {
+        SelectionContainer {
+            Text(
+                text = numberedSource,
+                modifier = Modifier.padding(16.dp),
+                fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 34,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BuildExecutionCard(
     mode: AppMode,
@@ -278,18 +554,19 @@ private fun BuildExecutionCard(
             onDispatch(selectedRef)
         }
     }
+
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Run merged workflow", style = MaterialTheme.typography.titleLarge)
+            Text("Run and diagnose", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "GitHub Rock detects the reviewed workflow, dispatches it, follows the exact new run, and exposes verified artifact downloads.",
+                "Dispatch the merged workflow and see every job and step status in a compact frame.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             when {
                 mode != AppMode.Connected -> Text("Connect GitHub to start and track a build.", color = MaterialTheme.colorScheme.primary)
                 repository == null -> Text("Select a repository first.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 actionState.loading && actionState.workflow == null -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Text("Detecting Android build workflow…")
                     }
@@ -314,18 +591,17 @@ private fun BuildExecutionCard(
                             onClick = { dispatchWithNotificationPermission(ref) },
                             enabled = refIsSafe && !actionState.loading && !actionState.tracking,
                             modifier = Modifier.weight(1f)
-                        ) { Text(if (actionState.tracking) "Tracking build…" else "Run Android build") }
+                        ) { Text("Run workflow") }
                         OutlinedButton(
                             onClick = onRefresh,
-                            enabled = !actionState.loading && !actionState.tracking
+                            enabled = !actionState.loading && !actionState.tracking,
+                            modifier = Modifier.weight(1f)
                         ) { Text("Refresh") }
                     }
-                    if (!refIsSafe) {
-                        Text("Use a valid branch or tag.", color = MaterialTheme.colorScheme.error)
-                    }
+                    if (!refIsSafe) Text("Use a valid branch or tag.", color = MaterialTheme.colorScheme.error)
                     if (!notificationsAllowed) {
                         Text(
-                            "Background tracking will continue, but Android notifications are currently disabled.",
+                            "Background tracking continues, but Android notifications are disabled.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -336,49 +612,139 @@ private fun BuildExecutionCard(
             if (actionState.tracking) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             actionState.run?.let { run ->
                 val displayState = run.displayState()
-                val color = when (displayState) {
-                    WorkflowDisplayState.Success -> MaterialTheme.colorScheme.tertiary
-                    WorkflowDisplayState.Failed -> MaterialTheme.colorScheme.error
-                    WorkflowDisplayState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
+                val color = workflowRunColor(displayState)
+                HorizontalDivider()
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = color.copy(alpha = .10f),
+                    border = BorderStroke(1.dp, color.copy(alpha = .38f))
+                ) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(run.displayTitle.ifBlank { run.name ?: "Android build" }, fontWeight = FontWeight.SemiBold)
+                        Text("${displayState.name} • ${run.headBranch.orEmpty()} • run ${run.id}", color = color)
+                        if (run.htmlUrl.isNotBlank()) {
+                            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))) }) {
+                                Icon(Icons.Default.OpenInNew, contentDescription = null)
+                                Spacer(Modifier.width(6.dp))
+                                Text("Open run on GitHub")
+                            }
+                        }
+                    }
+                }
+            }
+
+            actionState.jobs.forEach { job ->
+                val jobProblem = job.conclusion in setOf("failure", "timed_out", "action_required", "startup_failure")
+                val jobHealthy = job.conclusion == "success"
+                val accent = when {
+                    jobProblem -> MaterialTheme.colorScheme.error
+                    jobHealthy -> WorkflowHealthyGreen
                     else -> MaterialTheme.colorScheme.primary
                 }
-                HorizontalDivider()
-                Text(run.displayTitle.ifBlank { run.name ?: "Android build" }, fontWeight = FontWeight.SemiBold)
-                Text("${displayState.name} • ${run.headBranch.orEmpty()} • run ${run.id}", color = color)
-                if (run.htmlUrl.isNotBlank()) {
-                    TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))) }) {
-                        Text("Open run on GitHub")
-                    }
-                }
-            }
-            actionState.jobs.forEach { job ->
-                val completedSteps = job.steps.count { it.status == "completed" }
                 Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
+                    border = BorderStroke(1.dp, accent.copy(alpha = .35f))
                 ) {
-                    Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(job.name, fontWeight = FontWeight.Medium)
-                        Text(
-                            "${job.status} • ${job.conclusion ?: "pending"} • $completedSteps/${job.steps.size} steps",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                    Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(
+                                if (jobProblem) Icons.Default.ErrorOutline else if (jobHealthy) Icons.Default.CheckCircle else Icons.Default.HourglassTop,
+                                contentDescription = null,
+                                tint = accent,
+                                modifier = Modifier.size(19.dp)
+                            )
+                            Column(Modifier.weight(1f)) {
+                                Text(job.name, fontWeight = FontWeight.Medium)
+                                Text(
+                                    "${job.status} • ${job.conclusion ?: "pending"}",
+                                    color = accent,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        job.steps.forEach { step ->
+                            val stepFailed = step.conclusion in setOf("failure", "timed_out", "action_required", "startup_failure")
+                            val stepPassed = step.conclusion == "success"
+                            val stepAccent = when {
+                                stepFailed -> MaterialTheme.colorScheme.error
+                                stepPassed -> WorkflowHealthyGreen
+                                else -> MaterialTheme.colorScheme.primary
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    if (stepFailed) Icons.Default.ErrorOutline else if (stepPassed) Icons.Default.CheckCircle else Icons.Default.HourglassTop,
+                                    contentDescription = null,
+                                    tint = stepAccent,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(step.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                Text(step.conclusion ?: step.status, color = stepAccent, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
                     }
                 }
             }
+
             actionState.artifacts.forEach { artifact ->
                 OutlinedButton(
                     onClick = { onDownload(artifact) },
                     enabled = !artifact.expired,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        if (artifact.expired) "${artifact.name} expired"
-                        else "Queue ${artifact.name} in Downloads"
-                    )
+                    Text(if (artifact.expired) "${artifact.name} expired" else "Queue ${artifact.name} in Downloads")
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RecentRunCard(run: WorkflowRun) {
+    val state = run.displayState()
+    val accent = workflowRunColor(state)
+    GlassCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                when (state) {
+                    WorkflowDisplayState.Success -> Icons.Default.CheckCircle
+                    WorkflowDisplayState.Failed -> Icons.Default.ErrorOutline
+                    else -> Icons.Default.HourglassTop
+                },
+                contentDescription = null,
+                tint = accent
+            )
+            Column(Modifier.weight(1f)) {
+                Text(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, fontWeight = FontWeight.SemiBold)
+                Text("${run.event} • ${run.headBranch.orEmpty()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(state.name, color = accent, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+@Composable
+private fun workflowHealthColor(health: WorkflowPreviewHealth): Color = when (health) {
+    WorkflowPreviewHealth.Healthy -> WorkflowHealthyGreen
+    WorkflowPreviewHealth.Problem -> MaterialTheme.colorScheme.error
+    WorkflowPreviewHealth.Running -> MaterialTheme.colorScheme.primary
+    WorkflowPreviewHealth.Unknown -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+@Composable
+private fun workflowRunColor(state: WorkflowDisplayState): Color = when (state) {
+    WorkflowDisplayState.Success -> WorkflowHealthyGreen
+    WorkflowDisplayState.Failed -> MaterialTheme.colorScheme.error
+    WorkflowDisplayState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
+    else -> MaterialTheme.colorScheme.primary
 }
