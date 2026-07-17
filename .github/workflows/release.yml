@@ -49,11 +49,32 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || { echo "Use a version such as 0.2.0."; exit 1; }
-          [ -n "$GITHUB_CLIENT_ID" ] || { echo "Set the public GITHUB_CLIENT_ID Actions variable."; exit 1; }
-          for value in "$KEYSTORE_BASE64" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD"; do
-            [ -n "$value" ] || { echo "All Android signing secrets are required."; exit 1; }
-          done
+          set -euo pipefail
+
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || {
+            echo "Use a version such as 0.2.0."
+            exit 1
+          }
+
+          [ -n "$GITHUB_CLIENT_ID" ] || {
+            echo "Set the public GITHUB_CLIENT_ID Actions variable."
+            exit 1
+          }
+
+          missing=()
+          [ -n "${KEYSTORE_BASE64:-}" ] || missing+=(ANDROID_KEYSTORE_BASE64)
+          [ -n "${KEYSTORE_PASSWORD:-}" ] || missing+=(ANDROID_KEYSTORE_PASSWORD)
+          [ -n "${KEY_ALIAS:-}" ] || missing+=(ANDROID_KEY_ALIAS)
+          [ -n "${KEY_PASSWORD:-}" ] || missing+=(ANDROID_KEY_PASSWORD)
+
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing or empty Actions secret: %s\n' "${missing[@]}"
+            echo "Create each secret under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          echo "All required signing secrets are present."
+
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "Release v$VERSION already exists. Choose a new version."
             exit 1
@@ -61,7 +82,20 @@ jobs:
       - name: Prepare signing keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/github-rock-release.jks"
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/github-rock-release.jks"
+          [ -s "$RUNNER_TEMP/github-rock-release.jks" ] || {
+            echo "The decoded Android keystore is empty. Replace ANDROID_KEYSTORE_BASE64."
+            exit 1
+          }
+          keytool -list \
+            -keystore "$RUNNER_TEMP/github-rock-release.jks" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" >/dev/null
+          echo "Android signing keystore and alias validated."
       - name: Build signed release APK
         env:
           GITHUB_ROCK_KEYSTORE_PATH: ${{ runner.temp }}/github-rock-release.jks
