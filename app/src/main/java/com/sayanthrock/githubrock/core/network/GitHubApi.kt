@@ -48,6 +48,14 @@ interface GitHubRestApi {
     @DELETE("user/starred/{owner}/{repo}")
     suspend fun unstarRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
 
+    @GET("user/starred")
+    suspend fun starredRepositories(
+        @Query("sort") sort: String = "updated",
+        @Query("direction") direction: String = "desc",
+        @Query("per_page") perPage: Int = 50,
+        @Query("page") page: Int = 1
+    ): List<GitHubRepositoryModel>
+
     @POST("repos/{owner}/{repo}/forks")
     suspend fun forkRepository(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositoryModel
 
