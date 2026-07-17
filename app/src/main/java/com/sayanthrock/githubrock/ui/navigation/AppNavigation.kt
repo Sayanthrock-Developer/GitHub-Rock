@@ -28,12 +28,14 @@ import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
 import com.sayanthrock.githubrock.ui.screens.AppearanceScreen
 import com.sayanthrock.githubrock.ui.screens.BuildsScreen
+import com.sayanthrock.githubrock.ui.screens.DeveloperToolsScreen
 import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoryHubScreen
+import com.sayanthrock.githubrock.ui.screens.RepositoryLibraryScreen
 
 sealed class TopDestination(
     val route: String,
@@ -49,6 +51,8 @@ sealed class TopDestination(
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val APPEARANCE_ROUTE = "appearance"
+private const val REPOSITORY_LIBRARY_ROUTE = "repository-library"
+private const val DEVELOPER_TOOLS_ROUTE = "developer-tools"
 
 private val topDestinations = listOf(
     TopDestination.Home,
@@ -124,135 +128,147 @@ fun MainNavigation(
                         startDestination = TopDestination.Home.route,
                         modifier = Modifier.widthIn(max = 1200.dp).fillMaxSize()
                     ) {
-            composable(TopDestination.Home.route) {
-                HomeScreen(
-                    mode = mode,
-                    profile = state.profile,
-                    rateLimit = state.rateLimit,
-                    repositories = state.repositories,
-                    runs = state.workflowRuns,
-                    onOpenRepo = openRepo,
-                    onOpenBuilds = { navController.navigate(TopDestination.Builds.route) },
-                    isLoading = state.isLoading,
-                    isRefreshing = state.isRefreshing,
-                    onRefresh = onRefresh
-                )
-            }
-            composable(TopDestination.Repositories.route) {
-                RepositoriesScreen(state.repositories, state.isLoading, onSearch, openRepo)
-            }
-            composable(TopDestination.Builds.route) {
-                BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
-            }
-            composable(TopDestination.Downloads.route) { DownloadsScreen() }
-            composable(TopDestination.Profile.route) {
-                ProfileScreen(
-                    mode = mode,
-                    profile = state.profile,
-                    onOpenRepositories = {
-                        navController.navigate(TopDestination.Repositories.route) {
-                            launchSingleTop = true
+                        composable(TopDestination.Home.route) {
+                            HomeScreen(
+                                mode = mode,
+                                profile = state.profile,
+                                rateLimit = state.rateLimit,
+                                repositories = state.repositories,
+                                runs = state.workflowRuns,
+                                onOpenRepo = openRepo,
+                                onOpenBuilds = { navController.navigate(TopDestination.Builds.route) },
+                                isLoading = state.isLoading,
+                                isRefreshing = state.isRefreshing,
+                                onRefresh = onRefresh
+                            )
                         }
-                    },
-                    onOpenDownloads = {
-                        navController.navigate(TopDestination.Downloads.route) {
-                            launchSingleTop = true
+                        composable(TopDestination.Repositories.route) {
+                            RepositoriesScreen(state.repositories, state.isLoading, onSearch, openRepo)
                         }
-                    },
-                    onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
-                    onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
-                    onOpenGitHubUrl = onOpenGitHubUrl,
-                    onLogout = onLogout
-                )
-            }
-            composable(APPEARANCE_ROUTE) {
-                AppearanceScreen(onBack = navController::navigateUp)
-            }
-            composable(FEATURES_PREVIEW_ROUTE) {
-                FeaturePreviewScreen(
-                    login = state.profile?.login,
-                    onOpenGitHubUrl = onOpenGitHubUrl,
-                    onBack = navController::navigateUp
-                )
-            }
-            composable(
-                route = "repo/{owner}/{repo}?demo={demo}",
-                arguments = listOf(
-                    navArgument("owner") { type = NavType.StringType },
-                    navArgument("repo") { type = NavType.StringType },
-                    navArgument("demo") {
-                        type = NavType.BoolType
-                        defaultValue = false
-                    }
-                ),
-                deepLinks = listOf(
-                    navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" },
-                    navDeepLink { uriPattern = "https://github.com/{owner}/{repo}" }
-                )
-            ) { backStackEntry ->
-                val owner = backStackEntry.arguments?.getString("owner")
-                val repoName = backStackEntry.arguments?.getString("repo")
-                val repository = state.repositories.firstOrNull {
-                    it.owner.login == owner && it.name == repoName
-                }
-                RepositoryHubScreen(
-                    repository = repository,
-                    onBack = navController::navigateUp
-                )
-            }
-            composable(
-                route = "build/{owner}/{repo}/{runId}",
-                arguments = listOf(
-                    navArgument("owner") { type = NavType.StringType },
-                    navArgument("repo") { type = NavType.StringType },
-                    navArgument("runId") { type = NavType.LongType }
-                ),
-                deepLinks = listOf(
-                    navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" }
-                )
-            ) { backStackEntry ->
-                val owner = backStackEntry.arguments?.getString("owner")
-                val repoName = backStackEntry.arguments?.getString("repo")
-                val runId = backStackEntry.arguments?.getLong("runId")
-                val repository = state.repositories.firstOrNull {
-                    it.owner.login == owner && it.name == repoName
-                }
-                BuildsScreen(
-                    mode = mode,
-                    repositories = state.repositories,
-                    runs = state.workflowRuns,
-                    onSelectRepository = openRepo,
-                    initialRepository = repository,
-                    initialRunId = runId
-                )
-            }
-            composable(
-                route = "release/{owner}/{repo}/{tag}?demo={demo}",
-                arguments = listOf(
-                    navArgument("owner") { type = NavType.StringType },
-                    navArgument("repo") { type = NavType.StringType },
-                    navArgument("tag") { type = NavType.StringType },
-                    navArgument("demo") {
-                        type = NavType.BoolType
-                        defaultValue = false
-                    }
-                ),
-                deepLinks = listOf(
-                    navDeepLink { uriPattern = "githubrock://release/{owner}/{repo}/{tag}" }
-                )
-            ) { backStackEntry ->
-                val owner = backStackEntry.arguments?.getString("owner")
-                val repoName = backStackEntry.arguments?.getString("repo")
-                val tag = backStackEntry.arguments?.getString("tag")
-                val repository = state.repositories.firstOrNull {
-                    it.owner.login == owner && it.name == repoName
-                }
-                RepositoryHubScreen(
-                    repository = repository,
-                    onBack = navController::navigateUp,
-                    initialTag = tag
-                )
-            }
+                        composable(TopDestination.Builds.route) {
+                            BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
+                        }
+                        composable(TopDestination.Downloads.route) { DownloadsScreen() }
+                        composable(TopDestination.Profile.route) {
+                            ProfileScreen(
+                                mode = mode,
+                                profile = state.profile,
+                                onOpenRepositories = { navController.navigate(REPOSITORY_LIBRARY_ROUTE) },
+                                onOpenDownloads = {
+                                    navController.navigate(TopDestination.Downloads.route) {
+                                        launchSingleTop = true
+                                    }
+                                },
+                                onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
+                                onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
+                                onOpenGitHubUrl = onOpenGitHubUrl,
+                                onLogout = onLogout
+                            )
+                        }
+                        composable(APPEARANCE_ROUTE) {
+                            AppearanceScreen(onBack = navController::navigateUp)
+                        }
+                        composable(FEATURES_PREVIEW_ROUTE) {
+                            FeaturePreviewScreen(
+                                login = state.profile?.login,
+                                onOpenGitHubUrl = onOpenGitHubUrl,
+                                onBack = navController::navigateUp
+                            )
+                        }
+                        composable(REPOSITORY_LIBRARY_ROUTE) {
+                            RepositoryLibraryScreen(
+                                mode = mode,
+                                repositories = state.repositories,
+                                onOpenRepository = openRepo,
+                                onSignIn = onLogout,
+                                onOpenDeveloperTools = { navController.navigate(DEVELOPER_TOOLS_ROUTE) }
+                            )
+                        }
+                        composable(DEVELOPER_TOOLS_ROUTE) {
+                            DeveloperToolsScreen(
+                                mode = mode,
+                                repositories = state.repositories,
+                                onBack = navController::navigateUp
+                            )
+                        }
+                        composable(
+                            route = "repo/{owner}/{repo}?demo={demo}",
+                            arguments = listOf(
+                                navArgument("owner") { type = NavType.StringType },
+                                navArgument("repo") { type = NavType.StringType },
+                                navArgument("demo") {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                }
+                            ),
+                            deepLinks = listOf(
+                                navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" },
+                                navDeepLink { uriPattern = "https://github.com/{owner}/{repo}" }
+                            )
+                        ) { backStackEntry ->
+                            val owner = backStackEntry.arguments?.getString("owner")
+                            val repoName = backStackEntry.arguments?.getString("repo")
+                            val repository = state.repositories.firstOrNull {
+                                it.owner.login == owner && it.name == repoName
+                            }
+                            RepositoryHubScreen(
+                                repository = repository,
+                                onBack = navController::navigateUp
+                            )
+                        }
+                        composable(
+                            route = "build/{owner}/{repo}/{runId}",
+                            arguments = listOf(
+                                navArgument("owner") { type = NavType.StringType },
+                                navArgument("repo") { type = NavType.StringType },
+                                navArgument("runId") { type = NavType.LongType }
+                            ),
+                            deepLinks = listOf(
+                                navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" }
+                            )
+                        ) { backStackEntry ->
+                            val owner = backStackEntry.arguments?.getString("owner")
+                            val repoName = backStackEntry.arguments?.getString("repo")
+                            val runId = backStackEntry.arguments?.getLong("runId")
+                            val repository = state.repositories.firstOrNull {
+                                it.owner.login == owner && it.name == repoName
+                            }
+                            BuildsScreen(
+                                mode = mode,
+                                repositories = state.repositories,
+                                runs = state.workflowRuns,
+                                onSelectRepository = openRepo,
+                                initialRepository = repository,
+                                initialRunId = runId
+                            )
+                        }
+                        composable(
+                            route = "release/{owner}/{repo}/{tag}?demo={demo}",
+                            arguments = listOf(
+                                navArgument("owner") { type = NavType.StringType },
+                                navArgument("repo") { type = NavType.StringType },
+                                navArgument("tag") { type = NavType.StringType },
+                                navArgument("demo") {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                }
+                            ),
+                            deepLinks = listOf(
+                                navDeepLink { uriPattern = "githubrock://release/{owner}/{repo}/{tag}" }
+                            )
+                        ) { backStackEntry ->
+                            val owner = backStackEntry.arguments?.getString("owner")
+                            val repoName = backStackEntry.arguments?.getString("repo")
+                            val tag = backStackEntry.arguments?.getString("tag")
+                            val repository = state.repositories.firstOrNull {
+                                it.owner.login == owner && it.name == repoName
+                            }
+                            RepositoryHubScreen(
+                                repository = repository,
+                                onBack = navController::navigateUp,
+                                initialTag = tag
+                            )
+                        }
                     }
                 }
             }
