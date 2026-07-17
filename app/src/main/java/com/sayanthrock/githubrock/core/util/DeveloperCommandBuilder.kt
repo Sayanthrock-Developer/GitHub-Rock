@@ -11,6 +11,11 @@ object DeveloperCommandBuilder {
     const val INSTALL_TOOLCHAIN = "pkg update -y && pkg install -y git gh openssh"
     const val GITHUB_LOGIN = "gh auth login --hostname github.com --git-protocol https --web"
     const val GITHUB_SETUP_GIT = "gh auth setup-git && gh auth status"
+    const val ENABLE_TERMUX_BRIDGE =
+        "mkdir -p \"\$HOME/.termux\" && touch \"\$HOME/.termux/termux.properties\" && " +
+            "(grep -qx 'allow-external-apps=true' \"\$HOME/.termux/termux.properties\" || " +
+            "printf '\\nallow-external-apps=true\\n' >> \"\$HOME/.termux/termux.properties\") && " +
+            "termux-reload-settings"
 
     fun repository(owner: String, name: String): String? {
         val safeOwner = owner.trim().takeIf(ownerPattern::matches) ?: return null
