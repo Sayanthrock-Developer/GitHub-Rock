@@ -52,6 +52,7 @@ class MainViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var refreshJob: Job? = null
     private var sessionJob: Job? = null
+    private var rememberJob: Job? = null
 
     init {
         if (authRepository.hasSession) connectExistingSession()
@@ -198,7 +199,8 @@ class MainViewModel @Inject constructor(
 
     fun rememberRepository(repository: GitHubRepositoryModel) {
         if (_state.value.mode == AppMode.Demo) return
-        viewModelScope.launch {
+        rememberJob?.cancel()
+        rememberJob = viewModelScope.launch {
             runCatchingPreservingCancellation { githubRepository.remember(repository) }
                 .onFailure { error ->
                     _state.update { it.copy(message = "Unable to save recent repository: ${error.userMessage()}") }
@@ -258,13 +260,17 @@ class MainViewModel @Inject constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Throwable) {
-                _state.update {
-                    it.copy(
-                        mode = AppMode.Connected,
-                        isLoading = false,
-                        isRefreshing = false,
-                        message = error.userMessage()
-                    )
+                if (error is retrofit2.HttpException && error.code() == 401) {
+                    expireSession("Your GitHub session expired. Please sign in again.")
+                } else {
+                    _state.update {
+                        it.copy(
+                            mode = AppMode.Connected,
+                            isLoading = false,
+                            isRefreshing = false,
+                            message = error.userMessage()
+                        )
+                    }
                 }
             }
         }
@@ -325,9 +331,11 @@ class MainViewModel @Inject constructor(
         searchJob?.cancel()
         refreshJob?.cancel()
         sessionJob?.cancel()
+        rememberJob?.cancel()
         searchJob = null
         refreshJob = null
         sessionJob = null
+        rememberJob = null
     }
 
     private fun cancelAllJobs() {
