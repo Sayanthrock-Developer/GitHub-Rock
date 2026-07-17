@@ -108,9 +108,7 @@ fun HomeScreen(
             contentPadding = StandardScreenPadding,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                StandardScreenHeader("Home", "A clean view of your GitHub workspace")
-            }
+            item { StandardScreenHeader("Home", "A clean view of your GitHub workspace") }
             item { GitHubRockHero(mode, profile, rateLimit) }
             if (isLoading) item { LoadingWorkspaceCard() }
             item { WorkflowHealthCard(runs.size, running, success, failed) }
@@ -212,7 +210,10 @@ private fun GitHubRockHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateL
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         ModeBadge(mode)
-                        Surface(MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)) {
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)
+                        ) {
                             Text(
                                 "v${BuildConfig.VERSION_NAME}",
                                 Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
