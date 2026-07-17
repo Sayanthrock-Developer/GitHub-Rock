@@ -12,6 +12,7 @@ import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.core.util.AndroidArtifactType
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
+import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -35,6 +36,10 @@ data class BuildsActionState(
     val pullRequestUrl: String? = null,
     val selectedRepositoryId: Long? = null,
     val workflow: Workflow? = null,
+    val workflowSource: String? = null,
+    val workflowSourcePath: String? = null,
+    val workflowSourceLoading: Boolean = false,
+    val workflowSourceError: String? = null,
     val run: WorkflowRun? = null,
     val jobs: List<WorkflowJob> = emptyList(),
     val artifacts: List<WorkflowArtifact> = emptyList()
@@ -62,6 +67,10 @@ class BuildsViewModel @Inject constructor(
                     pullRequestUrl = null,
                     selectedRepositoryId = selected.id,
                     workflow = null,
+                    workflowSource = null,
+                    workflowSourcePath = null,
+                    workflowSourceLoading = true,
+                    workflowSourceError = null,
                     run = null,
                     jobs = emptyList(),
                     artifacts = emptyList()
@@ -75,12 +84,29 @@ class BuildsViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             loading = false,
+                            workflowSourceLoading = false,
                             message = "No merged Android build workflow was found. Merge its pull request, then refresh."
                         )
                     }
                     return@launch
                 }
 
+                val sourceResult = try {
+                    Result.success(
+                        SourceFileDecoder.decode(
+                            repository.file(
+                                selected.owner.login,
+                                selected.name,
+                                workflow.path,
+                                selected.defaultBranch
+                            )
+                        )
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    Result.failure(error)
+                }
                 val latest = requestedRunId?.let {
                     repository.run(selected.owner.login, selected.name, it)
                 } ?: repository.runsForWorkflow(selected.owner.login, selected.name, workflow.id).firstOrNull()
@@ -90,10 +116,17 @@ class BuildsViewModel @Inject constructor(
                 } else {
                     emptyList()
                 }
+                val sourceFailure = sourceResult.exceptionOrNull()
                 _state.update {
                     it.copy(
                         loading = false,
                         workflow = workflow,
+                        workflowSource = sourceResult.getOrNull(),
+                        workflowSourcePath = workflow.path,
+                        workflowSourceLoading = false,
+                        workflowSourceError = sourceFailure?.let { failure ->
+                            "Unable to load workflow code: ${failure.message?.takeIf(String::isNotBlank) ?: "unknown source error"}"
+                        },
                         run = latest,
                         jobs = jobs,
                         artifacts = artifacts,
@@ -109,6 +142,7 @@ class BuildsViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         loading = false,
+                        workflowSourceLoading = false,
                         tracking = false,
                         error = error.message ?: "Unable to inspect the Android build workflow"
                     )
@@ -173,9 +207,7 @@ class BuildsViewModel @Inject constructor(
                     }
                     return@launch
                 }
-                _state.update {
-                    it.copy(run = dispatchedRun, message = "Build queued on $ref")
-                }
+                _state.update { it.copy(run = dispatchedRun, message = "Build queued on $ref") }
                 monitorRun(selected, dispatchedRun)
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -205,6 +237,10 @@ class BuildsViewModel @Inject constructor(
                 pullRequestUrl = null,
                 selectedRepositoryId = null,
                 workflow = null,
+                workflowSource = null,
+                workflowSourcePath = null,
+                workflowSourceLoading = false,
+                workflowSourceError = null,
                 run = null,
                 jobs = emptyList(),
                 artifacts = emptyList()
@@ -288,9 +324,7 @@ class BuildsViewModel @Inject constructor(
                         jobs = jobs,
                         message = if (BuildRunTracker.isActive(current)) {
                             "Build ${current.displayState().name.lowercase()}"
-                        } else {
-                            null
-                        }
+                        } else null
                     )
                 }
 
@@ -303,9 +337,7 @@ class BuildsViewModel @Inject constructor(
             } catch (error: Throwable) {
                 consecutiveFailures += 1
                 if (consecutiveFailures >= MAX_CONSECUTIVE_POLL_FAILURES) throw error
-                _state.update {
-                    it.copy(message = "Run tracking was interrupted. Retrying…", error = null)
-                }
+                _state.update { it.copy(message = "Run tracking was interrupted. Retrying…", error = null) }
             }
             delay(RUN_POLL_INTERVAL_MS)
         }
@@ -318,9 +350,7 @@ class BuildsViewModel @Inject constructor(
     ) {
         val artifacts = if (run.displayState() == WorkflowDisplayState.Success) {
             awaitArtifacts(selected, run.id)
-        } else {
-            emptyList()
-        }
+        } else emptyList()
         val (message, error) = when (run.displayState()) {
             WorkflowDisplayState.Success -> if (artifacts.isNotEmpty()) {
                 "Build succeeded with ${artifacts.size} downloadable artifact${if (artifacts.size == 1) "" else "s"}" to null

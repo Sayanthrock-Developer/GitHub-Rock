@@ -16,11 +16,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.MotionPhotosOff
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewCompact
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -37,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -66,7 +74,15 @@ fun AppearanceScreen(
         onThemeMode = viewModel::setThemeMode,
         onAccentColor = viewModel::setAccentColor,
         onDynamicColor = viewModel::setDynamicColor,
-        onTrueBlack = viewModel::setTrueBlack
+        onTrueBlack = viewModel::setTrueBlack,
+        onWorkflowPreview = viewModel::setWorkflowPreview,
+        onWorkflowStepDetails = viewModel::setWorkflowStepDetails,
+        onStatusColors = viewModel::setStatusColors,
+        onActionsControls = viewModel::setActionsControls,
+        onRepositoryManager = viewModel::setRepositoryManager,
+        onFileTools = viewModel::setFileTools,
+        onCompactCards = viewModel::setCompactCards,
+        onReduceMotion = viewModel::setReduceMotion
     )
 }
 
@@ -78,21 +94,27 @@ fun AppearanceContent(
     onThemeMode: (ThemeMode) -> Unit,
     onAccentColor: (AccentColor) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
-    onTrueBlack: (Boolean) -> Unit
+    onTrueBlack: (Boolean) -> Unit,
+    onWorkflowPreview: (Boolean) -> Unit = {},
+    onWorkflowStepDetails: (Boolean) -> Unit = {},
+    onStatusColors: (Boolean) -> Unit = {},
+    onActionsControls: (Boolean) -> Unit = {},
+    onRepositoryManager: (Boolean) -> Unit = {},
+    onFileTools: (Boolean) -> Unit = {},
+    onCompactCards: (Boolean) -> Unit = {},
+    onReduceMotion: (Boolean) -> Unit = {}
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Appearance") },
+                title = { Text("Customization") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
@@ -103,8 +125,8 @@ fun AppearanceContent(
         ) {
             item {
                 StandardScreenHeader(
-                    title = "Clean, comfortable, yours",
-                    subtitle = "Choose a readable Material 3 style without changing how GitHub Rock works."
+                    title = "Control the whole app",
+                    subtitle = "Turn major tools and visual behavior on or off. Settings are saved on this device."
                 )
             }
             item { StandardSectionHeader("Look & feel") }
@@ -124,6 +146,20 @@ fun AppearanceContent(
                     onTrueBlack = onTrueBlack
                 )
             }
+            item { StandardSectionHeader("Feature controls") }
+            item {
+                FeatureControls(
+                    state = state,
+                    onWorkflowPreview = onWorkflowPreview,
+                    onWorkflowStepDetails = onWorkflowStepDetails,
+                    onStatusColors = onStatusColors,
+                    onActionsControls = onActionsControls,
+                    onRepositoryManager = onRepositoryManager,
+                    onFileTools = onFileTools,
+                    onCompactCards = onCompactCards,
+                    onReduceMotion = onReduceMotion
+                )
+            }
             item { StandardSectionHeader("Language & accessibility") }
             item {
                 StandardSettingsGroup {
@@ -136,13 +172,13 @@ fun AppearanceContent(
                     StandardSettingsRow(
                         icon = Icons.Default.PhoneAndroid,
                         title = "Text and display size",
-                        subtitle = "Uses your Android accessibility settings"
+                        subtitle = "Uses Android accessibility settings"
                     )
                 }
             }
             item {
                 Text(
-                    "Theme changes apply immediately. Touch targets, contrast, and system font scaling remain available in every style.",
+                    "Theme and feature changes apply immediately. GitHub permissions and API availability still determine which account actions can run.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -150,6 +186,107 @@ fun AppearanceContent(
             }
         }
     }
+}
+
+@Composable
+private fun FeatureControls(
+    state: AppearancePreferences,
+    onWorkflowPreview: (Boolean) -> Unit,
+    onWorkflowStepDetails: (Boolean) -> Unit,
+    onStatusColors: (Boolean) -> Unit,
+    onActionsControls: (Boolean) -> Unit,
+    onRepositoryManager: (Boolean) -> Unit,
+    onFileTools: (Boolean) -> Unit,
+    onCompactCards: (Boolean) -> Unit,
+    onReduceMotion: (Boolean) -> Unit
+) {
+    StandardSettingsGroup {
+        FeatureToggleRow(
+            icon = Icons.Default.Visibility,
+            title = "Workflow code preview",
+            subtitle = "Show the active workflow YAML inside the app",
+            checked = state.workflowPreview,
+            onCheckedChange = onWorkflowPreview
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.Code,
+            title = "Workflow step details",
+            subtitle = "Show every job and step result",
+            checked = state.workflowStepDetails,
+            onCheckedChange = onWorkflowStepDetails
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.Palette,
+            title = "Red and green status colors",
+            subtitle = "Red for problems and green for successful states",
+            checked = state.statusColors,
+            onCheckedChange = onStatusColors
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.PlayArrow,
+            title = "Actions controls",
+            subtitle = "Allow workflow run, refresh, and artifact actions",
+            checked = state.actionsControls,
+            onCheckedChange = onActionsControls
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.Tune,
+            title = "Repository manager",
+            subtitle = "Show native code, Issues, Pull Requests, Actions, and Releases tools",
+            checked = state.repositoryManager,
+            onCheckedChange = onRepositoryManager
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.FolderOpen,
+            title = "File tools",
+            subtitle = "Allow repository file viewing and review-branch uploads",
+            checked = state.fileTools,
+            onCheckedChange = onFileTools
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.ViewCompact,
+            title = "Compact cards",
+            subtitle = "Use smaller frames and tighter spacing",
+            checked = state.compactCards,
+            onCheckedChange = onCompactCards
+        )
+        StandardSettingsDivider()
+        FeatureToggleRow(
+            icon = Icons.Default.MotionPhotosOff,
+            title = "Reduce motion",
+            subtitle = "Limit nonessential progress and transition animation",
+            checked = state.reduceMotion,
+            onCheckedChange = onReduceMotion
+        )
+    }
+}
+
+@Composable
+private fun FeatureToggleRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    StandardSettingsRow(
+        icon = icon,
+        title = title,
+        subtitle = subtitle,
+        trailing = {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.semantics { contentDescription = "Toggle $title" }
+            )
+        }
+    )
 }
 
 @Composable
@@ -229,8 +366,7 @@ private fun AccentPicker(
                         color = accent.previewColor,
                         border = BorderStroke(
                             if (isSelected) 3.dp else 1.dp,
-                            if (isSelected) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.outline
+                            if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
                         )
                     ) {
                         if (isSelected) {
@@ -290,9 +426,7 @@ private fun ThemeSettings(
                 Switch(
                     checked = state.dynamicColor,
                     onCheckedChange = onDynamicColor,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Toggle dynamic color"
-                    }
+                    modifier = Modifier.semantics { contentDescription = "Toggle dynamic color" }
                 )
             }
         )
@@ -305,9 +439,7 @@ private fun ThemeSettings(
                 Switch(
                     checked = state.trueBlack,
                     onCheckedChange = onTrueBlack,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Toggle true black"
-                    }
+                    modifier = Modifier.semantics { contentDescription = "Toggle true black" }
                 )
             }
         )

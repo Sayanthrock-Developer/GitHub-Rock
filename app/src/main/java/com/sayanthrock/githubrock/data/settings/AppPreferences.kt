@@ -21,8 +21,7 @@ enum class ThemeMode {
     Dark;
 
     companion object {
-        fun fromStored(value: String?): ThemeMode =
-            entries.firstOrNull { it.name == value } ?: System
+        fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System
     }
 }
 
@@ -34,8 +33,7 @@ enum class AccentColor {
     Amber;
 
     companion object {
-        fun fromStored(value: String?): AccentColor =
-            entries.firstOrNull { it.name == value } ?: Cyan
+        fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan
     }
 }
 
@@ -43,7 +41,15 @@ data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val accentColor: AccentColor = AccentColor.Cyan,
     val dynamicColor: Boolean = false,
-    val trueBlack: Boolean = false
+    val trueBlack: Boolean = false,
+    val workflowPreview: Boolean = true,
+    val workflowStepDetails: Boolean = true,
+    val statusColors: Boolean = true,
+    val actionsControls: Boolean = true,
+    val repositoryManager: Boolean = true,
+    val fileTools: Boolean = true,
+    val compactCards: Boolean = true,
+    val reduceMotion: Boolean = false
 )
 
 @Singleton
@@ -55,31 +61,33 @@ class AppPreferences @Inject constructor(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
             accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: false,
-            trueBlack = preferences[TRUE_BLACK] ?: false
+            trueBlack = preferences[TRUE_BLACK] ?: false,
+            workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
+            workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true,
+            statusColors = preferences[STATUS_COLORS] ?: true,
+            actionsControls = preferences[ACTIONS_CONTROLS] ?: true,
+            repositoryManager = preferences[REPOSITORY_MANAGER] ?: true,
+            fileTools = preferences[FILE_TOOLS] ?: true,
+            compactCards = preferences[COMPACT_CARDS] ?: true,
+            reduceMotion = preferences[REDUCE_MOTION] ?: false
         )
     }
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
 
-    suspend fun setThemeMode(mode: ThemeMode) {
-        context.dataStore.edit { it[THEME_MODE] = mode.name }
-    }
-
-    suspend fun setAccentColor(color: AccentColor) {
-        context.dataStore.edit { it[ACCENT_COLOR] = color.name }
-    }
-
-    suspend fun setDynamicColor(enabled: Boolean) {
-        context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
-    }
-
-    suspend fun setTrueBlack(enabled: Boolean) {
-        context.dataStore.edit { it[TRUE_BLACK] = enabled }
-    }
-
-    suspend fun setBiometricLock(enabled: Boolean) {
-        context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
-    }
+    suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
+    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name }
+    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
+    suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
+    suspend fun setWorkflowPreview(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_PREVIEW] = enabled }
+    suspend fun setWorkflowStepDetails(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_STEP_DETAILS] = enabled }
+    suspend fun setStatusColors(enabled: Boolean) = context.dataStore.edit { it[STATUS_COLORS] = enabled }
+    suspend fun setActionsControls(enabled: Boolean) = context.dataStore.edit { it[ACTIONS_CONTROLS] = enabled }
+    suspend fun setRepositoryManager(enabled: Boolean) = context.dataStore.edit { it[REPOSITORY_MANAGER] = enabled }
+    suspend fun setFileTools(enabled: Boolean) = context.dataStore.edit { it[FILE_TOOLS] = enabled }
+    suspend fun setCompactCards(enabled: Boolean) = context.dataStore.edit { it[COMPACT_CARDS] = enabled }
+    suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
+    suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
 
     suspend fun monitoredWorkflowRun(monitorKey: String): Long? =
         context.dataStore.data.first()[longPreferencesKey("workflow_monitor_$monitorKey")]
@@ -98,5 +106,13 @@ class AppPreferences @Inject constructor(
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
+        val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview")
+        val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details")
+        val STATUS_COLORS = booleanPreferencesKey("status_colors")
+        val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls")
+        val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager")
+        val FILE_TOOLS = booleanPreferencesKey("file_tools")
+        val COMPACT_CARDS = booleanPreferencesKey("compact_cards")
+        val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
     }
 }
