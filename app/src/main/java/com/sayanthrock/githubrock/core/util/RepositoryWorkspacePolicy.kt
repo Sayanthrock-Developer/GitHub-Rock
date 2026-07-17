@@ -11,6 +11,7 @@ object RepositoryWorkspacePolicy {
         releasesLoading: Boolean,
         readmeLoading: Boolean
     ): Int {
+        if (!repositoryReady) return 0
         val completed = listOf(
             repositoryReady,
             !releasesLoading,
