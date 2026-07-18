@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version with or without the v prefix, for example 0.2.0
-        required: true
-        default: 0.2.0
+        description: Optional version with or without the v prefix; blank creates a unique automatic version
+        required: false
+        default: ''
         type: string
       prerelease:
         description: Mark the GitHub Release as a prerelease
-        required: true
+        required: false
         default: false
         type: boolean
   push:
@@ -62,7 +62,12 @@ jobs:
               PRERELEASE=false
             fi
           else
-            VERSION="${INPUT_VERSION#v}"
+            REQUESTED_VERSION="${INPUT_VERSION#v}"
+            if [ -n "$REQUESTED_VERSION" ]; then
+              VERSION="$REQUESTED_VERSION"
+            else
+              VERSION="0.1.$GITHUB_RUN_NUMBER"
+            fi
             RELEASE_TAG="v$VERSION"
             PRERELEASE="$(printf '%s' "${INPUT_PRERELEASE:-false}" | tr '[:upper:]' '[:lower:]')"
           fi
