@@ -20,7 +20,8 @@ import javax.inject.Singleton
 class GitHubRepository @Inject constructor(
     private val api: GitHubRestApi,
     private val recentDao: RepositoryDao,
-    private val artworkResolver: RepositoryArtworkResolver
+    private val artworkResolver: RepositoryArtworkResolver,
+    private val profileDetailsResolver: GitHubProfileDetailsResolver
 ) {
     suspend fun dashboard(): DashboardPayload = withContext(Dispatchers.IO) {
         coroutineScope {
@@ -37,16 +38,49 @@ class GitHubRepository @Inject constructor(
         }
     }
 
-    suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> = withContext(Dispatchers.IO) {
+    suspend fun publicRepositories(query: String): List<GitHubRepositoryModel> =
+        publicRepositories(RepositorySearchOptions(query = query))
+
+    suspend fun publicRepositories(options: RepositorySearchOptions): List<GitHubRepositoryModel> = withContext(Dispatchers.IO) {
         val repositories = api.searchRepositories(
-            query.ifBlank { "android stars:>1000" },
-            sort = "updated"
+            query = options.githubQuery(),
+            sort = options.sort.apiValue,
+            order = "desc"
         ).items
-        artworkResolver.attach(repositories)
+        options.applyLocally(artworkResolver.attach(repositories))
     }
 
     suspend fun repository(owner: String, repo: String): GitHubRepositoryModel = withContext(Dispatchers.IO) {
         artworkResolver.attach(listOf(api.repository(owner, repo))).single()
+    }
+
+    suspend fun profile(login: String, checkFollowing: Boolean): GitHubProfileSnapshot = withContext(Dispatchers.IO) {
+        coroutineScope {
+            val profile = async { api.user(login) }
+            val details = async {
+                runCatchingPreservingCancellation { profileDetailsResolver.resolve(login) }.getOrNull()
+            }
+            val resolvedProfile = profile.await()
+            val resolvedDetails = details.await()
+            val following = if (!checkFollowing) {
+                null
+            } else {
+                resolvedDetails?.viewerIsFollowing ?: run {
+                    val response = api.isFollowing(login)
+                    when (response.code()) {
+                        204 -> true
+                        404 -> false
+                        else -> throw retrofit2.HttpException(response)
+                    }
+                }
+            }
+            GitHubProfileSnapshot(resolvedProfile, resolvedDetails, following)
+        }
+    }
+
+    suspend fun setProfileFollowing(login: String, following: Boolean) = withContext(Dispatchers.IO) {
+        val response = if (following) api.followUser(login) else api.unfollowUser(login)
+        if (!response.isSuccessful) throw retrofit2.HttpException(response)
     }
 
     suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =

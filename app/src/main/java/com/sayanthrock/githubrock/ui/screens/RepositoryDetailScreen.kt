@@ -46,7 +46,9 @@ import com.sayanthrock.githubrock.core.util.SyntaxTokenKind
 import com.sayanthrock.githubrock.core.util.TextDiff
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.WorkflowLogViewer
 import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
+import com.sayanthrock.githubrock.ui.theme.LocalLogDisplayStyle
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +58,7 @@ fun RepositoryDetailScreen(
     viewModel: RepositoryDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val logDisplayStyle = LocalLogDisplayStyle.current
     val context = LocalContext.current
     val downloadsViewModel: DownloadsViewModel = hiltViewModel()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
@@ -269,11 +272,11 @@ fun RepositoryDetailScreen(
         )
     }
     logJob?.let { job ->
-        AlertDialog(
-            onDismissRequest = { logJob = null },
-            title = { Text("Logs • ${job.name}") },
-            text = { Text(state.jobLog ?: "Loading workflow logs…", style = MaterialTheme.typography.bodySmall, maxLines = 18, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
-            confirmButton = { TextButton(onClick = { logJob = null }) { Text("Close") } }
+        WorkflowLogViewer(
+            title = "Logs • ${job.name}",
+            log = state.jobLog,
+            style = logDisplayStyle,
+            onDismiss = { logJob = null }
         )
     }
     runAction?.let { run ->

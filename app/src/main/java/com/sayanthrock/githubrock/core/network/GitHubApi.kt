@@ -41,6 +41,18 @@ interface GitHubAuthApi {
 interface GitHubRestApi {
     @GET("user") suspend fun me(): GitHubUser
 
+    @GET("users/{username}") suspend fun user(@Path("username") username: String): GitHubUser
+
+    @GET("user/following/{username}")
+    suspend fun isFollowing(@Path("username") username: String): Response<Unit>
+
+    @Headers("Content-Length: 0")
+    @PUT("user/following/{username}")
+    suspend fun followUser(@Path("username") username: String): Response<Unit>
+
+    @DELETE("user/following/{username}")
+    suspend fun unfollowUser(@Path("username") username: String): Response<Unit>
+
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
 
     @GET("repos/{owner}/{repo}")
@@ -85,6 +97,7 @@ interface GitHubRestApi {
     suspend fun searchRepositories(
         @Query("q") query: String,
         @Query("sort") sort: String = "updated",
+        @Query("order") order: String = "desc",
         @Query("per_page") perPage: Int = 30,
         @Query("page") page: Int = 1
     ): RepositorySearchResponse

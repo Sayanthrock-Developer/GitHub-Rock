@@ -77,6 +77,7 @@ import com.sayanthrock.githubrock.data.settings.DisplaySize
 import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
+import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
@@ -106,6 +107,7 @@ fun AppearanceScreen(
         onFontFamily = viewModel::setFontFamily,
         onLoadingStyle = viewModel::setLoadingStyle,
         onCodeColorStyle = viewModel::setCodeColorStyle,
+        onLogDisplayStyle = viewModel::setLogDisplayStyle,
         onDynamicColor = viewModel::setDynamicColor,
         onTrueBlack = viewModel::setTrueBlack,
         onShowImages = viewModel::setShowImages,
@@ -137,6 +139,7 @@ fun AppearanceContent(
     onFontFamily: (AppFontFamily) -> Unit = {},
     onLoadingStyle: (LoadingStyle) -> Unit = {},
     onCodeColorStyle: (CodeColorStyle) -> Unit = {},
+    onLogDisplayStyle: (LogDisplayStyle) -> Unit = {},
     onShowImages: (Boolean) -> Unit = {},
     onWorkflowPreview: (Boolean) -> Unit = {},
     onWorkflowStepDetails: (Boolean) -> Unit = {},
@@ -290,6 +293,19 @@ fun AppearanceContent(
                     choices = CodeColorStyle.entries.map { it to it.displayName },
                     selected = state.codeColorStyle,
                     onSelected = onCodeColorStyle
+                )
+            }
+            item {
+                ChoiceCard(
+                    title = "Log display style",
+                    subtitle = "Scrollable popup or a full-screen highlighted terminal",
+                    icon = Icons.Default.Code,
+                    choices = listOf(
+                        LogDisplayStyle.Dialog to "Popup dialog",
+                        LogDisplayStyle.Terminal to "On-screen terminal"
+                    ),
+                    selected = state.logDisplayStyle,
+                    onSelected = onLogDisplayStyle
                 )
             }
             item { CodeColorPreview() }

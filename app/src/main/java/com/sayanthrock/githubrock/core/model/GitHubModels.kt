@@ -13,9 +13,56 @@ data class GitHubUser(
     val bio: String? = null,
     val location: String? = null,
     val blog: String? = null,
+    val company: String? = null,
+    val email: String? = null,
+    @SerialName("html_url") val htmlUrl: String = "",
+    @SerialName("twitter_username") val twitterUsername: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    val hireable: Boolean? = null,
     @SerialName("public_repos") val publicRepos: Int = 0,
     val followers: Int = 0,
     val following: Int = 0
+)
+
+data class GitHubContributionDay(
+    val date: String,
+    val count: Int,
+    val level: String
+)
+
+data class GitHubOrganization(
+    val login: String,
+    val name: String? = null,
+    val avatarUrl: String = "",
+    val url: String = ""
+)
+
+data class GitHubSocialAccount(
+    val displayName: String,
+    val provider: String,
+    val url: String
+)
+
+data class GitHubProfileDetails(
+    val pronouns: String? = null,
+    val contributionsLastYear: Int? = null,
+    val contributionDays: List<GitHubContributionDay> = emptyList(),
+    val organizations: List<GitHubOrganization> = emptyList(),
+    val organizationCount: Int = 0,
+    val socialAccounts: List<GitHubSocialAccount> = emptyList(),
+    val highlights: List<String> = emptyList(),
+    val viewerCanFollow: Boolean = false,
+    val viewerIsFollowing: Boolean? = null
+) {
+    val orcid: GitHubSocialAccount?
+        get() = socialAccounts.firstOrNull { it.url.contains("orcid.org/", ignoreCase = true) }
+}
+
+data class GitHubProfileSnapshot(
+    val profile: GitHubUser,
+    val details: GitHubProfileDetails? = null,
+    val isFollowing: Boolean? = details?.viewerIsFollowing
 )
 
 @Serializable

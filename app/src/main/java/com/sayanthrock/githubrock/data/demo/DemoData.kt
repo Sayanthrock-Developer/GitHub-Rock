@@ -13,6 +13,24 @@ object DemoData {
         following = 86
     )
 
+    val profileDetails = GitHubProfileDetails(
+        pronouns = "they/them",
+        contributionsLastYear = 642,
+        contributionDays = (1..35).map { day ->
+            GitHubContributionDay("2026-06-${day.coerceAtMost(30).toString().padStart(2, '0')}", day % 8, "DEMO")
+        },
+        organizations = listOf(
+            GitHubOrganization("github-rock-demo", "GitHub Rock Demo", url = "https://github.com/github-rock-demo")
+        ),
+        organizationCount = 1,
+        socialAccounts = listOf(
+            GitHubSocialAccount("0000-0002-1825-0097", "GENERIC", "https://orcid.org/0000-0002-1825-0097")
+        ),
+        highlights = listOf("Developer Program", "Available for hire"),
+        viewerCanFollow = false,
+        viewerIsFollowing = false
+    )
+
     val repositories = listOf(
         repository(1, "GitHub-Rock", "Premium GitHub developer control centre", "Kotlin", 386),
         repository(2, "Rock-Wedding", "Digital wedding invitation studio", "TypeScript", 174, isTemplate = true),

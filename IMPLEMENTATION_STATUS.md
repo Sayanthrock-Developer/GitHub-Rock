@@ -12,7 +12,11 @@ This file separates working alpha functionality from roadmap scope so the applic
 - App-wide adaptive Material 3 design system with phone bottom navigation, tablet/landscape navigation rail, bounded wide-screen content, and persistent appearance controls
 - Pull-to-refresh dashboard, progressive connected-account loading, concurrent account/API/repository requests, and honest loading/empty/error feedback
 - Working profile repository, follower, and following destinations through the allow-listed GitHub browser launcher
-- Searchable All GitHub services hub with 39 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
+- Native mobile profile lookup with REST/GraphQL details, follow/unfollow, yearly contributions, highlights, organizations, pronouns, social links, and ORCID detection
+- Repository search filters for language, source/fork or visibility type, sort order, and repository creation
+- Full scrollable workflow logs in popup or lazy syntax-highlighted terminal presentation, selectable in Appearance
+- Native App & SDK information for package, Android APIs, device, install dates, ABIs, and requested permissions
+- Searchable All GitHub services hub with 45 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases, including direct public/private repository resolution for deep links
 - Five-platform release-asset picker for Android, Windows, Linux, iOS, and macOS with deterministic format and architecture classification
 - Verified workflow dispatch/cancel/rerun repository methods

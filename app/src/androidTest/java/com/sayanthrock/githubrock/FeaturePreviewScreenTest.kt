@@ -66,6 +66,6 @@ class FeaturePreviewScreenTest {
 
         compose.onNodeWithText("Access tokens").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Dashboard").fetchSemanticsNodes().isEmpty())
-        compose.onNodeWithText("1 of 39 tools").assertIsDisplayed()
+        compose.onNodeWithText("1 of 45 tools").assertIsDisplayed()
     }
 }

@@ -115,6 +115,15 @@ enum class CodeColorStyle {
     }
 }
 
+enum class LogDisplayStyle {
+    Dialog,
+    Terminal;
+
+    companion object {
+        fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal
+    }
+}
+
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
@@ -125,6 +134,7 @@ data class AppearancePreferences(
     val fontFamily: AppFontFamily = AppFontFamily.SystemSans,
     val loadingStyle: LoadingStyle = LoadingStyle.Spinner,
     val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
+    val logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
     val dynamicColor: Boolean = false,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
@@ -153,6 +163,7 @@ class AppPreferences @Inject constructor(
             fontFamily = AppFontFamily.fromStored(preferences[FONT_FAMILY]),
             loadingStyle = LoadingStyle.fromStored(preferences[LOADING_STYLE]),
             codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
+            logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: false,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
@@ -181,6 +192,7 @@ class AppPreferences @Inject constructor(
     suspend fun setFontFamily(family: AppFontFamily) = context.dataStore.edit { it[FONT_FAMILY] = family.name }
     suspend fun setLoadingStyle(style: LoadingStyle) = context.dataStore.edit { it[LOADING_STYLE] = style.name }
     suspend fun setCodeColorStyle(style: CodeColorStyle) = context.dataStore.edit { it[CODE_COLOR_STYLE] = style.name }
+    suspend fun setLogDisplayStyle(style: LogDisplayStyle) = context.dataStore.edit { it[LOG_DISPLAY_STYLE] = style.name }
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
@@ -204,6 +216,7 @@ class AppPreferences @Inject constructor(
         preferences.remove(FONT_FAMILY)
         preferences.remove(LOADING_STYLE)
         preferences.remove(CODE_COLOR_STYLE)
+        preferences.remove(LOG_DISPLAY_STYLE)
         preferences.remove(DYNAMIC_COLOR)
         preferences.remove(TRUE_BLACK)
         preferences.remove(SHOW_IMAGES)
@@ -245,6 +258,7 @@ class AppPreferences @Inject constructor(
         val FONT_FAMILY = stringPreferencesKey("font_family")
         val LOADING_STYLE = stringPreferencesKey("loading_style")
         val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style")
+        val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
         val SHOW_IMAGES = booleanPreferencesKey("show_images")

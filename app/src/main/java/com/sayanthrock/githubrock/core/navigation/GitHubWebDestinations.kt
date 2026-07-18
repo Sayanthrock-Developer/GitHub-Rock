@@ -61,6 +61,7 @@ fun githubWebSections(login: String?): List<GitHubWebSection> {
                 destination("code-search", "Code search", "Search code, repositories, issues, pull requests, and users.", "https://github.com/search?type=code"),
                 destination("codespaces", "Codespaces", "Create and manage browser-based cloud development environments.", "https://github.com/codespaces"),
                 destination("copilot", "GitHub Copilot", "Open Copilot chat and coding-agent experiences available to your plan.", "https://github.com/copilot"),
+                destination("copilot-settings", "Copilot settings", "Manage suggestions, coding agents, policies, and Copilot preferences.", "https://github.com/settings/copilot"),
                 destination("models", "GitHub Models", "Explore and compare AI models available through GitHub.", "https://github.com/marketplace/models"),
                 destination("gists", "Gists", "Create and manage shareable code snippets and notes.", gistsUrl),
                 destination("packages", "Packages", "View packages published by your account.", packagesUrl)
@@ -74,6 +75,7 @@ fun githubWebSections(login: String?): List<GitHubWebSection> {
                 destination("projects", "Projects", "Plan work in tables, boards, roadmaps, and custom views.", projectsUrl),
                 destination("discussions", "Discussions", "Participate in community conversations across GitHub.", "https://github.com/discussions"),
                 destination("organizations", "Organizations", "Open organizations and switch between shared workspaces.", "https://github.com/settings/organizations"),
+                destination("enterprises", "Enterprises", "Open enterprise accounts and managed organization workspaces.", "https://github.com/settings/enterprises"),
                 destination("installations", "GitHub App installations", "Review apps installed for personal and organization repositories.", "https://github.com/settings/installations"),
                 destination("sponsors", "Sponsors dashboard", "Manage sponsorships and supported maintainers.", "https://github.com/sponsors/dashboard")
             )
@@ -108,11 +110,15 @@ fun githubWebSections(login: String?): List<GitHubWebSection> {
             title = "Account & community",
             description = "Personalize GitHub, manage plan details, and discover the wider community.",
             destinations = listOf(
-                destination("profile-settings", "Profile settings", "Edit public profile details and contribution visibility.", "https://github.com/settings/profile"),
+                destination("profile-settings", "Settings", "Edit public profile details, account preferences, and contribution visibility.", "https://github.com/settings/profile"),
                 destination("email-settings", "Email settings", "Manage addresses and commit-email privacy.", "https://github.com/settings/emails"),
                 destination("notification-settings", "Notification settings", "Choose email, web, and mobile notification delivery.", "https://github.com/settings/notifications"),
                 destination("billing", "Billing and plans", "Manage plan, usage, payment, and spending limits directly on GitHub.", "https://github.com/settings/billing"),
                 destination("appearance", "Appearance", "Choose GitHub theme, tab size, and display preferences.", "https://github.com/settings/appearance"),
+                destination("accessibility", "Accessibility", "Configure motion, keyboard shortcuts, and accessible GitHub experiences.", "https://github.com/settings/accessibility"),
+                destination("feature-preview", "Feature preview", "Review and opt into GitHub features available for preview.", "https://github.com/settings/feature_preview"),
+                destination("enterprise-trial", "Try Enterprise", "Start an official GitHub Enterprise trial.", "https://github.com/enterprise/trial/start"),
+                destination("github-free", "GitHub Free", "Compare Free, Team, and Enterprise plans on GitHub.", "https://github.com/pricing"),
                 destination("explore", "Explore", "Discover recommended repositories and developers.", "https://github.com/explore"),
                 destination("trending", "Trending", "See repositories and developers gaining attention now.", "https://github.com/trending"),
                 destination("topics", "Topics", "Browse repositories grouped by technology or interest.", "https://github.com/topics"),
