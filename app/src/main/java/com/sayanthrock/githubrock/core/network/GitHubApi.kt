@@ -17,7 +17,8 @@ interface GitHubAuthApi {
     @Headers("Accept: application/json")
     @POST("login/device/code")
     suspend fun requestDeviceCode(
-        @Query("client_id") clientId: String
+        @Query("client_id") clientId: String,
+        @Query("scope") scope: String
     ): DeviceCodeResponse
 
     @Headers("Accept: application/json")
@@ -120,169 +121,274 @@ interface GitHubRestApi {
     ): Response<Unit>
 
     @GET("repos/{owner}/{repo}/git/ref/heads/{branch}")
-    suspend fun branchReference(
+    suspend fun branchRef(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Path(value = "branch", encoded = true) branch: String
-    ): GitReference
+    ): GitRef
 
-    @PUT("repos/{owner}/{repo}/contents/{path}")
-    suspend fun commitFile(
+    @POST("repos/{owner}/{repo}/git/commits")
+    suspend fun createGitCommit(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path(value = "path", encoded = true) path: String,
-        @Body request: FileCommitRequest
-    ): Response<ContentEntry>
+        @Body request: CreateGitCommitRequest
+    ): GitCommit
 
-    @DELETE("repos/{owner}/{repo}/contents/{path}")
-    suspend fun deleteFile(
+    @POST("repos/{owner}/{repo}/git/trees")
+    suspend fun createGitTree(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path(value = "path", encoded = true) path: String,
-        @Body request: FileDeleteRequest
+        @Body request: CreateGitTreeRequest
+    ): GitTree
+
+    @POST("repos/{owner}/{repo}/git/blobs")
+    suspend fun createGitBlob(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Body request: CreateGitBlobRequest
+    ): GitBlob
+
+    @PATCH("repos/{owner}/{repo}/git/refs/heads/{branch}")
+    suspend fun updateBranchRef(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "branch", encoded = true) branch: String,
+        @Body request: UpdateGitRefRequest
     ): Response<Unit>
 
     @POST("repos/{owner}/{repo}/pulls")
     suspend fun createPullRequest(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Body request: PullRequestRequest
+        @Body request: CreatePullRequestRequest
     ): PullRequest
-
-    @GET("repos/{owner}/{repo}/issues/{issueNumber}/comments")
-    suspend fun issueComments(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int): List<IssueComment>
-
-    @POST("repos/{owner}/{repo}/issues/{issueNumber}/comments")
-    suspend fun addIssueComment(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int, @Body body: Map<String, String>): IssueComment
-
-    @GET("repos/{owner}/{repo}/pulls/{pullNumber}/reviews")
-    suspend fun pullReviews(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int): List<PullRequestReview>
-
-    @POST("repos/{owner}/{repo}/pulls/{pullNumber}/reviews")
-    suspend fun submitPullReview(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: ReviewRequest): PullRequestReview
-
-    @PUT("repos/{owner}/{repo}/pulls/{pullNumber}/merge")
-    suspend fun mergePullRequest(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, String>): MergeResponse
-
-    @GET("repos/{owner}/{repo}/actions/runs/{runId}/jobs")
-    suspend fun workflowJobs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): WorkflowJobsResponse
-
-    @GET("repos/{owner}/{repo}/actions/runs/{runId}/artifacts")
-    suspend fun workflowArtifacts(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): WorkflowArtifactsResponse
-
-    @GET("repos/{owner}/{repo}/actions/jobs/{jobId}/logs")
-    suspend fun workflowJobLogs(@Path("owner") owner: String, @Path("repo") repo: String, @Path("jobId") jobId: Long): Response<ResponseBody>
 
     @GET("repos/{owner}/{repo}/issues")
     suspend fun issues(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Query("state") state: String = "open",
-        @Query("per_page") perPage: Int = 30
-    ): List<GitHubIssue>
-
-    @POST("repos/{owner}/{repo}/issues")
-    suspend fun createIssue(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Body request: CreateIssueRequest
-    ): GitHubIssue
-
-    @PATCH("repos/{owner}/{repo}/issues/{issueNumber}")
-    suspend fun updateIssue(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Path("issueNumber") issueNumber: Int,
-        @Body request: UpdateIssueRequest
-    ): GitHubIssue
-
-    @POST("repos/{owner}/{repo}/issues/{issueNumber}/reactions")
-    suspend fun addIssueReaction(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Path("issueNumber") issueNumber: Int,
-        @Body request: IssueReactionRequest
-    ): IssueReaction
+        @Query("per_page") perPage: Int = 50,
+        @Query("page") page: Int = 1
+    ): List<Issue>
 
     @GET("repos/{owner}/{repo}/pulls")
     suspend fun pullRequests(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Query("state") state: String = "open",
-        @Query("per_page") perPage: Int = 30
-    ): List<PullRequestSummary>
-
-    @GET("repos/{owner}/{repo}/actions/workflows")
-    suspend fun workflows(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 100
-    ): WorkflowList
+        @Query("per_page") perPage: Int = 50,
+        @Query("page") page: Int = 1
+    ): List<PullRequest>
 
     @GET("repos/{owner}/{repo}/actions/runs")
     suspend fun workflowRuns(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 30
-    ): WorkflowRuns
+        @Query("per_page") perPage: Int = 30,
+        @Query("page") page: Int = 1
+    ): WorkflowRunsResponse
 
-    @GET("repos/{owner}/{repo}/actions/workflows/{workflowId}/runs")
-    suspend fun workflowRunsForWorkflow(
+    @GET("repos/{owner}/{repo}/actions/runs/{run_id}/jobs")
+    suspend fun workflowJobs(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("workflowId") workflowId: Long,
-        @Query("event") event: String = "workflow_dispatch",
-        @Query("per_page") perPage: Int = 20
-    ): WorkflowRuns
+        @Path("run_id") runId: Long,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): WorkflowJobsResponse
 
-    @GET("repos/{owner}/{repo}/actions/runs/{runId}")
-    suspend fun workflowRun(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String,
-        @Path("runId") runId: Long
-    ): WorkflowRun
-
-    @POST("repos/{owner}/{repo}/actions/workflows/{workflowId}/dispatches")
+    @POST("repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches")
     suspend fun dispatchWorkflow(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("workflowId") workflowId: Long,
+        @Path("workflow_id") workflowId: String,
         @Body request: WorkflowDispatchRequest
     ): Response<Unit>
 
-    @POST("repos/{owner}/{repo}/actions/runs/{runId}/cancel")
-    suspend fun cancelWorkflow(
+    @POST("repos/{owner}/{repo}/actions/runs/{run_id}/cancel")
+    suspend fun cancelWorkflowRun(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("runId") runId: Long
+        @Path("run_id") runId: Long
     ): Response<Unit>
 
-    @POST("repos/{owner}/{repo}/actions/runs/{runId}/rerun")
-    suspend fun rerunWorkflow(
+    @POST("repos/{owner}/{repo}/actions/runs/{run_id}/rerun")
+    suspend fun rerunWorkflowRun(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("runId") runId: Long
+        @Path("run_id") runId: Long
     ): Response<Unit>
+
+    @GET("repos/{owner}/{repo}/actions/runs/{run_id}/artifacts")
+    suspend fun workflowArtifacts(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("run_id") runId: Long,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): WorkflowArtifactsResponse
 
     @GET("repos/{owner}/{repo}/releases")
     suspend fun releases(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 30
+        @Query("per_page") perPage: Int = 30,
+        @Query("page") page: Int = 1
     ): List<Release>
 
-    @PATCH("repos/{owner}/{repo}/releases/{releaseId}")
-    suspend fun updateRelease(
+    @GET("repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}")
+    suspend fun downloadArtifact(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("releaseId") releaseId: Long,
-        @Body request: UpdateReleaseRequest
-    ): Release
+        @Path("artifact_id") artifactId: Long,
+        @Path("archive_format") archiveFormat: String = "zip"
+    ): ResponseBody
 
-    @DELETE("repos/{owner}/{repo}/releases/{releaseId}")
-    suspend fun deleteRelease(
+    @GET("repos/{owner}/{repo}")
+    suspend fun repository(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): GitHubRepositoryModel
+
+    @GET("users/{username}/repos")
+    suspend fun userRepositories(
+        @Path("username") username: String,
+        @Query("sort") sort: String = "updated",
+        @Query("per_page") perPage: Int = 50,
+        @Query("page") page: Int = 1
+    ): List<GitHubRepositoryModel>
+
+    @GET("users/{username}/followers")
+    suspend fun followers(
+        @Path("username") username: String,
+        @Query("per_page") perPage: Int = 50,
+        @Query("page") page: Int = 1
+    ): List<GitHubUser>
+
+    @GET("users/{username}/following")
+    suspend fun following(
+        @Path("username") username: String,
+        @Query("per_page") perPage: Int = 50,
+        @Query("page") page: Int = 1
+    ): List<GitHubUser>
+
+    @GET("user/following/{username}")
+    suspend fun isFollowing(@Path("username") username: String): Response<Unit>
+
+    @PUT("user/following/{username}")
+    suspend fun follow(@Path("username") username: String): Response<Unit>
+
+    @DELETE("user/following/{username}")
+    suspend fun unfollow(@Path("username") username: String): Response<Unit>
+
+    @POST("repos/{owner}/{repo}/issues")
+    suspend fun createIssue(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("releaseId") releaseId: Long
-    ): Response<Unit>
+        @Body request: CreateIssueRequest
+    ): Issue
+
+    @PATCH("repos/{owner}/{repo}/issues/{issue_number}")
+    suspend fun updateIssue(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issue_number") issueNumber: Int,
+        @Body request: UpdateIssueRequest
+    ): Issue
+
+    @POST("repos/{owner}/{repo}/issues/{issue_number}/comments")
+    suspend fun createIssueComment(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issue_number") issueNumber: Int,
+        @Body request: CreateIssueCommentRequest
+    ): IssueComment
+
+    @PATCH("repos/{owner}/{repo}/pulls/{pull_number}")
+    suspend fun updatePullRequest(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("pull_number") pullNumber: Int,
+        @Body request: UpdatePullRequestRequest
+    ): PullRequest
+
+    @PUT("repos/{owner}/{repo}/pulls/{pull_number}/merge")
+    suspend fun mergePullRequest(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("pull_number") pullNumber: Int,
+        @Body request: MergePullRequestRequest
+    ): MergePullRequestResponse
+
+    @POST("repos/{owner}/{repo}/pulls/{pull_number}/reviews")
+    suspend fun createPullRequestReview(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("pull_number") pullNumber: Int,
+        @Body request: CreatePullRequestReviewRequest
+    ): PullRequestReview
+
+    @GET("repos/{owner}/{repo}/issues/{issue_number}/comments")
+    suspend fun issueComments(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("issue_number") issueNumber: Int,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<IssueComment>
+
+    @GET("repos/{owner}/{repo}/pulls/{pull_number}/files")
+    suspend fun pullRequestFiles(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("pull_number") pullNumber: Int,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<PullRequestFile>
+
+    @GET("repos/{owner}/{repo}/collaborators")
+    suspend fun collaborators(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("affiliation") affiliation: String = "all",
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<GitHubUser>
+
+    @GET("repos/{owner}/{repo}/milestones")
+    suspend fun milestones(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("state") state: String = "open",
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<Milestone>
+
+    @GET("repos/{owner}/{repo}/labels")
+    suspend fun labels(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<Label>
+
+    @GET("repos/{owner}/{repo}/contributors")
+    suspend fun contributors(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<GitHubUser>
+
+    @GET("repos/{owner}/{repo}/languages")
+    suspend fun languages(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Map<String, Long>
+}
+
+interface GitHubGraphQlApi {
+    @POST("graphql")
+    suspend fun query(@Body request: GraphQlRequest): GraphQlResponse
 }
