@@ -30,6 +30,8 @@ enum class ThemeStyle {
     Clean,
     LiquidGlass,
     Studio,
+    Midnight,
+    Aurora,
     HighContrast;
 
     companion object {
@@ -41,11 +43,75 @@ enum class AccentColor {
     Cyan,
     Blue,
     Violet,
+    Emerald,
+    Rose,
     Coral,
-    Amber;
+    Amber,
+    Orange;
 
     companion object {
         fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan
+    }
+}
+
+enum class DisplaySize {
+    Small,
+    Standard,
+    Large;
+
+    companion object {
+        fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard
+    }
+}
+
+enum class FontSize {
+    Small,
+    Default,
+    Large;
+
+    companion object {
+        fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default
+    }
+}
+
+enum class FontWeightStyle {
+    Light,
+    Default,
+    Bold;
+
+    companion object {
+        fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default
+    }
+}
+
+enum class AppFontFamily {
+    SystemSans,
+    Serif,
+    Monospace;
+
+    companion object {
+        fun fromStored(value: String?): AppFontFamily = entries.firstOrNull { it.name == value } ?: SystemSans
+    }
+}
+
+enum class LoadingStyle {
+    Spinner,
+    Linear,
+    Pulse;
+
+    companion object {
+        fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: Spinner
+    }
+}
+
+enum class CodeColorStyle {
+    Classic,
+    Ocean,
+    Sunset,
+    Monochrome;
+
+    companion object {
+        fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic
     }
 }
 
@@ -53,6 +119,12 @@ data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
     val accentColor: AccentColor = AccentColor.Cyan,
+    val displaySize: DisplaySize = DisplaySize.Standard,
+    val fontSize: FontSize = FontSize.Default,
+    val fontWeight: FontWeightStyle = FontWeightStyle.Default,
+    val fontFamily: AppFontFamily = AppFontFamily.SystemSans,
+    val loadingStyle: LoadingStyle = LoadingStyle.Spinner,
+    val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
     val dynamicColor: Boolean = false,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
@@ -75,6 +147,12 @@ class AppPreferences @Inject constructor(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
             themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
             accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
+            displaySize = DisplaySize.fromStored(preferences[DISPLAY_SIZE]),
+            fontSize = FontSize.fromStored(preferences[FONT_SIZE]),
+            fontWeight = FontWeightStyle.fromStored(preferences[FONT_WEIGHT]),
+            fontFamily = AppFontFamily.fromStored(preferences[FONT_FAMILY]),
+            loadingStyle = LoadingStyle.fromStored(preferences[LOADING_STYLE]),
+            codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: false,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
@@ -97,6 +175,12 @@ class AppPreferences @Inject constructor(
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
     suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name }
+    suspend fun setDisplaySize(size: DisplaySize) = context.dataStore.edit { it[DISPLAY_SIZE] = size.name }
+    suspend fun setFontSize(size: FontSize) = context.dataStore.edit { it[FONT_SIZE] = size.name }
+    suspend fun setFontWeight(weight: FontWeightStyle) = context.dataStore.edit { it[FONT_WEIGHT] = weight.name }
+    suspend fun setFontFamily(family: AppFontFamily) = context.dataStore.edit { it[FONT_FAMILY] = family.name }
+    suspend fun setLoadingStyle(style: LoadingStyle) = context.dataStore.edit { it[LOADING_STYLE] = style.name }
+    suspend fun setCodeColorStyle(style: CodeColorStyle) = context.dataStore.edit { it[CODE_COLOR_STYLE] = style.name }
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
@@ -109,6 +193,29 @@ class AppPreferences @Inject constructor(
     suspend fun setCompactCards(enabled: Boolean) = context.dataStore.edit { it[COMPACT_CARDS] = enabled }
     suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
+
+    suspend fun resetAppearance() = context.dataStore.edit { preferences ->
+        preferences.remove(THEME_MODE)
+        preferences.remove(THEME_STYLE)
+        preferences.remove(ACCENT_COLOR)
+        preferences.remove(DISPLAY_SIZE)
+        preferences.remove(FONT_SIZE)
+        preferences.remove(FONT_WEIGHT)
+        preferences.remove(FONT_FAMILY)
+        preferences.remove(LOADING_STYLE)
+        preferences.remove(CODE_COLOR_STYLE)
+        preferences.remove(DYNAMIC_COLOR)
+        preferences.remove(TRUE_BLACK)
+        preferences.remove(SHOW_IMAGES)
+        preferences.remove(WORKFLOW_PREVIEW)
+        preferences.remove(WORKFLOW_STEP_DETAILS)
+        preferences.remove(STATUS_COLORS)
+        preferences.remove(ACTIONS_CONTROLS)
+        preferences.remove(REPOSITORY_MANAGER)
+        preferences.remove(FILE_TOOLS)
+        preferences.remove(COMPACT_CARDS)
+        preferences.remove(REDUCE_MOTION)
+    }
 
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
@@ -135,6 +242,12 @@ class AppPreferences @Inject constructor(
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val THEME_STYLE = stringPreferencesKey("theme_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
+        val DISPLAY_SIZE = stringPreferencesKey("display_size")
+        val FONT_SIZE = stringPreferencesKey("font_size")
+        val FONT_WEIGHT = stringPreferencesKey("font_weight")
+        val FONT_FAMILY = stringPreferencesKey("font_family")
+        val LOADING_STYLE = stringPreferencesKey("loading_style")
+        val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
         val SHOW_IMAGES = booleanPreferencesKey("show_images")

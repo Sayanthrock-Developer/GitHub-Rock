@@ -55,6 +55,12 @@ class MainActivity : ComponentActivity() {
                 trueBlack = appearance.trueBlack,
                 accentColor = appearance.accentColor,
                 themeStyle = appearance.themeStyle,
+                displaySize = appearance.displaySize,
+                fontSize = appearance.fontSize,
+                fontWeight = appearance.fontWeight,
+                fontFamily = appearance.fontFamily,
+                loadingStyle = appearance.loadingStyle,
+                codeColorStyle = appearance.codeColorStyle,
                 showImages = appearance.showImages
             ) {
                 GitHubRockRoot()

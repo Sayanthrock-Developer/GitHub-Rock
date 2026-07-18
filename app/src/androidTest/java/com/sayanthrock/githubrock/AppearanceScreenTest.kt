@@ -46,13 +46,13 @@ class AppearanceScreenTest {
             }
         }
 
-        compose.onNodeWithText("Clean standard").assertIsDisplayed()
+        compose.onNodeWithText("Make GitHub Rock yours").assertIsDisplayed()
         compose.onNodeWithText("Liquid glass").performScrollTo().performClick()
         compose.onNodeWithText("Dark").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Use Violet accent").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle Show remote images").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Toggle dynamic color").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Toggle true black").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Toggle System dynamic color").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Toggle True black").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle Workflow code preview").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle File tools").performScrollTo().performClick()
 
