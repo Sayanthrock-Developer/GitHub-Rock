@@ -68,6 +68,8 @@ app/src/main/java/com/sayanthrock/githubrock/
 
 ## GitHub App registration and Device Flow
 
+> Full setup guide: [GitHub authentication and APK signing](docs/GITHUB_AUTH_AND_SIGNING.md).
+
 1. Open **GitHub Settings → Developer settings → GitHub Apps → New GitHub App**.
 2. Give the app a unique name and homepage URL. A callback URL is not used by Device Flow.
 3. Enable **Device Flow** in the GitHub App settings.
@@ -142,16 +144,20 @@ Create these GitHub Actions repository or environment secrets:
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 
+Independently read the SHA-256 certificate fingerprint from the intended release keystore and create the public Actions variable `EXPECTED_RELEASE_CERT_SHA256`. The release workflow fails closed if this value is missing, malformed, or does not match the APK signer.
+
 The workflow decodes the keystore into the runner's temporary directory and exposes passwords only as masked environment variables. `app/build.gradle.kts` activates the release signing configuration only when `GITHUB_ROCK_KEYSTORE_PATH` exists in the build environment. Secret values are never written into YAML, source, logs, artifacts, or the APK.
+
+Each published release includes both the APK file checksum (`.apk.sha256`) and the signing-certificate fingerprint (`.apk.certificate.sha256`). The certificate asset is a convenience copy, not the root of trust; compare it with the independently published trusted project fingerprint.
 
 ## Publish and install the app
 
-1. Add the four Android signing secrets listed above. The official public GitHub App Client ID is already configured; forks may override it with a `PUBLIC_GITHUB_CLIENT_ID` Actions variable.
+1. Add the four Android signing secrets listed above and set `EXPECTED_RELEASE_CERT_SHA256` from the independently verified release keystore. The official public GitHub App Client ID is already configured; forks may override it with a `PUBLIC_GITHUB_CLIENT_ID` Actions variable.
 2. Open **Actions → Publish Android Release → Run workflow**.
 3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
-4. Wait for signature verification, checksum generation, and release publication to finish.
-5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk` plus its `.sha256` file. An AAB cannot be installed directly on a phone.
-6. Compare the APK's SHA-256 value with the checksum file.
+4. Wait for pinned certificate verification, checksum generation, and release publication to finish.
+5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk`, `GitHub-Rock-<version>.apk.sha256`, and `GitHub-Rock-<version>.apk.certificate.sha256`. An AAB cannot be installed directly on a phone.
+6. Compare the APK's SHA-256 checksum with the `.apk.sha256` file. Compare the detected signing certificate with the fingerprint previously published through an independently trusted project channel; do not treat the certificate asset from the same release as the only trust source.
 7. On Android 10 or newer, allow **Install unknown apps** only for the browser or file manager you used, open the APK, and approve Android's official Package Installer prompt.
 
 If Android reports an incompatible signature, the installed copy was signed with a different key. Uninstall that older release before installing the new APK, or rebuild with the original signing key. Uninstalling removes that app's local data. Never bypass Play Protect or Android's package-signature checks.
@@ -163,6 +169,7 @@ If Android reports an incompatible signature, the installed copy was signed with
 - The central GitHub REST version header is `BuildConfig.GITHUB_API_VERSION`.
 - The network stack rejects cleartext traffic.
 - APK installation is delegated to Android's official package installer; there is no silent install or security bypass.
+- Release publication verifies the APK signer against the independently configured `EXPECTED_RELEASE_CERT_SHA256` value before creating release assets.
 - SHA-256 is calculated locally for every completed file. Publisher identity is established only when that fingerprint is compared with a trusted checksum or signature.
 - Destructive GitHub operations require an explicit confirmation in the product flow.
 - Website-only actions open through an allow-listed HTTPS GitHub host in a Custom Tab. Credentials, passkeys, tokens, billing details, and Marketplace purchases remain on GitHub's pages and are never collected by GitHub Rock.
@@ -188,7 +195,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
 - Recoverable fingerprinted download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
 - Own-repository CI and manual APK/AAB workflows
-- Signed, versioned GitHub Release workflow with APK signature verification and SHA-256 assets
+- Signed, versioned GitHub Release workflow with APK signature verification, pinned signing-certificate validation, APK checksums, and certificate fingerprint assets
 - Actionable All GitHub hub covering 39 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, Marketplace, security settings, billing, and community discovery
 
 ## Planned next

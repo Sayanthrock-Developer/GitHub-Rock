@@ -3,9 +3,9 @@
 build/
 **/build/
 local.properties
+keystore.properties
 *.iml
 *.jks
 *.keystore
 captures/
 .DS_Store
-
