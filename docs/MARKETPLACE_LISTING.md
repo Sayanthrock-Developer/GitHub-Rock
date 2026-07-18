@@ -50,7 +50,7 @@ Create one plan by selecting **New draft plan**.
 | Trial | No trial needed |
 | Units or seats | Not applicable |
 
-Do not create a paid plan unless a real paid service, billing process, support policy, and Marketplace purchase webhook are introduced.
+Do not create a paid plan unless a real paid service, billing process, support policy, and Marketplace purchase backend are introduced.
 
 Save the plan and make it visible in the draft listing.
 
@@ -70,7 +70,7 @@ Select that option only when it accurately describes the owner and project. Obta
 | --- | --- |
 | Privacy Policy URL | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/PRIVACY.md` |
 | Terms of Service URL | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/TERMS.md` |
-| Third-party services required | `GitHub OAuth and GitHub APIs; Android browser/Custom Tabs; Android Package Installer and system sharing/file interfaces; optional Termux integration when explicitly enabled by the user.` |
+| Third-party services required | `GitHub OAuth and GitHub APIs; Cloudflare Workers for signed Marketplace webhook delivery; Android browser/Custom Tabs; Android Package Installer and system sharing/file interfaces; optional Termux integration when explicitly enabled by the user.` |
 | Repository visibility | `Public` |
 
 ### Transparency disclosures
@@ -93,6 +93,7 @@ GitHub Rock is an open-source Android developer tool that connects to GitHub thr
 - The project owner does not receive OAuth tokens during normal app operation.
 - App backup is disabled for sensitive data, cleartext traffic is disabled, authorization and cookie headers are redacted, and release builds disable HTTP logging.
 - Logging out clears the local OAuth session. Users may also revoke authorization, clear app storage, or uninstall the app.
+- Signed Marketplace webhook events are delivered through Cloudflare Workers. The endpoint verifies GitHub's HMAC signature and does not persist payloads for the current free plan.
 
 ### User-controlled operations
 - Repository changes, workflow actions, downloads, sharing, and APK installation are initiated by the user.
@@ -102,22 +103,69 @@ GitHub Rock is an open-source Android developer tool that connects to GitHub thr
 ### Incident reporting and limitations
 - Security issues must be reported privately using the repository's SECURITY.md instructions; live credentials must never be posted publicly.
 - GitHub Rock is provided under the Apache License 2.0 without an uptime or service-level guarantee.
-- GitHub services and data processing remain subject to GitHub's own terms, privacy statement, API rules, and organization policies.
+- GitHub and Cloudflare services remain subject to their own terms, privacy statements, security policies, and availability.
 ```
 
 Select **Save listing details**.
 
 ## 5 — Webhook
 
-The current Android OAuth Device Flow implementation has no backend webhook receiver.
+A deployable Cloudflare Worker is included in `webhook-worker/`.
 
-- Leave **Payload URL** blank.
-- Do not enter a fake endpoint.
-- Leave **Secret** blank.
-- Turn **Active** off.
-- Do not select **Create webhook**.
+### Add deployment secrets
 
-A real HTTPS webhook endpoint, secret verification, event storage policy, retry handling, and incident monitoring are required before enabling Marketplace purchase events. Paid plans must not be offered without that backend.
+Open **Repository → Settings → Secrets and variables → Actions → New repository secret** and create:
+
+```text
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+MARKETPLACE_WEBHOOK_SECRET
+```
+
+Generate `MARKETPLACE_WEBHOOK_SECRET` privately with a password manager or:
+
+```bash
+openssl rand -hex 32
+```
+
+Never commit or share this value.
+
+### Deploy the endpoint
+
+Open **Actions → Deploy Marketplace Webhook → Run workflow**. Copy the deployed `workers.dev` URL from the action output.
+
+The Payload URL must end with:
+
+```text
+/github/marketplace/webhook
+```
+
+Example format:
+
+```text
+https://github-rock-marketplace-webhook.<your-workers-subdomain>.workers.dev/github/marketplace/webhook
+```
+
+Confirm the service first by opening:
+
+```text
+https://github-rock-marketplace-webhook.<your-workers-subdomain>.workers.dev/health
+```
+
+### Enter the Marketplace webhook fields
+
+| Field | Value |
+| --- | --- |
+| Payload URL | The real deployed Worker URL ending in `/github/marketplace/webhook` |
+| Content type | `application/json` |
+| Secret | The exact same private value stored as `MARKETPLACE_WEBHOOK_SECRET` |
+| Active | Enabled |
+
+Then select **Create webhook**.
+
+Do not use a GitHub Pages URL, repository URL, localhost URL, or invented domain. GitHub requires a real HTTPS endpoint.
+
+See [`webhook-worker/README.md`](../webhook-worker/README.md) for deployment, testing, and secret-rotation instructions.
 
 ## Related listing pages
 
@@ -128,10 +176,11 @@ A real HTTPS webhook endpoint, secret verification, event storage policy, retry 
 | Support | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/SUPPORT.md` |
 | Security policy | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/SECURITY.md` |
 | OAuth documentation | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/docs/GITHUB_AUTH_AND_SIGNING.md` |
+| Webhook deployment | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/webhook-worker/README.md` |
 
 ## Notes
 
 - GitHub Rock uses OAuth Device Flow.
 - The public OAuth Client ID may be included in the Android app.
-- Never upload or publish a Client Secret, access token, refresh token, private key, keystore, or password.
+- Never upload or publish a Client Secret, webhook secret, access token, refresh token, private key, keystore, or password.
 - Use a free plan unless paid services are actually provided.
