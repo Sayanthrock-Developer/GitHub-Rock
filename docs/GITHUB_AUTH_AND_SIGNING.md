@@ -11,7 +11,8 @@ GitHub Rock is a native Android application, so it uses **GitHub App Device Flow
 3. Copy the public Client ID.
 4. Put it in `local.properties` for local builds, or in the `PUBLIC_GITHUB_CLIENT_ID` Actions variable for fork CI builds.
 5. Sync and run the project.
-6. Keep every secret, keystore, password, private key, and token outside the repository and APK.
+6. Before publishing a release, independently read the release-key SHA-256 fingerprint and set `EXPECTED_RELEASE_CERT_SHA256` in GitHub Actions variables.
+7. Keep every secret, keystore, password, private key, and token outside the repository and APK.
 
 ---
 
@@ -132,14 +133,41 @@ After changing account permissions, save the GitHub App settings and re-authoriz
 
 ## 🔏 APK signing certificate
 
-Official releases are signed in GitHub Actions. The release workflow verifies the APK with Android `apksigner` and publishes two separate SHA-256 files:
+Official releases are signed in GitHub Actions. The release workflow verifies the APK with Android `apksigner`, compares the detected signer certificate with a separately configured trusted fingerprint, and only then publishes release assets.
+
+### Pin the trusted release certificate
+
+The repository owner must independently read the fingerprint from the intended release keystore before the first release:
+
+```bash
+keytool -list -v \
+  -keystore release.jks \
+  -alias your_key_alias
+```
+
+Copy the certificate's SHA-256 fingerprint, then create this GitHub Actions repository variable:
+
+**Repository → Settings → Secrets and variables → Actions → Variables**
+
+```text
+Name: EXPECTED_RELEASE_CERT_SHA256
+Value: YOUR_TRUSTED_64_HEX_SHA256_FINGERPRINT
+```
+
+Colons and letter case are accepted; the workflow normalizes the value before comparison. The release fails closed when the variable is missing, malformed, or does not match the APK signer.
+
+> Owner action required: the exact official fingerprint cannot be generated from source code because the private release keystore is intentionally not stored in this repository. Set `EXPECTED_RELEASE_CERT_SHA256` from the independently controlled release keystore before running the release workflow.
+
+### Published release assets
+
+After the pinned certificate check succeeds, the workflow publishes two separate SHA-256 files:
 
 | Release asset | Meaning |
 | --- | --- |
 | `GitHub-Rock-<version>.apk.sha256` | SHA-256 checksum of the APK file |
-| `GitHub-Rock-<version>.apk.certificate.sha256` | SHA-256 fingerprint of the APK signing certificate |
+| `GitHub-Rock-<version>.apk.certificate.sha256` | SHA-256 fingerprint detected from the APK signing certificate |
 
-Do not confuse the APK file checksum with the signing-certificate fingerprint.
+Do not confuse the APK file checksum with the signing-certificate fingerprint. The certificate asset is a convenient copy of the detected value, not the root of trust. Users should compare it with the fingerprint previously published through an independently trusted project channel, such as a reviewed security document or the organization's official website.
 
 ### Read the signing certificate from an APK
 
@@ -152,16 +180,6 @@ Look for:
 ```text
 Signer #1 certificate SHA-256 digest: ...
 ```
-
-### Read the certificate from a keystore
-
-```bash
-keytool -list -v \
-  -keystore release.jks \
-  -alias your_key_alias
-```
-
-Publish only the public SHA-256 certificate fingerprint. Never publish the keystore, private key, alias password, keystore password, or signing password.
 
 ### Required GitHub Actions signing secrets
 
@@ -176,7 +194,23 @@ ANDROID_KEY_ALIAS
 ANDROID_KEY_PASSWORD
 ```
 
-The workflow decodes the keystore only inside the temporary GitHub Actions runner directory, validates it, signs the APK, verifies the signer certificate, generates checksums, uploads the workflow artifact, and publishes the release assets.
+The workflow decodes the keystore only inside the temporary GitHub Actions runner directory, validates it, signs the APK, verifies the signer certificate against `EXPECTED_RELEASE_CERT_SHA256`, generates checksums, uploads the workflow artifact, and publishes the release assets.
+
+Publish only the public SHA-256 certificate fingerprint. Never publish the keystore, private key, alias password, keystore password, or signing password.
+
+### Intentional signing-key rotation
+
+A signing-key change is a security-sensitive release event:
+
+1. Generate and back up the new keystore offline.
+2. Read and independently record the new SHA-256 certificate fingerprint.
+3. Obtain project-owner approval for the rotation.
+4. Publish the old and new fingerprints through a trusted project channel before the new release.
+5. Replace the four signing secrets and update `EXPECTED_RELEASE_CERT_SHA256` in one controlled maintenance window.
+6. Run the release workflow and verify that the pinned comparison succeeds.
+7. Explain upgrade impact in the release notes. Android normally rejects a sideloaded update signed by a different certificate, so users may need to uninstall the previous build unless a supported signing-lineage migration is in place.
+
+Never update the expected fingerprint merely to make a failing release pass. First confirm that the keystore change was intentional.
 
 ---
 
@@ -189,4 +223,5 @@ The workflow decodes the keystore only inside the temporary GitHub Actions runne
 - [x] Device Flow polling follows GitHub's supplied interval
 - [x] Tokens stored with Android Keystore-backed encryption
 - [x] Signed release APK verified with `apksigner`
+- [x] APK signer compared with `EXPECTED_RELEASE_CERT_SHA256`
 - [x] APK checksum and certificate fingerprint published separately
