@@ -14,7 +14,7 @@ import org.junit.Test
 class RepositoryShowcaseScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun applicationRepositoryShowsCleanPreviewAndGitHubAction() {
+    @Test fun applicationRepositorySeparatesPreviewFromIdentityVisual() {
         val repository = GitHubRepositoryModel(
             id = 1,
             name = "GitHub-Rock",
@@ -48,7 +48,11 @@ class RepositoryShowcaseScreenTest {
             }
         }
 
+        compose.onNodeWithContentDescription(
+            "SayanthRock/GitHub-Rock repository preview image"
+        ).assertIsDisplayed()
         compose.onNodeWithContentDescription("GitHub-Rock application icon").assertIsDisplayed()
+        compose.onNodeWithContentDescription("SayanthRock avatar").assertDoesNotExist()
         compose.onNodeWithText("Application").assertIsDisplayed()
         compose.onNodeWithText("About this project").assertIsDisplayed()
         compose.onNodeWithText("Open on GitHub").assertIsDisplayed()

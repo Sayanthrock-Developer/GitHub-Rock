@@ -33,7 +33,13 @@ import coil.compose.rememberAsyncImagePainter
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
-/** Branded repository artwork with a privacy-aware image fallback. */
+/**
+ * Branded repository artwork with a privacy-aware image fallback.
+ *
+ * Full-size heroes intentionally separate the large preview from the project icon and owner identity.
+ * The lower identity rail reserves space for the project icon rendered by the parent hero, preventing
+ * the previous banner/avatar/icon overlap.
+ */
 @Composable
 fun RepositoryArtwork(
     repository: GitHubRepositoryModel,
@@ -41,7 +47,9 @@ fun RepositoryArtwork(
     compact: Boolean = false
 ) {
     val showImages = LocalRemoteImagesEnabled.current
-    val artworkHeight = if (compact) 132.dp else 176.dp
+    val previewHeight = if (compact) 92.dp else 124.dp
+    val identityHeight = if (compact) 40.dp else 52.dp
+    val artworkHeight = previewHeight + identityHeight
     val previewDescription = "${repository.fullName} repository preview image"
     val ownerFallbackPainter = if (showImages) {
         repository.owner.avatarUrl.takeIf(String::isNotBlank)?.let { rememberAsyncImagePainter(it) }
@@ -49,7 +57,7 @@ fun RepositoryArtwork(
         null
     }
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .height(artworkHeight)
@@ -63,92 +71,110 @@ fun RepositoryArtwork(
                 )
             )
     ) {
-        when {
-            showImages && !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
-                model = repository.previewImageUrl,
-                contentDescription = previewDescription,
-                placeholder = ownerFallbackPainter,
-                error = ownerFallbackPainter,
-                fallback = ownerFallbackPainter,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            showImages && repository.owner.avatarUrl.isNotBlank() -> AsyncImage(
-                model = repository.owner.avatarUrl,
-                contentDescription = previewDescription,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().alpha(.24f)
-            )
-        }
-
         Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.background.copy(alpha = .04f),
-                            Color.Transparent,
-                            MaterialTheme.colorScheme.background.copy(alpha = .92f)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(previewHeight)
+        ) {
+            when {
+                showImages && !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
+                    model = repository.previewImageUrl,
+                    contentDescription = previewDescription,
+                    placeholder = ownerFallbackPainter,
+                    error = ownerFallbackPainter,
+                    fallback = ownerFallbackPainter,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                showImages && repository.owner.avatarUrl.isNotBlank() -> AsyncImage(
+                    model = repository.owner.avatarUrl,
+                    contentDescription = previewDescription,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().alpha(.22f)
+                )
+            }
+
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.background.copy(alpha = .03f),
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background.copy(alpha = .46f)
+                            )
                         )
                     )
-                )
-        )
+            )
 
-        Row(
-            modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (repository.isTemplate) RepositoryArtworkBadge("Template")
-            if (repository.fork) RepositoryArtworkBadge("Fork")
-            if (repository.private) RepositoryArtworkBadge("Private")
+            Row(
+                modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (repository.isTemplate) RepositoryArtworkBadge("Template")
+                if (repository.fork) RepositoryArtworkBadge("Fork")
+                if (repository.private) RepositoryArtworkBadge("Private")
+            }
         }
 
-        Row(
+        Surface(
             modifier = Modifier
-                .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .height(identityHeight),
+            color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .96f),
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .72f)
+            )
         ) {
-            Surface(
-                shape = RoundedCornerShape(15.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = .94f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .72f))
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = if (compact) 14.dp else 108.dp,
+                        end = 14.dp
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (showImages && repository.owner.avatarUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = repository.owner.avatarUrl,
-                        contentDescription = "${repository.owner.login} avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(if (compact) 42.dp else 48.dp)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.size(if (compact) 42.dp else 48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Surface(
+                    modifier = Modifier.size(if (compact) 26.dp else 30.dp),
+                    shape = RoundedCornerShape(if (compact) 9.dp else 10.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(if (compact) 15.dp else 17.dp)
+                        )
                     }
                 }
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "@${repository.owner.login}",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    repository.language ?: "GitHub repository",
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .76f),
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "@${repository.owner.login}",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = if (compact) {
+                            MaterialTheme.typography.labelMedium
+                        } else {
+                            MaterialTheme.typography.labelLarge
+                        },
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!compact) {
+                        Text(
+                            repository.language ?: "GitHub repository",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
     }
@@ -158,8 +184,8 @@ fun RepositoryArtwork(
 private fun RepositoryArtworkBadge(label: String) {
     Surface(
         shape = RoundedCornerShape(999.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = .9f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .62f))
+        color = MaterialTheme.colorScheme.surface.copy(alpha = .92f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .58f))
     ) {
         Text(
             label,
