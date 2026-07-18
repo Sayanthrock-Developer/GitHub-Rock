@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.core.security
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.sayanthrock.githubrock.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,7 +37,16 @@ class KeystoreTokenStore @Inject constructor(
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
+    private val configuredClientId: String
+        get() = BuildConfig.GITHUB_CLIENT_ID.trim()
+
     override fun read(): StoredTokens? {
+        val storedClientId = preferences.getString(KEY_CLIENT_ID, null)
+        if (!isStoredClientIdCompatible(storedClientId, configuredClientId)) {
+            clear()
+            return null
+        }
+
         val access = preferences.getString(KEY_ACCESS, null) ?: return null
         return StoredTokens(
             accessToken = access,
@@ -48,6 +58,7 @@ class KeystoreTokenStore @Inject constructor(
 
     override fun save(tokens: StoredTokens) {
         preferences.edit().apply {
+            putString(KEY_CLIENT_ID, configuredClientId)
             putString(KEY_ACCESS, tokens.accessToken)
             putString(KEY_REFRESH, tokens.refreshToken)
             putLongOrRemove(KEY_ACCESS_EXPIRY, tokens.accessExpiresAtEpochSeconds)
@@ -62,9 +73,15 @@ class KeystoreTokenStore @Inject constructor(
     }
 
     private companion object {
+        const val KEY_CLIENT_ID = "oauth_client_id"
         const val KEY_ACCESS = "access_token"
         const val KEY_REFRESH = "refresh_token"
         const val KEY_ACCESS_EXPIRY = "access_expiry"
         const val KEY_REFRESH_EXPIRY = "refresh_expiry"
     }
+}
+
+internal fun isStoredClientIdCompatible(storedClientId: String?, configuredClientId: String): Boolean {
+    val configured = configuredClientId.trim()
+    return configured.isNotBlank() && storedClientId == configured
 }

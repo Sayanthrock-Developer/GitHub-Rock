@@ -17,7 +17,8 @@ interface GitHubAuthApi {
     @Headers("Accept: application/json")
     @POST("login/device/code")
     suspend fun requestDeviceCode(
-        @Query("client_id") clientId: String
+        @Query("client_id") clientId: String,
+        @Query("scope") scope: String
     ): DeviceCodeResponse
 
     @Headers("Accept: application/json")

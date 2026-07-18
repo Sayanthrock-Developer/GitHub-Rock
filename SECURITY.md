@@ -12,5 +12,4 @@ The project is currently an alpha. Security fixes are applied to the latest `mai
 
 ## Credential model
 
-GitHub Rock embeds only a public GitHub App client ID. User tokens are encrypted with an Android Keystore-backed key. Android signing material belongs in GitHub repository/environment secrets and is used only on ephemeral Actions runners.
-
+GitHub Rock embeds only the public OAuth App Client ID used by GitHub Device Flow. The Android app never embeds or requires an OAuth Client Secret. User tokens are encrypted with an Android Keystore-backed key. Android signing material belongs in GitHub repository/environment secrets and is used only on ephemeral Actions runners.

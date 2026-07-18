@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_CLIENT_ID || 'Iv23liBz9KwjI8S24igW' }}
+      GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

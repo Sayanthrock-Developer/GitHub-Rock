@@ -1,5 +1,5 @@
 # Copy this file to local.properties. local.properties is ignored by Git.
-# GitHub Rock uses GitHub App Device Flow, so only the public Client ID is needed.
-# Never add a client secret, private key, access token, keystore, or password here.
+# GitHub Rock uses OAuth App Device Flow, so only the public Client ID is needed.
+# Never add a client secret, access token, keystore, private key, or password here.
 sdk.dir=/path/to/Android/Sdk
-GITHUB_CLIENT_ID=YOUR_PUBLIC_GITHUB_APP_CLIENT_ID
+GITHUB_CLIENT_ID=Ov23lim8WhLjeUMqvuMj

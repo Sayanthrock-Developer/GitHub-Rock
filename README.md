@@ -13,7 +13,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - MVVM with a pragmatic Clean Architecture boundary
 - Hilt, Retrofit/OkHttp, Kotlin Serialization, Room, DataStore, Paging dependencies, WorkManager, Coil, and Navigation Compose
 - Android 10+ (`minSdk 29`), `compileSdk` / `targetSdk` 36
-- GitHub App Device Flow with pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
+- GitHub OAuth App Device Flow with explicit scopes, pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
 - Complete GitHub services hub with 39 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, security, billing, settings, and community features
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
@@ -66,49 +66,41 @@ app/src/main/java/com/sayanthrock/githubrock/
 └── ui/         Compose theme, components, navigation, screens, view models
 ```
 
-## GitHub App registration and Device Flow
+## OAuth App registration and Device Flow
 
 > Full setup guide: [GitHub authentication and APK signing](docs/GITHUB_AUTH_AND_SIGNING.md).
 
-1. Open **GitHub Settings → Developer settings → GitHub Apps → New GitHub App**.
-2. Give the app a unique name and homepage URL. A callback URL is not used by Device Flow.
-3. Enable **Device Flow** in the GitHub App settings.
-4. Install the GitHub App for the account or organizations the user should manage.
-5. Copy the public **Client ID**. Never copy a client secret, private key, access token, keystore, or password into this project.
-6. Copy `local.properties.example` to `local.properties` and configure:
+1. Open **GitHub Settings → Developer settings → OAuth Apps → New OAuth App**.
+2. Use application name `Sayanth Rock Mobile Oauth`.
+3. Use homepage URL `https://github.com/Sayanthrock-Developer/GitHub-Rock`.
+4. Use callback URL `githubrock://oauth/callback`. GitHub requires this registration value, but the current Device Flow login does not use a callback token exchange.
+5. Enable **Device Flow** and save the OAuth App.
+6. Use the public Client ID `Ov23lim8WhLjeUMqvuMj`. Never place the Client Secret, access token, keystore, private key, or password inside the Android project.
+7. Copy `local.properties.example` to `local.properties` for local development.
 
 ```properties
 sdk.dir=/absolute/path/to/Android/Sdk
-GITHUB_CLIENT_ID=your_custom_client_id
+GITHUB_CLIENT_ID=Ov23lim8WhLjeUMqvuMj
 ```
 
-The value is exposed through `BuildConfig.GITHUB_CLIENT_ID`. `local.properties` is ignored by Git. New users can tap **Sign up for GitHub** to open GitHub's official signup page in an Ephemeral Custom Tab. This isolated session does not reuse existing GitHub cookies, so a signed-in browser account cannot redirect signup to the Dashboard. Users can choose Google, Apple, or email, then return to **Continue with my new account**. Browsers without Ephemeral Custom Tab support fall back to GitHub's Add account flow instead of opening the signed-in Dashboard. The app then opens GitHub in a Custom Tab with a browser fallback, shows a copyable verification code, and polls only at GitHub's supplied interval. GitHub's Device Flow completion page cannot reopen an Android app automatically; when the user returns with Android Back or the app switcher, GitHub Rock automatically performs a rate-safe authorization check. The login card also retains **I've authorized — check now**, fresh-code, and guest fallback actions.
+The Client ID is exposed through `BuildConfig.GITHUB_CLIENT_ID` and is bundled as the official fallback so CI and release builds can sign in. Forks can override it with a `PUBLIC_GITHUB_OAUTH_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets and tokens must never be bundled.
 
-The official Sayanth Rock Mobile public Client ID (`Iv23liBz9KwjI8S24igW`) is bundled as a safe default so verified CI and release builds can sign in immediately. Forks can override it with a `PUBLIC_GITHUB_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets, private keys, and tokens must never be bundled.
+New users can tap **Sign up for GitHub** to open GitHub's official signup page in an Ephemeral Custom Tab. The app then opens GitHub's official Device Flow authorization page, displays a copyable verification code, and polls only at GitHub's supplied interval. GitHub Rock never asks for a GitHub password.
 
-## Suggested GitHub App permissions
+## OAuth scopes
 
-Use the smallest permission set that matches the features you enable. Organization policy can further restrict access.
+GitHub Rock requests the following scopes during Device Flow authorization:
 
-| Permission | Access | Used for |
-| --- | --- | --- |
-| Metadata | Read | Repository identity and basic metadata |
-| Contents | Read & write | Browse files and prepare reviewed workflow/file commits |
-| Issues | Read & write | Issues, comments, labels, assignees |
-| Pull requests | Read & write | PR creation, review, and merge flows |
-| Actions | Read & write | Runs, logs, artifacts, dispatch, cancel, rerun |
-| Workflows | Read & write | Propose Android build workflow files |
-| Administration | Read & write only if needed | Repository creation/settings |
-| Members | Read only if needed | Assignee/reviewer resolution in organizations |
+| Scope | Used for |
+| --- | --- |
+| `repo` | Public/private repositories, issues, pull requests, releases, and Actions data |
+| `workflow` | Creating or updating GitHub Actions workflow files |
+| `read:user` | Connected account profile |
+| `user:email` | Account email addresses when required |
+| `read:org` | Organization membership and reviewer/assignee resolution |
+| `notifications` | GitHub notifications used by the app |
 
-Recommended account permissions:
-
-| Permission | Access | Used for |
-| --- | --- | --- |
-| Email addresses | Read-only only if enabled later | Private email display; not required by the current UI |
-| Starring | Read & write only if star controls are enabled | Star/unstar repositories |
-
-The Followers account permission is not required. After changing an account permission, save the GitHub App settings and re-authorize the user so GitHub can grant the updated account access. Repository or organization permission changes instead require approval from the GitHub App installation owner. Permissions should only be enabled when their corresponding UI is active. GitHub Rock never asks for a GitHub password.
+Users approve these permissions on GitHub's official page. Removing a scope requires signing out and authorizing again with the new scope set.
 
 ## Build
 
@@ -152,24 +144,26 @@ Each published release includes both the APK file checksum (`.apk.sha256`) and t
 
 ## Publish and install the app
 
-1. Add the four Android signing secrets listed above and set `EXPECTED_RELEASE_CERT_SHA256` from the independently verified release keystore. The official public GitHub App Client ID is already configured; forks may override it with a `PUBLIC_GITHUB_CLIENT_ID` Actions variable.
+1. Add the four Android signing secrets listed above and set `EXPECTED_RELEASE_CERT_SHA256` from the independently verified release keystore. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_OAUTH_CLIENT_ID`.
 2. Open **Actions → Publish Android Release → Run workflow**.
 3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
 4. Wait for pinned certificate verification, checksum generation, and release publication to finish.
 5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk`, `GitHub-Rock-<version>.apk.sha256`, and `GitHub-Rock-<version>.apk.certificate.sha256`. An AAB cannot be installed directly on a phone.
-6. Compare the APK's SHA-256 checksum with the `.apk.sha256` file. Compare the detected signing certificate with the fingerprint previously published through an independently trusted project channel; do not treat the certificate asset from the same release as the only trust source.
+6. Compare the APK's SHA-256 checksum with the `.apk.sha256` file. Compare the detected signing certificate with the fingerprint previously published through an independently trusted project channel.
 7. On Android 10 or newer, allow **Install unknown apps** only for the browser or file manager you used, open the APK, and approve Android's official Package Installer prompt.
 
 If Android reports an incompatible signature, the installed copy was signed with a different key. Uninstall that older release before installing the new APK, or rebuild with the original signing key. Uninstalling removes that app's local data. Never bypass Play Protect or Android's package-signature checks.
 
 ## Security
 
+- The APK contains only the public OAuth Client ID; no OAuth Client Secret is embedded or required.
+- OAuth Device Flow requests explicit scopes and uses GitHub's official authorization page.
 - Access and refresh tokens are kept in `EncryptedSharedPreferences` using an Android Keystore AES-256-GCM master key and are excluded from backups.
 - `Authorization` and `Cookie` headers are redacted; release builds disable HTTP logging.
 - The central GitHub REST version header is `BuildConfig.GITHUB_API_VERSION`.
 - The network stack rejects cleartext traffic.
 - APK installation is delegated to Android's official package installer; there is no silent install or security bypass.
-- Release publication verifies the APK signer against the independently configured `EXPECTED_RELEASE_CERT_SHA256` value before creating release assets.
+- Release publication verifies the APK signer against `EXPECTED_RELEASE_CERT_SHA256` before creating release assets.
 - SHA-256 is calculated locally for every completed file. Publisher identity is established only when that fingerprint is compared with a trusted checksum or signature.
 - Destructive GitHub operations require an explicit confirmation in the product flow.
 - Website-only actions open through an allow-listed HTTPS GitHub host in a Custom Tab. Credentials, passkeys, tokens, billing details, and Marketplace purchases remain on GitHub's pages and are never collected by GitHub Rock.
@@ -180,7 +174,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 ## Current functional scope
 
-- GitHub Device Flow session acquisition/storage/refresh/logout foundation
+- OAuth Device Flow session acquisition/storage/refresh/logout foundation
 - Guest and isolated demo entry
 - Connected dashboard request with API health, active/failed workflow metrics, and authorized repository listing
 - Public repository search

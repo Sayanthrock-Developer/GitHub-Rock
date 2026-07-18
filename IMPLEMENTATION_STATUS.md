@@ -5,7 +5,7 @@ This file separates working alpha functionality from roadmap scope so the applic
 ## Implemented in the current alpha
 
 - Native Android project, package `com.sayanthrock.githubrock`, API 29–36
-- GitHub App Device Flow request/poll/refresh/logout foundation
+- GitHub OAuth App Device Flow request/poll/refresh/logout foundation with explicit scopes
 - Android Keystore-backed encrypted token storage and redacted HTTP logging
 - Connected, public guest, and isolated demo data modes
 - Home, Repositories, Builds, Downloads, Profile, and repository-detail navigation

@@ -15,6 +15,9 @@ import javax.inject.Singleton
 
 class DeviceFlowException(message: String) : IllegalStateException(message)
 
+internal const val GITHUB_OAUTH_SCOPES =
+    "repo workflow read:user user:email read:org notifications"
+
 @Singleton
 class DeviceFlowAuthRepository @Inject constructor(
     private val api: GitHubAuthApi,
@@ -30,7 +33,8 @@ class DeviceFlowAuthRepository @Inject constructor(
     suspend fun begin(): DeviceCodeResponse {
         check(isConfigured) { "Add GITHUB_CLIENT_ID to local.properties before using GitHub login." }
         return api.requestDeviceCode(
-            clientId = BuildConfig.GITHUB_CLIENT_ID
+            clientId = BuildConfig.GITHUB_CLIENT_ID,
+            scope = GITHUB_OAUTH_SCOPES
         ).also { device ->
             pollMutex.withLock {
                 requiredIntervalSeconds = device.interval.coerceAtLeast(MINIMUM_POLL_INTERVAL_SECONDS)
@@ -52,10 +56,10 @@ class DeviceFlowAuthRepository @Inject constructor(
                 "expired_token" -> throw DeviceFlowException("The device code expired. Start login again.")
                 "access_denied" -> throw DeviceFlowException("GitHub login was denied.")
                 "device_flow_disabled" -> throw DeviceFlowException(
-                    "Device Flow is disabled for this GitHub App. Enable it in the GitHub App settings."
+                    "Device Flow is disabled for this GitHub OAuth App. Enable it in the OAuth App settings."
                 )
                 "incorrect_client_credentials" -> throw DeviceFlowException(
-                    "This build has an invalid GitHub App client ID."
+                    "This build has an invalid GitHub OAuth client ID."
                 )
                 else -> throw DeviceFlowException(response.errorDescription ?: "GitHub authentication failed.")
             }
