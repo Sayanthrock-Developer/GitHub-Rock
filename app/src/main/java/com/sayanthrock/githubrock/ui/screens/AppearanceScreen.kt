@@ -38,7 +38,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -263,7 +262,7 @@ fun AppearanceContent(
             item {
                 ChoiceCard(
                     title = "Loading animation",
-                    subtitle = "Applied to repository and workflow progress",
+                    subtitle = "Applied to repository loading and repository operations",
                     icon = Icons.Default.PlayArrow,
                     choices = LoadingStyle.entries.map { it to it.name },
                     selected = state.loadingStyle,
