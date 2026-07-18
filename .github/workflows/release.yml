@@ -124,16 +124,40 @@ jobs:
           ./gradlew assembleRelease --stacktrace \
             -PGITHUB_ROCK_VERSION_NAME="$VERSION" \
             -PGITHUB_ROCK_VERSION_CODE="${{ github.run_number }}"
-      - name: Verify signature and checksum
+      - name: Verify signature, certificate, and checksum
         run: |
+          set -euo pipefail
+
           APK="$(find app/build/outputs/apk/release -type f -name '*.apk' | head -n 1)"
           [ -f "$APK" ] || { echo "No release APK was produced."; exit 1; }
+
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           [ -x "$APKSIGNER" ] || { echo "Android apksigner was not found."; exit 1; }
-          "$APKSIGNER" verify --verbose --print-certs "$APK"
+
+          CERT_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK" 2>&1)"
+          printf '%s\n' "$CERT_OUTPUT"
+
+          CERT_SHA256="$(
+            printf '%s\n' "$CERT_OUTPUT" |
+              sed -n 's/^Signer #1 certificate SHA-256 digest: //p' |
+              head -n 1
+          )"
+          [ -n "$CERT_SHA256" ] || {
+            echo "Unable to read the signer certificate SHA-256 fingerprint."
+            exit 1
+          }
+
           mkdir -p dist
-          cp "$APK" "dist/GitHub-Rock-$VERSION.apk"
-          (cd dist && sha256sum "GitHub-Rock-$VERSION.apk" > "GitHub-Rock-$VERSION.apk.sha256")
+          RELEASE_APK="GitHub-Rock-$VERSION.apk"
+          cp "$APK" "dist/$RELEASE_APK"
+          (cd dist && sha256sum "$RELEASE_APK" > "$RELEASE_APK.sha256")
+          printf '%s\n' "$CERT_SHA256" > "dist/$RELEASE_APK.certificate.sha256"
+
+          {
+            echo "### APK signing certificate"
+            echo
+            echo "SHA-256: \`$CERT_SHA256\`"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload verified workflow artifact
         uses: actions/upload-artifact@v4
         with:
