@@ -28,6 +28,7 @@ import com.sayanthrock.githubrock.data.settings.ThemeStyle
 
 val LocalRemoteImagesEnabled = staticCompositionLocalOf { true }
 val LocalLoadingStyle = staticCompositionLocalOf { LoadingStyle.Spinner }
+val LocalReduceMotion = staticCompositionLocalOf { false }
 val LocalCodeColorStyle = staticCompositionLocalOf { CodeColorStyle.Classic }
 
 data class CodeColors(
@@ -212,41 +213,36 @@ private fun codeColors(style: CodeColorStyle, darkTheme: Boolean): CodeColors = 
     CodeColorStyle.Classic -> CodeColors(
         keyword = if (darkTheme) Color(0xFF79B8FF) else Color(0xFF0550AE),
         string = if (darkTheme) Color(0xFF85E89D) else Color(0xFF116329),
-        comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF6E7781),
+        comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A),
         number = if (darkTheme) Color(0xFFFFAB70) else Color(0xFF953800),
         type = if (darkTheme) Color(0xFFBC8CFF) else Color(0xFF8250DF),
         property = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E)
     )
     CodeColorStyle.Ocean -> CodeColors(
-        keyword = Color(0xFF58A6FF),
-        string = Color(0xFF7EE787),
-        comment = Color(0xFF8B949E),
-        number = Color(0xFF79C0FF),
-        type = Color(0xFFD2A8FF),
-        property = Color(0xFF39C5CF)
+        keyword = if (darkTheme) Color(0xFF58A6FF) else Color(0xFF0550AE),
+        string = if (darkTheme) Color(0xFF7EE787) else Color(0xFF116329),
+        comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A),
+        number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0A4A7A),
+        type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA),
+        property = if (darkTheme) Color(0xFF39C5CF) else Color(0xFF006D75)
     )
     CodeColorStyle.Sunset -> CodeColors(
-        keyword = Color(0xFFFF7B72),
-        string = Color(0xFFF2CC60),
-        comment = Color(0xFF9DA7B3),
-        number = Color(0xFFFFA657),
-        type = Color(0xFFD2A8FF),
-        property = Color(0xFFFF8FB3)
+        keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFA40E26),
+        string = if (darkTheme) Color(0xFFF2CC60) else Color(0xFF6F5500),
+        comment = if (darkTheme) Color(0xFF9DA7B3) else Color(0xFF57606A),
+        number = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800),
+        type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA),
+        property = if (darkTheme) Color(0xFFFF8FB3) else Color(0xFF9E1B59)
     )
     CodeColorStyle.Monochrome -> CodeColors(
         keyword = if (darkTheme) Color.White else Color.Black,
         string = if (darkTheme) Color(0xFFD0D7DE) else Color(0xFF24292F),
-        comment = if (darkTheme) Color(0xFF8C959F) else Color(0xFF6E7781),
+        comment = if (darkTheme) Color(0xFF8C959F) else Color(0xFF57606A),
         number = if (darkTheme) Color(0xFFE6EDF3) else Color(0xFF24292F),
         type = if (darkTheme) Color.White else Color.Black,
         property = if (darkTheme) Color(0xFFC9D1D9) else Color(0xFF24292F)
     )
 }
-
-private fun ColorScheme.applyCodeStyle(colors: CodeColors): ColorScheme = copy(
-    secondary = colors.number,
-    tertiary = colors.string
-)
 
 private fun DisplaySize.scale(): Float = when (this) {
     DisplaySize.Small -> .90f
@@ -260,7 +256,7 @@ private fun FontSize.scale(): Float = when (this) {
     FontSize.Large -> 1.16f
 }
 
-/** Material 3 visual system with selectable personality, density, typography, and code palette. */
+/** Material 3 visual system with selectable personality, density, typography, and isolated code palettes. */
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = true,
@@ -274,6 +270,7 @@ fun GitHubRockTheme(
     fontFamily: AppFontFamily = AppFontFamily.SystemSans,
     loadingStyle: LoadingStyle = LoadingStyle.Spinner,
     codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
+    reduceMotion: Boolean = false,
     showImages: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -287,21 +284,19 @@ fun GitHubRockTheme(
             dynamicLightColorScheme(context)
         darkTheme -> darkColors(accentColor)
         else -> lightColors(accentColor)
-    }.applyStyle(themeStyle, darkTheme)
-        .applyCodeStyle(codeColors)
-        .let { scheme ->
-            if (darkTheme && trueBlack) {
-                scheme.copy(
-                    background = Color.Black,
-                    surface = Color(0xFF080A0D),
-                    surfaceContainerLowest = Color.Black,
-                    surfaceContainerLow = Color(0xFF06080A),
-                    surfaceContainer = Color(0xFF0A0D10)
-                )
-            } else {
-                scheme
-            }
+    }.applyStyle(themeStyle, darkTheme).let { scheme ->
+        if (darkTheme && trueBlack) {
+            scheme.copy(
+                background = Color.Black,
+                surface = Color(0xFF080A0D),
+                surfaceContainerLowest = Color.Black,
+                surfaceContainerLow = Color(0xFF06080A),
+                surfaceContainer = Color(0xFF0A0D10)
+            )
+        } else {
+            scheme
         }
+    }
 
     val scaledDensity = Density(
         density = baseDensity.density * displaySize.scale(),
@@ -311,6 +306,7 @@ fun GitHubRockTheme(
     CompositionLocalProvider(
         LocalRemoteImagesEnabled provides showImages,
         LocalLoadingStyle provides loadingStyle,
+        LocalReduceMotion provides reduceMotion,
         LocalCodeColorStyle provides codeColorStyle,
         LocalCodeColors provides codeColors,
         LocalDensity provides scaledDensity
