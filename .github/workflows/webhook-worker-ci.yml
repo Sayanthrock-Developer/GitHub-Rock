@@ -1,0 +1,31 @@
+name: Webhook Worker CI
+
+on:
+  pull_request:
+    paths:
+      - "webhook-worker/**"
+      - ".github/workflows/webhook-worker-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "webhook-worker/**"
+      - ".github/workflows/webhook-worker-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: webhook-worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test signature verification and payload parsing
+        run: npm test
