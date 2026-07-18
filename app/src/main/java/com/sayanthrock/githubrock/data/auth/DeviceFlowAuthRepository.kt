@@ -15,6 +15,9 @@ import javax.inject.Singleton
 
 class DeviceFlowException(message: String) : IllegalStateException(message)
 
+internal const val GITHUB_OAUTH_SCOPES =
+    "repo workflow read:user user:email read:org notifications"
+
 @Singleton
 class DeviceFlowAuthRepository @Inject constructor(
     private val api: GitHubAuthApi,
@@ -31,7 +34,7 @@ class DeviceFlowAuthRepository @Inject constructor(
         check(isConfigured) { "Add GITHUB_CLIENT_ID to local.properties before using GitHub login." }
         return api.requestDeviceCode(
             clientId = BuildConfig.GITHUB_CLIENT_ID,
-            scope = OAUTH_SCOPES
+            scope = GITHUB_OAUTH_SCOPES
         ).also { device ->
             pollMutex.withLock {
                 requiredIntervalSeconds = device.interval.coerceAtLeast(MINIMUM_POLL_INTERVAL_SECONDS)
@@ -112,7 +115,6 @@ class DeviceFlowAuthRepository @Inject constructor(
     }
 
     private companion object {
-        const val OAUTH_SCOPES = "repo workflow read:user user:email read:org notifications"
         const val MINIMUM_POLL_INTERVAL_SECONDS = 5
         const val SLOW_DOWN_INCREMENT_SECONDS = 5
         const val SESSION_EXPIRY_SKEW_SECONDS = 60L
