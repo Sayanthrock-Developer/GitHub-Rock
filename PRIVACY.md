@@ -28,6 +28,18 @@ GitHub Rock does not require you to enter your GitHub password inside the app. A
 
 Logging out clears the locally stored OAuth session. Uninstalling the app removes its local application data, subject to Android's platform behavior.
 
+## Marketplace webhook processing
+
+When the GitHub Marketplace listing is active, GitHub may send signed Marketplace event notifications to the project's Cloudflare Worker endpoint. The endpoint:
+
+- Verifies GitHub's `X-Hub-Signature-256` HMAC signature before accepting an event.
+- Processes the event type, action, and delivery identifier needed to acknowledge the Marketplace event.
+- Does not receive or store GitHub OAuth access tokens.
+- Does not persist Marketplace webhook payloads in a database for the current free plan.
+- Does not log webhook payload bodies, email addresses, or account details.
+
+Cloudflare may process request metadata under Cloudflare's own privacy and security policies when this endpoint is deployed.
+
 ## Information shared with third parties
 
 GitHub Rock communicates with GitHub to perform requested GitHub operations. GitHub processes information under GitHub's own terms and privacy statement.
@@ -38,6 +50,7 @@ The app may also hand actions to trusted system components or apps when you expl
 - Android's Package Installer for APK installation.
 - Android's sharing and file-opening interfaces.
 - Termux, only when you explicitly use optional Termux integration.
+- Cloudflare Workers, only for signed GitHub Marketplace webhook delivery when the Marketplace listing is enabled.
 
 The project owner does not receive your OAuth token through normal app operation.
 
@@ -47,7 +60,7 @@ Depending on the feature used, the Android app may request or declare permission
 
 ## Support information
 
-If you contact support or submit a GitHub issue, the information you choose to include is stored by GitHub and may be publicly visible. Never include access tokens, client secrets, private keys, passwords, keystores, or other credentials in a support request.
+If you contact support or submit a GitHub issue, the information you choose to include is stored by GitHub and may be publicly visible. Never include access tokens, client secrets, webhook secrets, private keys, passwords, keystores, or other credentials in a support request.
 
 ## Data retention and control
 
@@ -58,7 +71,7 @@ You can:
 - Clear the app's storage from Android settings.
 - Uninstall the app to remove its local data.
 
-GitHub may retain information according to its own policies and your GitHub account settings.
+GitHub and Cloudflare may retain information according to their own policies and your account settings.
 
 ## Children's privacy
 
