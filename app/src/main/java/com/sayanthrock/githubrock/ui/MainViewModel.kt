@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.build.WorkflowMonitorScheduler
 import com.sayanthrock.githubrock.core.model.*
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
+import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.data.auth.DeviceFlowAuthRepository
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
@@ -26,6 +27,13 @@ data class DeviceAuthState(
     val error: String? = null
 )
 
+data class ProfileExplorerState(
+    val snapshot: GitHubProfileSnapshot? = null,
+    val loading: Boolean = false,
+    val followUpdating: Boolean = false,
+    val error: String? = null
+)
+
 data class MainUiState(
     val mode: AppMode? = null,
     val isLoading: Boolean = false,
@@ -34,6 +42,7 @@ data class MainUiState(
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val workflowRuns: List<WorkflowRun> = emptyList(),
     val rateLimit: RateLimit? = null,
+    val profileExplorer: ProfileExplorerState = ProfileExplorerState(),
     val auth: DeviceAuthState = DeviceAuthState(),
     val message: String? = null
 )
@@ -53,6 +62,7 @@ class MainViewModel @Inject constructor(
     private var refreshJob: Job? = null
     private var sessionJob: Job? = null
     private var rememberJob: Job? = null
+    private var profileJob: Job? = null
 
     init {
         if (authRepository.hasSession) connectExistingSession()
@@ -132,11 +142,14 @@ class MainViewModel @Inject constructor(
             repositories = DemoData.repositories,
             workflowRuns = DemoData.workflows,
             rateLimit = RateLimit(5_000, 4_862, 0),
+            profileExplorer = ProfileExplorerState(
+                snapshot = GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails, false)
+            ),
             message = "Demo mode uses isolated sample data."
         )
     }
 
-    fun searchRepositories(query: String) {
+    fun searchRepositories(options: RepositorySearchOptions) {
         val mode = _state.value.mode ?: return
         searchJob?.cancel()
         refreshJob?.cancel()
@@ -145,11 +158,11 @@ class MainViewModel @Inject constructor(
             val result = when (mode) {
                 AppMode.Demo -> Result.success(
                     DemoData.repositories.filter {
-                        it.fullName.contains(query, true) || it.description.orEmpty().contains(query, true)
-                    }
+                        it.fullName.contains(options.query, true) || it.description.orEmpty().contains(options.query, true)
+                    }.let(options::applyLocally)
                 )
                 AppMode.Guest, AppMode.Connected -> runCatchingPreservingCancellation {
-                    githubRepository.publicRepositories(query)
+                    githubRepository.publicRepositories(options)
                 }
             }
             result.onSuccess { repos ->
@@ -205,6 +218,96 @@ class MainViewModel @Inject constructor(
                 .onFailure { error ->
                     _state.update { it.copy(message = "Unable to save recent repository: ${error.userMessage()}") }
                 }
+        }
+    }
+
+    fun inspectProfile(login: String) {
+        val normalized = normalizedGitHubLogin(login)
+        if (normalized == null) {
+            _state.update {
+                it.copy(profileExplorer = it.profileExplorer.copy(loading = false, error = "Enter a valid GitHub username."))
+            }
+            return
+        }
+        val mode = _state.value.mode ?: return
+        profileJob?.cancel()
+        profileJob = viewModelScope.launch {
+            _state.update {
+                it.copy(profileExplorer = it.profileExplorer.copy(loading = true, followUpdating = false, error = null))
+            }
+            val result = when (mode) {
+                AppMode.Demo -> if (normalized.equals(DemoData.profile.login, ignoreCase = true)) {
+                    Result.success(GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails, false))
+                } else {
+                    Result.failure(IllegalArgumentException("Demo mode only contains @${DemoData.profile.login}."))
+                }
+                AppMode.Guest, AppMode.Connected -> runCatchingPreservingCancellation {
+                    val ownLogin = _state.value.profile?.login
+                    githubRepository.profile(
+                        login = normalized,
+                        checkFollowing = mode == AppMode.Connected && !normalized.equals(ownLogin, ignoreCase = true)
+                    )
+                }
+            }
+            result.onSuccess { snapshot ->
+                _state.update {
+                    it.copy(profileExplorer = ProfileExplorerState(snapshot = snapshot))
+                }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(
+                        profileExplorer = it.profileExplorer.copy(
+                            loading = false,
+                            error = error.userMessage()
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    fun setProfileFollowing(following: Boolean) {
+        val current = _state.value
+        val snapshot = current.profileExplorer.snapshot ?: return
+        if (current.mode != AppMode.Connected || snapshot.profile.login.equals(current.profile?.login, ignoreCase = true)) return
+        profileJob?.cancel()
+        profileJob = viewModelScope.launch {
+            _state.update {
+                it.copy(profileExplorer = it.profileExplorer.copy(followUpdating = true, error = null))
+            }
+            runCatchingPreservingCancellation {
+                githubRepository.setProfileFollowing(snapshot.profile.login, following)
+            }.onSuccess {
+                _state.update { state ->
+                    val old = state.profileExplorer.snapshot ?: return@update state
+                    val oldFollowers = old.profile.followers
+                    val newFollowers = when {
+                        following && old.isFollowing != true -> oldFollowers + 1
+                        !following && old.isFollowing == true -> (oldFollowers - 1).coerceAtLeast(0)
+                        else -> oldFollowers
+                    }
+                    state.copy(
+                        profileExplorer = state.profileExplorer.copy(
+                            snapshot = old.copy(
+                                profile = old.profile.copy(followers = newFollowers),
+                                details = old.details?.copy(viewerIsFollowing = following),
+                                isFollowing = following
+                            ),
+                            followUpdating = false,
+                            error = null
+                        )
+                    )
+                }
+            }.onFailure { error ->
+                val message = if (error is retrofit2.HttpException && error.code() == 403) {
+                    "Follow access needs the user:follow permission. Sign out and authorize GitHub Rock again."
+                } else {
+                    error.userMessage()
+                }
+                _state.update {
+                    it.copy(profileExplorer = it.profileExplorer.copy(followUpdating = false, error = message))
+                }
+            }
         }
     }
 
@@ -285,7 +388,14 @@ class MainViewModel @Inject constructor(
                         isLoading = false,
                         profile = payload.profile,
                         rateLimit = payload.rateLimit,
-                        repositories = payload.repositories
+                        repositories = payload.repositories,
+                        profileExplorer = if (it.profileExplorer.snapshot == null ||
+                            it.profileExplorer.snapshot.profile.login.equals(payload.profile.login, ignoreCase = true)
+                        ) {
+                            ProfileExplorerState(snapshot = GitHubProfileSnapshot(payload.profile))
+                        } else {
+                            it.profileExplorer
+                        }
                     )
                 }
 
@@ -332,10 +442,12 @@ class MainViewModel @Inject constructor(
         refreshJob?.cancel()
         sessionJob?.cancel()
         rememberJob?.cancel()
+        profileJob?.cancel()
         searchJob = null
         refreshJob = null
         sessionJob = null
         rememberJob = null
+        profileJob = null
     }
 
     private fun cancelAllJobs() {

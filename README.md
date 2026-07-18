@@ -14,8 +14,12 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Hilt, Retrofit/OkHttp, Kotlin Serialization, Room, DataStore, Paging dependencies, WorkManager, Coil, and Navigation Compose
 - Android 10+ (`minSdk 29`), `compileSdk` / `targetSdk` 36
 - GitHub OAuth App Device Flow with explicit scopes, pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
-- Searchable GitHub services hub with 39 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, security, billing, settings, and community features
+- Searchable GitHub services hub with 45 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, Copilot, enterprise, accessibility, security, billing, settings, and community features
 - Guest access for public repositories and a fully isolated demo workspace
+- Mobile profile explorer with follower statistics, follow/unfollow, pronouns, yearly contributions, highlights, organizations, public links, ORCID detection, and an official achievements destination
+- Repository discovery with language/type/sort controls and a direct New repository action
+- Full workflow logs in a configurable scrollable popup or high-performance, syntax-highlighted terminal with line numbers and copy-all
+- In-app application, Android SDK, device, installation, and permission information
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Platform-aware GitHub Release picker for Android, Windows, Linux, iOS, and macOS assets, with file-format and architecture guidance
 - Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
@@ -97,6 +101,7 @@ GitHub Rock requests the following scopes during Device Flow authorization:
 | `workflow` | Creating or updating GitHub Actions workflow files |
 | `read:user` | Connected account profile |
 | `user:email` | Account email addresses when required |
+| `user:follow` | Explicit profile follow and unfollow actions |
 | `read:org` | Organization membership and reviewer/assignee resolution |
 | `notifications` | GitHub notifications used by the app |
 
@@ -190,7 +195,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Recoverable fingerprinted download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
 - Own-repository CI and manual APK/AAB workflows
 - Signed, versioned GitHub Release workflow with APK signature verification, pinned signing-certificate validation, APK checksums, and certificate fingerprint assets
-- Actionable All GitHub hub covering 39 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, Marketplace, security settings, billing, and community discovery
+- Actionable All GitHub hub covering 45 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, enterprises, Marketplace, accessibility, security settings, billing, and community discovery
 
 ## Planned next
 

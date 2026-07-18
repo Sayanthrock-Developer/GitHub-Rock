@@ -90,4 +90,11 @@ class GitHubWebDestinationsTest {
 
         assertEquals(sections, filterGitHubWebSections(sections, "   "))
     }
+
+    @Test fun mobileAccountCatalogueIncludesRequestedSettingsAndPlans() {
+        val ids = allGitHubWebDestinations("SayanthRock").map { it.id }.toSet()
+
+        assertTrue(setOf("copilot-settings", "enterprises", "accessibility", "feature-preview", "enterprise-trial", "github-free").all(ids::contains))
+        assertEquals(45, ids.size)
+    }
 }

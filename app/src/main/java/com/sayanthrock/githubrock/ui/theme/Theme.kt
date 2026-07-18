@@ -24,12 +24,14 @@ import com.sayanthrock.githubrock.data.settings.DisplaySize
 import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
+import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 
 val LocalRemoteImagesEnabled = staticCompositionLocalOf { true }
 val LocalLoadingStyle = staticCompositionLocalOf { LoadingStyle.Spinner }
 val LocalReduceMotion = staticCompositionLocalOf { false }
 val LocalCodeColorStyle = staticCompositionLocalOf { CodeColorStyle.Classic }
+val LocalLogDisplayStyle = staticCompositionLocalOf { LogDisplayStyle.Terminal }
 
 data class CodeColors(
     val keyword: Color,
@@ -270,6 +272,7 @@ fun GitHubRockTheme(
     fontFamily: AppFontFamily = AppFontFamily.SystemSans,
     loadingStyle: LoadingStyle = LoadingStyle.Spinner,
     codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
+    logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
     reduceMotion: Boolean = false,
     showImages: Boolean = true,
     content: @Composable () -> Unit
@@ -308,6 +311,7 @@ fun GitHubRockTheme(
         LocalLoadingStyle provides loadingStyle,
         LocalReduceMotion provides reduceMotion,
         LocalCodeColorStyle provides codeColorStyle,
+        LocalLogDisplayStyle provides logDisplayStyle,
         LocalCodeColors provides codeColors,
         LocalDensity provides scaledDensity
     ) {

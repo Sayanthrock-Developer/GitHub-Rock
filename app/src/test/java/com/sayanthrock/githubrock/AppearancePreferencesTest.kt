@@ -8,6 +8,7 @@ import com.sayanthrock.githubrock.data.settings.DisplaySize
 import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
+import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import org.junit.Assert.assertEquals
@@ -43,6 +44,8 @@ class AppearancePreferencesTest {
         assertEquals(AppFontFamily.SystemSans, AppFontFamily.fromStored(null))
         assertEquals(LoadingStyle.Spinner, LoadingStyle.fromStored("unknown"))
         assertEquals(CodeColorStyle.Classic, CodeColorStyle.fromStored(null))
+        assertEquals(LogDisplayStyle.Terminal, LogDisplayStyle.fromStored(null))
+        assertEquals(LogDisplayStyle.Dialog, LogDisplayStyle.fromStored("Dialog"))
     }
 
     @Test fun nativeFeatureControlsUseSafeVisibleDefaults() {
@@ -55,6 +58,7 @@ class AppearancePreferencesTest {
         assertEquals(AppFontFamily.SystemSans, preferences.fontFamily)
         assertEquals(LoadingStyle.Spinner, preferences.loadingStyle)
         assertEquals(CodeColorStyle.Classic, preferences.codeColorStyle)
+        assertEquals(LogDisplayStyle.Terminal, preferences.logDisplayStyle)
         assertTrue(preferences.showImages)
         assertTrue(preferences.workflowPreview)
         assertTrue(preferences.workflowStepDetails)
