@@ -43,6 +43,12 @@ interface GitHubRestApi {
 
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
 
+    @GET("repos/{owner}/{repo}")
+    suspend fun repository(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): GitHubRepositoryModel
+
     @PUT("user/starred/{owner}/{repo}")
     suspend fun starRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
 
@@ -53,7 +59,7 @@ interface GitHubRestApi {
     suspend fun starredRepositories(
         @Query("sort") sort: String = "updated",
         @Query("direction") direction: String = "desc",
-        @Query("per_page") perPage: Int = 50,
+        @Query("per_page") perPage: Int = 100,
         @Query("page") page: Int = 1
     ): List<GitHubRepositoryModel>
 
@@ -71,7 +77,7 @@ interface GitHubRestApi {
     suspend fun repositories(
         @Query("affiliation") affiliation: String = "owner,collaborator,organization_member",
         @Query("sort") sort: String = "updated",
-        @Query("per_page") perPage: Int = 50,
+        @Query("per_page") perPage: Int = 100,
         @Query("page") page: Int = 1
     ): List<GitHubRepositoryModel>
 

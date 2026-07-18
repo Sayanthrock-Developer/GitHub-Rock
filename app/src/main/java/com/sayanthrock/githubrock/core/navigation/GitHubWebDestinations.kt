@@ -1,5 +1,7 @@
 package com.sayanthrock.githubrock.core.navigation
 
+import java.util.Locale
+
 data class GitHubWebDestination(
     val id: String,
     val title: String,
@@ -122,6 +124,38 @@ fun githubWebSections(login: String?): List<GitHubWebSection> {
 
 fun allGitHubWebDestinations(login: String?): List<GitHubWebDestination> =
     githubWebSections(login).flatMap(GitHubWebSection::destinations)
+
+internal fun filterGitHubWebSections(
+    sections: List<GitHubWebSection>,
+    query: String
+): List<GitHubWebSection> {
+    val terms = query.trim()
+        .lowercase(Locale.ROOT)
+        .split(Regex("\\s+"))
+        .filter(String::isNotBlank)
+    if (terms.isEmpty()) return sections
+
+    return sections.mapNotNull { section ->
+        if (matchesEveryTerm(terms, section.title, section.description)) {
+            section
+        } else {
+            val matches = section.destinations.filter { destination ->
+                matchesEveryTerm(
+                    terms,
+                    destination.title,
+                    destination.description,
+                    destination.id
+                )
+            }
+            section.copy(destinations = matches).takeIf { matches.isNotEmpty() }
+        }
+    }
+}
+
+private fun matchesEveryTerm(terms: List<String>, vararg values: String): Boolean {
+    val searchable = values.joinToString(separator = "\n").lowercase(Locale.ROOT)
+    return terms.all(searchable::contains)
+}
 
 private fun destination(
     id: String,

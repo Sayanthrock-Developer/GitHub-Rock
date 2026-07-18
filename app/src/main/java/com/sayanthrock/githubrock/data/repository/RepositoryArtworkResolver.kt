@@ -8,6 +8,9 @@ import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import java.util.Collections
+import java.util.LinkedHashMap
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,29 +19,45 @@ class RepositoryArtworkResolver @Inject constructor(
     private val graphQlApi: GitHubGraphQlApi,
     private val tokenStore: TokenStore
 ) {
+    private val previewCache = Collections.synchronizedMap(
+        object : LinkedHashMap<String, String>(MAX_PREVIEW_CACHE_SIZE, 0.75f, true) {
+            override fun removeEldestEntry(
+                eldest: MutableMap.MutableEntry<String, String>?
+            ): Boolean = size > MAX_PREVIEW_CACHE_SIZE
+        }
+    )
+
     suspend fun attach(repositories: List<GitHubRepositoryModel>): List<GitHubRepositoryModel> {
         if (repositories.isEmpty() || tokenStore.read()?.accessToken.isNullOrBlank()) return repositories
 
-        val previews = mutableMapOf<String, String>()
-        repositories.chunked(GRAPHQL_BATCH_SIZE).forEach { batch ->
+        val unresolved = repositories
+            .distinctBy { it.cacheKey() }
+            .filterNot { previewCache.containsKey(it.cacheKey()) }
+
+        unresolved.chunked(GRAPHQL_BATCH_SIZE).forEach { batch ->
             runCatchingPreservingCancellation {
                 graphQlApi.query(GraphQlRequest(buildQuery(batch))).data
             }.getOrNull()?.let { data ->
                 batch.forEachIndexed { index, repository ->
-                    (data["repo$index"] as? JsonObject)
+                    val preview = (data["repo$index"] as? JsonObject)
                         ?.get("openGraphImageUrl")
                         ?.jsonPrimitive
                         ?.contentOrNull
                         ?.takeIf(String::isNotBlank)
-                        ?.let { previews[repository.fullName] = it }
+                        .orEmpty()
+                    previewCache[repository.cacheKey()] = preview
                 }
             }
         }
 
         return repositories.map { repository ->
-            repository.copy(previewImageUrl = previews[repository.fullName])
+            repository.copy(
+                previewImageUrl = previewCache[repository.cacheKey()]?.takeIf(String::isNotBlank)
+            )
         }
     }
+
+    private fun GitHubRepositoryModel.cacheKey(): String = fullName.lowercase(Locale.ROOT)
 
     private fun buildQuery(repositories: List<GitHubRepositoryModel>): String = buildString {
         append("query RepositoryArtwork {")
@@ -70,6 +89,7 @@ class RepositoryArtworkResolver @Inject constructor(
     }
 
     private companion object {
-        const val GRAPHQL_BATCH_SIZE = 25
+        const val GRAPHQL_BATCH_SIZE = 50
+        const val MAX_PREVIEW_CACHE_SIZE = 512
     }
 }

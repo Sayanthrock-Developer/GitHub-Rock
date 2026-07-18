@@ -66,4 +66,28 @@ class GitHubWebDestinationsTest {
         assertFalse(urls.any { malicious in it })
         assertTrue(urls.all(GitHubUrlPolicy::isGitHubHttpsUrl))
     }
+
+    @Test fun searchFindsSpecificToolsAcrossSections() {
+        val filtered = filterGitHubWebSections(
+            sections = githubWebSections("SayanthRock"),
+            query = "personal access token"
+        )
+
+        assertEquals(listOf("tokens"), filtered.flatMap(GitHubWebSection::destinations).map { it.id })
+    }
+
+    @Test fun searchIsCaseInsensitiveAndKeepsAWholeMatchingSection() {
+        val filtered = filterGitHubWebSections(
+            sections = githubWebSections("SayanthRock"),
+            query = "SECURITY"
+        )
+
+        assertTrue(filtered.any { it.id == "security" && it.destinations.size >= 6 })
+    }
+
+    @Test fun blankSearchPreservesTheCompleteCatalogue() {
+        val sections = githubWebSections("SayanthRock")
+
+        assertEquals(sections, filterGitHubWebSections(sections, "   "))
+    }
 }
