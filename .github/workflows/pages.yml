@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: github-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -24,14 +24,33 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Verify static website
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_files=(
+            site/index.html
+            site/404.html
+            site/privacy-policy/index.html
+            site/terms/index.html
+          )
+          for file in "${required_files[@]}"; do
+            test -f "$file" || {
+              echo "::error title=Missing website file::$file was not found."
+              exit 1
+            }
+          done
+
+      # GitHub Pages must be enabled once in Repository Settings with
+      # Build and deployment -> Source set to "GitHub Actions".
+      # A workflow GITHUB_TOKEN cannot create the Pages site itself.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload static website
         uses: actions/upload-pages-artifact@v3
