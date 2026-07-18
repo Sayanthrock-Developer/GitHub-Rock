@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="Privacy Policy for the GitHub Rock Android application.">
+  <title>Privacy Policy — GitHub Rock</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script defer src="../assets/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#policy">Skip to policy</a>
+  <header class="site-header" data-header>
+    <div class="shell nav-shell">
+      <a class="brand" href="../" aria-label="GitHub Rock home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M14 10h20a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8V18a8 8 0 0 1 8-8Z"/><path d="m18 19-5 5 5 5M30 19l5 5-5 5M27 16l-6 16"/></svg></span>
+        <span>GitHub Rock</span>
+      </a>
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        <a href="../">Home</a>
+        <a href="../#security">Security</a>
+        <a href="../terms/">Terms</a>
+        <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock">GitHub</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-button" type="button" data-theme-toggle aria-label="Switch color theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+        </button>
+        <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">Contact support</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="policy-main shell" id="policy">
+    <header class="policy-hero reveal">
+      <div class="eyebrow">Legal · Privacy</div>
+      <h1>Privacy Policy</h1>
+      <p>This policy explains what GitHub Rock processes, where information is stored, and the controls available to you when connecting the Android app to GitHub.</p>
+      <div class="policy-meta"><span>Last updated: July 18, 2026</span><span>Applies to: GitHub Rock for Android</span><span>Open-source policy</span></div>
+    </header>
+
+    <div class="policy-layout">
+      <aside class="policy-nav reveal" aria-label="Policy sections">
+        <strong>On this page</strong>
+        <a href="#overview">Overview</a>
+        <a href="#information">Information processed</a>
+        <a href="#use">How information is used</a>
+        <a href="#storage">Local storage and security</a>
+        <a href="#webhooks">Marketplace webhooks</a>
+        <a href="#sharing">Third parties</a>
+        <a href="#permissions">Permissions</a>
+        <a href="#support">Support information</a>
+        <a href="#control">Retention and control</a>
+        <a href="#children">Children’s privacy</a>
+        <a href="#changes">Policy changes</a>
+        <a href="#contact">Contact</a>
+      </aside>
+
+      <article class="policy-article reveal">
+        <section id="overview">
+          <h2>Overview</h2>
+          <p>GitHub Rock is an open-source Android application that connects to GitHub through GitHub OAuth Device Flow. This policy explains what information the app processes and how it is handled.</p>
+          <div class="policy-callout"><strong>GitHub Rock does not ask you to enter your GitHub password inside the app.</strong> Authorization takes place on GitHub’s official website in your browser.</div>
+        </section>
+
+        <section id="information">
+          <h2>Information processed by the app</h2>
+          <p>GitHub Rock may process the following information when you use connected features:</p>
+          <ul>
+            <li>Your GitHub OAuth access token and, when provided by GitHub, refresh token.</li>
+            <li>GitHub account information returned by the GitHub API, including your username, avatar, repositories, issues, pull requests, Actions runs, releases, organizations, and notifications.</li>
+            <li>App preferences, cached repository information, download history, file checksums, and APK inspection results stored on your device.</li>
+            <li>Files and release artifacts that you choose to download.</li>
+          </ul>
+        </section>
+
+        <section id="use">
+          <h2>How information is used</h2>
+          <p>The app uses this information only to provide the features you request, including signing in, browsing and managing GitHub resources, monitoring Actions, downloading artifacts, and inspecting APK files.</p>
+          <p>GitHub Rock does not use third-party advertising trackers or analytics scripts on this website.</p>
+        </section>
+
+        <section id="storage">
+          <h2>Local storage and security</h2>
+          <ul>
+            <li>OAuth tokens are stored locally using Android Keystore-backed encrypted storage.</li>
+            <li>App backup is disabled for sensitive application data.</li>
+            <li>Authorization and cookie headers are redacted from HTTP logs, and release builds disable network logging.</li>
+            <li>Cleartext network traffic is disabled.</li>
+          </ul>
+          <p>Logging out clears the locally stored OAuth session. Uninstalling the app removes its local application data, subject to Android platform behavior.</p>
+        </section>
+
+        <section id="webhooks">
+          <h2>Marketplace webhook processing</h2>
+          <p>When the GitHub Marketplace listing is active, GitHub may send signed Marketplace event notifications to the project’s Cloudflare Worker endpoint. The endpoint:</p>
+          <ul>
+            <li>Verifies GitHub’s <code>X-Hub-Signature-256</code> HMAC signature before accepting an event.</li>
+            <li>Processes the event type, action, and delivery identifier needed to acknowledge the Marketplace event.</li>
+            <li>Does not receive or store GitHub OAuth access tokens.</li>
+            <li>Does not persist Marketplace webhook payloads in a database for the current free plan.</li>
+            <li>Does not log webhook payload bodies, email addresses, or account details.</li>
+          </ul>
+          <p>Cloudflare may process request metadata under Cloudflare’s own privacy and security policies when this endpoint is deployed.</p>
+        </section>
+
+        <section id="sharing">
+          <h2>Information shared with third parties</h2>
+          <p>GitHub Rock communicates with GitHub to perform requested GitHub operations. GitHub processes information under GitHub’s own terms and privacy statement.</p>
+          <p>The app may also hand actions to trusted system components or apps when you explicitly request them:</p>
+          <ul>
+            <li>Your browser for GitHub authorization and GitHub web pages.</li>
+            <li>Android’s Package Installer for APK installation.</li>
+            <li>Android sharing and file-opening interfaces.</li>
+            <li>Termux, only when you explicitly use optional Termux integration.</li>
+            <li>Cloudflare Workers, only for signed GitHub Marketplace webhook delivery when the Marketplace listing is enabled.</li>
+          </ul>
+          <p>The project owner does not receive your OAuth token through normal app operation.</p>
+        </section>
+
+        <section id="permissions">
+          <h2>Permissions</h2>
+          <p>Depending on the feature used, the Android app may request or declare permissions for internet access, network state, notifications, background work, APK installation, and optional Termux command integration. Permissions are used only for their related features.</p>
+        </section>
+
+        <section id="support">
+          <h2>Support information</h2>
+          <p>If you contact support or submit a GitHub issue, the information you choose to include is stored by GitHub and may be publicly visible.</p>
+          <div class="policy-callout"><strong>Never include access tokens, client secrets, webhook secrets, private keys, passwords, keystores, or other credentials in a support request.</strong></div>
+        </section>
+
+        <section id="control">
+          <h2>Data retention and your controls</h2>
+          <p>You can:</p>
+          <ul>
+            <li>Log out of GitHub Rock to clear the local OAuth session.</li>
+            <li>Revoke OAuth authorization from your GitHub account settings.</li>
+            <li>Clear the app’s storage from Android settings.</li>
+            <li>Uninstall the app to remove local app data.</li>
+          </ul>
+          <p>GitHub and Cloudflare may retain information according to their own policies and your account settings.</p>
+        </section>
+
+        <section id="children">
+          <h2>Children’s privacy</h2>
+          <p>GitHub Rock is a developer tool and is not directed to children. Users must meet GitHub’s account-age requirements.</p>
+        </section>
+
+        <section id="changes">
+          <h2>Changes to this policy</h2>
+          <p>Material changes will be published in the GitHub Rock repository and on this page with an updated date.</p>
+        </section>
+
+        <section id="contact">
+          <h2>Contact</h2>
+          <p>For support, open an issue in the <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">GitHub Rock issue tracker</a>. For security reports, follow the instructions in <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-bottom"><span>© 2026 Sayanth Rock.</span><span><a href="../">Home</a> · <a href="../terms/">Terms</a> · <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock">Source</a></span></div>
+  </footer>
+</body>
+</html>
