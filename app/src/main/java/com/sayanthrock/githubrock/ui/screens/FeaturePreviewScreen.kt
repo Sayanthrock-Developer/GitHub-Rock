@@ -25,11 +25,13 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +39,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +48,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,12 +56,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.core.navigation.GITHUB_HOME_URL
 import com.sayanthrock.githubrock.core.navigation.GitHubWebDestination
 import com.sayanthrock.githubrock.core.navigation.GitHubWebSection
+import com.sayanthrock.githubrock.core.navigation.filterGitHubWebSections
 import com.sayanthrock.githubrock.core.navigation.githubWebSections
 import com.sayanthrock.githubrock.ui.components.GlassCard
 
@@ -102,8 +109,14 @@ fun FeaturePreviewScreen(
     onBack: () -> Unit
 ) {
     var filter by rememberSaveable { mutableStateOf(FeatureFilter.All) }
+    var webQuery by rememberSaveable { mutableStateOf("") }
     val categories = featureCategories
-    val webSections = githubWebSections(login)
+    val webSections = remember(login) { githubWebSections(login) }
+    val visibleWebSections = remember(webSections, webQuery) {
+        filterGitHubWebSections(webSections, webQuery)
+    }
+    val totalWebDestinations = webSections.sumOf { it.destinations.size }
+    val visibleWebDestinations = visibleWebSections.sumOf { it.destinations.size }
 
     Box(
         modifier = Modifier
@@ -135,19 +148,30 @@ fun FeaturePreviewScreen(
             ) {
                 item {
                     FeaturePreviewHero(
-                        webDestinationCount = webSections.sumOf { it.destinations.size },
+                        webDestinationCount = totalWebDestinations,
                         onOpenGitHubUrl = onOpenGitHubUrl
                     )
                 }
                 item { GitHubWebAccessNote() }
+                item {
+                    GitHubWebSearch(
+                        query = webQuery,
+                        visibleCount = visibleWebDestinations,
+                        totalCount = totalWebDestinations,
+                        onQueryChange = { webQuery = it }
+                    )
+                }
 
-                webSections.forEach { section ->
+                visibleWebSections.forEach { section ->
                     item(key = "web-${section.id}") {
                         GitHubWebSectionCard(
                             section = section,
                             onOpenGitHubUrl = onOpenGitHubUrl
                         )
                     }
+                }
+                if (visibleWebSections.isEmpty()) {
+                    item { EmptyGitHubWebSearch(query = webQuery) }
                 }
 
                 item {
@@ -185,6 +209,54 @@ fun FeaturePreviewScreen(
                 item { CustomerWorkflowSection() }
                 item { HonestPreviewNote() }
             }
+        }
+    }
+}
+
+@Composable
+private fun GitHubWebSearch(
+    query: String,
+    visibleCount: Int,
+    totalCount: Int,
+    onQueryChange: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = "Search GitHub tools" },
+            singleLine = true,
+            label = { Text("Find a GitHub tool") },
+            placeholder = { Text("Notifications, tokens, Codespaces…") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear GitHub tool search")
+                    }
+                }
+            }
+        )
+        Text(
+            if (query.isBlank()) "$totalCount official GitHub tools" else "$visibleCount of $totalCount tools",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium
+        )
+    }
+}
+
+@Composable
+private fun EmptyGitHubWebSearch(query: String) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text("No GitHub tool matches “${query.trim()}”", fontWeight = FontWeight.Bold)
+            Text(
+                "Try a shorter name such as issues, security, billing, or apps.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

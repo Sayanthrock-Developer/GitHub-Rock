@@ -45,6 +45,10 @@ class GitHubRepository @Inject constructor(
         artworkResolver.attach(repositories)
     }
 
+    suspend fun repository(owner: String, repo: String): GitHubRepositoryModel = withContext(Dispatchers.IO) {
+        artworkResolver.attach(listOf(api.repository(owner, repo))).single()
+    }
+
     suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =
         if (starred) api.starRepository(owner, repo).isSuccessful else api.unstarRepository(owner, repo).isSuccessful
 

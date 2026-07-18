@@ -113,11 +113,7 @@ class RepositoryHubViewModel @Inject constructor(
             Result.success(initialRepository)
         } else {
             runCatchingPreservingCancellation {
-                githubRepository.publicRepositories("$repoName user:$owner")
-                    .firstOrNull {
-                        it.owner.login.equals(owner, ignoreCase = true) &&
-                            it.name.equals(repoName, ignoreCase = true)
-                    }
+                githubRepository.repository(owner, repoName)
             }
         }
         val resolvedRepository = repositoryResult.getOrNull()
@@ -128,10 +124,13 @@ class RepositoryHubViewModel @Inject constructor(
                     loading = false,
                     releasesLoading = false,
                     readmeLoading = false,
-                    error = if (repositoryResult.isFailure) {
-                        "Repository information is temporarily unavailable. Retry when the connection is stable."
-                    } else {
-                        "Unable to find this repository. Open it again from the repository list."
+                    error = when (val failure = repositoryResult.exceptionOrNull()) {
+                        is retrofit2.HttpException -> if (failure.code() == 404) {
+                            "This repository does not exist or your GitHub account cannot access it."
+                        } else {
+                            "Repository information is temporarily unavailable. Retry when the connection is stable."
+                        }
+                        else -> "Repository information is temporarily unavailable. Retry when the connection is stable."
                     }
                 )
             }

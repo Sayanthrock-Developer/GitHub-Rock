@@ -369,7 +369,7 @@ private fun ThemePreview(state: AppearancePreferences) {
             Column(Modifier.weight(1f)) {
                 Text(state.themeStyle.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(
-                    "${state.displaySize.name} display · ${state.fontSize.name} text · ${state.fontFamily.displayName}",
+                    "${state.themeMode.name} mode · ${state.displaySize.name} display · ${state.fontSize.name} text",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -485,7 +485,14 @@ private fun ThemeControls(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(Icons.Default.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Mode", style = MaterialTheme.typography.titleSmall)
+                Column {
+                    Text("Color mode", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Follow the system, stay light, or stay dark",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ThemeMode.entries.forEach { mode ->

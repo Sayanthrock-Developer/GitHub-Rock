@@ -14,7 +14,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Hilt, Retrofit/OkHttp, Kotlin Serialization, Room, DataStore, Paging dependencies, WorkManager, Coil, and Navigation Compose
 - Android 10+ (`minSdk 29`), `compileSdk` / `targetSdk` 36
 - GitHub OAuth App Device Flow with explicit scopes, pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
-- Complete GitHub services hub with 39 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, security, billing, settings, and community features
+- Searchable GitHub services hub with 39 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, security, billing, settings, and community features
 - Guest access for public repositories and a fully isolated demo workspace
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Platform-aware GitHub Release picker for Android, Windows, Linux, iOS, and macOS assets, with file-format and architecture guidance
@@ -22,8 +22,8 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 fingerprinting and expected-checksum verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
 - Clean adaptive Material 3 visual system with consistent spacing, typography, grouped settings, edge-to-edge system bars, phone bottom navigation, tablet/landscape navigation rail, system/light/dark modes, true black, five accent choices, and optional dynamic color
-- Pull-to-refresh dashboard with honest initial-loading, refreshing, empty, and offline feedback; account, rate-limit, and repository requests are loaded concurrently
-- Deep links for repositories, builds, releases, and standard GitHub repository URLs
+- Pull-to-refresh dashboard with honest initial-loading, refreshing, empty, and offline feedback; account, rate-limit, and repository requests are loaded concurrently, and repository artwork is batched and cached for the app session
+- Direct API-backed deep links for public, private, and unlisted repositories, plus builds, releases, and standard GitHub repository URLs
 - Unit tests for authentication responses, workflow status, Android workflow generation, project detection, release-asset classification, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
 

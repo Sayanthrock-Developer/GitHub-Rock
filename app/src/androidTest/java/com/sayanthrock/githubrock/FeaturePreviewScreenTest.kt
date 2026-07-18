@@ -2,10 +2,12 @@ package com.sayanthrock.githubrock
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertEquals
@@ -45,5 +47,25 @@ class FeaturePreviewScreenTest {
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.runOnIdle { assertTrue(wentBack) }
+    }
+
+    @Test fun githubToolSearchFiltersTheLargeWebCatalogue() {
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                FeaturePreviewScreen(
+                    login = "SayanthRock",
+                    onOpenGitHubUrl = {},
+                    onBack = {}
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription("Search GitHub tools")
+            .performScrollTo()
+            .performTextInput("personal access token")
+
+        compose.onNodeWithText("Access tokens").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("Dashboard").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("1 of 39 tools").assertIsDisplayed()
     }
 }
