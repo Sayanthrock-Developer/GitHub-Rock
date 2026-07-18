@@ -22,7 +22,6 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.RepositorySearchOptions
 import com.sayanthrock.githubrock.core.model.RepositorySort
 import com.sayanthrock.githubrock.core.model.RepositoryTypeFilter
-import com.sayanthrock.githubrock.ui.components.AppBrandBanner
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryGalleryCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -58,8 +57,6 @@ fun RepositoriesScreen(
     }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        Spacer(Modifier.height(16.dp))
-        AppBrandBanner()
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {

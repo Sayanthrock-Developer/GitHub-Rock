@@ -43,16 +43,6 @@ interface GitHubRestApi {
 
     @GET("users/{username}") suspend fun user(@Path("username") username: String): GitHubUser
 
-    @GET("user/following/{username}")
-    suspend fun isFollowing(@Path("username") username: String): Response<Unit>
-
-    @Headers("Content-Length: 0")
-    @PUT("user/following/{username}")
-    suspend fun followUser(@Path("username") username: String): Response<Unit>
-
-    @DELETE("user/following/{username}")
-    suspend fun unfollowUser(@Path("username") username: String): Response<Unit>
-
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
 
     @GET("repos/{owner}/{repo}")

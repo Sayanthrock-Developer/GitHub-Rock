@@ -138,15 +138,33 @@ data class AppearancePreferences(
     val dynamicColor: Boolean = false,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
-    val workflowPreview: Boolean = true,
-    val workflowStepDetails: Boolean = true,
-    val statusColors: Boolean = true,
-    val actionsControls: Boolean = true,
-    val repositoryManager: Boolean = true,
-    val fileTools: Boolean = true,
-    val compactCards: Boolean = true,
+    val workflowPreview: Boolean = false,
+    val workflowStepDetails: Boolean = false,
+    val statusColors: Boolean = false,
+    val actionsControls: Boolean = false,
+    val repositoryManager: Boolean = false,
+    val fileTools: Boolean = false,
+    val compactCards: Boolean = false,
     val reduceMotion: Boolean = false
-)
+) {
+    val enabledFeatureControlCount: Int
+        get() = listOf(
+            workflowPreview,
+            workflowStepDetails,
+            statusColors,
+            actionsControls,
+            repositoryManager,
+            fileTools,
+            compactCards
+        ).count { it }
+
+    val featureControlLevel: Int
+        get() = enabledFeatureControlCount * 100 / FEATURE_CONTROL_COUNT
+
+    private companion object {
+        const val FEATURE_CONTROL_COUNT = 7
+    }
+}
 
 @Singleton
 class AppPreferences @Inject constructor(
@@ -167,13 +185,13 @@ class AppPreferences @Inject constructor(
             dynamicColor = preferences[DYNAMIC_COLOR] ?: false,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
-            workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
-            workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true,
-            statusColors = preferences[STATUS_COLORS] ?: true,
-            actionsControls = preferences[ACTIONS_CONTROLS] ?: true,
-            repositoryManager = preferences[REPOSITORY_MANAGER] ?: true,
-            fileTools = preferences[FILE_TOOLS] ?: true,
-            compactCards = preferences[COMPACT_CARDS] ?: true,
+            workflowPreview = preferences[WORKFLOW_PREVIEW] ?: false,
+            workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: false,
+            statusColors = preferences[STATUS_COLORS] ?: false,
+            actionsControls = preferences[ACTIONS_CONTROLS] ?: false,
+            repositoryManager = preferences[REPOSITORY_MANAGER] ?: false,
+            fileTools = preferences[FILE_TOOLS] ?: false,
+            compactCards = preferences[COMPACT_CARDS] ?: false,
             reduceMotion = preferences[REDUCE_MOTION] ?: false
         )
     }
@@ -206,6 +224,16 @@ class AppPreferences @Inject constructor(
     suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
 
+    suspend fun setAllFeatureControls(enabled: Boolean) = context.dataStore.edit { preferences ->
+        preferences[WORKFLOW_PREVIEW] = enabled
+        preferences[WORKFLOW_STEP_DETAILS] = enabled
+        preferences[STATUS_COLORS] = enabled
+        preferences[ACTIONS_CONTROLS] = enabled
+        preferences[REPOSITORY_MANAGER] = enabled
+        preferences[FILE_TOOLS] = enabled
+        preferences[COMPACT_CARDS] = enabled
+    }
+
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
         preferences.remove(THEME_MODE)
         preferences.remove(THEME_STYLE)
@@ -223,6 +251,9 @@ class AppPreferences @Inject constructor(
         preferences.remove(WORKFLOW_PREVIEW)
         preferences.remove(WORKFLOW_STEP_DETAILS)
         preferences.remove(STATUS_COLORS)
+        preferences.remove(ACTIONS_CONTROLS)
+        preferences.remove(REPOSITORY_MANAGER)
+        preferences.remove(FILE_TOOLS)
         preferences.remove(COMPACT_CARDS)
         preferences.remove(REDUCE_MOTION)
     }

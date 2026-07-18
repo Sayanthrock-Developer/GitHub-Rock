@@ -7,7 +7,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Owner
-import com.sayanthrock.githubrock.ui.components.AppBrandBanner
 import com.sayanthrock.githubrock.ui.components.RepositoryGalleryCard
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertTrue
@@ -51,18 +50,5 @@ class RepositoryCardTest {
         compose.onNodeWithText("174", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Premium digital wedding invitation studio").performClick()
         compose.runOnIdle { assertTrue(opened) }
-    }
-
-    @Test
-    fun appBrandBannerShowsApplicationIconAndVisualFeatureScope() {
-        compose.setContent {
-            GitHubRockTheme(dynamicColor = false) {
-                AppBrandBanner()
-            }
-        }
-
-        compose.onNodeWithContentDescription("GitHub Rock application icon").assertIsDisplayed()
-        compose.onNodeWithText("GitHub Rock").assertIsDisplayed()
-        compose.onNodeWithText("Profiles • Templates • Actions • Releases", substring = true).assertIsDisplayed()
     }
 }

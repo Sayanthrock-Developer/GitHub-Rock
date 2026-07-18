@@ -26,9 +26,7 @@ object DemoData {
         socialAccounts = listOf(
             GitHubSocialAccount("0000-0002-1825-0097", "GENERIC", "https://orcid.org/0000-0002-1825-0097")
         ),
-        highlights = listOf("Developer Program", "Available for hire"),
-        viewerCanFollow = false,
-        viewerIsFollowing = false
+        highlights = listOf("Developer Program", "Available for hire")
     )
 
     val repositories = listOf(

@@ -51,9 +51,7 @@ data class GitHubProfileDetails(
     val organizations: List<GitHubOrganization> = emptyList(),
     val organizationCount: Int = 0,
     val socialAccounts: List<GitHubSocialAccount> = emptyList(),
-    val highlights: List<String> = emptyList(),
-    val viewerCanFollow: Boolean = false,
-    val viewerIsFollowing: Boolean? = null
+    val highlights: List<String> = emptyList()
 ) {
     val orcid: GitHubSocialAccount?
         get() = socialAccounts.firstOrNull { it.url.contains("orcid.org/", ignoreCase = true) }
@@ -61,8 +59,7 @@ data class GitHubProfileDetails(
 
 data class GitHubProfileSnapshot(
     val profile: GitHubUser,
-    val details: GitHubProfileDetails? = null,
-    val isFollowing: Boolean? = details?.viewerIsFollowing
+    val details: GitHubProfileDetails? = null
 )
 
 @Serializable

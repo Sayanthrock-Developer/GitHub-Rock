@@ -27,8 +27,9 @@ class AppearanceScreenTest {
         var dynamicColor = false
         var trueBlack = false
         var showImages = true
-        var workflowPreview = true
-        var fileTools = true
+        var workflowPreview = false
+        var fileTools = false
+        var allFeatures = false
         var logDisplayStyle: LogDisplayStyle? = null
 
         compose.setContent {
@@ -44,12 +45,13 @@ class AppearanceScreenTest {
                     onShowImages = { showImages = it },
                     onWorkflowPreview = { workflowPreview = it },
                     onFileTools = { fileTools = it },
+                    onAllFeatureControls = { allFeatures = it },
                     onLogDisplayStyle = { logDisplayStyle = it }
                 )
             }
         }
 
-        compose.onNodeWithText("Make GitHub Rock yours").assertIsDisplayed()
+        compose.onNodeWithText("Customize your experience").assertIsDisplayed()
         compose.onNodeWithText("Liquid glass").performScrollTo().performClick()
         compose.onNodeWithText("Dark").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Use Violet accent").performScrollTo().performClick()
@@ -58,6 +60,7 @@ class AppearanceScreenTest {
         compose.onNodeWithContentDescription("Toggle True black").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle Workflow code preview").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Toggle File tools").performScrollTo().performClick()
+        compose.onNodeWithText("Turn all on").performScrollTo().performClick()
         compose.onNodeWithText("Popup dialog").performScrollTo().performClick()
 
         compose.runOnIdle {
@@ -67,8 +70,9 @@ class AppearanceScreenTest {
             assertEquals(false, showImages)
             assertEquals(true, dynamicColor)
             assertEquals(true, trueBlack)
-            assertEquals(false, workflowPreview)
-            assertEquals(false, fileTools)
+            assertEquals(true, workflowPreview)
+            assertEquals(true, fileTools)
+            assertEquals(true, allFeatures)
             assertEquals(LogDisplayStyle.Dialog, logDisplayStyle)
         }
     }
