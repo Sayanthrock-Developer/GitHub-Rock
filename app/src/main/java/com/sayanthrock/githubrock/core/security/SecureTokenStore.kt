@@ -42,7 +42,7 @@ class KeystoreTokenStore @Inject constructor(
 
     override fun read(): StoredTokens? {
         val storedClientId = preferences.getString(KEY_CLIENT_ID, null)
-        if (storedClientId.isNullOrBlank() || storedClientId != configuredClientId) {
+        if (!isStoredClientIdCompatible(storedClientId, configuredClientId)) {
             clear()
             return null
         }
@@ -79,4 +79,9 @@ class KeystoreTokenStore @Inject constructor(
         const val KEY_ACCESS_EXPIRY = "access_expiry"
         const val KEY_REFRESH_EXPIRY = "refresh_expiry"
     }
+}
+
+internal fun isStoredClientIdCompatible(storedClientId: String?, configuredClientId: String): Boolean {
+    val configured = configuredClientId.trim()
+    return configured.isNotBlank() && storedClientId == configured
 }
