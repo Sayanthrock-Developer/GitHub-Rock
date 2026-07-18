@@ -9,7 +9,7 @@ GitHub Rock is a native Android application that uses **GitHub OAuth App Device 
 1. Create a GitHub OAuth App.
 2. Enable Device Flow.
 3. Use the public Client ID `Ov23lim8WhLjeUMqvuMj`.
-4. Put it in `local.properties` for local builds, or override it with the `PUBLIC_GITHUB_CLIENT_ID` Actions variable.
+4. Put it in `local.properties` for local builds, or override it with the `PUBLIC_GITHUB_OAUTH_CLIENT_ID` Actions variable.
 5. Sync and run the project.
 6. Keep the Client Secret out of the Android app and repository.
 7. Before publishing a release, set `EXPECTED_RELEASE_CERT_SHA256` from the independently controlled release keystore.
@@ -76,7 +76,7 @@ The same Client ID is bundled as the official fallback for CI and release builds
 **Repository → Settings → Secrets and variables → Actions → Variables**
 
 ```text
-Name: PUBLIC_GITHUB_CLIENT_ID
+Name: PUBLIC_GITHUB_OAUTH_CLIENT_ID
 Value: YOUR_PUBLIC_OAUTH_APP_CLIENT_ID
 ```
 
