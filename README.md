@@ -83,7 +83,7 @@ sdk.dir=/absolute/path/to/Android/Sdk
 GITHUB_CLIENT_ID=Ov23lim8WhLjeUMqvuMj
 ```
 
-The Client ID is exposed through `BuildConfig.GITHUB_CLIENT_ID` and is bundled as the official fallback so CI and release builds can sign in. Forks can override it with a `PUBLIC_GITHUB_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets and tokens must never be bundled.
+The Client ID is exposed through `BuildConfig.GITHUB_CLIENT_ID` and is bundled as the official fallback so CI and release builds can sign in. Forks can override it with a `PUBLIC_GITHUB_OAUTH_CLIENT_ID` repository variable under **Settings → Secrets and variables → Actions → Variables**. A Client ID is public; client secrets and tokens must never be bundled.
 
 New users can tap **Sign up for GitHub** to open GitHub's official signup page in an Ephemeral Custom Tab. The app then opens GitHub's official Device Flow authorization page, displays a copyable verification code, and polls only at GitHub's supplied interval. GitHub Rock never asks for a GitHub password.
 
@@ -144,7 +144,7 @@ Each published release includes both the APK file checksum (`.apk.sha256`) and t
 
 ## Publish and install the app
 
-1. Add the four Android signing secrets listed above and set `EXPECTED_RELEASE_CERT_SHA256` from the independently verified release keystore. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_CLIENT_ID`.
+1. Add the four Android signing secrets listed above and set `EXPECTED_RELEASE_CERT_SHA256` from the independently verified release keystore. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_OAUTH_CLIENT_ID`.
 2. Open **Actions → Publish Android Release → Run workflow**.
 3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
 4. Wait for pinned certificate verification, checksum generation, and release publication to finish.
