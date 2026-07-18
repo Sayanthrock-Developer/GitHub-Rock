@@ -60,13 +60,30 @@ class AppearancePreferencesTest {
         assertEquals(CodeColorStyle.Classic, preferences.codeColorStyle)
         assertEquals(LogDisplayStyle.Terminal, preferences.logDisplayStyle)
         assertTrue(preferences.showImages)
-        assertTrue(preferences.workflowPreview)
-        assertTrue(preferences.workflowStepDetails)
-        assertTrue(preferences.statusColors)
-        assertTrue(preferences.actionsControls)
-        assertTrue(preferences.repositoryManager)
-        assertTrue(preferences.fileTools)
-        assertTrue(preferences.compactCards)
+        assertFalse(preferences.workflowPreview)
+        assertFalse(preferences.workflowStepDetails)
+        assertFalse(preferences.statusColors)
+        assertFalse(preferences.actionsControls)
+        assertFalse(preferences.repositoryManager)
+        assertFalse(preferences.fileTools)
+        assertFalse(preferences.compactCards)
+        assertEquals(0, preferences.enabledFeatureControlCount)
+        assertEquals(0, preferences.featureControlLevel)
         assertFalse(preferences.reduceMotion)
+    }
+
+    @Test fun featureControlLevelReachesOneHundredWhenAllOptionalToolsAreOn() {
+        val preferences = AppearancePreferences(
+            workflowPreview = true,
+            workflowStepDetails = true,
+            statusColors = true,
+            actionsControls = true,
+            repositoryManager = true,
+            fileTools = true,
+            compactCards = true
+        )
+
+        assertEquals(7, preferences.enabledFeatureControlCount)
+        assertEquals(100, preferences.featureControlLevel)
     }
 }

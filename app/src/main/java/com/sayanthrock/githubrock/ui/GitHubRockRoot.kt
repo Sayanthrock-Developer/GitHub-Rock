@@ -110,7 +110,6 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 state = state,
                 onSearch = viewModel::searchRepositories,
                 onInspectProfile = viewModel::inspectProfile,
-                onFollowProfile = viewModel::setProfileFollowing,
                 onRememberRepository = viewModel::rememberRepository,
                 onOpenGitHubUrl = openGitHubUrl,
                 onRefresh = viewModel::refresh,

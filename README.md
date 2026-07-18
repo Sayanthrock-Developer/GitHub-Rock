@@ -16,7 +16,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - GitHub OAuth App Device Flow with explicit scopes, pending, slow-down, expired, denied, refresh handling, and an official GitHub account-signup link
 - Searchable GitHub services hub with 45 allow-listed official destinations for notifications, account queues, Codespaces, Projects, Gists, Marketplace, Copilot, enterprise, accessibility, security, billing, settings, and community features
 - Guest access for public repositories and a fully isolated demo workspace
-- Mobile profile explorer with follower statistics, follow/unfollow, pronouns, yearly contributions, highlights, organizations, public links, ORCID detection, and an official achievements destination
+- Own-profile mobile view with follower statistics, pronouns, yearly contributions, highlights, organizations, public links, ORCID detection, and an official achievements destination
 - Repository discovery with language/type/sort controls and a direct New repository action
 - Full workflow logs in a configurable scrollable popup or high-performance, syntax-highlighted terminal with line numbers and copy-all
 - In-app application, Android SDK, device, installation, and permission information
@@ -36,13 +36,13 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Screen | What it shows |
 | --- | --- |
 | Login | Explicit sign-in, official signup (Google, Apple, or email), GitHub Device Flow, guest access, and demo mode |
-| Home | Profile hero, API health, repository/build metrics, quick actions, workflow status, pull-to-refresh, and honest loading/empty states |
+| Home | Clean 0–100 account/API/workflow levels, repository/build metrics, quick actions, pull-to-refresh, and honest loading/empty states |
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and a five-platform Release asset picker |
 | Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
-| Downloads | Live artifact progress, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
-| Profile | Compact account summary with working repository/follower/following links, shortcuts, GitHub security, appearance, feature status, and session controls |
-| Appearance | System/light/dark mode, true black, dynamic color, and five persistent accent choices |
+| Downloads | Explicit GitHub image/file downloads, 0–100 progress, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
+| Profile | Own-account summary with repository/follower/following links, contributions, highlights, GitHub security, appearance, feature status, and session controls |
+| Appearance | Theme, typography, log style, bulk optional-feature controls (off by default), true black, dynamic color, and persistent accents |
 | All GitHub | Native feature status plus secure access to every major GitHub.com workspace and account tool |
 
 PNG screenshots will be added after the first instrumented device capture. No mock screenshot is presented as a running build.
@@ -101,7 +101,6 @@ GitHub Rock requests the following scopes during Device Flow authorization:
 | `workflow` | Creating or updating GitHub Actions workflow files |
 | `read:user` | Connected account profile |
 | `user:email` | Account email addresses when required |
-| `user:follow` | Explicit profile follow and unfollow actions |
 | `read:org` | Organization membership and reviewer/assignee resolution |
 | `notifications` | GitHub notifications used by the app |
 

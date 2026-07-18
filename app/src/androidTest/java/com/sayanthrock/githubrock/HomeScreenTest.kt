@@ -9,7 +9,6 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.core.model.RateLimit
-import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertTrue
@@ -24,7 +23,6 @@ class HomeScreenTest {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
-                    mode = AppMode.Connected,
                     profile = GitHubUser(
                         login = "SayanthRock",
                         id = 202829406,
@@ -39,11 +37,13 @@ class HomeScreenTest {
             }
         }
 
-        compose.onNodeWithText("CONNECTED").assertIsDisplayed()
-        compose.onNodeWithText("Show workspace details").performClick()
-        compose.onNodeWithText("Sayanth Rock").assertIsDisplayed()
-        compose.onNodeWithText("GitHub API health").assertIsDisplayed()
-        compose.onNodeWithText("4862 / 5000").assertIsDisplayed()
+        compose.onNodeWithText("Workspace levels").assertIsDisplayed()
+        compose.onNodeWithText("Account data").assertIsDisplayed()
+        compose.onNodeWithText("100 / 100").assertIsDisplayed()
+        compose.onNodeWithText("GitHub API capacity").assertIsDisplayed()
+        compose.onNodeWithText("97 / 100").assertIsDisplayed()
+        compose.onNodeWithText("GitHub Rock").assertDoesNotExist()
+        compose.onNodeWithText("CONNECTED").assertDoesNotExist()
         compose.onNodeWithText("Build APK").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(openedBuilds) }
     }
@@ -61,7 +61,6 @@ class HomeScreenTest {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
-                    mode = AppMode.Connected,
                     profile = null,
                     rateLimit = null,
                     repositories = listOf(repository),
@@ -80,7 +79,6 @@ class HomeScreenTest {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
-                    mode = AppMode.Connected,
                     profile = null,
                     rateLimit = null,
                     repositories = emptyList(),

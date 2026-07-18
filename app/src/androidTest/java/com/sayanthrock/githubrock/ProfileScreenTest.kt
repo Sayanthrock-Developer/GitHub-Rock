@@ -68,14 +68,14 @@ class ProfileScreenTest {
         compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
         compose.onNodeWithText("GitHub security").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("By Sayanth Rock").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Follow me").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
+        compose.onNodeWithText("GitHub username").assertDoesNotExist()
+        compose.onNodeWithText("Visual developer control centre").assertDoesNotExist()
     }
 
-    @Test fun profileExplorerShowsMobileDetailsAndFollowAction() {
-        var followRequested: Boolean? = null
+    @Test fun ownProfileShowsMobileDetailsWithoutProfileSearch() {
         val viewedProfile = GitHubUser(
-            login = "octocat",
+            login = "SayanthRock",
             id = 1,
             name = "The Octocat",
             followers = 18_000,
@@ -98,20 +98,17 @@ class ProfileScreenTest {
                     url = "https://orcid.org/0000-0002-1825-0097"
                 )
             ),
-            highlights = listOf("GitHub Star"),
-            viewerCanFollow = true,
-            viewerIsFollowing = false
+            highlights = listOf("GitHub Star")
         )
 
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ProfileScreen(
                     mode = AppMode.Connected,
-                    profile = GitHubUser(login = "SayanthRock", id = 2),
+                    profile = viewedProfile,
                     explorerState = ProfileExplorerState(
-                        snapshot = GitHubProfileSnapshot(viewedProfile, details, isFollowing = false)
+                        snapshot = GitHubProfileSnapshot(viewedProfile, details)
                     ),
-                    onFollowProfile = { followRequested = it },
                     onOpenRepositories = {},
                     onOpenDownloads = {},
                     onOpenFeatures = {},
@@ -122,11 +119,11 @@ class ProfileScreenTest {
             }
         }
 
-        compose.onNodeWithText("Follow @octocat").performScrollTo().performClick()
         compose.onNodeWithText("321 contributions").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Pronouns").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("ORCID · 0000-0002-1825-0097").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("View achievements on GitHub").performScrollTo().assertIsDisplayed()
-        compose.runOnIdle { assertEquals(true, followRequested) }
+        compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
+        compose.onNodeWithText("GitHub username").assertDoesNotExist()
     }
 }

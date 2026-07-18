@@ -31,8 +31,6 @@ class GitHubProfileDetailsResolver @Inject constructor(
         query MobileProfile {
           user(login: "$login") {
             pronouns
-            viewerCanFollow
-            viewerIsFollowing
             isBountyHunter
             isCampusExpert
             isDeveloperProgramMember
@@ -107,9 +105,7 @@ internal object GitHubProfileDetailsParser {
                 if (user.booleanValue("isBountyHunter") == true) add("Security Bug Bounty")
                 if (user.booleanValue("isEmployee") == true) add("GitHub staff")
                 if (user.booleanValue("isHireable") == true) add("Available for hire")
-            },
-            viewerCanFollow = user.booleanValue("viewerCanFollow") ?: false,
-            viewerIsFollowing = user.booleanValue("viewerIsFollowing")
+            }
         )
     }
 

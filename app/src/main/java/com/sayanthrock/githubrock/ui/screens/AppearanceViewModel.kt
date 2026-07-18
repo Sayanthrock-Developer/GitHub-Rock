@@ -52,5 +52,6 @@ class AppearanceViewModel @Inject constructor(
     fun setFileTools(enabled: Boolean) = viewModelScope.launch { preferences.setFileTools(enabled) }
     fun setCompactCards(enabled: Boolean) = viewModelScope.launch { preferences.setCompactCards(enabled) }
     fun setReduceMotion(enabled: Boolean) = viewModelScope.launch { preferences.setReduceMotion(enabled) }
+    fun setAllFeatureControls(enabled: Boolean) = viewModelScope.launch { preferences.setAllFeatureControls(enabled) }
     fun resetAppearance() = viewModelScope.launch { preferences.resetAppearance() }
 }

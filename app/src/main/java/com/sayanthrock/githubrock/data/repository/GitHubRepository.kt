@@ -54,7 +54,7 @@ class GitHubRepository @Inject constructor(
         artworkResolver.attach(listOf(api.repository(owner, repo))).single()
     }
 
-    suspend fun profile(login: String, checkFollowing: Boolean): GitHubProfileSnapshot = withContext(Dispatchers.IO) {
+    suspend fun profile(login: String): GitHubProfileSnapshot = withContext(Dispatchers.IO) {
         coroutineScope {
             val profile = async { api.user(login) }
             val details = async {
@@ -62,25 +62,8 @@ class GitHubRepository @Inject constructor(
             }
             val resolvedProfile = profile.await()
             val resolvedDetails = details.await()
-            val following = if (!checkFollowing) {
-                null
-            } else {
-                resolvedDetails?.viewerIsFollowing ?: run {
-                    val response = api.isFollowing(login)
-                    when (response.code()) {
-                        204 -> true
-                        404 -> false
-                        else -> throw retrofit2.HttpException(response)
-                    }
-                }
-            }
-            GitHubProfileSnapshot(resolvedProfile, resolvedDetails, following)
+            GitHubProfileSnapshot(resolvedProfile, resolvedDetails)
         }
-    }
-
-    suspend fun setProfileFollowing(login: String, following: Boolean) = withContext(Dispatchers.IO) {
-        val response = if (following) api.followUser(login) else api.unfollowUser(login)
-        if (!response.isSuccessful) throw retrofit2.HttpException(response)
     }
 
     suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =

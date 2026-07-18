@@ -2,7 +2,6 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -30,15 +29,12 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,15 +52,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.sayanthrock.githubrock.BuildConfig
-import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.GitHubProfileDetails
 import com.sayanthrock.githubrock.core.model.GitHubProfileSnapshot
@@ -89,15 +82,12 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private const val CREATOR_PROFILE_URL = "https://github.com/SayanthRock"
-
 @Composable
 fun ProfileScreen(
     mode: AppMode,
     profile: GitHubUser?,
     explorerState: ProfileExplorerState = ProfileExplorerState(),
     onInspectProfile: (String) -> Unit = {},
-    onFollowProfile: (Boolean) -> Unit = {},
     onOpenRepositories: () -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenFeatures: () -> Unit,
@@ -111,7 +101,6 @@ fun ProfileScreen(
     val connectedLogin = normalizedGitHubLogin(displayedProfile?.login)
     val profileUrl = connectedLogin?.let { "https://github.com/$it" }
     val ownLogin = normalizedGitHubLogin(profile?.login)
-    val viewingOwnProfile = connectedLogin != null && connectedLogin.equals(ownLogin, ignoreCase = true)
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
@@ -169,19 +158,10 @@ fun ProfileScreen(
             StandardScreenHeader(
                 title = "Profile",
                 subtitle = when (mode) {
-                    AppMode.Connected -> "Your account, library, and app settings"
+                    AppMode.Connected -> "Account, activity, and app settings"
                     AppMode.Guest -> "Public browsing session"
                     AppMode.Demo -> "Isolated demonstration workspace"
                 }
-            )
-        }
-
-        item {
-            ProfileSearchCard(
-                currentLogin = connectedLogin,
-                ownLogin = ownLogin,
-                loading = explorerState.loading,
-                onSearch = onInspectProfile
             )
         }
 
@@ -209,18 +189,6 @@ fun ProfileScreen(
                     { onOpenGitHubUrl("https://github.com/$login?tab=following") }
                 }
             )
-        }
-
-        if (mode == AppMode.Connected && !viewingOwnProfile && displayedProfile != null) {
-            item {
-                Button(
-                    onClick = { onFollowProfile(explorerState.snapshot?.isFollowing != true) },
-                    enabled = !explorerState.followUpdating,
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) {
-                    Text(if (explorerState.snapshot?.isFollowing == true) "Unfollow @${displayedProfile.login}" else "Follow @${displayedProfile.login}")
-                }
-            }
         }
 
         if (profileUrl != null) {
@@ -395,11 +363,6 @@ fun ProfileScreen(
             }
         }
 
-        item { StandardSectionHeader("About") }
-        item {
-            AboutCreatorCard(onOpenGitHubUrl = onOpenGitHubUrl)
-        }
-
         item { StandardSectionHeader("Account") }
         item {
             StandardSettingsGroup {
@@ -414,43 +377,6 @@ fun ProfileScreen(
                     destructive = true,
                     onClick = onLogout
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileSearchCard(
-    currentLogin: String?,
-    ownLogin: String?,
-    loading: Boolean,
-    onSearch: (String) -> Unit
-) {
-    var query by rememberSaveable(currentLogin) { mutableStateOf(currentLogin.orEmpty()) }
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Find a GitHub profile", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(
-                "Search by username to inspect public profile information on your phone.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it.take(39) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text("GitHub username") },
-                placeholder = { Text("octocat") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    IconButton(onClick = { onSearch(query.trim()) }, enabled = !loading) {
-                        Icon(Icons.Default.Search, contentDescription = "Search GitHub profile")
-                    }
-                }
-            )
-            if (ownLogin != null && !currentLogin.equals(ownLogin, ignoreCase = true)) {
-                TextButton(onClick = { query = ownLogin; onSearch(ownLogin) }) { Text("Back to my profile") }
             }
         }
     }
@@ -610,64 +536,6 @@ internal fun normalizedProfileLink(value: String?): String? {
         else -> "https://$trimmed"
     }
     return normalized.takeIf { runCatching { java.net.URI(it).host?.isNotBlank() == true }.getOrDefault(false) }
-}
-
-@Composable
-private fun AboutCreatorCard(onOpenGitHubUrl: (String) -> Unit) {
-    GlassCard(contentPadding = PaddingValues(18.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(64.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
-                        contentDescription = "GitHub Rock application logo",
-                        modifier = Modifier.padding(5.dp)
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    Text("GitHub Rock", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-                    Text(
-                        "Visual developer control centre",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Version ${BuildConfig.VERSION_NAME}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("By Sayanth Rock", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(
-                    CREATOR_PROFILE_URL,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Button(
-                onClick = { onOpenGitHubUrl(CREATOR_PROFILE_URL) },
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) {
-                Text("Follow me", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(8.dp))
-                Icon(Icons.Default.OpenInNew, contentDescription = null)
-            }
-        }
-    }
 }
 
 @Composable

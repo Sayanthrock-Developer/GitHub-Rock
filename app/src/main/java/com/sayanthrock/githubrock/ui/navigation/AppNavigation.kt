@@ -75,7 +75,6 @@ fun MainNavigation(
     state: MainUiState,
     onSearch: (com.sayanthrock.githubrock.core.model.RepositorySearchOptions) -> Unit,
     onInspectProfile: (String) -> Unit,
-    onFollowProfile: (Boolean) -> Unit,
     onRememberRepository: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -134,7 +133,6 @@ fun MainNavigation(
                     ) {
                         composable(TopDestination.Home.route) {
                             HomeScreen(
-                                mode = mode,
                                 profile = state.profile,
                                 rateLimit = state.rateLimit,
                                 repositories = state.repositories,
@@ -165,7 +163,6 @@ fun MainNavigation(
                                 profile = state.profile,
                                 explorerState = state.profileExplorer,
                                 onInspectProfile = onInspectProfile,
-                                onFollowProfile = onFollowProfile,
                                 onOpenRepositories = { navController.navigate(REPOSITORY_LIBRARY_ROUTE) },
                                 onOpenDownloads = {
                                     navController.navigate(TopDestination.Downloads.route) {

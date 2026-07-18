@@ -1,7 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,22 +54,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.sayanthrock.githubrock.BuildConfig
-import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.RateLimit
 import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
-import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
@@ -84,7 +79,6 @@ import java.util.Locale
 @Composable
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun HomeScreen(
-    mode: AppMode,
     profile: GitHubUser?,
     rateLimit: RateLimit?,
     repositories: List<GitHubRepositoryModel>,
@@ -109,7 +103,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { StandardScreenHeader("Home", "A clean view of your GitHub workspace") }
-            item { GitHubRockHero(mode, profile, rateLimit) }
+            item { WorkspaceLevelsCard(profile, rateLimit) }
             if (isLoading) item { LoadingWorkspaceCard() }
             item { WorkflowHealthCard(runs.size, running, success, failed) }
 
@@ -187,73 +181,49 @@ fun HomeScreen(
 }
 
 @Composable
-private fun GitHubRockHero(mode: AppMode, profile: GitHubUser?, rateLimit: RateLimit?) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+private fun WorkspaceLevelsCard(profile: GitHubUser?, rateLimit: RateLimit?) {
+    val accountLevel = if (profile == null) 0 else 100
+    val apiLevel = if (rateLimit == null || rateLimit.limit <= 0) {
+        0
+    } else {
+        (rateLimit.remaining.toLong() * 100 / rateLimit.limit).toInt().coerceIn(0, 100)
+    }
     GlassCard(contentPadding = PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(66.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .14f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .30f))
-                ) {
-                    Image(
-                        painterResource(R.drawable.ic_launcher_foreground),
-                        "GitHub Rock application logo",
-                        Modifier.padding(5.dp)
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    Text("GitHub Rock", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
-                    Text("Visual developer control centre", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        ModeBadge(mode)
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)
-                        ) {
-                            Text(
-                                "v${BuildConfig.VERSION_NAME}",
-                                Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Workspace levels", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    "Every measurable status uses the same 0 / 100 scale.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-
-            TextButton({ expanded = !expanded }, Modifier.fillMaxWidth()) {
-                Text(if (expanded) "Hide workspace details" else "Show workspace details")
-                Spacer(Modifier.width(4.dp))
-                Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
-            }
-
-            if (expanded) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        profile?.name ?: profile?.login ?: "Developer workspace",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(profile?.login?.let { "@$it" } ?: "Browse public repositories securely", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    profile?.bio?.takeIf(String::isNotBlank)?.let {
-                        Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    }
-                    rateLimit?.let {
-                        val progress = if (it.limit == 0) 0f else it.remaining.toFloat() / it.limit.toFloat()
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("GitHub API health", style = MaterialTheme.typography.labelLarge)
-                            Text("${it.remaining} / ${it.limit}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        }
-                        LinearProgressIndicator({ progress.coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
-                    }
-                }
-            }
+            WorkspaceLevelRow(
+                label = "Account data",
+                detail = profile?.login?.let { "Loaded for @$it" } ?: "Waiting for account data",
+                level = accountLevel
+            )
+            WorkspaceLevelRow(
+                label = "GitHub API capacity",
+                detail = rateLimit?.let { "${it.remaining} of ${it.limit} requests available" }
+                    ?: "Rate limit unavailable",
+                level = apiLevel
+            )
         }
+    }
+}
+
+@Composable
+private fun WorkspaceLevelRow(label: String, detail: String, level: Int) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.weight(1f)) {
+                Text(label, fontWeight = FontWeight.SemiBold)
+                Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.width(12.dp))
+            Text("$level / 100", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+        }
+        LinearProgressIndicator({ level / 100f }, Modifier.fillMaxWidth().height(7.dp))
     }
 }
 
@@ -270,7 +240,7 @@ private fun WorkflowHealthCard(total: Int, running: Int, success: Int, failed: I
                     Text("Live workflow status and completion", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("$percent%", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+                    Text("$percent / 100", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
                     Text("$finished/$total", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -314,18 +284,6 @@ private fun LoadingWorkspaceCard() {
                 Text("Fetching account, repositories, workflow status, and activity time.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-    }
-}
-
-@Composable
-private fun ModeBadge(mode: AppMode) {
-    val label = when (mode) {
-        AppMode.Connected -> "CONNECTED"
-        AppMode.Guest -> "GUEST"
-        AppMode.Demo -> "DEMO"
-    }
-    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)) {
-        Text(label, Modifier.padding(horizontal = 9.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
     }
 }
 

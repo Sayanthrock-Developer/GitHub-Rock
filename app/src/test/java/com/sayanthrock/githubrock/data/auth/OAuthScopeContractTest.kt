@@ -13,7 +13,6 @@ class OAuthScopeContractTest {
         assertTrue("workflow" in scopes)
         assertTrue("read:user" in scopes)
         assertTrue("user:email" in scopes)
-        assertTrue("user:follow" in scopes)
         assertTrue("read:org" in scopes)
         assertTrue("notifications" in scopes)
     }

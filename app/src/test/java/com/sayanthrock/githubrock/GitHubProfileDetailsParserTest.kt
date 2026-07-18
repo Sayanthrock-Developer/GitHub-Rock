@@ -4,7 +4,6 @@ import com.sayanthrock.githubrock.data.repository.GitHubProfileDetailsParser
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -14,8 +13,6 @@ class GitHubProfileDetailsParserTest {
             """
             {"user":{
               "pronouns":"he/him",
-              "viewerCanFollow":true,
-              "viewerIsFollowing":false,
               "isGitHubStar":true,
               "isDeveloperProgramMember":true,
               "isCampusExpert":false,
@@ -38,6 +35,5 @@ class GitHubProfileDetailsParserTest {
         assertEquals("0000-0002-1825-0097", details.orcid?.displayName)
         assertTrue("GitHub Star" in details.highlights)
         assertTrue("Available for hire" in details.highlights)
-        assertFalse(details.viewerIsFollowing ?: true)
     }
 }

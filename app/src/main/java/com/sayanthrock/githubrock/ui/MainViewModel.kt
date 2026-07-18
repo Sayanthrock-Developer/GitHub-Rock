@@ -30,7 +30,6 @@ data class DeviceAuthState(
 data class ProfileExplorerState(
     val snapshot: GitHubProfileSnapshot? = null,
     val loading: Boolean = false,
-    val followUpdating: Boolean = false,
     val error: String? = null
 )
 
@@ -143,7 +142,7 @@ class MainViewModel @Inject constructor(
             workflowRuns = DemoData.workflows,
             rateLimit = RateLimit(5_000, 4_862, 0),
             profileExplorer = ProfileExplorerState(
-                snapshot = GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails, false)
+                snapshot = GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails)
             ),
             message = "Demo mode uses isolated sample data."
         )
@@ -225,7 +224,7 @@ class MainViewModel @Inject constructor(
         val normalized = normalizedGitHubLogin(login)
         if (normalized == null) {
             _state.update {
-                it.copy(profileExplorer = it.profileExplorer.copy(loading = false, error = "Enter a valid GitHub username."))
+                it.copy(profileExplorer = it.profileExplorer.copy(loading = false, error = "GitHub profile data is unavailable."))
             }
             return
         }
@@ -233,20 +232,16 @@ class MainViewModel @Inject constructor(
         profileJob?.cancel()
         profileJob = viewModelScope.launch {
             _state.update {
-                it.copy(profileExplorer = it.profileExplorer.copy(loading = true, followUpdating = false, error = null))
+                it.copy(profileExplorer = it.profileExplorer.copy(loading = true, error = null))
             }
             val result = when (mode) {
                 AppMode.Demo -> if (normalized.equals(DemoData.profile.login, ignoreCase = true)) {
-                    Result.success(GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails, false))
+                    Result.success(GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails))
                 } else {
                     Result.failure(IllegalArgumentException("Demo mode only contains @${DemoData.profile.login}."))
                 }
                 AppMode.Guest, AppMode.Connected -> runCatchingPreservingCancellation {
-                    val ownLogin = _state.value.profile?.login
-                    githubRepository.profile(
-                        login = normalized,
-                        checkFollowing = mode == AppMode.Connected && !normalized.equals(ownLogin, ignoreCase = true)
-                    )
+                    githubRepository.profile(normalized)
                 }
             }
             result.onSuccess { snapshot ->
@@ -261,51 +256,6 @@ class MainViewModel @Inject constructor(
                             error = error.userMessage()
                         )
                     )
-                }
-            }
-        }
-    }
-
-    fun setProfileFollowing(following: Boolean) {
-        val current = _state.value
-        val snapshot = current.profileExplorer.snapshot ?: return
-        if (current.mode != AppMode.Connected || snapshot.profile.login.equals(current.profile?.login, ignoreCase = true)) return
-        profileJob?.cancel()
-        profileJob = viewModelScope.launch {
-            _state.update {
-                it.copy(profileExplorer = it.profileExplorer.copy(followUpdating = true, error = null))
-            }
-            runCatchingPreservingCancellation {
-                githubRepository.setProfileFollowing(snapshot.profile.login, following)
-            }.onSuccess {
-                _state.update { state ->
-                    val old = state.profileExplorer.snapshot ?: return@update state
-                    val oldFollowers = old.profile.followers
-                    val newFollowers = when {
-                        following && old.isFollowing != true -> oldFollowers + 1
-                        !following && old.isFollowing == true -> (oldFollowers - 1).coerceAtLeast(0)
-                        else -> oldFollowers
-                    }
-                    state.copy(
-                        profileExplorer = state.profileExplorer.copy(
-                            snapshot = old.copy(
-                                profile = old.profile.copy(followers = newFollowers),
-                                details = old.details?.copy(viewerIsFollowing = following),
-                                isFollowing = following
-                            ),
-                            followUpdating = false,
-                            error = null
-                        )
-                    )
-                }
-            }.onFailure { error ->
-                val message = if (error is retrofit2.HttpException && error.code() == 403) {
-                    "Follow access needs the user:follow permission. Sign out and authorize GitHub Rock again."
-                } else {
-                    error.userMessage()
-                }
-                _state.update {
-                    it.copy(profileExplorer = it.profileExplorer.copy(followUpdating = false, error = message))
                 }
             }
         }

@@ -40,6 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -119,6 +120,7 @@ fun AppearanceScreen(
         onFileTools = viewModel::setFileTools,
         onCompactCards = viewModel::setCompactCards,
         onReduceMotion = viewModel::setReduceMotion,
+        onAllFeatureControls = viewModel::setAllFeatureControls,
         onReset = viewModel::resetAppearance
     )
 }
@@ -149,6 +151,7 @@ fun AppearanceContent(
     onFileTools: (Boolean) -> Unit = {},
     onCompactCards: (Boolean) -> Unit = {},
     onReduceMotion: (Boolean) -> Unit = {},
+    onAllFeatureControls: (Boolean) -> Unit = {},
     onReset: () -> Unit = {}
 ) {
     var confirmReset by remember { mutableStateOf(false) }
@@ -176,7 +179,7 @@ fun AppearanceContent(
         ) {
             item {
                 StandardScreenHeader(
-                    title = "Make GitHub Rock yours",
+                    title = "Customize your experience",
                     subtitle = "Choose a clean theme, comfortable display size, readable fonts, loading motion, and code colors."
                 )
             }
@@ -312,6 +315,12 @@ fun AppearanceContent(
 
             item { StandardSectionHeader("Feature controls") }
             item {
+                BulkFeatureControls(
+                    state = state,
+                    onSetAll = onAllFeatureControls
+                )
+            }
+            item {
                 FeatureControls(
                     state = state,
                     onWorkflowPreview = onWorkflowPreview,
@@ -337,7 +346,7 @@ fun AppearanceContent(
             }
             item {
                 Text(
-                    "Reset restores visual defaults only. GitHub connection, downloads, favorites, repository manager, file tools, and Actions controls stay unchanged.",
+                    "Reset restores visual defaults and turns every optional feature control off. Your GitHub connection, downloads, and favorites stay unchanged.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -350,7 +359,7 @@ fun AppearanceContent(
             onDismissRequest = { confirmReset = false },
             title = { Text("Reset appearance?") },
             text = {
-                Text("Themes, colors, display size, fonts, loading, and visual preferences will return to clean defaults.")
+                Text("Themes, colors, display size, fonts, loading, and optional feature controls will return to clean defaults.")
             },
             confirmButton = {
                 Button(onClick = {
@@ -534,12 +543,53 @@ private fun ThemeControls(
 private fun TypographyPreview() {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("GitHub Rock", style = MaterialTheme.typography.headlineSmall)
+            Text("Interface preview", style = MaterialTheme.typography.headlineSmall)
             Text("Clean typography preview", style = MaterialTheme.typography.titleMedium)
             Text(
                 "Repositories, workflows, releases, and code remain readable at every selected size.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun BulkFeatureControls(
+    state: AppearancePreferences,
+    onSetAll: (Boolean) -> Unit
+) {
+    val level = state.featureControlLevel
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Bulk feature controls", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Turn all seven optional tools on or off together. Fresh installs start with every optional tool off.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text("$level / 100", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+            }
+            LinearProgressIndicator(
+                progress = { level / 100f },
+                modifier = Modifier.fillMaxWidth().height(8.dp)
+            )
+            Text(
+                "${state.enabledFeatureControlCount} of 7 enabled",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = { onSetAll(true) }, modifier = Modifier.weight(1f)) { Text("Turn all on") }
+                OutlinedButton(onClick = { onSetAll(false) }, modifier = Modifier.weight(1f)) { Text("Turn all off") }
+            }
         }
     }
 }
