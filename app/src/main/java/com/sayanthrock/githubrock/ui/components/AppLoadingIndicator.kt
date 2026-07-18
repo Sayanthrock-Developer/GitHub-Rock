@@ -67,28 +67,37 @@ fun AppLoadingIndicator(
             }
 
             LoadingStyle.Pulse -> {
-                val transition = rememberInfiniteTransition(label = "app-loading-pulse")
-                val pulse by transition.animateFloat(
-                    initialValue = if (reduceMotion) 1f else .72f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = if (reduceMotion) 1 else 700),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "app-loading-pulse-scale"
-                )
-                Surface(
-                    modifier = Modifier
-                        .size(if (compact) 20.dp else 28.dp)
-                        .graphicsLayer {
-                            scaleX = pulse
-                            scaleY = pulse
-                            alpha = pulse
-                        },
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.primary
-                ) {}
+                if (reduceMotion) {
+                    PulseDot(compact = compact, scale = 1f)
+                } else {
+                    val transition = rememberInfiniteTransition(label = "app-loading-pulse")
+                    val pulse by transition.animateFloat(
+                        initialValue = .72f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 700),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "app-loading-pulse-scale"
+                    )
+                    PulseDot(compact = compact, scale = pulse)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun PulseDot(compact: Boolean, scale: Float) {
+    Surface(
+        modifier = Modifier
+            .size(if (compact) 20.dp else 28.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                alpha = scale
+            },
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.primary
+    ) {}
 }
