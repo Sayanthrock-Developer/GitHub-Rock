@@ -18,6 +18,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.ui.theme.LocalLoadingStyle
@@ -34,9 +38,20 @@ fun AppLoadingIndicator(
 ) {
     val normalizedProgress = progress?.coerceIn(0f, 1f)
     val height = if (compact) 32.dp else 44.dp
+    val loadingSemantics = Modifier.clearAndSetSemantics {
+        progressBarRangeInfo = normalizedProgress?.let {
+            ProgressBarRangeInfo(current = it, range = 0f..1f)
+        } ?: ProgressBarRangeInfo.Indeterminate
+        stateDescription = normalizedProgress?.let {
+            "${(it * 100).toInt()} percent loaded"
+        } ?: "Loading"
+    }
 
     Box(
-        modifier = modifier.fillMaxWidth().height(height),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .then(loadingSemantics),
         contentAlignment = Alignment.Center
     ) {
         when (style) {
