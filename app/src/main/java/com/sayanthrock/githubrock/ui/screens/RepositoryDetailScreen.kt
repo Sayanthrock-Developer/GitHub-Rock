@@ -44,7 +44,9 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.SyntaxHighlighter
 import com.sayanthrock.githubrock.core.util.SyntaxTokenKind
 import com.sayanthrock.githubrock.core.util.TextDiff
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,7 +111,7 @@ fun RepositoryDetailScreen(
                 FilterChip(selected = state.section == section, onClick = { viewModel.select(section) }, label = { Text(section.title) })
             }
         }
-        if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (state.loading) AppLoadingIndicator(Modifier.fillMaxWidth(), compact = true)
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp)) }
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp)) }
         LazyColumn(
@@ -614,28 +616,28 @@ private fun CodeEditorCard(
                         }
                     }
                     if (showDiff) {
-                    Surface(
-                        shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
-                    ) {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                            diff.take(MAX_VISIBLE_DIFF_LINES).forEach { line ->
-                                val background = when (line.kind) {
-                                    DiffLineKind.Added -> MaterialTheme.colorScheme.tertiary.copy(alpha = .18f)
-                                    DiffLineKind.Removed -> MaterialTheme.colorScheme.error.copy(alpha = .18f)
-                                    DiffLineKind.Context -> androidx.compose.ui.graphics.Color.Transparent
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                diff.take(MAX_VISIBLE_DIFF_LINES).forEach { line ->
+                                    val background = when (line.kind) {
+                                        DiffLineKind.Added -> MaterialTheme.colorScheme.tertiary.copy(alpha = .18f)
+                                        DiffLineKind.Removed -> MaterialTheme.colorScheme.error.copy(alpha = .18f)
+                                        DiffLineKind.Context -> androidx.compose.ui.graphics.Color.Transparent
+                                    }
+                                    Text(
+                                        text = "${line.prefix()}${line.text}",
+                                        modifier = Modifier.fillMaxWidth().background(background).padding(horizontal = 8.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                                    )
                                 }
-                                Text(
-                                    text = "${line.prefix()}${line.text}",
-                                    modifier = Modifier.fillMaxWidth().background(background).padding(horizontal = 8.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                                )
-                            }
-                            if (diff.size > MAX_VISIBLE_DIFF_LINES) {
-                                Text("Diff truncated for readability.", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
+                                if (diff.size > MAX_VISIBLE_DIFF_LINES) {
+                                    Text("Diff truncated for readability.", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
-                    }
                     }
                 }
                 OutlinedTextField(
@@ -705,16 +707,19 @@ private fun SyntaxPreviewCard(path: String, source: String) {
 }
 
 @Composable
-private fun syntaxColor(kind: SyntaxTokenKind): Color = when (kind) {
-    SyntaxTokenKind.Keyword -> MaterialTheme.colorScheme.primary
-    SyntaxTokenKind.String -> MaterialTheme.colorScheme.tertiary
-    SyntaxTokenKind.Comment -> MaterialTheme.colorScheme.onSurfaceVariant
-    SyntaxTokenKind.Number -> MaterialTheme.colorScheme.secondary
-    SyntaxTokenKind.Type -> MaterialTheme.colorScheme.primary.copy(alpha = .9f)
-    SyntaxTokenKind.Tag -> MaterialTheme.colorScheme.primary
-    SyntaxTokenKind.Attribute -> MaterialTheme.colorScheme.secondary
-    SyntaxTokenKind.Property -> MaterialTheme.colorScheme.primary
-    SyntaxTokenKind.Markdown -> MaterialTheme.colorScheme.primary
+private fun syntaxColor(kind: SyntaxTokenKind): Color {
+    val colors = LocalCodeColors.current
+    return when (kind) {
+        SyntaxTokenKind.Keyword -> colors.keyword
+        SyntaxTokenKind.String -> colors.string
+        SyntaxTokenKind.Comment -> colors.comment
+        SyntaxTokenKind.Number -> colors.number
+        SyntaxTokenKind.Type -> colors.type
+        SyntaxTokenKind.Tag -> colors.type
+        SyntaxTokenKind.Attribute -> colors.property
+        SyntaxTokenKind.Property -> colors.property
+        SyntaxTokenKind.Markdown -> colors.keyword
+    }
 }
 
 @Composable

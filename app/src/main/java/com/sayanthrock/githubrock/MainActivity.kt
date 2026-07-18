@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
                 fontFamily = appearance.fontFamily,
                 loadingStyle = appearance.loadingStyle,
                 codeColorStyle = appearance.codeColorStyle,
+                reduceMotion = appearance.reduceMotion,
                 showImages = appearance.showImages
             ) {
                 GitHubRockRoot()

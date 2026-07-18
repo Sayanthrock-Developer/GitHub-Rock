@@ -210,9 +210,6 @@ class AppPreferences @Inject constructor(
         preferences.remove(WORKFLOW_PREVIEW)
         preferences.remove(WORKFLOW_STEP_DETAILS)
         preferences.remove(STATUS_COLORS)
-        preferences.remove(ACTIONS_CONTROLS)
-        preferences.remove(REPOSITORY_MANAGER)
-        preferences.remove(FILE_TOOLS)
         preferences.remove(COMPACT_CARDS)
         preferences.remove(REDUCE_MOTION)
     }

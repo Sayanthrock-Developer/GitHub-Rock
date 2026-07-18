@@ -1,10 +1,5 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Code
@@ -42,13 +36,11 @@ import androidx.compose.material.icons.filled.ViewCompact
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -66,7 +58,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -89,6 +80,7 @@ import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
@@ -136,16 +128,16 @@ fun AppearanceContent(
     state: AppearancePreferences,
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
-    onThemeStyle: (ThemeStyle) -> Unit = {},
     onAccentColor: (AccentColor) -> Unit,
+    onDynamicColor: (Boolean) -> Unit,
+    onTrueBlack: (Boolean) -> Unit,
+    onThemeStyle: (ThemeStyle) -> Unit = {},
     onDisplaySize: (DisplaySize) -> Unit = {},
     onFontSize: (FontSize) -> Unit = {},
     onFontWeight: (FontWeightStyle) -> Unit = {},
     onFontFamily: (AppFontFamily) -> Unit = {},
     onLoadingStyle: (LoadingStyle) -> Unit = {},
     onCodeColorStyle: (CodeColorStyle) -> Unit = {},
-    onDynamicColor: (Boolean) -> Unit,
-    onTrueBlack: (Boolean) -> Unit,
     onShowImages: (Boolean) -> Unit = {},
     onWorkflowPreview: (Boolean) -> Unit = {},
     onWorkflowStepDetails: (Boolean) -> Unit = {},
@@ -169,19 +161,21 @@ fun AppearanceContent(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
+            contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 StandardScreenHeader(
                     title = "Make GitHub Rock yours",
-                    subtitle = "Themes, colors, display size, fonts, loading motion, and code colors update immediately across the app."
+                    subtitle = "Choose a clean theme, comfortable display size, readable fonts, loading motion, and code colors."
                 )
             }
 
@@ -199,7 +193,7 @@ fun AppearanceContent(
             }
             item { AccentPicker(state.accentColor, !state.dynamicColor, onAccentColor) }
             item {
-                ThemeSettings(
+                ThemeControls(
                     state = state,
                     onThemeMode = onThemeMode,
                     onDynamicColor = onDynamicColor,
@@ -212,7 +206,7 @@ fun AppearanceContent(
             item {
                 ChoiceCard(
                     title = "Interface scale",
-                    subtitle = "Large, standard, or small controls and spacing",
+                    subtitle = "Changes controls, cards, spacing, and navigation app-wide",
                     icon = Icons.Default.ViewCompact,
                     choices = listOf(
                         DisplaySize.Large to "Large",
@@ -226,22 +220,80 @@ fun AppearanceContent(
 
             item { StandardSectionHeader("Fonts") }
             item {
-                TypographyControls(
-                    state = state,
-                    onFontFamily = onFontFamily,
-                    onFontSize = onFontSize,
-                    onFontWeight = onFontWeight
+                ChoiceCard(
+                    title = "Font family",
+                    subtitle = "System sans, serif, or developer monospace",
+                    icon = Icons.Default.TextFields,
+                    choices = AppFontFamily.entries.map { it to it.displayName },
+                    selected = state.fontFamily,
+                    onSelected = onFontFamily
                 )
             }
-
-            item { StandardSectionHeader("Loading & code") }
             item {
-                LoadingAndCodeControls(
-                    state = state,
-                    onLoadingStyle = onLoadingStyle,
-                    onCodeColorStyle = onCodeColorStyle
+                ChoiceCard(
+                    title = "Font size",
+                    subtitle = "Small, default, or large readable text",
+                    icon = Icons.Default.FormatSize,
+                    choices = listOf(
+                        FontSize.Small to "Small",
+                        FontSize.Default to "Default",
+                        FontSize.Large to "Large"
+                    ),
+                    selected = state.fontSize,
+                    onSelected = onFontSize
                 )
             }
+            item {
+                ChoiceCard(
+                    title = "Font weight",
+                    subtitle = "Light, default, or stronger text",
+                    icon = Icons.Default.FormatSize,
+                    choices = listOf(
+                        FontWeightStyle.Light to "Light",
+                        FontWeightStyle.Default to "Default",
+                        FontWeightStyle.Bold to "Bold"
+                    ),
+                    selected = state.fontWeight,
+                    onSelected = onFontWeight
+                )
+            }
+            item { TypographyPreview() }
+
+            item { StandardSectionHeader("Loading and code") }
+            item {
+                ChoiceCard(
+                    title = "Loading animation",
+                    subtitle = "Applied to repository and workflow progress",
+                    icon = Icons.Default.PlayArrow,
+                    choices = LoadingStyle.entries.map { it to it.name },
+                    selected = state.loadingStyle,
+                    onSelected = onLoadingStyle
+                )
+            }
+            item {
+                GlassCard {
+                    AppLoadingIndicator(
+                        style = state.loadingStyle,
+                        reduceMotion = state.reduceMotion
+                    )
+                    Text(
+                        if (state.reduceMotion) "Static reduced-motion preview" else "Live loading preview",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            item {
+                ChoiceCard(
+                    title = "Code colors",
+                    subtitle = "Syntax colors stay isolated from the rest of the interface",
+                    icon = Icons.Default.Code,
+                    choices = CodeColorStyle.entries.map { it to it.displayName },
+                    selected = state.codeColorStyle,
+                    onSelected = onCodeColorStyle
+                )
+            }
+            item { CodeColorPreview() }
 
             item { StandardSectionHeader("Feature controls") }
             item {
@@ -270,10 +322,9 @@ fun AppearanceContent(
             }
             item {
                 Text(
-                    "Reset restores clean standard defaults only. Your GitHub connection, downloads, repositories, and favorites are not removed.",
+                    "Reset restores visual defaults only. GitHub connection, downloads, favorites, repository manager, file tools, and Actions controls stay unchanged.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -283,7 +334,9 @@ fun AppearanceContent(
         AlertDialog(
             onDismissRequest = { confirmReset = false },
             title = { Text("Reset appearance?") },
-            text = { Text("Themes, colors, display, fonts, loading, and visual feature controls will return to their clean defaults.") },
+            text = {
+                Text("Themes, colors, display size, fonts, loading, and visual preferences will return to clean defaults.")
+            },
             confirmButton = {
                 Button(onClick = {
                     confirmReset = false
@@ -300,45 +353,30 @@ fun AppearanceContent(
 @Composable
 private fun ThemePreview(state: AppearancePreferences) {
     GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Surface(
-                    modifier = Modifier.size(52.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
-                Column(Modifier.weight(1f)) {
-                    Text(state.themeStyle.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(
-                        state.themeStyle.previewSubtitle,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Icon(Icons.Default.Check, contentDescription = "Selected theme", tint = MaterialTheme.colorScheme.primary)
             }
-            HorizontalDivider()
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                PreviewPill("${state.displaySize.name} display")
-                PreviewPill("${state.fontSize.name} text")
-                PreviewPill(state.fontFamily.displayName)
+            Column(Modifier.weight(1f)) {
+                Text(state.themeStyle.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    "${state.displaySize.name} display · ${state.fontSize.name} text · ${state.fontFamily.displayName}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
+            Icon(Icons.Default.Check, contentDescription = "Selected theme", tint = MaterialTheme.colorScheme.primary)
         }
-    }
-}
-
-@Composable
-private fun PreviewPill(text: String) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Text(text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp), style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -355,7 +393,7 @@ private fun <T> ChoiceCard(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
@@ -392,7 +430,7 @@ private fun AccentPicker(
                 Column {
                     Text("Accent color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
-                        if (enabled) "Choose the highlight used for actions and selection" else "System dynamic color is active",
+                        if (enabled) "Choose the interface highlight" else "System dynamic color is active",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -423,7 +461,7 @@ private fun AccentPicker(
                     ) {
                         if (isSelected) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF071012), modifier = Modifier.size(22.dp))
+                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF071012))
                             }
                         }
                     }
@@ -434,7 +472,7 @@ private fun AccentPicker(
 }
 
 @Composable
-private fun ThemeSettings(
+private fun ThemeControls(
     state: AppearancePreferences,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
@@ -448,7 +486,7 @@ private fun ThemeSettings(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(Icons.Default.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Mode", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text("Mode", style = MaterialTheme.typography.titleSmall)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ThemeMode.entries.forEach { mode ->
@@ -462,127 +500,24 @@ private fun ThemeSettings(
             }
         }
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.Image, "Show remote images", "Load avatars and repository artwork", state.showImages, onShowImages)
+        ToggleRow(Icons.Default.Image, "Show remote images", "Avatars and repository artwork", state.showImages, onShowImages)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.ColorLens, "System dynamic color", "Use your Android wallpaper palette", state.dynamicColor, onDynamicColor)
+        ToggleRow(Icons.Default.ColorLens, "System dynamic color", "Use the Android wallpaper palette", state.dynamicColor, onDynamicColor)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.DarkMode, "True black", "Pure black background in dark mode", state.trueBlack, onTrueBlack)
+        ToggleRow(Icons.Default.DarkMode, "True black", "Pure black in dark mode", state.trueBlack, onTrueBlack)
     }
 }
 
 @Composable
-private fun TypographyControls(
-    state: AppearancePreferences,
-    onFontFamily: (AppFontFamily) -> Unit,
-    onFontSize: (FontSize) -> Unit,
-    onFontWeight: (FontWeightStyle) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ChoiceCard(
-            title = "Font family",
-            subtitle = "System sans, serif, or developer monospace",
-            icon = Icons.Default.TextFields,
-            choices = AppFontFamily.entries.map { it to it.displayName },
-            selected = state.fontFamily,
-            onSelected = onFontFamily
-        )
-        ChoiceCard(
-            title = "Font size",
-            subtitle = "Readable scaling that respects Android accessibility",
-            icon = Icons.Default.FormatSize,
-            choices = listOf(FontSize.Small to "Small", FontSize.Default to "Default", FontSize.Large to "Large"),
-            selected = state.fontSize,
-            onSelected = onFontSize
-        )
-        ChoiceCard(
-            title = "Font weight",
-            subtitle = "Choose lighter, default, or stronger text",
-            icon = Icons.Default.FormatSize,
-            choices = listOf(FontWeightStyle.Light to "Light", FontWeightStyle.Default to "Default", FontWeightStyle.Bold to "Bold"),
-            selected = state.fontWeight,
-            onSelected = onFontWeight
-        )
-        GlassCard {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("GitHub Rock", style = MaterialTheme.typography.headlineSmall)
-                Text("Clean typography preview", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Repository, workflow, release, and code tools stay readable at every selected size.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LoadingAndCodeControls(
-    state: AppearancePreferences,
-    onLoadingStyle: (LoadingStyle) -> Unit,
-    onCodeColorStyle: (CodeColorStyle) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ChoiceCard(
-            title = "Loading animation",
-            subtitle = "Spinner, progress bar, or soft pulse",
-            icon = Icons.Default.Animation,
-            choices = LoadingStyle.entries.map { it to it.name },
-            selected = state.loadingStyle,
-            onSelected = onLoadingStyle
-        )
-        LoadingPreview(state.loadingStyle, state.reduceMotion)
-        ChoiceCard(
-            title = "Code colors",
-            subtitle = "Change syntax colors without changing repository content",
-            icon = Icons.Default.Code,
-            choices = CodeColorStyle.entries.map { it to it.displayName },
-            selected = state.codeColorStyle,
-            onSelected = onCodeColorStyle
-        )
-        CodeColorPreview()
-    }
-}
-
-@Composable
-private fun LoadingPreview(style: LoadingStyle, reduceMotion: Boolean) {
+private fun TypographyPreview() {
     GlassCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                when (style) {
-                    LoadingStyle.Spinner -> CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
-                    LoadingStyle.Linear -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    LoadingStyle.Pulse -> {
-                        val transition = rememberInfiniteTransition(label = "loading-pulse")
-                        val pulse by transition.animateFloat(
-                            initialValue = if (reduceMotion) 1f else .72f,
-                            targetValue = 1f,
-                            animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-                            label = "loading-pulse-scale"
-                        )
-                        Surface(
-                            modifier = Modifier.size(28.dp).graphicsLayer {
-                                scaleX = pulse
-                                scaleY = pulse
-                                alpha = pulse
-                            },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary
-                        ) {}
-                    }
-                }
-            }
-            Column {
-                Text("Loading preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(
-                    if (reduceMotion) "Reduced motion is active" else "Used for repository and workflow progress",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("GitHub Rock", style = MaterialTheme.typography.headlineSmall)
+            Text("Clean typography preview", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Repositories, workflows, releases, and code remain readable at every selected size.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -624,21 +559,21 @@ private fun FeatureControls(
     onReduceMotion: (Boolean) -> Unit
 ) {
     StandardSettingsGroup {
-        ToggleRow(Icons.Default.Visibility, "Workflow code preview", "Show the active workflow YAML inside the app", state.workflowPreview, onWorkflowPreview)
+        ToggleRow(Icons.Default.Visibility, "Workflow code preview", "Show active workflow YAML", state.workflowPreview, onWorkflowPreview)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.Code, "Workflow step details", "Show every job and step result", state.workflowStepDetails, onWorkflowStepDetails)
+        ToggleRow(Icons.Default.Code, "Workflow step details", "Show every job and step", state.workflowStepDetails, onWorkflowStepDetails)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.Palette, "Status colors", "Red problems and green successful states", state.statusColors, onStatusColors)
+        ToggleRow(Icons.Default.Palette, "Status colors", "Red problems and green success", state.statusColors, onStatusColors)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.PlayArrow, "Actions controls", "Allow workflow run, refresh, and artifacts", state.actionsControls, onActionsControls)
+        ToggleRow(Icons.Default.PlayArrow, "Actions controls", "Run, refresh, and download artifacts", state.actionsControls, onActionsControls)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.Tune, "Repository manager", "Show code, Issues, Pull Requests, Actions, and Releases", state.repositoryManager, onRepositoryManager)
+        ToggleRow(Icons.Default.Tune, "Repository manager", "Code, issues, pulls, Actions, and releases", state.repositoryManager, onRepositoryManager)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.FolderOpen, "File tools", "Allow file viewing, copying, and review-branch uploads", state.fileTools, onFileTools)
+        ToggleRow(Icons.Default.FolderOpen, "File tools", "View, copy, and upload through review branches", state.fileTools, onFileTools)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.ViewCompact, "Compact cards", "Use tighter spacing for information-dense screens", state.compactCards, onCompactCards)
+        ToggleRow(Icons.Default.ViewCompact, "Compact cards", "Use tighter information spacing", state.compactCards, onCompactCards)
         StandardSettingsDivider()
-        ToggleRow(Icons.Default.MotionPhotosOff, "Reduce motion", "Limit nonessential animation", state.reduceMotion, onReduceMotion)
+        ToggleRow(Icons.Default.MotionPhotosOff, "Reduce motion", "Use static loading indicators", state.reduceMotion, onReduceMotion)
     }
 }
 
@@ -672,16 +607,6 @@ private val ThemeStyle.displayName: String
         ThemeStyle.Midnight -> "Midnight"
         ThemeStyle.Aurora -> "Aurora"
         ThemeStyle.HighContrast -> "High contrast"
-    }
-
-private val ThemeStyle.previewSubtitle: String
-    get() = when (this) {
-        ThemeStyle.Clean -> "Calm surfaces · clear hierarchy · Material 3"
-        ThemeStyle.LiquidGlass -> "Large curves · layered surfaces · premium spacing"
-        ThemeStyle.Studio -> "Sharper frames · dense developer workspace"
-        ThemeStyle.Midnight -> "Deep navy surfaces · focused low-light workspace"
-        ThemeStyle.Aurora -> "Soft green layers · bright modern contrast"
-        ThemeStyle.HighContrast -> "Maximum separation · stronger borders · clear text"
     }
 
 private val AppFontFamily.displayName: String
