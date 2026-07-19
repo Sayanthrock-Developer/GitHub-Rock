@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sayanthrock.githubrock.core.model.DownloadMirror
 import com.sayanthrock.githubrock.core.model.ManualDownloadRequest
 import com.sayanthrock.githubrock.core.model.ManualDownloadType
 import com.sayanthrock.githubrock.core.model.validateManualDownload
@@ -81,12 +84,14 @@ import java.util.Locale
 @Composable
 fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
+    val selectedMirror by viewModel.selectedMirror.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var inspection by remember { mutableStateOf<ApkInspection?>(null) }
     var inspectionFile by remember { mutableStateOf<File?>(null) }
     var deleteTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var cancelTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var showAddDownload by rememberSaveable { mutableStateOf(false) }
+    var showMirrors by rememberSaveable { mutableStateOf(false) }
 
     val active = downloads.count { it.status in setOf("queued", "downloading", "retrying") }
     val completed = downloads.count { it.status == "completed" }
@@ -98,56 +103,39 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                StandardScreenHeader(
-                    title = "Downloads",
-                    subtitle = "Images, files, transfer status, and file safety",
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(10.dp))
-                Button(onClick = { showAddDownload = true }) {
+            StandardScreenHeader(
+                title = "Downloads",
+                subtitle = "Images, files, transfer status, and file safety"
+            )
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = { showMirrors = true }, modifier = Modifier.weight(1f).height(52.dp)) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(Modifier.width(7.dp))
+                    Text(selectedMirror.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Button(onClick = { showAddDownload = true }, modifier = Modifier.weight(1f).height(52.dp)) {
                     Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(Modifier.width(5.dp))
-                    Text("Add")
+                    Spacer(Modifier.width(6.dp))
+                    Text("Add download")
                 }
             }
         }
-        item { DownloadOverviewCard(active, completed, failed) }
+        item { DownloadOverviewCard(active, completed, failed, selectedMirror) }
 
         if (downloads.isEmpty()) {
             item {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(320.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(64.dp),
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
-                        ) {
+                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Surface(Modifier.size(64.dp), MaterialTheme.shapes.extraLarge, MaterialTheme.colorScheme.primary.copy(alpha = .10f)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.Download,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Icon(Icons.Default.Download, null, Modifier.size(32.dp), MaterialTheme.colorScheme.primary)
                             }
                         }
                         Text("No downloads yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Add a GitHub image or file, or queue an Actions artifact or release asset.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        OutlinedButton(onClick = { showAddDownload = true }) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(Modifier.width(6.dp))
-                            Text("Add image or file")
-                        }
+                        Text("Choose a mirror, then add a trusted GitHub image or file.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        OutlinedButton(onClick = { showAddDownload = true }) { Text("Add image or file") }
                     }
                 }
             }
@@ -170,8 +158,17 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         }
     }
 
+    if (showMirrors) {
+        DownloadMirrorDialog(
+            selected = selectedMirror,
+            onSelect = viewModel::selectMirror,
+            onDismiss = { showMirrors = false }
+        )
+    }
+
     if (showAddDownload) {
         ManualDownloadDialog(
+            selectedMirror = selectedMirror,
             onDismiss = { showAddDownload = false },
             onAdd = { request ->
                 viewModel.enqueue(request.url, request.fileName)
@@ -193,11 +190,10 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     Text("Installed signing match: ${apk.installedSignatureMatches?.toString() ?: "Not installed"}")
                     Text("Requested permissions: ${apk.permissions.size}")
                     apk.permissions.take(5).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
-                    if (apk.permissions.size > 5) Text("+${apk.permissions.size - 5} more")
                 }
             },
             confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row {
                     TextButton(onClick = {
                         inspectionFile?.let { file ->
                             val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
@@ -218,9 +214,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
             onDismissRequest = { cancelTarget = null },
             title = { Text("Cancel download?") },
             text = { Text("The partial file will be removed. The item remains in history and can be restarted.") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.cancel(item); cancelTarget = null }) { Text("Cancel download") }
-            },
+            confirmButton = { TextButton(onClick = { viewModel.cancel(item); cancelTarget = null }) { Text("Cancel download") } },
             dismissButton = { TextButton(onClick = { cancelTarget = null }) { Text("Keep downloading") } }
         )
     }
@@ -230,16 +224,83 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
             onDismissRequest = { deleteTarget = null },
             title = { Text("Delete download?") },
             text = { Text("This removes the local file and its download history. This cannot be undone.") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.delete(item); deleteTarget = null }) { Text("Delete") }
-            },
+            confirmButton = { TextButton(onClick = { viewModel.delete(item); deleteTarget = null }) { Text("Delete") } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Keep") } }
         )
     }
 }
 
 @Composable
+private fun DownloadMirrorDialog(
+    selected: DownloadMirror,
+    onSelect: (DownloadMirror) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var pending by remember(selected) { mutableStateOf(selected) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Download Mirror") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text("Select the endpoint used for new downloads. Direct GitHub is the official and safest default.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                MirrorSection("Official", listOf(DownloadMirror.Direct), pending) { pending = it }
+                MirrorSection("Community", DownloadMirror.entries.filter { it.community }, pending) { pending = it }
+                Text(
+                    "Community mirrors are third-party services. Existing queue items keep their original endpoint.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSelect(pending); onDismiss() }) { Text("Use selected") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun MirrorSection(
+    title: String,
+    mirrors: List<DownloadMirror>,
+    selected: DownloadMirror,
+    onSelect: (DownloadMirror) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column {
+                mirrors.forEachIndexed { index, mirror ->
+                    Surface(onClick = { onSelect(mirror) }, color = Color.Transparent) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(mirror.label, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    if (mirror == DownloadMirror.Direct) "Official GitHub endpoint" else "Third-party community endpoint",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            RadioButton(selected = selected == mirror, onClick = { onSelect(mirror) })
+                        }
+                    }
+                    if (index < mirrors.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 14.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ManualDownloadDialog(
+    selectedMirror: DownloadMirror,
     onDismiss: () -> Unit,
     onAdd: (ManualDownloadRequest) -> Unit
 ) {
@@ -252,44 +313,26 @@ private fun ManualDownloadDialog(
         onDismissRequest = onDismiss,
         title = { Text("Download image or file") },
         text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Choose what you are saving. Only trusted GitHub HTTPS links are accepted.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)) {
+                    Text("Mirror: ${selectedMirror.label}", Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = type == ManualDownloadType.Image,
                         onClick = { type = ManualDownloadType.Image; error = null },
                         label = { Text("Image") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
-                        },
+                        leadingIcon = { Icon(Icons.Default.Image, null, Modifier.size(18.dp)) },
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
                         selected = type == ManualDownloadType.File,
                         onClick = { type = ManualDownloadType.File; error = null },
                         label = { Text("File") },
-                        leadingIcon = {
-                            Icon(Icons.Default.InsertDriveFile, contentDescription = null, modifier = Modifier.size(18.dp))
-                        },
+                        leadingIcon = { Icon(Icons.Default.InsertDriveFile, null, Modifier.size(18.dp)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
-                Text(
-                    if (type == ManualDownloadType.Image) {
-                        "Image · PNG, JPG, JPEG, WebP, or GIF from a GitHub link."
-                    } else {
-                        "File · APK, ZIP, PDF, source, or another published file."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it; error = null },
@@ -308,14 +351,8 @@ private fun ManualDownloadDialog(
                     singleLine = true,
                     supportingText = { Text("Optional — a safe name is created from the link.") }
                 )
-                error?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-                Text(
-                    "Saved privately inside the app. Completed items can be shared; APK files can also be inspected before installation.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                Text("Only trusted GitHub HTTPS source links are accepted.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         confirmButton = {
@@ -329,29 +366,16 @@ private fun ManualDownloadDialog(
 }
 
 @Composable
-private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int) {
+private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int, mirror: DownloadMirror) {
     GlassCard(contentPadding = PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = .12f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
-                    }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(Modifier.size(48.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.tertiary.copy(alpha = .12f)) {
+                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.tertiary) }
                 }
                 Column(Modifier.weight(1f)) {
                     Text("Protected download queue", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Resumable transfers, SHA-256 verification, and APK inspection",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("New downloads use ${mirror.label}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -367,12 +391,7 @@ private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int) {
 private fun DownloadMetric(label: String, value: Int, accent: Color, modifier: Modifier) {
     Surface(modifier, MaterialTheme.shapes.large, accent.copy(alpha = .09f)) {
         Column(Modifier.padding(vertical = 11.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                value.toString(),
-                color = accent,
-                fontWeight = FontWeight.Black,
-                style = MaterialTheme.typography.titleLarge
-            )
+            Text(value.toString(), color = accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
         }
     }
@@ -397,144 +416,63 @@ private fun DownloadCard(
 
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(46.dp),
-                    shape = MaterialTheme.shapes.large,
-                    color = accent.copy(alpha = .12f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(downloadStatusIcon(item.status), contentDescription = null, tint = accent)
-                    }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(Modifier.size(46.dp), MaterialTheme.shapes.large, accent.copy(alpha = .12f)) {
+                    Box(contentAlignment = Alignment.Center) { Icon(downloadStatusIcon(item.status), null, tint = accent) }
                 }
                 Column(Modifier.weight(1f)) {
                     Text(item.fileName, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        "${downloadTypeLabel(item.fileName)} · ${downloadFormatLabel(item.fileName)}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("${downloadTypeLabel(item.fileName)} · ${downloadFormatLabel(item.fileName)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = accent.copy(alpha = .12f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = .30f))
-                ) {
-                    Text(
-                        item.status.replaceFirstChar { it.uppercase() },
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        color = accent,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
+                Text(item.status.replaceFirstChar { it.uppercase() }, color = accent, fontWeight = FontWeight.Bold)
             }
-
             if (item.downloadedBytes > 0) {
                 Text(
-                    if (item.totalBytes > 0) {
-                        "${formatBytes(item.downloadedBytes)} of ${formatBytes(item.totalBytes)}"
-                    } else {
-                        formatBytes(item.downloadedBytes)
-                    },
+                    if (item.totalBytes > 0) "${formatBytes(item.downloadedBytes)} of ${formatBytes(item.totalBytes)}" else formatBytes(item.downloadedBytes),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = accent
-            )
-            if (isActive && item.totalBytes <= 0) {
-                Text(
-                    "Waiting for the server to report file size",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
+            LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(8.dp), color = accent)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when {
-                    DownloadControl.Pause in controls -> OutlinedButton(onPause, Modifier.weight(1f)) {
-                        Icon(Icons.Default.Pause, contentDescription = null)
-                        Spacer(Modifier.width(5.dp))
-                        Text("Pause")
-                    }
-                    DownloadControl.Resume in controls -> Button(onResume, Modifier.weight(1f)) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(Modifier.width(5.dp))
-                        Text("Resume")
-                    }
-                    DownloadControl.Retry in controls -> Button(onRetry, Modifier.weight(1f)) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(Modifier.width(5.dp))
-                        Text(if (item.status == "cancelled") "Restart" else "Retry")
-                    }
+                    DownloadControl.Pause in controls -> OutlinedButton(onPause, Modifier.weight(1f)) { Icon(Icons.Default.Pause, null); Text("Pause") }
+                    DownloadControl.Resume in controls -> Button(onResume, Modifier.weight(1f)) { Icon(Icons.Default.PlayArrow, null); Text("Resume") }
+                    DownloadControl.Retry in controls -> Button(onRetry, Modifier.weight(1f)) { Icon(Icons.Default.PlayArrow, null); Text(if (item.status == "cancelled") "Restart" else "Retry") }
                     else -> Spacer(Modifier.weight(1f))
                 }
                 OutlinedButton({ expanded = !expanded }, Modifier.weight(1f)) {
                     Text(if (expanded) "Less" else "Options")
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null
-                    )
+                    Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
                 }
             }
-
             if (expanded) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                if (DownloadControl.Cancel in controls) {
-                    DownloadOption(Icons.Default.Cancel, "Cancel download", onCancel)
-                }
-                if (item.status == "completed" && item.localPath?.endsWith(".apk", true) == true) {
-                    DownloadOption(Icons.Default.Security, "Inspect APK", onInspect)
-                }
-                if (item.status == "completed" && item.localPath != null) {
-                    DownloadOption(
-                        Icons.Default.Share,
-                        if (isImageDownload(item.fileName)) "Share image" else "Share file",
-                        onShare
-                    )
-                }
-                if (!isActive && item.status != "paused") {
-                    DownloadOption(Icons.Default.Delete, "Delete history and file", onDelete, destructive = true)
-                }
+                HorizontalDivider()
+                if (DownloadControl.Cancel in controls) DownloadOption(Icons.Default.Cancel, "Cancel download", onCancel)
+                if (item.status == "completed" && item.localPath?.endsWith(".apk", true) == true) DownloadOption(Icons.Default.Security, "Inspect APK", onInspect)
+                if (item.status == "completed" && item.localPath != null) DownloadOption(Icons.Default.Share, "Share file", onShare)
+                if (!isActive && item.status != "paused") DownloadOption(Icons.Default.Delete, "Delete history and file", onDelete, true)
             }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Schedule,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "Added ${formatDownloadTime(item.createdAt)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            HorizontalDivider()
+            Text("Added ${formatDownloadTime(item.createdAt)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
+private enum class DownloadControl { Pause, Resume, Retry, Cancel }
+
+private fun downloadControls(status: String): Set<DownloadControl> = when (status) {
+    "queued", "downloading", "retrying" -> setOf(DownloadControl.Pause, DownloadControl.Cancel)
+    "paused" -> setOf(DownloadControl.Resume, DownloadControl.Cancel)
+    "failed", "cancelled" -> setOf(DownloadControl.Retry)
+    else -> emptySet()
+}
+
 @Composable
-private fun DownloadOption(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    destructive: Boolean = false
-) {
+private fun DownloadOption(icon: ImageVector, label: String, onClick: () -> Unit, destructive: Boolean = false) {
     TextButton(onClick, Modifier.fillMaxWidth()) {
         val tint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-        Icon(icon, contentDescription = null, tint = tint)
+        Icon(icon, null, tint = tint)
         Spacer(Modifier.width(6.dp))
         Text(label, color = tint)
     }
@@ -560,25 +498,14 @@ private fun downloadStatusIcon(status: String): ImageVector = when (status) {
 internal fun downloadProgressLevel(downloadedBytes: Long, totalBytes: Long, status: String): Int = when {
     status == "completed" -> 100
     totalBytes <= 0 -> 0
-    else -> (downloadedBytes.coerceAtLeast(0) * 100 / totalBytes)
-        .toInt()
-        .coerceIn(0, 100)
+    else -> (downloadedBytes.coerceAtLeast(0) * 100 / totalBytes).toInt().coerceIn(0, 100)
 }
 
-private fun isImageDownload(fileName: String): Boolean =
-    fileName.substringAfterLast('.', missingDelimiterValue = "").lowercase(Locale.US) in
-        setOf("png", "jpg", "jpeg", "webp", "gif")
-
+private fun isImageDownload(fileName: String): Boolean = fileName.substringAfterLast('.', "").lowercase(Locale.US) in setOf("png", "jpg", "jpeg", "webp", "gif")
 private fun downloadTypeLabel(fileName: String): String = if (isImageDownload(fileName)) "Image" else "File"
+private fun downloadFormatLabel(fileName: String): String = fileName.substringAfterLast('.', "file").ifBlank { "file" }.uppercase(Locale.US)
 
-private fun downloadFormatLabel(fileName: String): String = fileName
-    .substringAfterLast('.', missingDelimiterValue = "file")
-    .ifBlank { "file" }
-    .uppercase(Locale.US)
-
-private fun downloadMimeType(fileName: String): String = when (
-    fileName.substringAfterLast('.', missingDelimiterValue = "").lowercase(Locale.US)
-) {
+private fun downloadMimeType(fileName: String): String = when (fileName.substringAfterLast('.', "").lowercase(Locale.US)) {
     "png" -> "image/png"
     "jpg", "jpeg" -> "image/jpeg"
     "webp" -> "image/webp"
@@ -586,8 +513,6 @@ private fun downloadMimeType(fileName: String): String = when (
     "apk" -> "application/vnd.android.package-archive"
     "pdf" -> "application/pdf"
     "zip" -> "application/zip"
-    "json" -> "application/json"
-    "txt", "md", "kt", "java", "xml", "yaml", "yml" -> "text/plain"
     else -> "application/octet-stream"
 }
 
@@ -595,16 +520,11 @@ private fun shareDownload(context: android.content.Context, item: DownloadEntity
     val file = item.localPath?.let(::File) ?: return
     if (!file.exists()) return
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    context.startActivity(
-        Intent.createChooser(
-            Intent(Intent.ACTION_SEND).apply {
-                type = downloadMimeType(item.fileName)
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-            "Share ${item.fileName}"
-        )
-    )
+    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+        type = downloadMimeType(item.fileName)
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }, "Share ${item.fileName}"))
 }
 
 private fun formatBytes(bytes: Long): String = when {
@@ -614,10 +534,5 @@ private fun formatBytes(bytes: Long): String = when {
     else -> "$bytes B"
 }
 
-private val downloadTimeFormatter = DateTimeFormatter
-    .ofPattern("dd MMM yyyy • hh:mm:ss a", Locale.getDefault())
-    .withZone(ZoneId.systemDefault())
-
-private fun formatDownloadTime(epochMillis: Long): String = runCatching {
-    downloadTimeFormatter.format(Instant.ofEpochMilli(epochMillis))
-}.getOrDefault("Time unavailable")
+private val downloadTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy • hh:mm:ss a", Locale.getDefault()).withZone(ZoneId.systemDefault())
+private fun formatDownloadTime(epochMillis: Long): String = runCatching { downloadTimeFormatter.format(Instant.ofEpochMilli(epochMillis)) }.getOrDefault("Time unavailable")

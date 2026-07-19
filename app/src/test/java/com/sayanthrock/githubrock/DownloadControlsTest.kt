@@ -1,7 +1,7 @@
 package com.sayanthrock.githubrock
 
-import com.sayanthrock.githubrock.ui.screens.DownloadControl
-import com.sayanthrock.githubrock.ui.screens.downloadControls
+import com.sayanthrock.githubrock.ui.screens.QueueDownloadControl
+import com.sayanthrock.githubrock.ui.screens.queueDownloadControls
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,8 +11,8 @@ class DownloadControlsTest {
     fun activeDownloadsCanPauseOrCancel() {
         listOf("queued", "downloading", "retrying").forEach { status ->
             assertEquals(
-                setOf(DownloadControl.Pause, DownloadControl.Cancel),
-                downloadControls(status)
+                setOf(QueueDownloadControl.Pause, QueueDownloadControl.Cancel),
+                queueDownloadControls(status)
             )
         }
     }
@@ -20,8 +20,8 @@ class DownloadControlsTest {
     @Test
     fun pausedDownloadsCanResumeOrCancel() {
         assertEquals(
-            setOf(DownloadControl.Resume, DownloadControl.Cancel),
-            downloadControls("paused")
+            setOf(QueueDownloadControl.Resume, QueueDownloadControl.Cancel),
+            queueDownloadControls("paused")
         )
     }
 
@@ -29,15 +29,15 @@ class DownloadControlsTest {
     fun stoppedDownloadsCanRestartWithoutDuplicatingHistory() {
         listOf("failed", "cancelled").forEach { status ->
             assertEquals(
-                setOf(DownloadControl.Retry),
-                downloadControls(status)
+                setOf(QueueDownloadControl.Retry),
+                queueDownloadControls(status)
             )
         }
     }
 
     @Test
     fun completedAndUnknownStatesHaveNoQueueControls() {
-        assertTrue(downloadControls("completed").isEmpty())
-        assertTrue(downloadControls("unknown").isEmpty())
+        assertTrue(queueDownloadControls("completed").isEmpty())
+        assertTrue(queueDownloadControls("unknown").isEmpty())
     }
 }
