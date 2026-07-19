@@ -5,8 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.ContentEntry
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
-import com.sayanthrock.githubrock.core.util.CopyableRepositoryFile
-import com.sayanthrock.githubrock.core.util.RepositoryCopyBundle
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
@@ -33,10 +31,8 @@ data class RepositoryFileManagerState(
     val currentPath: String = "",
     val entries: List<ContentEntry> = emptyList(),
     val selectedFile: ViewedRepositoryFile? = null,
-    val copyBundle: String? = null,
     val loading: Boolean = false,
-    val progress: Int = 100,
-    val progressLabel: String = "Ready",
+    val operationLabel: String = "Ready",
     val error: String? = null,
     val message: String? = null,
     val pullRequestUrl: String? = null
@@ -72,11 +68,11 @@ class RepositoryFileManagerViewModel @Inject constructor(
             if (requestId == browseRequestId) reportError("Use a valid repository path")
             return@launch
         }
-        updateProgress(0, "Opening repository files")
+        startOperation("Opening repository files")
         try {
             val entries = if (demo) DemoData.contents else repository.contents(owner, repo, normalized, defaultBranch)
             if (requestId != browseRequestId) return@launch
-            updateProgress(75, "Preparing file list")
+            updateOperation("Preparing file list")
             _state.update {
                 it.copy(
                     currentPath = normalized,
@@ -85,16 +81,15 @@ class RepositoryFileManagerViewModel @Inject constructor(
                             .thenBy { entry -> entry.name.lowercase() }
                     ),
                     selectedFile = null,
-                    copyBundle = null,
                     error = null,
                     message = null
                 )
             }
-            finishProgress("${entries.size} items loaded")
+            finishOperation("${entries.size} items loaded")
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Throwable) {
-            if (requestId == browseRequestId) failProgress(error.message ?: "Unable to load repository files")
+            if (requestId == browseRequestId) failOperation(error.message ?: "Unable to load repository files")
         }
     }
 
@@ -106,7 +101,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
     fun openFile(entry: ContentEntry) = viewModelScope.launch {
         if (entry.type != "file") return@launch
         val requestId = ++browseRequestId
-        updateProgress(0, "Opening ${entry.name}")
+        startOperation("Opening ${entry.name}")
         if (!isTextFile(entry.name) || entry.size > MAX_VIEWABLE_TEXT_BYTES) {
             if (requestId != browseRequestId) return@launch
             _state.update {
@@ -115,7 +110,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
                     error = null
                 )
             }
-            finishProgress("Raw file ready")
+            finishOperation("Raw file ready")
             return@launch
         }
 
@@ -132,60 +127,14 @@ class RepositoryFileManagerViewModel @Inject constructor(
                     error = null
                 )
             }
-            finishProgress("File opened")
+            finishOperation("File opened")
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Throwable) {
-            if (requestId == browseRequestId) failProgress(error.message ?: "Unable to open this file")
+            if (requestId == browseRequestId) failOperation(error.message ?: "Unable to open this file")
         }
     }
 
-    fun copyVisibleTextFiles() = viewModelScope.launch {
-        val candidates = _state.value.entries.filter { entry ->
-            entry.type == "file" && isTextFile(entry.name) && entry.size <= MAX_VIEWABLE_TEXT_BYTES
-        }
-        if (candidates.isEmpty()) {
-            reportError("No visible text or code files are available to copy")
-            return@launch
-        }
-        if (candidates.size > RepositoryCopyBundle.MAX_FILES) {
-            reportError("This folder has too many text files. Copy up to ${RepositoryCopyBundle.MAX_FILES} at a time")
-            return@launch
-        }
-
-        updateProgress(0, "Reading ${candidates.size} files")
-        try {
-            val files = candidates.mapIndexed { index, entry ->
-                val content = if (demo) {
-                    "# Demo copy for ${entry.path}\n"
-                } else {
-                    SourceFileDecoder.decodeStrictText(
-                        repository.file(owner, repo, entry.path, defaultBranch)
-                    )
-                }
-                updateProgress(
-                    progress = ((index + 1) * 85 / candidates.size).coerceIn(1, 85),
-                    label = "Reading ${index + 1} / ${candidates.size}"
-                )
-                CopyableRepositoryFile(entry.path, content)
-            }
-            val bundle = RepositoryCopyBundle.build(files)
-            _state.update {
-                it.copy(
-                    copyBundle = bundle,
-                    message = "${files.size} text files copied",
-                    error = null
-                )
-            }
-            finishProgress("Copy complete")
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            failProgress(error.message ?: "Unable to copy these files")
-        }
-    }
-
-    fun consumeCopyBundle() = _state.update { it.copy(copyBundle = null) }
     fun closeFile() = _state.update { it.copy(selectedFile = null) }
 
     fun prepareUpload() = _state.update {
@@ -195,8 +144,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
     fun reportError(message: String) = _state.update {
         it.copy(
             loading = false,
-            progress = 100,
-            progressLabel = "Needs attention",
+            operationLabel = "Needs attention",
             error = message
         )
     }
@@ -229,9 +177,9 @@ class RepositoryFileManagerViewModel @Inject constructor(
             return@launch
         }
 
-        updateProgress(0, "Preparing upload")
+        startOperation("Preparing upload")
         try {
-            updateProgress(15, "Checking destination path")
+            updateOperation("Checking destination path")
             val existingEntry = try {
                 repository.file(owner, repo, path, defaultBranch)
             } catch (error: HttpException) {
@@ -240,7 +188,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
             existingEntry?.let { check(it.type == "file") { "The destination path is not a file" } }
             val currentSha = existingEntry?.sha?.takeIf(String::isNotBlank)
 
-            updateProgress(35, "Creating review branch")
+            updateOperation("Creating review branch")
             val pull = repository.commitFileAndOpenPullRequest(
                 owner = owner,
                 repo = repo,
@@ -260,39 +208,41 @@ class RepositoryFileManagerViewModel @Inject constructor(
                     error = null
                 )
             }
-            finishProgress("Upload complete")
+            finishOperation("Upload complete")
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Throwable) {
-            failProgress(error.message ?: "Unable to upload this file")
+            failOperation(error.message ?: "Unable to upload this file")
         }
     }
 
     fun dismissError() = _state.update { it.copy(error = null) }
     fun dismissMessage() = _state.update { it.copy(message = null) }
 
-    private fun updateProgress(progress: Int, label: String) {
+    private fun startOperation(label: String) {
         _state.update {
             it.copy(
                 loading = true,
-                progress = progress.coerceIn(0, 100),
-                progressLabel = label,
+                operationLabel = label,
                 error = null,
                 message = null
             )
         }
     }
 
-    private fun finishProgress(label: String) {
-        _state.update { it.copy(loading = false, progress = 100, progressLabel = label) }
+    private fun updateOperation(label: String) {
+        _state.update { it.copy(loading = true, operationLabel = label) }
     }
 
-    private fun failProgress(message: String) {
+    private fun finishOperation(label: String) {
+        _state.update { it.copy(loading = false, operationLabel = label) }
+    }
+
+    private fun failOperation(message: String) {
         _state.update {
             it.copy(
                 loading = false,
-                progress = 100,
-                progressLabel = "Needs attention",
+                operationLabel = "Needs attention",
                 error = message
             )
         }
