@@ -56,7 +56,8 @@ data class RepositoryCreationForm(
             ownerLogin.isBlank() -> "Choose an owner account."
             normalizedName.isBlank() -> "Repository name is required."
             normalizedName.length > 100 -> "Repository name must be 100 characters or fewer."
-            normalizedName.any(Char::isWhitespace) || '/' in normalizedName || '\\' in normalizedName ->
+            normalizedName == "." || normalizedName == ".." ||
+                normalizedName.any { !it.isLetterOrDigit() && it !in "._-" } ->
                 "Repository name can use letters, numbers, dots, hyphens, and underscores only."
             description.length > 350 -> "Description must be 350 characters or fewer."
             !initializeReadme && (gitignoreTemplate != null || licenseTemplate != null) ->
