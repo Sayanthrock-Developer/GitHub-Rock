@@ -1,19 +1,19 @@
-name: Build Android Artifact
+name: Build Android APK
 
 on:
   workflow_dispatch:
     inputs:
       artifact_type:
-        description: Artifact to build
+        description: APK to build
         required: true
         type: choice
-        options: [debug-apk, release-apk, release-aab]
+        options: [debug-apk, release-apk]
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-artifact-${{ github.ref }}-${{ inputs.artifact_type }}
+  group: android-apk-${{ github.ref }}-${{ inputs.artifact_type }}
   cancel-in-progress: false
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
 
           echo "All required release build settings are present."
       - name: Prepare and validate signing keystore
-        if: ${{ inputs.artifact_type != 'debug-apk' }}
+        if: ${{ inputs.artifact_type == 'release-apk' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -113,18 +113,8 @@ jobs:
           GITHUB_ROCK_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           GITHUB_ROCK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --stacktrace
-      - name: Build release AAB
-        if: ${{ inputs.artifact_type == 'release-aab' }}
-        env:
-          GITHUB_ROCK_KEYSTORE_PATH: ${{ runner.temp }}/github-rock-release.jks
-          GITHUB_ROCK_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          GITHUB_ROCK_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          GITHUB_ROCK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew :app:bundleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: github-rock-${{ inputs.artifact_type }}
-          path: |
-            app/build/outputs/apk/**/*.apk
-            app/build/outputs/bundle/**/*.aab
+          path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error

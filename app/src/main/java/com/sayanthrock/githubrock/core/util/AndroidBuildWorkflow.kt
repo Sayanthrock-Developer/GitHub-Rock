@@ -2,8 +2,7 @@ package com.sayanthrock.githubrock.core.util
 
 enum class AndroidArtifactType(val gradleTask: String, val artifactGlob: String) {
     DebugApk("assembleDebug", "**/build/outputs/apk/debug/*.apk"),
-    ReleaseApk("assembleRelease", "**/build/outputs/apk/release/*.apk"),
-    ReleaseAab("bundleRelease", "**/build/outputs/bundle/release/*.aab")
+    ReleaseApk("assembleRelease", "**/build/outputs/apk/release/*.apk")
 }
 
 data class AndroidProjectDetection(
@@ -45,10 +44,10 @@ object AndroidWorkflowGenerator {
     private val safeModuleSegment = Regex("^[A-Za-z0-9_.-]+$")
 
     /**
-     * Generates a GitHub Actions workflow for building an Android artifact.
+     * Generates a GitHub Actions workflow for building an installable Android APK.
      *
      * @param module The Android Gradle module to build.
-     * @param artifact The artifact type and corresponding Gradle task to use.
+     * @param artifact The APK type and corresponding Gradle task to use.
      * @param javaVersion The Java version for the workflow; supported values are 17 and 21.
      * @return The generated GitHub Actions workflow YAML.
      * @throws IllegalArgumentException If the module is invalid or the Java version is unsupported.

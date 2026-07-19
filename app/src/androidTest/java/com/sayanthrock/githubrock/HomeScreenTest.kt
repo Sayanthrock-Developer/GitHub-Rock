@@ -18,7 +18,7 @@ import org.junit.Test
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedDashboardShowsRealHealthAndBuildAction() {
+    @Test fun connectedDashboardShowsClearStatusAndBuildAction() {
         var openedBuilds = false
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
@@ -37,13 +37,13 @@ class HomeScreenTest {
             }
         }
 
-        compose.onNodeWithText("Workspace levels").assertIsDisplayed()
-        compose.onNodeWithText("Account data").assertIsDisplayed()
-        compose.onNodeWithText("100 / 100").assertIsDisplayed()
-        compose.onNodeWithText("GitHub API capacity").assertIsDisplayed()
-        compose.onNodeWithText("97 / 100").assertIsDisplayed()
-        compose.onNodeWithText("GitHub Rock").assertDoesNotExist()
-        compose.onNodeWithText("CONNECTED").assertDoesNotExist()
+        compose.onNodeWithText("Workspace status").assertIsDisplayed()
+        compose.onNodeWithText("GitHub account").assertIsDisplayed()
+        compose.onNodeWithText("Connected as @SayanthRock").assertIsDisplayed()
+        compose.onNodeWithText("GitHub API").assertIsDisplayed()
+        compose.onNodeWithText("4862 of 5000 requests available").assertIsDisplayed()
+        compose.onNodeWithText("100 / 100").assertDoesNotExist()
+        compose.onNodeWithText("97 / 100").assertDoesNotExist()
         compose.onNodeWithText("Build APK").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(openedBuilds) }
     }

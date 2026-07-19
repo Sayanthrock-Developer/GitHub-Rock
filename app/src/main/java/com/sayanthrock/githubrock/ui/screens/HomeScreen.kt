@@ -38,7 +38,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -100,20 +99,25 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = StandardScreenPadding,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            item { StandardScreenHeader("Home", "A clean view of your GitHub workspace") }
-            item { WorkspaceLevelsCard(profile, rateLimit) }
+            item {
+                StandardScreenHeader(
+                    title = "Home",
+                    subtitle = "Your GitHub workspace, clearly organized"
+                )
+            }
+            item { WorkspaceStatusCard(profile, rateLimit) }
             if (isLoading) item { LoadingWorkspaceCard() }
-            item { WorkflowHealthCard(runs.size, running, success, failed) }
+            item { WorkflowActivityCard(runs.size, running, success, failed) }
 
             item {
-                StandardSectionHeader("Workspace overview")
+                StandardSectionHeader("Overview")
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     item { DashboardMetric("Repositories", repositories.size.toString(), Icons.Default.Folder) }
                     item { DashboardMetric("Running", running.toString(), Icons.Default.CloudQueue) }
-                    item { DashboardMetric("Success", success.toString(), Icons.Default.CheckCircle, success = true) }
+                    item { DashboardMetric("Successful", success.toString(), Icons.Default.CheckCircle, success = true) }
                     item { DashboardMetric("Failed", failed.toString(), Icons.Default.ErrorOutline, warning = failed > 0) }
                 }
             }
@@ -123,7 +127,7 @@ fun HomeScreen(
                 Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(onOpenBuilds, Modifier.weight(1f).height(54.dp)) {
-                        Icon(Icons.Default.Build, null)
+                        Icon(Icons.Default.Build, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Build APK", fontWeight = FontWeight.Bold)
                     }
@@ -132,20 +136,25 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f).height(54.dp),
                         enabled = repositories.isNotEmpty()
                     ) {
-                        Icon(Icons.Default.Folder, null)
+                        Icon(Icons.Default.Folder, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Open repo")
+                        Text("Open repository")
                     }
                 }
             }
 
             if (runs.isNotEmpty()) {
                 item { StandardSectionHeader("Workflow activity", "${runs.size} recent") }
-                items(if (showAllRuns) runs else runs.take(3), key = { it.id }) { WorkflowSummaryCard(it) }
+                items(if (showAllRuns) runs else runs.take(3), key = { it.id }) { run ->
+                    WorkflowSummaryCard(run)
+                }
                 if (runs.size > 3) {
                     item {
                         TextButton({ showAllRuns = !showAllRuns }, Modifier.fillMaxWidth()) {
-                            Icon(if (showAllRuns) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
+                            Icon(
+                                if (showAllRuns) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null
+                            )
                             Spacer(Modifier.width(6.dp))
                             Text(if (showAllRuns) "Show fewer workflows" else "See all workflows")
                         }
@@ -166,85 +175,125 @@ fun HomeScreen(
             if (!isLoading && repositories.isEmpty()) {
                 item {
                     GlassCard {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.ErrorOutline, null)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.ErrorOutline, contentDescription = null)
                             Text("No repositories to show. Pull down to refresh.")
                         }
                     }
                 }
             }
-            items(repositories.take(6), key = { it.id }) { repo ->
-                RepositoryCard(repo) { onOpenRepo(repo) }
+            items(repositories.take(6), key = { it.id }) { repository ->
+                RepositoryCard(repository) { onOpenRepo(repository) }
             }
         }
     }
 }
 
 @Composable
-private fun WorkspaceLevelsCard(profile: GitHubUser?, rateLimit: RateLimit?) {
-    val accountLevel = if (profile == null) 0 else 100
-    val apiLevel = if (rateLimit == null || rateLimit.limit <= 0) {
-        0
-    } else {
-        (rateLimit.remaining.toLong() * 100 / rateLimit.limit).toInt().coerceIn(0, 100)
-    }
+private fun WorkspaceStatusCard(profile: GitHubUser?, rateLimit: RateLimit?) {
+    val accountReady = profile != null
+    val apiReady = rateLimit != null && rateLimit.limit > 0
+
     GlassCard(contentPadding = PaddingValues(18.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("Workspace levels", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    "Every measurable status uses the same 0 / 100 scale.",
+                    "Workspace status",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Important connection details without technical scoring.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            WorkspaceLevelRow(
-                label = "Account data",
-                detail = profile?.login?.let { "Loaded for @$it" } ?: "Waiting for account data",
-                level = accountLevel
+            WorkspaceStatusRow(
+                icon = if (accountReady) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                title = "GitHub account",
+                detail = profile?.login?.let { "Connected as @$it" } ?: "Sign in to load your account",
+                status = if (accountReady) "Connected" else "Not connected",
+                healthy = accountReady
             )
-            WorkspaceLevelRow(
-                label = "GitHub API capacity",
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            WorkspaceStatusRow(
+                icon = if (apiReady) Icons.Default.CloudQueue else Icons.Default.ErrorOutline,
+                title = "GitHub API",
                 detail = rateLimit?.let { "${it.remaining} of ${it.limit} requests available" }
-                    ?: "Rate limit unavailable",
-                level = apiLevel
+                    ?: "Availability has not been loaded",
+                status = if (apiReady) "Available" else "Unavailable",
+                healthy = apiReady
             )
         }
     }
 }
 
 @Composable
-private fun WorkspaceLevelRow(label: String, detail: String, level: Int) {
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column(Modifier.weight(1f)) {
-                Text(label, fontWeight = FontWeight.SemiBold)
-                Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            }
-            Spacer(Modifier.width(12.dp))
-            Text("$level / 100", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+private fun WorkspaceStatusRow(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+    status: String,
+    healthy: Boolean
+) {
+    val accent = if (healthy) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = accent.copy(alpha = .12f)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.padding(10.dp).size(22.dp), tint = accent)
         }
-        LinearProgressIndicator({ level / 100f }, Modifier.fillMaxWidth().height(7.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontWeight = FontWeight.SemiBold)
+            Text(
+                detail,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        StatusPill(status, accent)
     }
 }
 
 @Composable
-private fun WorkflowHealthCard(total: Int, running: Int, success: Int, failed: Int) {
-    val finished = (success + failed).coerceAtMost(total)
-    val progress = if (total == 0) 0f else finished.toFloat() / total
-    val percent = (progress * 100).toInt().coerceIn(0, 100)
+private fun WorkflowActivityCard(total: Int, running: Int, success: Int, failed: Int) {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text("Build health", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Live workflow status and completion", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        "Build activity",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Recent workflow results at a glance",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("$percent / 100", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
-                    Text("$finished/$total", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                ) {
+                    Text(
+                        if (total == 1) "1 run" else "$total runs",
+                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
-            LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 WorkflowStateTile("Running", running, WorkflowDisplayState.Running, Modifier.weight(1f))
                 WorkflowStateTile("Success", success, WorkflowDisplayState.Success, Modifier.weight(1f))
@@ -255,7 +304,12 @@ private fun WorkflowHealthCard(total: Int, running: Int, success: Int, failed: I
 }
 
 @Composable
-private fun WorkflowStateTile(label: String, value: Int, state: WorkflowDisplayState, modifier: Modifier) {
+private fun WorkflowStateTile(
+    label: String,
+    value: Int,
+    state: WorkflowDisplayState,
+    modifier: Modifier
+) {
     val accent = workflowStateColor(state)
     Surface(
         modifier = modifier,
@@ -263,9 +317,21 @@ private fun WorkflowStateTile(label: String, value: Int, state: WorkflowDisplayS
         color = accent.copy(alpha = .10f),
         border = BorderStroke(1.dp, accent.copy(alpha = .28f))
     ) {
-        Column(Modifier.padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(value.toString(), color = accent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        Column(
+            Modifier.padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                value.toString(),
+                color = accent,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                label,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }
@@ -274,14 +340,19 @@ private fun WorkflowStateTile(label: String, value: Int, state: WorkflowDisplayS
 private fun LoadingWorkspaceCard() {
     GlassCard {
         Row(
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Loading your GitHub workspace" },
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = "Loading your GitHub workspace" },
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
             Column {
                 Text("Loading your GitHub workspace…", fontWeight = FontWeight.SemiBold)
-                Text("Fetching account, repositories, workflow status, and activity time.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Fetching account, repositories, workflow status, and activity time.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -307,8 +378,13 @@ private fun DashboardMetric(
         border = BorderStroke(1.dp, accent.copy(alpha = .20f))
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Icon(icon, null, Modifier.size(22.dp), accent)
-            Text(value, color = accent, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp), tint = accent)
+            Text(
+                value,
+                color = accent,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Black
+            )
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -318,46 +394,80 @@ private fun DashboardMetric(
 private fun WorkflowSummaryCard(run: WorkflowRun) {
     val state = run.displayState()
     val accent = workflowStateColor(state)
-    val progress = when (state) {
-        WorkflowDisplayState.Queued -> .08f
-        WorkflowDisplayState.Running -> .55f
-        WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled -> 1f
-        WorkflowDisplayState.Unknown -> 0f
-    }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Surface(shape = MaterialTheme.shapes.large, color = accent.copy(alpha = .12f)) {
-                    Icon(workflowStateIcon(state), null, Modifier.padding(10.dp).size(22.dp), accent)
+                    Icon(
+                        workflowStateIcon(state),
+                        contentDescription = null,
+                        modifier = Modifier.padding(10.dp).size(22.dp),
+                        tint = accent
+                    )
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(run.displayTitle.ifBlank { run.name ?: "Workflow" }, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        listOf(run.event, run.headBranch.orEmpty()).filter(String::isNotBlank).joinToString(" • "),
+                        run.displayTitle.ifBlank { run.name ?: "Workflow" },
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        listOf(run.event, run.headBranch.orEmpty())
+                            .filter(String::isNotBlank)
+                            .joinToString(" • "),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                StatusBadge(state)
+                StatusPill(state.name, accent)
             }
-            LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(6.dp), color = accent)
+            HorizontalDivider(color = accent.copy(alpha = .28f))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatGitHubTime(run.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        formatGitHubTime(run.createdAt),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Text("Run #${run.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Run #${run.id}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
 }
 
 @Composable
-private fun StatusBadge(state: WorkflowDisplayState) {
-    val accent = workflowStateColor(state)
-    Surface(shape = MaterialTheme.shapes.small, color = accent.copy(alpha = .12f), border = BorderStroke(1.dp, accent.copy(alpha = .30f))) {
-        Text(state.name, Modifier.padding(horizontal = 9.dp, vertical = 5.dp), color = accent, fontWeight = FontWeight.Bold)
+private fun StatusPill(label: String, accent: Color) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = accent.copy(alpha = .12f),
+        border = BorderStroke(1.dp, accent.copy(alpha = .30f))
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+            color = accent,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }
 
@@ -381,39 +491,90 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
     val showImages = LocalRemoteImagesEnabled.current
     GlassCard(Modifier.fillMaxWidth(), PaddingValues(16.dp), onClick) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(Modifier.size(50.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.surfaceVariant) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(50.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
                     if (showImages && repo.owner.avatarUrl.isNotBlank()) {
-                        AsyncImage(repo.owner.avatarUrl, "${repo.owner.login} avatar", Modifier.fillMaxSize())
+                        AsyncImage(
+                            model = repo.owner.avatarUrl,
+                            contentDescription = "${repo.owner.login} avatar",
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(repo.owner.login.take(2).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text(
+                                repo.owner.login.take(2).uppercase(),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(repo.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        repo.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Text(repo.owner.login, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Surface(Modifier.size(42.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.primary.copy(alpha = .12f)) {
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.ChevronRight, "Open ${repo.name}", tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "Open ${repo.name}",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
-            Text(repo.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, overflow = TextOverflow.Ellipsis)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                repo.description ?: "No repository description.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 RepositoryMetaChip(Icons.Default.Star, "Stars", compactCount(repo.stars))
                 RepositoryMetaChip(Icons.Default.CallSplit, "Forks", compactCount(repo.forks))
                 RepositoryMetaChip(Icons.Default.ErrorOutline, "Open issues", compactCount(repo.openIssues))
                 RepositoryMetaChip(Icons.Default.Code, "Language", repo.language ?: "Repository", true)
-                repo.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let { RepositoryMetaChip(Icons.Default.Tag, "Topic", it) }
+                repo.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let { topic ->
+                    RepositoryMetaChip(Icons.Default.Tag, "Topic", topic)
+                }
             }
             if (repo.updatedAt.isNotBlank()) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Updated ${formatGitHubTime(repo.updatedAt)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Updated ${formatGitHubTime(repo.updatedAt)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -421,16 +582,33 @@ fun RepositoryCard(repo: GitHubRepositoryModel, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RepositoryMetaChip(icon: ImageVector, label: String, value: String, accent: Boolean = false) {
+private fun RepositoryMetaChip(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    accent: Boolean = false
+) {
     val foreground = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Surface(
         modifier = Modifier.semantics { contentDescription = "$label: $value" },
         shape = MaterialTheme.shapes.large,
-        color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f),
-        border = BorderStroke(1.dp, if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .28f) else MaterialTheme.colorScheme.outline)
+        color = if (accent) {
+            MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .28f)
+            else MaterialTheme.colorScheme.outline
+        )
     ) {
-        Row(Modifier.padding(horizontal = 11.dp, vertical = 7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, Modifier.size(15.dp), foreground)
+        Row(
+            Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp), tint = foreground)
             Text(value, color = foreground, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
