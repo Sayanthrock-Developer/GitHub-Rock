@@ -22,7 +22,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - In-app application, Android SDK, device, installation, and permission information
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
 - Platform-aware GitHub Release picker for Android, Windows, Linux, iOS, and macOS assets, with file-format and architecture guidance
-- Deterministic Android project detection and safe workflow generation for `assembleDebug`, `assembleRelease`, and `bundleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
+- Deterministic Android project detection and safe workflow generation for `assembleDebug` and `assembleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
 - Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 fingerprinting and expected-checksum verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
 - Clean adaptive Material 3 visual system with consistent spacing, typography, grouped settings, edge-to-edge system bars, phone bottom navigation, tablet/landscape navigation rail, system/light/dark modes, true black, five accent choices, and optional dynamic color
@@ -36,11 +36,11 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 | Screen | What it shows |
 | --- | --- |
 | Login | Explicit sign-in, official signup (Google, Apple, or email), GitHub Device Flow, guest access, and demo mode |
-| Home | Clean 0–100 account/API/workflow levels, repository/build metrics, quick actions, pull-to-refresh, and honest loading/empty states |
+| Home | Clear account/API status, repository and build metrics, quick actions, pull-to-refresh, and honest loading/empty states |
 | Repositories | Public/authorized repository search and repository cards |
 | Repository | Overview, Code, Issues, Pull Requests, Actions, and a five-platform Release asset picker |
-| Builds | Workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
-| Downloads | Explicit GitHub image/file downloads, 0–100 progress, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
+| Builds | APK workflow preview/PR creation, merged-workflow detection, dispatch, live job state, background completion monitoring, and artifact handoff |
+| Downloads | Explicit GitHub image/file downloads, byte-based transfer details, pause/resume/cancel/restart controls, SHA-256 fingerprints, sharing, and APK inspection |
 | Profile | Own-account summary with repository/follower/following links, contributions, highlights, GitHub security, appearance, feature status, and session controls |
 | Appearance | Theme, typography, log style, bulk optional-feature controls (off by default), true black, dynamic color, and persistent accents |
 | All GitHub | Native feature status plus secure access to every major GitHub.com workspace and account tool |
@@ -125,9 +125,8 @@ The debug APK is produced under `app/build/outputs/apk/debug/`.
 
 - Debug APK → `:app:assembleDebug`
 - Release APK → `:app:assembleRelease`
-- Release AAB → `:app:bundleRelease`
 
-GitHub Rock's `AndroidProjectDetector` looks for `gradlew`, Gradle settings/build files, Android manifests, application-module paths, and existing workflow files. `AndroidWorkflowGenerator` maps a validated module name to a fixed Gradle task; it rejects shell syntax instead of interpolating arbitrary commands.
+GitHub Rock's `AndroidProjectDetector` looks for `gradlew`, Gradle settings/build files, Android manifests, application-module paths, and existing workflow files. `AndroidWorkflowGenerator` maps a validated module name to a fixed APK Gradle task; it rejects shell syntax instead of interpolating arbitrary commands.
 
 When adding a workflow to another repository, GitHub Rock previews the complete YAML, creates a new branch, commits the file, and opens a pull request. After that workflow is reviewed and merged, the Builds tab detects it on the repository, dispatches a selected branch or tag, identifies the new run, and follows job/step state to completion. A network-constrained WorkManager job persists run discovery across process loss and posts an honest terminal-state notification when Android notification permission is available. Published artifacts can then be queued in Downloads. Branch protection is never bypassed.
 
@@ -152,7 +151,7 @@ Each published release includes both the APK file checksum (`.apk.sha256`) and t
 2. Open **Actions → Publish Android Release → Run workflow**.
 3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
 4. Wait for pinned certificate verification, checksum generation, and release publication to finish.
-5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk`, `GitHub-Rock-<version>.apk.sha256`, and `GitHub-Rock-<version>.apk.certificate.sha256`. An AAB cannot be installed directly on a phone.
+5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk`, `GitHub-Rock-<version>.apk.sha256`, and `GitHub-Rock-<version>.apk.certificate.sha256`.
 6. Compare the APK's SHA-256 checksum with the `.apk.sha256` file. Compare the detected signing certificate with the fingerprint previously published through an independently trusted project channel.
 7. On Android 10 or newer, allow **Install unknown apps** only for the browser or file manager you used, open the APK, and approve Android's official Package Installer prompt.
 
@@ -180,7 +179,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 - OAuth Device Flow session acquisition/storage/refresh/logout foundation
 - Guest and isolated demo entry
-- Connected dashboard request with API health, active/failed workflow metrics, and authorized repository listing
+- Connected dashboard request with API status, active/failed workflow metrics, and authorized repository listing
 - Public repository search
 - Repository overview plus real Code/Issues/Pull Requests/Actions/Releases reads
 - Platform-aware release selection for Android, Windows, Linux, iOS, and macOS assets; non-Android files are downloaded for sharing or transfer and are not run on the Android device
@@ -188,11 +187,11 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Adaptive phone/tablet navigation, bounded wide-screen content, and pull-to-refresh dashboard feedback
 - Issue metadata editing for labels, assignees, milestones, and reactions
 - Workflow dispatch/cancel/rerun, logs, jobs, artifacts, and verified HTTP responses
-- Android workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
+- Android APK workflow preview, safe branch/PR creation, merged-workflow detection, dispatch, live and WorkManager-backed run tracking, completion notifications, and artifact handoff
 - Repository code browsing with base64 decoding, text-file editing/creation, syntax-highlighted previews, safe rename/move/delete operations, branch-protection awareness, and reviewed branch/PR commits
 - Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
 - Recoverable fingerprinted download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
-- Own-repository CI and manual APK/AAB workflows
+- Own-repository CI and manual APK workflows
 - Signed, versioned GitHub Release workflow with APK signature verification, pinned signing-certificate validation, APK checksums, and certificate fingerprint assets
 - Actionable All GitHub hub covering 45 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, enterprises, Marketplace, accessibility, security settings, billing, and community discovery
 
