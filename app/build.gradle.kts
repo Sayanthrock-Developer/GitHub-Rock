@@ -143,6 +143,7 @@ dependencies {
     implementation(libs.androidx.browser)
 
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso)
     androidTestImplementation(libs.compose.ui.test.junit4)

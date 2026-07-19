@@ -149,7 +149,7 @@ fun MainNavigation(
                                 repositories = state.repositories,
                                 loading = state.isLoading,
                                 onSearch = onSearch,
-                                onNewRepository = { onOpenGitHubUrl("https://github.com/new") },
+                                creationEnabled = mode == AppMode.Connected,
                                 onOpen = openRepo
                             )
                         }
