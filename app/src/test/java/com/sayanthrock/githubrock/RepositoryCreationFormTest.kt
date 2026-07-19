@@ -51,7 +51,16 @@ class RepositoryCreationFormTest {
 
     @Test
     fun repositoryNameRejectsUnsafeCharacters() {
-        listOf("bad name", "bad/name", "bad\\name", "bad!name", ".", "..").forEach { name ->
+        listOf(
+            "bad name",
+            "bad/name",
+            "bad\\name",
+            "bad!name",
+            "café",
+            "റോക്ക്",
+            ".",
+            ".."
+        ).forEach { name ->
             assertEquals(
                 "Repository name can use letters, numbers, dots, hyphens, and underscores only.",
                 RepositoryCreationForm(ownerLogin = "SayanthRock", name = name).validationError()
