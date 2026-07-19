@@ -29,16 +29,16 @@ class AndroidBuildWorkflowTest {
     }
 
     @Test
-    fun generatorUsesFixedTaskMappingAndRepairsIncompleteWrapper() {
-        val yaml = AndroidWorkflowGenerator.generate("app", AndroidArtifactType.ReleaseAab)
+    fun generatorUsesFixedApkTaskMappingAndRepairsIncompleteWrapper() {
+        val yaml = AndroidWorkflowGenerator.generate("app", AndroidArtifactType.ReleaseApk)
 
         assertTrue(yaml.contains("gradle-version: '8.13'"))
         assertTrue(yaml.contains("[ ! -f ./gradlew ] ||"))
         assertTrue(yaml.contains("[ ! -f gradle/wrapper/gradle-wrapper.jar ] ||"))
         assertTrue(yaml.contains("[ ! -f gradle/wrapper/gradle-wrapper.properties ]; then"))
         assertTrue(yaml.contains("gradle wrapper --gradle-version 8.13"))
-        assertTrue(yaml.contains("./gradlew :app:bundleRelease"))
-        assertTrue(yaml.contains("**/build/outputs/bundle/release/*.aab"))
+        assertTrue(yaml.contains("./gradlew :app:assembleRelease"))
+        assertTrue(yaml.contains("**/build/outputs/apk/release/*.apk"))
     }
 
     @Test
