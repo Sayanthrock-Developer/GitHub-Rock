@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -14,6 +15,7 @@ import com.sayanthrock.githubrock.core.model.RepositoryOwnerOption
 import com.sayanthrock.githubrock.core.model.RepositoryOwnerType
 import com.sayanthrock.githubrock.ui.screens.CreateRepositoryFormContent
 import com.sayanthrock.githubrock.ui.screens.CreateRepositoryState
+import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
 import org.junit.Rule
 import org.junit.Test
 
@@ -85,5 +87,23 @@ class CreateRepositorySheetTest {
         composeRule.onNodeWithText("Loading owner accounts and GitHub templates…")
             .assertTextContains("Loading owner accounts")
         composeRule.onNodeWithText("Create").performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test
+    fun readOnlyModeDoesNotExposeRepositoryCreation() {
+        composeRule.setContent {
+            MaterialTheme {
+                RepositoriesScreen(
+                    repositories = emptyList(),
+                    loading = false,
+                    onSearch = {},
+                    creationEnabled = false,
+                    onOpen = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Repositories").assertExists()
+        composeRule.onNodeWithText("New").assertDoesNotExist()
     }
 }
