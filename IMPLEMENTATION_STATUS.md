@@ -16,13 +16,13 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Repository search filters for language, source/fork or visibility type, sort order, and repository creation
 - Full scrollable workflow logs in popup or lazy syntax-highlighted terminal presentation, selectable in Appearance
 - Native App & SDK information for package, Android APIs, device, install dates, ABIs, and requested permissions
-- Explicit trusted-GitHub image/file downloads with clear format guidance and consistent 0–100 progress levels
+- Explicit trusted-GitHub image/file downloads with clear format guidance, byte-based transfer details, and resumable progress indicators
 - Bulk optional-feature controls with fresh-install and reset defaults set to off
 - Searchable All GitHub services hub with 45 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases, including direct public/private repository resolution for deep links
 - Five-platform release-asset picker for Android, Windows, Linux, iOS, and macOS with deterministic format and architecture classification
 - Verified workflow dispatch/cancel/rerun repository methods
-- Android project detection and safe APK/AAB workflow YAML generation
+- Android project detection and safe debug/release APK workflow YAML generation
 - Room cache schema, DataStore settings, recoverable WorkManager download worker
 - SHA-256 fingerprinting and expected-checksum validation plus APK/package/signature inspection foundation
 - Deep-link routes and Android-system installer permission model
