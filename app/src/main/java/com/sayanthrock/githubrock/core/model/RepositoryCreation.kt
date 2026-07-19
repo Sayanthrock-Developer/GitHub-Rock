@@ -57,7 +57,7 @@ data class RepositoryCreationForm(
             normalizedName.isBlank() -> "Repository name is required."
             normalizedName.length > 100 -> "Repository name must be 100 characters or fewer."
             normalizedName == "." || normalizedName == ".." ||
-                normalizedName.any { !it.isLetterOrDigit() && it !in "._-" } ->
+                normalizedName.any { !it.isAsciiLetterOrDigit() && it !in "._-" } ->
                 "Repository name can use letters, numbers, dots, hyphens, and underscores only."
             description.length > 350 -> "Description must be 350 characters or fewer."
             !initializeReadme && (gitignoreTemplate != null || licenseTemplate != null) ->
@@ -77,6 +77,9 @@ data class RepositoryCreationForm(
         licenseTemplate = licenseTemplate?.takeIf { initializeReadme }
     )
 }
+
+private fun Char.isAsciiLetterOrDigit(): Boolean =
+    this in 'a'..'z' || this in 'A'..'Z' || this in '0'..'9'
 
 internal fun isValidBranchName(value: String): Boolean {
     if (value.isBlank() || value.length > 255) return false
