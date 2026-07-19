@@ -149,6 +149,7 @@ fun MainNavigation(
                                 repositories = state.repositories,
                                 loading = state.isLoading,
                                 onSearch = onSearch,
+                                creationEnabled = mode == AppMode.Connected,
                                 onOpen = openRepo
                             )
                         }
