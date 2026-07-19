@@ -1,8 +1,6 @@
 package com.sayanthrock.githubrock
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
