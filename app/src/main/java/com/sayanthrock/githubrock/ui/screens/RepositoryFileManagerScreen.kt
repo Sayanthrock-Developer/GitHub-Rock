@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,10 +34,10 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -103,12 +102,6 @@ fun RepositoryFileManagerScreen(
     LaunchedEffect(state.pullRequestUrl) {
         if (!state.pullRequestUrl.isNullOrBlank()) pendingUpload = null
     }
-    LaunchedEffect(state.copyBundle) {
-        state.copyBundle?.let { bundle ->
-            clipboard.setText(AnnotatedString(bundle))
-            viewModel.consumeCopyBundle()
-        }
-    }
 
     val openUrl: (String) -> Unit = { url ->
         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
@@ -128,15 +121,15 @@ fun RepositoryFileManagerScreen(
                     )?.use { cursor ->
                         if (cursor.moveToFirst()) cursor.getString(0) else null
                     } ?: "uploaded-file.txt"
-                    val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
-                        readLimited(input)
-                    } ?: error("Unable to read the selected file")
+                    val bytes = context.contentResolver.openInputStream(uri)?.use(::readLimited)
+                        ?: error("Unable to read the selected file")
                     PendingTextUpload(sanitizeFileName(displayName), bytes)
                 }
             }.onSuccess { upload ->
                 viewModel.prepareUpload()
                 pendingUpload = upload
-                uploadPath = state.currentPath.takeIf(String::isNotBlank)?.let { "$it/${upload.suggestedPath}" }
+                uploadPath = state.currentPath.takeIf(String::isNotBlank)
+                    ?.let { "$it/${upload.suggestedPath}" }
                     ?: upload.suggestedPath
                 uploadBranch = "github-rock/upload-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}"
                 uploadMessage = "Upload ${upload.suggestedPath}"
@@ -150,8 +143,8 @@ fun RepositoryFileManagerScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Repository files")
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Repository files", fontWeight = FontWeight.Bold)
                         Text(
                             repository?.fullName ?: "GitHub repository",
                             style = MaterialTheme.typography.labelMedium,
@@ -175,12 +168,12 @@ fun RepositoryFileManagerScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 40.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                FileOperationProgress(
-                    progress = state.progress,
-                    label = state.progressLabel,
+                FileOperationStatus(
+                    loading = state.loading,
+                    label = state.operationLabel,
                     hasError = state.error != null
                 )
             }
@@ -191,12 +184,11 @@ fun RepositoryFileManagerScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FileStatusFrame(
-                        label = if (state.error == null) "API healthy" else "Needs attention",
+                        label = if (state.error == null) "API ready" else "Needs attention",
                         healthy = state.error == null
                     )
                     FileStatusFrame(label = "${state.entries.size} items", healthy = state.error == null)
-                    FileStatusFrame(label = "Bulk copy ready", healthy = true)
-                    FileStatusFrame(label = "Review-branch uploads", healthy = true)
+                    FileStatusFrame(label = "Review uploads", healthy = true)
                 }
             }
 
@@ -242,12 +234,19 @@ fun RepositoryFileManagerScreen(
 
             item {
                 GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            state.currentPath.ifBlank { "Repository root" },
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(
+                                state.currentPath.ifBlank { "Repository root" },
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Browse files or upload a UTF-8 text file through a review branch.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -280,20 +279,6 @@ fun RepositoryFileManagerScreen(
                                 Text("Upload")
                             }
                         }
-                        OutlinedButton(
-                            onClick = viewModel::copyVisibleTextFiles,
-                            enabled = !state.loading && state.entries.any { it.type == "file" },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null)
-                            Spacer(Modifier.size(7.dp))
-                            Text("Copy visible text files")
-                        }
-                        Text(
-                            "Copy the current folder's visible UTF-8 text/code files, or upload files up to 1 MB on a review branch. Binary files are never copied as text.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
-                        )
                     }
                 }
             }
@@ -301,7 +286,7 @@ fun RepositoryFileManagerScreen(
             state.selectedFile?.let { file ->
                 item {
                     GlassCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -343,7 +328,10 @@ fun RepositoryFileManagerScreen(
                                 }
                             }
                             file.rawUrl?.takeIf(String::isNotBlank)?.let { url ->
-                                OutlinedButton(onClick = { openUrl(url) }, modifier = Modifier.fillMaxWidth()) {
+                                OutlinedButton(
+                                    onClick = { openUrl(url) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
                                     Icon(Icons.Default.OpenInNew, contentDescription = null)
                                     Spacer(Modifier.size(6.dp))
                                     Text(if (file.content == null) "View or download raw file" else "Open raw file")
@@ -359,7 +347,8 @@ fun RepositoryFileManagerScreen(
                     entry = entry,
                     enabled = !state.loading,
                     onClick = {
-                        if (entry.type == "dir") viewModel.loadDirectory(entry.path) else viewModel.openFile(entry)
+                        if (entry.type == "dir") viewModel.loadDirectory(entry.path)
+                        else viewModel.openFile(entry)
                     },
                     onOpenRaw = entry.downloadUrl?.let { url -> { openUrl(url) } }
                 )
@@ -374,7 +363,7 @@ fun RepositoryFileManagerScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "The default branch will not be overwritten. GitHub Rock creates a review branch and pull request.",
+                        "The default branch stays protected. GitHub Rock creates a review branch and pull request.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     OutlinedTextField(
@@ -419,30 +408,48 @@ fun RepositoryFileManagerScreen(
 }
 
 @Composable
-private fun FileOperationProgress(progress: Int, label: String, hasError: Boolean) {
-    val accent = if (hasError) MaterialTheme.colorScheme.error else HEALTHY_GREEN
+private fun FileOperationStatus(loading: Boolean, label: String, hasError: Boolean) {
+    val accent = when {
+        hasError -> MaterialTheme.colorScheme.error
+        loading -> MaterialTheme.colorScheme.primary
+        else -> HEALTHY_GREEN
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = accent.copy(alpha = .10f),
         border = BorderStroke(1.dp, accent.copy(alpha = .36f))
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(label, fontWeight = FontWeight.Bold)
-                Text("${progress.coerceIn(0, 100)} / 100", color = accent, fontWeight = FontWeight.Black)
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    strokeWidth = 2.dp,
+                    color = accent
+                )
+            } else {
+                Icon(
+                    if (hasError) Icons.Default.ErrorOutline else Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = accent
+                )
             }
-            LinearProgressIndicator(
-                progress = { progress.coerceIn(0, 100) / 100f },
-                modifier = Modifier.fillMaxWidth(),
-                color = accent
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, fontWeight = FontWeight.Bold)
+                Text(
+                    when {
+                        hasError -> "Review the message below"
+                        loading -> "Working on this request"
+                        else -> "Ready for the next action"
+                    },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
@@ -466,7 +473,12 @@ private fun FileStatusFrame(label: String, healthy: Boolean) {
                 tint = accent,
                 modifier = Modifier.size(16.dp)
             )
-            Text(label, color = accent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Text(
+                label,
+                color = accent,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -504,7 +516,12 @@ private fun FileEntryCard(
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text(entry.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    entry.name,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     if (entry.type == "dir") "Folder" else "${entry.size} bytes",
                     style = MaterialTheme.typography.bodySmall,
