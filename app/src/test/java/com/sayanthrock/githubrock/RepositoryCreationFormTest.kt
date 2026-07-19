@@ -1,7 +1,9 @@
 package com.sayanthrock.githubrock
 
 import com.sayanthrock.githubrock.core.model.RepositoryCreationForm
+import com.sayanthrock.githubrock.ui.screens.RepositoryCreationOperation
 import com.sayanthrock.githubrock.ui.screens.repositoryCreationError
+import java.io.IOException
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -114,6 +116,19 @@ class RepositoryCreationFormTest {
         assertEquals(
             "GitHub denied repository creation. The OAuth token needs the repo scope and your organization role must allow repository creation.",
             repositoryCreationError(forbidden, privateRepository = false, organization = true)
+        )
+    }
+
+    @Test
+    fun optionLoadingNetworkFailureNamesTheFailedOperation() {
+        assertEquals(
+            "Network connection failed while loading repository creation options.",
+            repositoryCreationError(
+                error = IOException("offline"),
+                privateRepository = false,
+                organization = false,
+                operation = RepositoryCreationOperation.LoadOptions
+            )
         )
     }
 }
