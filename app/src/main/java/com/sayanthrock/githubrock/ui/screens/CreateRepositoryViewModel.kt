@@ -147,16 +147,22 @@ class CreateRepositoryViewModel @Inject constructor(
                 var result = created
                 var warning: String? = null
                 if (form.initializeReadme && requestedBranch != created.defaultBranch) {
-                    val rename = api.renameBranch(
-                        owner = created.owner.login,
-                        repository = created.name,
-                        branch = created.defaultBranch,
-                        request = RenameBranchRequest(requestedBranch)
-                    )
-                    if (rename.isSuccessful) {
+                    val renameResult = runCatchingPreservingCancellation {
+                        api.renameBranch(
+                            owner = created.owner.login,
+                            repository = created.name,
+                            branch = created.defaultBranch,
+                            request = RenameBranchRequest(requestedBranch)
+                        )
+                    }
+                    val renameResponse = renameResult.getOrNull()
+                    if (renameResponse?.isSuccessful == true) {
                         result = created.copy(defaultBranch = requestedBranch)
                     } else {
-                        warning = "Repository created, but the default branch could not be renamed. It remains ${created.defaultBranch}."
+                        warning = branchRenameWarning(
+                            defaultBranch = created.defaultBranch,
+                            failure = renameResult.exceptionOrNull()
+                        )
                     }
                 }
                 _state.update {
@@ -197,6 +203,13 @@ class CreateRepositoryViewModel @Inject constructor(
         val optionalRequestFailed: Boolean
     )
 }
+
+internal fun branchRenameWarning(defaultBranch: String, failure: Throwable?): String =
+    if (failure is IOException) {
+        "Repository created, but the network failed while renaming the default branch. It remains $defaultBranch."
+    } else {
+        "Repository created, but the default branch could not be renamed. It remains $defaultBranch."
+    }
 
 internal fun repositoryCreationError(
     error: Throwable,
