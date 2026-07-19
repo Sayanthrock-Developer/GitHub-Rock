@@ -3,12 +3,15 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.RenameBranchRequest
 import com.sayanthrock.githubrock.core.model.RepositoryCreationForm
 import com.sayanthrock.githubrock.core.model.RepositoryLicenseTemplate
+import com.sayanthrock.githubrock.core.model.RepositoryOrganization
 import com.sayanthrock.githubrock.core.model.RepositoryOwnerOption
 import com.sayanthrock.githubrock.core.model.RepositoryOwnerType
 import com.sayanthrock.githubrock.core.network.RepositoryCreationApi
+import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -48,17 +51,26 @@ class CreateRepositoryViewModel @Inject constructor(
             _state.update { it.copy(loadingOptions = true, error = null, optionWarning = null) }
             try {
                 val result = coroutineScope {
-                    val user = async { api.authenticatedUser() }
-                    val organizations = async { runCatching { api.organizations() } }
-                    val gitignoreTemplates = async { runCatching { api.gitignoreTemplates() } }
-                    val licenses = async { runCatching { api.licenses() } }
+                    val userDeferred = async { api.authenticatedUser() }
+                    val organizationsDeferred = async {
+                        runCatchingPreservingCancellation { api.organizations() }
+                    }
+                    val gitignoreDeferred = async {
+                        runCatchingPreservingCancellation { api.gitignoreTemplates() }
+                    }
+                    val licensesDeferred = async {
+                        runCatchingPreservingCancellation { api.licenses() }
+                    }
+                    val organizations = organizationsDeferred.await()
+                    val gitignoreTemplates = gitignoreDeferred.await()
+                    val licenses = licensesDeferred.await()
                     OptionsResult(
-                        user = user.await(),
-                        organizations = organizations.await().getOrDefault(emptyList()),
-                        gitignoreTemplates = gitignoreTemplates.await().getOrDefault(emptyList()),
-                        licenses = licenses.await().getOrDefault(emptyList()),
-                        optionalRequestFailed = organizations.await().isFailure ||
-                            gitignoreTemplates.await().isFailure || licenses.await().isFailure
+                        user = userDeferred.await(),
+                        organizations = organizations.getOrDefault(emptyList()),
+                        gitignoreTemplates = gitignoreTemplates.getOrDefault(emptyList()),
+                        licenses = licenses.getOrDefault(emptyList()),
+                        optionalRequestFailed = organizations.isFailure ||
+                            gitignoreTemplates.isFailure || licenses.isFailure
                     )
                 }
                 val owners = buildList {
@@ -168,8 +180,8 @@ class CreateRepositoryViewModel @Inject constructor(
     }
 
     private data class OptionsResult(
-        val user: com.sayanthrock.githubrock.core.model.GitHubUser,
-        val organizations: List<com.sayanthrock.githubrock.core.model.RepositoryOrganization>,
+        val user: GitHubUser,
+        val organizations: List<RepositoryOrganization>,
         val gitignoreTemplates: List<String>,
         val licenses: List<RepositoryLicenseTemplate>,
         val optionalRequestFailed: Boolean
