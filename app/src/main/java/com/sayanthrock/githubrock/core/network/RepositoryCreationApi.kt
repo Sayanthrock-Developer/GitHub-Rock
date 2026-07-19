@@ -45,7 +45,7 @@ interface RepositoryCreationApi {
     suspend fun renameBranch(
         @Path("owner") owner: String,
         @Path("repo") repository: String,
-        @Path(value = "branch", encoded = true) branch: String,
+        @Path("branch") branch: String,
         @Body request: RenameBranchRequest
     ): Response<Unit>
 }
