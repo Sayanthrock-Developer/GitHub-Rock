@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock
 
 import com.sayanthrock.githubrock.core.model.RepositoryCreationForm
 import com.sayanthrock.githubrock.ui.screens.RepositoryCreationOperation
+import com.sayanthrock.githubrock.ui.screens.branchRenameWarning
 import com.sayanthrock.githubrock.ui.screens.repositoryCreationError
 import java.io.IOException
 import okhttp3.MediaType.Companion.toMediaType
@@ -129,6 +130,14 @@ class RepositoryCreationFormTest {
                 organization = false,
                 operation = RepositoryCreationOperation.LoadOptions
             )
+        )
+    }
+
+    @Test
+    fun branchRenameNetworkFailureKeepsRepositorySuccessExplicit() {
+        assertEquals(
+            "Repository created, but the network failed while renaming the default branch. It remains main.",
+            branchRenameWarning(defaultBranch = "main", failure = IOException("offline"))
         )
     }
 }
