@@ -8,6 +8,7 @@ import com.sayanthrock.githubrock.core.network.AuthInterceptor
 import com.sayanthrock.githubrock.core.network.GitHubAuthApi
 import com.sayanthrock.githubrock.core.network.GitHubGraphQlApi
 import com.sayanthrock.githubrock.core.network.GitHubRestApi
+import com.sayanthrock.githubrock.core.network.RepositoryCreationApi
 import com.sayanthrock.githubrock.core.security.KeystoreTokenStore
 import com.sayanthrock.githubrock.core.security.TokenStore
 import com.sayanthrock.githubrock.data.local.AppDatabase
@@ -80,6 +81,15 @@ object AppModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(GitHubRestApi::class.java)
+
+    @Provides
+    @Singleton
+    fun repositoryCreationApi(json: Json, client: OkHttpClient): RepositoryCreationApi = Retrofit.Builder()
+        .baseUrl("https://api.github.com/")
+        .client(client)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(RepositoryCreationApi::class.java)
 
     @Provides
     @Singleton
