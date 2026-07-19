@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,21 +16,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.ForkRight
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,7 +51,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,12 +58,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
-import com.sayanthrock.githubrock.core.util.RepositoryHealthState
-import com.sayanthrock.githubrock.core.util.RepositoryWorkspacePolicy
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import kotlinx.coroutines.launch
 
-/** Single repository page containing identity, releases, tools, statistics and documentation. */
+/** Native repository workspace with overview, code, issues, pull requests, Actions and releases. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositoryHubScreen(
@@ -119,14 +120,9 @@ fun RepositoryHubScreen(
         }
     }
 
-    val repositoryHealthy = displayedRepository != null && !state.loading && state.error == null
-    val fileToolsHealthy = repositoryHealthy && preferences.fileTools
-    val managerHealthy = repositoryHealthy && preferences.repositoryManager
-    val loadProgress = RepositoryWorkspacePolicy.loadProgress(
-        repositoryReady = repositoryHealthy,
-        releasesLoading = state.releasesLoading,
-        readmeLoading = state.readmeLoading
-    )
+    val repositoryReady = displayedRepository != null && !state.loading && state.error == null
+    val managerReady = repositoryReady && preferences.repositoryManager
+    val filesReady = repositoryReady && preferences.fileTools
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -135,17 +131,16 @@ fun RepositoryHubScreen(
                 title = {
                     Column {
                         Text(
-                            displayedRepository?.name ?: "Repository",
+                            displayedRepository?.fullName ?: "Repository",
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            fontWeight = FontWeight.Bold
                         )
-                        displayedRepository?.owner?.login?.let {
-                            Text(
-                                "@$it",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            if (repositoryReady) "Native repository workspace" else "Loading repository",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 navigationIcon = {
@@ -154,26 +149,28 @@ fun RepositoryHubScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = .96f)
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
         ) {
             displayedRepository?.let { repo ->
-                RepositoryWorkspacePanel(
+                RepositoryIdentityPanel(
                     repository = repo,
-                    progress = loadProgress,
-                    repositoryHealthy = repositoryHealthy,
-                    managerHealthy = managerHealthy,
-                    fileToolsHealthy = fileToolsHealthy,
+                    repositoryReady = repositoryReady,
+                    managerReady = managerReady,
+                    filesReady = filesReady,
                     preferences = preferences,
                     onOpenManager = { workspacePage = "manager" },
                     onOpenFiles = { workspacePage = "files" }
                 )
             }
+
             RepositoryHubContent(
                 repository = displayedRepository,
                 releases = state.releases,
@@ -202,142 +199,175 @@ fun RepositoryHubScreen(
 }
 
 @Composable
-private fun RepositoryWorkspacePanel(
+private fun RepositoryIdentityPanel(
     repository: GitHubRepositoryModel,
-    progress: Int,
-    repositoryHealthy: Boolean,
-    managerHealthy: Boolean,
-    fileToolsHealthy: Boolean,
+    repositoryReady: Boolean,
+    managerReady: Boolean,
+    filesReady: Boolean,
     preferences: AppearancePreferences,
     onOpenManager: () -> Unit,
     onOpenFiles: () -> Unit
 ) {
-    val issueHealth = RepositoryWorkspacePolicy.issueHealth(repository.openIssues)
-    val issueHealthy = issueHealth == RepositoryHealthState.Healthy
-    val verticalGap = if (preferences.compactCards) 8.dp else 10.dp
+    val spacing = if (preferences.compactCards) 10.dp else 14.dp
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = verticalGap),
-        verticalArrangement = Arrangement.spacedBy(verticalGap)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surfaceContainer,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(
-                modifier = Modifier.padding(if (preferences.compactCards) 12.dp else 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(if (preferences.compactCards) 16.dp else 20.dp),
+                verticalArrangement = Arrangement.spacedBy(spacing)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Repository workspace", fontWeight = FontWeight.Bold)
-                    Text(
-                        "${progress.coerceIn(0, 100)} / 100",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Black
-                    )
+                    Surface(
+                        modifier = Modifier.size(54.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (repository.private) Icons.Default.Lock else Icons.Default.Public,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            repository.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            repository.owner.login,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    RepositoryVisibilityPill(repository.private)
                 }
-                if (!preferences.reduceMotion || progress < 100) {
-                    LinearProgressIndicator(
-                        progress = { progress.coerceIn(0, 100) / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                Text(
+                    repository.description?.takeIf { it.isNotBlank() }
+                        ?: "No description has been added to this repository yet.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RepositoryMetric(Icons.Default.Code, repository.defaultBranch, "Default branch")
+                    RepositoryMetric(Icons.Default.Star, repository.stars.toString(), "Stars")
+                    RepositoryMetric(Icons.Default.ForkRight, repository.forks.toString(), "Forks")
+                    RepositoryMetric(Icons.Default.WarningAmber, repository.openIssues.toString(), "Open issues")
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Button(
+                        onClick = onOpenManager,
+                        enabled = managerReady,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Code, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (preferences.repositoryManager) "Manage" else "Manager off")
+                    }
+                    FilledTonalButton(
+                        onClick = onOpenFiles,
+                        enabled = filesReady,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.FolderOpen, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (preferences.fileTools) "Files" else "Files off")
+                    }
+                }
+
+                Text(
+                    when {
+                        !repositoryReady -> "Repository data is still loading or unavailable."
+                        managerReady && filesReady -> "Repository tools are ready inside the app."
+                        else -> "Enable repository manager and file tools in Appearance to use every native action."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
+    }
+}
 
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            WorkspaceHealthFrame(
-                if (repositoryHealthy) "Repository ready" else "Repository loading or failed",
-                healthy = repositoryHealthy,
-                preferences = preferences
-            )
-            WorkspaceHealthFrame(
-                if (issueHealthy) "No open issues" else "${repository.openIssues} open issues",
-                healthy = issueHealthy,
-                preferences = preferences
-            )
-            WorkspaceHealthFrame(
-                if (managerHealthy) "Manager enabled" else "Manager off",
-                healthy = managerHealthy,
-                preferences = preferences
-            )
-            WorkspaceHealthFrame(
-                if (fileToolsHealthy) "File tools enabled" else "File tools off",
-                healthy = fileToolsHealthy,
-                preferences = preferences
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = onOpenManager,
-                enabled = managerHealthy,
-                modifier = Modifier.weight(1f).height(48.dp)
-            ) {
-                Icon(Icons.Default.Code, contentDescription = null)
-                Spacer(Modifier.size(6.dp))
-                Text(if (preferences.repositoryManager) "Manage" else "Manager off")
-            }
-            OutlinedButton(
-                onClick = onOpenFiles,
-                enabled = fileToolsHealthy,
-                modifier = Modifier.weight(1f).height(48.dp)
-            ) {
-                Icon(Icons.Default.FolderOpen, contentDescription = null)
-                Spacer(Modifier.size(6.dp))
-                Text(if (preferences.fileTools) "Files" else "Files off")
-            }
-        }
-
+@Composable
+private fun RepositoryVisibilityPill(isPrivate: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
         Text(
-            "Issues, Pull Requests, Actions, Releases, code editing, and file uploads are controlled inside these native tools. Website-only shortcut templates were removed.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
+            if (isPrivate) "Private" else "Public",
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
 @Composable
-private fun WorkspaceHealthFrame(
-    label: String,
-    healthy: Boolean,
-    preferences: AppearancePreferences
+private fun RepositoryMetric(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    label: String
 ) {
-    val accent = when {
-        !preferences.statusColors -> MaterialTheme.colorScheme.primary
-        healthy -> HEALTHY_GREEN
-        else -> MaterialTheme.colorScheme.error
-    }
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = accent.copy(alpha = .10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = .35f))
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                if (healthy) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                icon,
                 contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(16.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
             )
-            Text(label, color = accent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Column {
+                Text(value, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
-
-private val HEALTHY_GREEN = Color(0xFF2DA44E)
