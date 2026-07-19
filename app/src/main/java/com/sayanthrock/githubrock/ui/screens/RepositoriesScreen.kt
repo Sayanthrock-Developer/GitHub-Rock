@@ -32,6 +32,7 @@ import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
  * @param repositories The repositories to display.
  * @param loading Whether repository data is currently loading.
  * @param onSearch Called with the submitted or cleared search query.
+ * @param creationEnabled Whether the connected account may enter the write flow.
  * @param onOpen Called when a repository is selected.
  */
 @Composable
@@ -40,6 +41,7 @@ fun RepositoriesScreen(
     repositories: List<GitHubRepositoryModel>,
     loading: Boolean,
     onSearch: (RepositorySearchOptions) -> Unit,
+    creationEnabled: Boolean,
     onOpen: (GitHubRepositoryModel) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -69,10 +71,12 @@ fun RepositoriesScreen(
                     }
                 )
             }
-            OutlinedButton(onClick = { showCreateRepository = true }) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(Modifier.width(6.dp))
-                Text("New")
+            if (creationEnabled) {
+                OutlinedButton(onClick = { showCreateRepository = true }) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("New")
+                }
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -200,7 +204,7 @@ fun RepositoriesScreen(
         }
     }
 
-    if (showCreateRepository) {
+    if (showCreateRepository && creationEnabled) {
         CreateRepositorySheet(
             onDismiss = { showCreateRepository = false },
             onCreated = { repository ->
