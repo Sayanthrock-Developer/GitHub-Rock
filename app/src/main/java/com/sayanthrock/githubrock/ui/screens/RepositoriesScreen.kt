@@ -36,12 +36,10 @@ import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
  */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("UNUSED_PARAMETER")
 fun RepositoriesScreen(
     repositories: List<GitHubRepositoryModel>,
     loading: Boolean,
     onSearch: (RepositorySearchOptions) -> Unit,
-    onNewRepository: () -> Unit,
     onOpen: (GitHubRepositoryModel) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
