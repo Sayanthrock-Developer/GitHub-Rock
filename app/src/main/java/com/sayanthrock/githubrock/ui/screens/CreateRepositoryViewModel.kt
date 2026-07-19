@@ -38,6 +38,11 @@ data class CreateRepositoryState(
     val successWarning: String? = null
 )
 
+internal enum class RepositoryCreationOperation {
+    LoadOptions,
+    CreateRepository
+}
+
 @HiltViewModel
 class CreateRepositoryViewModel @Inject constructor(
     private val api: RepositoryCreationApi
@@ -104,7 +109,12 @@ class CreateRepositoryViewModel @Inject constructor(
                     it.copy(
                         loadingOptions = false,
                         optionsLoaded = false,
-                        error = repositoryCreationError(error, privateRepository = false, organization = false)
+                        error = repositoryCreationError(
+                            error = error,
+                            privateRepository = false,
+                            organization = false,
+                            operation = RepositoryCreationOperation.LoadOptions
+                        )
                     )
                 }
             }
@@ -163,7 +173,7 @@ class CreateRepositoryViewModel @Inject constructor(
                     it.copy(
                         submitting = false,
                         error = repositoryCreationError(
-                            error,
+                            error = error,
                             privateRepository = form.privateRepository,
                             organization = owner.type == RepositoryOwnerType.Organization
                         )
@@ -191,24 +201,54 @@ class CreateRepositoryViewModel @Inject constructor(
 internal fun repositoryCreationError(
     error: Throwable,
     privateRepository: Boolean,
-    organization: Boolean
+    organization: Boolean,
+    operation: RepositoryCreationOperation = RepositoryCreationOperation.CreateRepository
 ): String = when (error) {
     is HttpException -> when (error.code()) {
-        401 -> "GitHub authorization expired. Sign in again before creating a repository."
-        403 -> when {
-            organization -> "GitHub denied repository creation. The OAuth token needs the repo scope and your organization role must allow repository creation."
-            privateRepository -> "GitHub denied private repository creation. Reauthorize with the repo OAuth scope."
-            else -> "GitHub denied repository creation. Reauthorize with the public_repo or repo OAuth scope."
-        }
-        404 -> if (organization) {
-            "The organization is unavailable or your membership does not permit repository creation."
+        401 -> if (operation == RepositoryCreationOperation.LoadOptions) {
+            "GitHub authorization expired. Sign in again to load repository creation options."
         } else {
-            "The selected owner account is unavailable."
+            "GitHub authorization expired. Sign in again before creating a repository."
         }
-        422 -> "GitHub rejected this repository. The name may already exist or one of the selected templates is invalid."
+        403 -> when {
+            operation == RepositoryCreationOperation.LoadOptions ->
+                "GitHub denied access to repository creation options. Reauthorize with read:user and read:org scopes."
+            organization ->
+                "GitHub denied repository creation. The OAuth token needs the repo scope and your organization role must allow repository creation."
+            privateRepository ->
+                "GitHub denied private repository creation. Reauthorize with the repo OAuth scope."
+            else ->
+                "GitHub denied repository creation. Reauthorize with the public_repo or repo OAuth scope."
+        }
+        404 -> when {
+            operation == RepositoryCreationOperation.LoadOptions ->
+                "Repository creation options are unavailable for this account."
+            organization ->
+                "The organization is unavailable or your membership does not permit repository creation."
+            else -> "The selected owner account is unavailable."
+        }
+        422 -> if (operation == RepositoryCreationOperation.LoadOptions) {
+            "GitHub rejected the repository option request."
+        } else {
+            "GitHub rejected this repository. The name may already exist or one of the selected templates is invalid."
+        }
         429 -> "GitHub rate limiting is active. Try again after the rate-limit reset."
-        else -> "GitHub could not create the repository (HTTP ${error.code()})."
+        else -> if (operation == RepositoryCreationOperation.LoadOptions) {
+            "GitHub could not load repository creation options (HTTP ${error.code()})."
+        } else {
+            "GitHub could not create the repository (HTTP ${error.code()})."
+        }
     }
-    is IOException -> "Network connection failed while creating the repository."
-    else -> error.message?.takeIf(String::isNotBlank) ?: "Unable to create the repository."
+    is IOException -> if (operation == RepositoryCreationOperation.LoadOptions) {
+        "Network connection failed while loading repository creation options."
+    } else {
+        "Network connection failed while creating the repository."
+    }
+    else -> error.message?.takeIf(String::isNotBlank) ?: if (
+        operation == RepositoryCreationOperation.LoadOptions
+    ) {
+        "Unable to load repository creation options."
+    } else {
+        "Unable to create the repository."
+    }
 }
