@@ -36,6 +36,7 @@ import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
  */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UNUSED_PARAMETER")
 fun RepositoriesScreen(
     repositories: List<GitHubRepositoryModel>,
     loading: Boolean,
@@ -50,6 +51,7 @@ fun RepositoriesScreen(
     var languageMenu by remember { mutableStateOf(false) }
     var typeMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
+    var showCreateRepository by rememberSaveable { mutableStateOf(false) }
     val languages = remember(repositories) { repositories.mapNotNull { it.language }.distinct().sorted() }
     val options = RepositorySearchOptions(query, language, type, sort)
     val visibleRepositories = remember(repositories, language, type, sort) {
@@ -69,7 +71,7 @@ fun RepositoriesScreen(
                     }
                 )
             }
-            OutlinedButton(onClick = onNewRepository) {
+            OutlinedButton(onClick = { showCreateRepository = true }) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(Modifier.width(6.dp))
                 Text("New")
@@ -198,5 +200,15 @@ fun RepositoriesScreen(
                 RepositoryGalleryCard(repository) { onOpen(repository) }
             }
         }
+    }
+
+    if (showCreateRepository) {
+        CreateRepositorySheet(
+            onDismiss = { showCreateRepository = false },
+            onCreated = { repository ->
+                showCreateRepository = false
+                onOpen(repository)
+            }
+        )
     }
 }
