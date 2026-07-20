@@ -29,14 +29,12 @@ import com.sayanthrock.githubrock.ui.MainUiState
 import com.sayanthrock.githubrock.ui.screens.AppearanceScreen
 import com.sayanthrock.githubrock.ui.screens.AppInformationScreen
 import com.sayanthrock.githubrock.ui.screens.BuildsScreen
-import com.sayanthrock.githubrock.ui.screens.DeveloperToolsScreen
 import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoryHubScreen
-import com.sayanthrock.githubrock.ui.screens.RepositoryLibraryScreen
 
 sealed class TopDestination(
     val route: String,
@@ -51,10 +49,8 @@ sealed class TopDestination(
 }
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
-private const val APPEARANCE_ROUTE = "appearance"
+private const val SETTINGS_ROUTE = "settings"
 private const val APP_INFORMATION_ROUTE = "app-information"
-private const val REPOSITORY_LIBRARY_ROUTE = "repository-library"
-private const val DEVELOPER_TOOLS_ROUTE = "developer-tools"
 
 private val topDestinations = listOf(
     TopDestination.Home,
@@ -163,20 +159,19 @@ fun MainNavigation(
                                 profile = state.profile,
                                 explorerState = state.profileExplorer,
                                 onInspectProfile = onInspectProfile,
-                                onOpenRepositories = { navController.navigate(REPOSITORY_LIBRARY_ROUTE) },
                                 onOpenDownloads = {
                                     navController.navigate(TopDestination.Downloads.route) {
                                         launchSingleTop = true
                                     }
                                 },
                                 onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
-                                onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
+                                onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                                 onOpenAppInfo = { navController.navigate(APP_INFORMATION_ROUTE) },
                                 onOpenGitHubUrl = onOpenGitHubUrl,
                                 onLogout = onLogout
                             )
                         }
-                        composable(APPEARANCE_ROUTE) {
+                        composable(SETTINGS_ROUTE) {
                             AppearanceScreen(onBack = navController::navigateUp)
                         }
                         composable(APP_INFORMATION_ROUTE) {
@@ -186,22 +181,6 @@ fun MainNavigation(
                             FeaturePreviewScreen(
                                 login = state.profile?.login,
                                 onOpenGitHubUrl = onOpenGitHubUrl,
-                                onBack = navController::navigateUp
-                            )
-                        }
-                        composable(REPOSITORY_LIBRARY_ROUTE) {
-                            RepositoryLibraryScreen(
-                                mode = mode,
-                                repositories = state.repositories,
-                                onOpenRepository = openRepo,
-                                onSignIn = onLogout,
-                                onOpenDeveloperTools = { navController.navigate(DEVELOPER_TOOLS_ROUTE) }
-                            )
-                        }
-                        composable(DEVELOPER_TOOLS_ROUTE) {
-                            DeveloperToolsScreen(
-                                mode = mode,
-                                repositories = state.repositories,
                                 onBack = navController::navigateUp
                             )
                         }
