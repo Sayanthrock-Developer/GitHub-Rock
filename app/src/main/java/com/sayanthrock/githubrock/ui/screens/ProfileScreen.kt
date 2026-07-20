@@ -95,6 +95,7 @@ fun ProfileScreen(
     var showAdvanced by rememberSaveable { mutableStateOf(false) }
     var requestedOwnProfile by rememberSaveable(ownLogin) { mutableStateOf(false) }
     var exportMessage by remember(displayedProfile?.id) { mutableStateOf<String?>(null) }
+    var pendingExportProfile by remember { mutableStateOf<GitHubUser?>(null) }
 
     LaunchedEffect(mode, ownLogin) {
         if (!requestedOwnProfile && ownLogin != null) {
@@ -106,7 +107,8 @@ fun ProfileScreen(
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        val user = displayedProfile
+        val user = pendingExportProfile
+        pendingExportProfile = null
         if (uri == null || user == null) return@rememberLauncherForActivityResult
         scope.launch {
             runCatching {
@@ -123,11 +125,16 @@ fun ProfileScreen(
         }
     }
 
-    val openExternal: (String) -> Unit = { url ->
-        if (url.startsWith("https://github.com/") || url.startsWith("https://gist.github.com/")) {
-            onOpenGitHubUrl(url)
+    val openExternal: (String) -> Unit = external@{ url ->
+        val safeUrl = url.trim().takeIf { it.startsWith("https://", ignoreCase = true) }
+            ?: return@external
+        if (
+            safeUrl.startsWith("https://github.com/", ignoreCase = true) ||
+            safeUrl.startsWith("https://gist.github.com/", ignoreCase = true)
+        ) {
+            onOpenGitHubUrl(safeUrl)
         } else {
-            runCatching { uriHandler.openUri(url) }
+            runCatching { uriHandler.openUri(safeUrl) }
         }
     }
 
@@ -302,8 +309,11 @@ fun ProfileScreen(
                                     title = "Download profile",
                                     subtitle = "Save public account details as JSON",
                                     onClick = {
-                                        exportMessage = null
-                                        exportLauncher.launch(ProfileExportFormatter.fileName(displayedProfile))
+                                        displayedProfile.let { target ->
+                                            exportMessage = null
+                                            pendingExportProfile = target
+                                            exportLauncher.launch(ProfileExportFormatter.fileName(target))
+                                        }
                                     }
                                 )
                             }
