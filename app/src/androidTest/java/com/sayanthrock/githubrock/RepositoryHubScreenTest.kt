@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -11,8 +12,10 @@ import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
 import com.sayanthrock.githubrock.ui.screens.RepositoryHubContent
+import com.sayanthrock.githubrock.ui.screens.RepositoryWorkspaceTopBar
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -106,5 +109,42 @@ class RepositoryHubScreenTest {
         compose.onNodeWithText("Stats").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("What’s New").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("README.md").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun compactTopBarReplacesTheLargeRepositoryIdentityCard() {
+        var managerOpened = false
+        var filesOpened = false
+        val repository = GitHubRepositoryModel(
+            id = 1,
+            name = "GitHub-Rock",
+            fullName = "Sayanthrock-Developer/GitHub-Rock",
+            owner = Owner(login = "Sayanthrock-Developer"),
+            htmlUrl = "https://github.com/Sayanthrock-Developer/GitHub-Rock",
+            defaultBranch = "main",
+            private = false
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                RepositoryWorkspaceTopBar(
+                    repository = repository,
+                    repositoryReady = true,
+                    onBack = {},
+                    onOpenManager = { managerOpened = true },
+                    onOpenFiles = { filesOpened = true }
+                )
+            }
+        }
+
+        compose.onNodeWithText("Sayanthrock-Developer/GitHub-Rock").assertIsDisplayed()
+        compose.onNodeWithText("Public · main").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Manage repository").performClick()
+        compose.onNodeWithContentDescription("Browse repository files").performClick()
+        compose.runOnIdle {
+            assertTrue(managerOpened)
+            assertTrue(filesOpened)
+        }
+        compose.onNodeWithText("Default branch").assertDoesNotExist()
+        compose.onNodeWithText("Repository tools are ready inside the app.").assertDoesNotExist()
     }
 }
