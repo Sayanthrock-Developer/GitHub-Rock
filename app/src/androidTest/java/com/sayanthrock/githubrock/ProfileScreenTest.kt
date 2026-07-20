@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -23,9 +24,9 @@ import org.junit.Test
 class ProfileScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedProfileShowsRepositoryCountAndNativeActions() {
+    @Test fun connectedProfileShowsCommandDeckAndNativeActions() {
         var openedFeatures = false
-        var openedAppearance = false
+        var openedSettings = false
         var openedGitHubUrl: String? = null
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
@@ -38,10 +39,9 @@ class ProfileScreenTest {
                         followers = 120,
                         following = 48
                     ),
-                    onOpenRepositories = {},
                     onOpenDownloads = {},
                     onOpenFeatures = { openedFeatures = true },
-                    onOpenAppearance = { openedAppearance = true },
+                    onOpenSettings = { openedSettings = true },
                     onOpenGitHubUrl = { openedGitHubUrl = it },
                     onLogout = {}
                 )
@@ -60,14 +60,15 @@ class ProfileScreenTest {
         }
 
         compose.onNodeWithText("View profile on GitHub").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Appearance").performScrollTo().assertIsDisplayed().performClick()
-        compose.runOnIdle { assertTrue(openedAppearance) }
+        compose.onNodeWithText("Settings").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertTrue(openedSettings) }
 
         compose.onNodeWithText("Show").performScrollTo().performClick()
         compose.onNodeWithText("Download profile").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("All GitHub services").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("GitHub services").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedFeatures) }
         compose.onNodeWithText("GitHub security").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Repository library").assertDoesNotExist()
         compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
         compose.onNodeWithText("GitHub username").assertDoesNotExist()
         compose.onNodeWithText("Visual developer control centre").assertDoesNotExist()
@@ -109,10 +110,9 @@ class ProfileScreenTest {
                     explorerState = ProfileExplorerState(
                         snapshot = GitHubProfileSnapshot(viewedProfile, details)
                     ),
-                    onOpenRepositories = {},
                     onOpenDownloads = {},
                     onOpenFeatures = {},
-                    onOpenAppearance = {},
+                    onOpenSettings = {},
                     onOpenGitHubUrl = {},
                     onLogout = {}
                 )
@@ -123,6 +123,7 @@ class ProfileScreenTest {
         compose.onNodeWithText("Pronouns").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("ORCID · 0000-0002-1825-0097").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("View achievements on GitHub").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Repository library").assertDoesNotExist()
         compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
         compose.onNodeWithText("GitHub username").assertDoesNotExist()
     }
