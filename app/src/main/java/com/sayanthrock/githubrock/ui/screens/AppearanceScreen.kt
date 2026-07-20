@@ -23,24 +23,19 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.MotionPhotosOff
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewCompact
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -112,15 +107,6 @@ fun AppearanceScreen(
         onDynamicColor = viewModel::setDynamicColor,
         onTrueBlack = viewModel::setTrueBlack,
         onShowImages = viewModel::setShowImages,
-        onWorkflowPreview = viewModel::setWorkflowPreview,
-        onWorkflowStepDetails = viewModel::setWorkflowStepDetails,
-        onStatusColors = viewModel::setStatusColors,
-        onActionsControls = viewModel::setActionsControls,
-        onRepositoryManager = viewModel::setRepositoryManager,
-        onFileTools = viewModel::setFileTools,
-        onCompactCards = viewModel::setCompactCards,
-        onReduceMotion = viewModel::setReduceMotion,
-        onAllFeatureControls = viewModel::setAllFeatureControls,
         onReset = viewModel::resetAppearance
     )
 }
@@ -143,15 +129,6 @@ fun AppearanceContent(
     onCodeColorStyle: (CodeColorStyle) -> Unit = {},
     onLogDisplayStyle: (LogDisplayStyle) -> Unit = {},
     onShowImages: (Boolean) -> Unit = {},
-    onWorkflowPreview: (Boolean) -> Unit = {},
-    onWorkflowStepDetails: (Boolean) -> Unit = {},
-    onStatusColors: (Boolean) -> Unit = {},
-    onActionsControls: (Boolean) -> Unit = {},
-    onRepositoryManager: (Boolean) -> Unit = {},
-    onFileTools: (Boolean) -> Unit = {},
-    onCompactCards: (Boolean) -> Unit = {},
-    onReduceMotion: (Boolean) -> Unit = {},
-    onAllFeatureControls: (Boolean) -> Unit = {},
     onReset: () -> Unit = {}
 ) {
     var confirmReset by remember { mutableStateOf(false) }
@@ -160,7 +137,7 @@ fun AppearanceContent(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Customization") },
+                title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -180,7 +157,7 @@ fun AppearanceContent(
             item {
                 StandardScreenHeader(
                     title = "Customize your experience",
-                    subtitle = "Choose a clean theme, comfortable display size, readable fonts, loading motion, and code colors."
+                    subtitle = "Choose the visual system, scale, typography, loading style, and code presentation."
                 )
             }
 
@@ -277,12 +254,9 @@ fun AppearanceContent(
             }
             item {
                 GlassCard {
-                    AppLoadingIndicator(
-                        style = state.loadingStyle,
-                        reduceMotion = state.reduceMotion
-                    )
+                    AppLoadingIndicator(style = state.loadingStyle, reduceMotion = false)
                     Text(
-                        if (state.reduceMotion) "Static reduced-motion preview" else "Live loading preview",
+                        "Live loading preview",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -313,27 +287,6 @@ fun AppearanceContent(
             }
             item { CodeColorPreview() }
 
-            item { StandardSectionHeader("Feature controls") }
-            item {
-                BulkFeatureControls(
-                    state = state,
-                    onSetAll = onAllFeatureControls
-                )
-            }
-            item {
-                FeatureControls(
-                    state = state,
-                    onWorkflowPreview = onWorkflowPreview,
-                    onWorkflowStepDetails = onWorkflowStepDetails,
-                    onStatusColors = onStatusColors,
-                    onActionsControls = onActionsControls,
-                    onRepositoryManager = onRepositoryManager,
-                    onFileTools = onFileTools,
-                    onCompactCards = onCompactCards,
-                    onReduceMotion = onReduceMotion
-                )
-            }
-
             item {
                 OutlinedButton(
                     onClick = { confirmReset = true },
@@ -341,12 +294,12 @@ fun AppearanceContent(
                 ) {
                     Icon(Icons.Default.RestartAlt, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Reset appearance")
+                    Text("Reset settings")
                 }
             }
             item {
                 Text(
-                    "Reset restores visual defaults and turns every optional feature control off. Your GitHub connection, downloads, and favorites stay unchanged.",
+                    "Reset restores visual defaults. Your GitHub connection, downloads, and saved repositories stay unchanged.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -357,15 +310,15 @@ fun AppearanceContent(
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
-            title = { Text("Reset appearance?") },
-            text = {
-                Text("Themes, colors, display size, fonts, loading, and optional feature controls will return to clean defaults.")
-            },
+            title = { Text("Reset settings?") },
+            text = { Text("Themes, colors, display size, fonts, loading, and code presentation will return to defaults.") },
             confirmButton = {
-                Button(onClick = {
-                    confirmReset = false
-                    onReset()
-                }) { Text("Reset") }
+                Button(
+                    onClick = {
+                        confirmReset = false
+                        onReset()
+                    }
+                ) { Text("Reset") }
             },
             dismissButton = {
                 TextButton(onClick = { confirmReset = false }) { Text("Cancel") }
@@ -433,7 +386,9 @@ private fun <T> ChoiceCard(
                         label = { Text(label) },
                         leadingIcon = if (selected == value) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null
+                        } else {
+                            null
+                        }
                     )
                 }
             }
@@ -554,47 +509,6 @@ private fun TypographyPreview() {
 }
 
 @Composable
-private fun BulkFeatureControls(
-    state: AppearancePreferences,
-    onSetAll: (Boolean) -> Unit
-) {
-    val level = state.featureControlLevel
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("Bulk feature controls", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Turn all seven optional tools on or off together. Fresh installs start with every optional tool off.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Text("$level / 100", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
-            }
-            LinearProgressIndicator(
-                progress = { level / 100f },
-                modifier = Modifier.fillMaxWidth().height(8.dp)
-            )
-            Text(
-                "${state.enabledFeatureControlCount} of 7 enabled",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelMedium
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = { onSetAll(true) }, modifier = Modifier.weight(1f)) { Text("Turn all on") }
-                OutlinedButton(onClick = { onSetAll(false) }, modifier = Modifier.weight(1f)) { Text("Turn all off") }
-            }
-        }
-    }
-}
-
-@Composable
 private fun CodeColorPreview() {
     val colors = LocalCodeColors.current
     val code = buildAnnotatedString {
@@ -615,37 +529,6 @@ private fun CodeColorPreview() {
     }
     GlassCard {
         Text(code, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun FeatureControls(
-    state: AppearancePreferences,
-    onWorkflowPreview: (Boolean) -> Unit,
-    onWorkflowStepDetails: (Boolean) -> Unit,
-    onStatusColors: (Boolean) -> Unit,
-    onActionsControls: (Boolean) -> Unit,
-    onRepositoryManager: (Boolean) -> Unit,
-    onFileTools: (Boolean) -> Unit,
-    onCompactCards: (Boolean) -> Unit,
-    onReduceMotion: (Boolean) -> Unit
-) {
-    StandardSettingsGroup {
-        ToggleRow(Icons.Default.Visibility, "Workflow code preview", "Show active workflow YAML", state.workflowPreview, onWorkflowPreview)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.Code, "Workflow step details", "Show every job and step", state.workflowStepDetails, onWorkflowStepDetails)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.Palette, "Status colors", "Red problems and green success", state.statusColors, onStatusColors)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.PlayArrow, "Actions controls", "Run, refresh, and download artifacts", state.actionsControls, onActionsControls)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.Tune, "Repository manager", "Code, issues, pulls, Actions, and releases", state.repositoryManager, onRepositoryManager)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.FolderOpen, "File tools", "View, copy, and upload through review branches", state.fileTools, onFileTools)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.ViewCompact, "Compact cards", "Use tighter information spacing", state.compactCards, onCompactCards)
-        StandardSettingsDivider()
-        ToggleRow(Icons.Default.MotionPhotosOff, "Reduce motion", "Use static loading indicators", state.reduceMotion, onReduceMotion)
     }
 }
 
