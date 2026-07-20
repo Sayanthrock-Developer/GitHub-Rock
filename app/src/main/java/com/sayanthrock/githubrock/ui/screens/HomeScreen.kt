@@ -109,7 +109,6 @@ fun HomeScreen(
             }
             item { WorkspaceStatusCard(profile, rateLimit) }
             if (isLoading) item { LoadingWorkspaceCard() }
-            item { WorkflowActivityCard(runs.size, running, success, failed) }
 
             item {
                 StandardSectionHeader("Overview")
@@ -259,80 +258,6 @@ private fun WorkspaceStatusRow(
             )
         }
         StatusPill(status, accent)
-    }
-}
-
-@Composable
-private fun WorkflowActivityCard(total: Int, running: Int, success: Int, failed: Int) {
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        "Build activity",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Recent workflow results at a glance",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
-                ) {
-                    Text(
-                        if (total == 1) "1 run" else "$total runs",
-                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                WorkflowStateTile("Running", running, WorkflowDisplayState.Running, Modifier.weight(1f))
-                WorkflowStateTile("Success", success, WorkflowDisplayState.Success, Modifier.weight(1f))
-                WorkflowStateTile("Failed", failed, WorkflowDisplayState.Failed, Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun WorkflowStateTile(
-    label: String,
-    value: Int,
-    state: WorkflowDisplayState,
-    modifier: Modifier
-) {
-    val accent = workflowStateColor(state)
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.large,
-        color = accent.copy(alpha = .10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = .28f))
-    ) {
-        Column(
-            Modifier.padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                value.toString(),
-                color = accent,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
-            )
-            Text(
-                label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
     }
 }
 

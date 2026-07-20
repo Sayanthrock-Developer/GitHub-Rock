@@ -44,6 +44,8 @@ class HomeScreenTest {
         compose.onNodeWithText("4862 of 5000 requests available").assertIsDisplayed()
         compose.onNodeWithText("100 / 100").assertDoesNotExist()
         compose.onNodeWithText("97 / 100").assertDoesNotExist()
+        compose.onNodeWithText("Build activity").assertDoesNotExist()
+        compose.onNodeWithText("Recent workflow results at a glance").assertDoesNotExist()
         compose.onNodeWithText("Build APK").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(openedBuilds) }
     }
