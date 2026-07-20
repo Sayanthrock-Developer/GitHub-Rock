@@ -102,6 +102,8 @@ fun RepositoryHubScreen(
             RepositoryWorkspaceTopBar(
                 repository = displayedRepository,
                 repositoryReady = repositoryReady,
+                repositoryLoading = state.loading,
+                repositoryHasError = state.error != null,
                 onBack = onBack,
                 onOpenManager = { workspacePage = "manager" },
                 onOpenFiles = { workspacePage = "files" }
@@ -145,6 +147,8 @@ fun RepositoryHubScreen(
 internal fun RepositoryWorkspaceTopBar(
     repository: GitHubRepositoryModel?,
     repositoryReady: Boolean,
+    repositoryLoading: Boolean,
+    repositoryHasError: Boolean,
     onBack: () -> Unit,
     onOpenManager: () -> Unit,
     onOpenFiles: () -> Unit
@@ -162,7 +166,12 @@ internal fun RepositoryWorkspaceTopBar(
                     text = repository?.let {
                         val visibility = if (it.private) "Private" else "Public"
                         "$visibility · ${it.defaultBranch}"
-                    } ?: if (repositoryReady) "Repository workspace" else "Loading repository",
+                    } ?: when {
+                        repositoryHasError -> "Repository unavailable"
+                        repositoryLoading -> "Loading repository"
+                        repositoryReady -> "Repository workspace"
+                        else -> "Repository unavailable"
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
