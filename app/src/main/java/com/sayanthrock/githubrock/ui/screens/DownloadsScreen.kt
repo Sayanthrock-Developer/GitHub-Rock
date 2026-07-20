@@ -5,7 +5,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -93,10 +92,6 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     var showAddDownload by rememberSaveable { mutableStateOf(false) }
     var showMirrors by rememberSaveable { mutableStateOf(false) }
 
-    val active = downloads.count { it.status in setOf("queued", "downloading", "retrying") }
-    val completed = downloads.count { it.status == "completed" }
-    val failed = downloads.count { it.status == "failed" }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = StandardScreenPadding,
@@ -122,7 +117,6 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 }
             }
         }
-        item { DownloadOverviewCard(active, completed, failed, selectedMirror) }
 
         if (downloads.isEmpty()) {
             item {
@@ -363,38 +357,6 @@ private fun ManualDownloadDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
-}
-
-@Composable
-private fun DownloadOverviewCard(active: Int, completed: Int, failed: Int, mirror: DownloadMirror) {
-    GlassCard(contentPadding = PaddingValues(18.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(Modifier.size(48.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.tertiary.copy(alpha = .12f)) {
-                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.tertiary) }
-                }
-                Column(Modifier.weight(1f)) {
-                    Text("Protected download queue", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("New downloads use ${mirror.label}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DownloadMetric("Active", active, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                DownloadMetric("Completed", completed, MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
-                DownloadMetric("Failed", failed, MaterialTheme.colorScheme.error, Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun DownloadMetric(label: String, value: Int, accent: Color, modifier: Modifier) {
-    Surface(modifier, MaterialTheme.shapes.large, accent.copy(alpha = .09f)) {
-        Column(Modifier.padding(vertical = 11.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(value.toString(), color = accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-        }
-    }
 }
 
 @Composable
