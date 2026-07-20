@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
@@ -32,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,6 +52,7 @@ fun RepositoryHubScreen(
     downloadsViewModel: DownloadsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var workspacePage by rememberSaveable { mutableStateOf("overview") }
@@ -83,8 +86,7 @@ fun RepositoryHubScreen(
     val openUrl: (String) -> Unit = { url ->
         if (url.isNotBlank()) {
             try {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                viewModel.applicationContext.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
             } catch (_: ActivityNotFoundException) {
                 scope.launch { snackbar.showSnackbar("Unable to open this link") }
             } catch (_: IllegalArgumentException) {
