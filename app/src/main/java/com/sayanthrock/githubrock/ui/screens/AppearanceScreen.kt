@@ -254,12 +254,14 @@ fun AppearanceContent(
             }
             item {
                 GlassCard {
-                    AppLoadingIndicator(style = state.loadingStyle, reduceMotion = false)
-                    Text(
-                        "Live loading preview",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppLoadingIndicator(style = state.loadingStyle, reduceMotion = false)
+                        Text(
+                            "Live loading preview",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
             item {
@@ -311,7 +313,11 @@ fun AppearanceContent(
         AlertDialog(
             onDismissRequest = { confirmReset = false },
             title = { Text("Reset settings?") },
-            text = { Text("Themes, colors, display size, fonts, loading, and code presentation will return to defaults.") },
+            text = {
+                Text(
+                    "Theme, accent and dynamic colors, true black, remote images, display size, fonts, loading, code colors, and log presentation will return to defaults."
+                )
+            },
             confirmButton = {
                 Button(
                     onClick = {
