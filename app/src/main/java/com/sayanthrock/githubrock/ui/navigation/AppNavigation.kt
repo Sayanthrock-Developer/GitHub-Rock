@@ -31,6 +31,7 @@ import com.sayanthrock.githubrock.ui.screens.AppInformationScreen
 import com.sayanthrock.githubrock.ui.screens.BuildsScreen
 import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
+import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
@@ -50,6 +51,7 @@ sealed class TopDestination(
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val SETTINGS_ROUTE = "settings"
+private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
 
 private val topDestinations = listOf(
@@ -172,6 +174,14 @@ fun MainNavigation(
                             )
                         }
                         composable(SETTINGS_ROUTE) {
+                            GitHubSettingsScreen(
+                                login = state.profile?.login,
+                                onOpenAppSettings = { navController.navigate(APP_CUSTOMIZATION_ROUTE) },
+                                onOpenGitHubUrl = onOpenGitHubUrl,
+                                onBack = navController::navigateUp
+                            )
+                        }
+                        composable(APP_CUSTOMIZATION_ROUTE) {
                             AppearanceScreen(onBack = navController::navigateUp)
                         }
                         composable(APP_INFORMATION_ROUTE) {
