@@ -128,6 +128,8 @@ class RepositoryHubScreenTest {
                 RepositoryWorkspaceTopBar(
                     repository = repository,
                     repositoryReady = true,
+                    repositoryLoading = false,
+                    repositoryHasError = false,
                     onBack = {},
                     onOpenManager = { managerOpened = true },
                     onOpenFiles = { filesOpened = true }
@@ -145,5 +147,24 @@ class RepositoryHubScreenTest {
         }
         compose.onNodeWithText("Default branch").assertDoesNotExist()
         compose.onNodeWithText("Repository tools are ready inside the app.").assertDoesNotExist()
+    }
+
+    @Test fun topBarShowsUnavailableAfterRepositoryLoadFailure() {
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                RepositoryWorkspaceTopBar(
+                    repository = null,
+                    repositoryReady = false,
+                    repositoryLoading = false,
+                    repositoryHasError = true,
+                    onBack = {},
+                    onOpenManager = {},
+                    onOpenFiles = {}
+                )
+            }
+        }
+
+        compose.onNodeWithText("Repository unavailable").assertIsDisplayed()
+        compose.onNodeWithText("Loading repository").assertDoesNotExist()
     }
 }
