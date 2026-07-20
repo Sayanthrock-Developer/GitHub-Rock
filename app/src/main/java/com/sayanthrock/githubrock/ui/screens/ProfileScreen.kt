@@ -210,9 +210,9 @@ fun ProfileScreen(
                     ControlTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Tune,
-                        title = "Settings",
-                        subtitle = "Theme, feature switches, density, motion",
-                        badge = "ALL CONTROLS",
+                        title = "GitHub settings",
+                        subtitle = "Account, security, notifications, apps",
+                        badge = "ALL GITHUB",
                         onClick = onOpenSettings
                     )
                     ControlTile(
