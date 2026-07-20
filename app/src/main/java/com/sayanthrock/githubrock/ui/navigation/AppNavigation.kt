@@ -176,7 +176,11 @@ fun MainNavigation(
                         composable(SETTINGS_ROUTE) {
                             GitHubSettingsScreen(
                                 login = state.profile?.login,
-                                onOpenAppSettings = { navController.navigate(APP_CUSTOMIZATION_ROUTE) },
+                                onOpenAppSettings = {
+                                    navController.navigate(APP_CUSTOMIZATION_ROUTE) {
+                                        launchSingleTop = true
+                                    }
+                                },
                                 onOpenGitHubUrl = onOpenGitHubUrl,
                                 onBack = navController::navigateUp
                             )
