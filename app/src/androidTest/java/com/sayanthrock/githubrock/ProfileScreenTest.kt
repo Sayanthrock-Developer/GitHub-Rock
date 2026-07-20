@@ -59,7 +59,7 @@ class ProfileScreenTest {
         }
 
         compose.onNodeWithText("View profile on GitHub").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Settings").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("GitHub settings").performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(openedSettings) }
 
         compose.onNodeWithText("Show").performScrollTo().performClick()
