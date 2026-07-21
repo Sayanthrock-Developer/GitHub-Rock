@@ -50,12 +50,7 @@ class DownloadsViewModel @Inject constructor(
         preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
     }
 
-    /**
-     * Adds a download to the queue and schedules it for background execution.
-     *
-     * @param url The original trusted GitHub source URL.
-     * @param fileName The name of the local file.
-     */
+    /** Adds a trusted GitHub download and schedules it for background execution. */
     fun enqueue(url: String, fileName: String) = viewModelScope.launch {
         val resolvedUrl = runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
         val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued")
@@ -91,9 +86,12 @@ class DownloadsViewModel @Inject constructor(
     fun retry(download: DownloadEntity) = resume(download)
 
     /** Parses APK metadata, signing certificates, and hashes on a worker dispatcher. */
-    fun inspectApk(file: File, onResult: (Result<ApkInspection?>) -> Unit) = viewModelScope.launch {
+    fun inspectApk(file: File, onResult: (Result<ApkInspection>) -> Unit) = viewModelScope.launch {
         val result = withContext(Dispatchers.IO) {
-            runCatching { ApkInspector.inspect(applicationContext, file) }
+            runCatching {
+                ApkInspector.inspect(applicationContext, file)
+                    ?: error("Android could not read APK metadata from this file.")
+            }
         }
         onResult(result)
     }
