@@ -91,7 +91,7 @@ class DownloadsViewModel @Inject constructor(
     fun retry(download: DownloadEntity) = resume(download)
 
     /** Parses APK metadata, signing certificates, and hashes on a worker dispatcher. */
-    fun inspectApk(file: File, onResult: (Result<ApkInspection>) -> Unit) = viewModelScope.launch {
+    fun inspectApk(file: File, onResult: (Result<ApkInspection?>) -> Unit) = viewModelScope.launch {
         val result = withContext(Dispatchers.IO) {
             runCatching { ApkInspector.inspect(applicationContext, file) }
         }
