@@ -90,21 +90,6 @@ fun BuildsScreen(
                 subtitle = "Read real workflow code and understand every run without leaving the app"
             )
         }
-        item {
-            GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Default.CloudQueue, null, tint = MaterialTheme.colorScheme.primary)
-                    Text("GitHub Actions control centre", style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        "Template cards were removed. This screen shows the active workflow, native controls, job results, failed steps, and artifacts.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (mode == AppMode.Guest) {
-                        Text("Connect GitHub to inspect private workflow code and dispatch runs.", color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-        }
         item { StandardSectionHeader("Choose a repository") }
         if (repositories.isEmpty()) {
             item { GlassCard { Text("No repositories are available in this workspace.") } }
