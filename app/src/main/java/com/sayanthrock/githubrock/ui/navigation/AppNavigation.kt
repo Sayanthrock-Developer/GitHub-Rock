@@ -1,6 +1,10 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
@@ -13,6 +17,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,12 +48,13 @@ import com.sayanthrock.githubrock.ui.screens.RepositoryHubScreen
 sealed class TopDestination(
     val route: String,
     val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val accessibilityLabel: String = label
 ) {
     data object Home : TopDestination("home", "Home", Icons.Default.Home)
-    data object Repositories : TopDestination("repositories", "Repos", Icons.Default.Folder)
+    data object Repositories : TopDestination("repositories", "Repos", Icons.Default.Folder, "Repositories")
     data object Builds : TopDestination("builds", "Builds", Icons.Default.Build)
-    data object Downloads : TopDestination("downloads", "Files", Icons.Default.Download)
+    data object Downloads : TopDestination("downloads", "Downloads", Icons.Default.Download)
     data object Profile : TopDestination("profile", "Profile", Icons.Default.AccountCircle)
 }
 
@@ -284,46 +293,122 @@ fun MainNavigation(
 }
 
 @Composable
-private fun AppNavigationBar(
+internal fun AppNavigationBar(
     selectedRoute: String?,
     onDestinationSelected: (TopDestination) -> Unit
 ) {
-    val borderColor = MaterialTheme.colorScheme.outlineVariant
-    NavigationBar(
-        modifier = Modifier.drawBehind {
-            drawLine(
-                color = borderColor,
-                start = androidx.compose.ui.geometry.Offset.Zero,
-                end = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                strokeWidth = 1.dp.toPx()
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        topDestinations.forEach { destination ->
-            val selected = selectedRoute == destination.route
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onDestinationSelected(destination) },
-                icon = {
-                    Icon(
-                        destination.icon,
-                        destination.label,
-                        modifier = Modifier.size(23.dp)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(68.dp),
+            shape = RoundedCornerShape(26.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .98f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 0.dp,
+            shadowElevation = 10.dp,
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .78f)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(6.dp)
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                topDestinations.forEach { destination ->
+                    NavigationDockItem(
+                        destination = destination,
+                        selected = selectedRoute == destination.route,
+                        onClick = { onDestinationSelected(destination) }
                     )
-                },
-                label = {
-                    NavigationLabel(destination.label, selected)
-                },
-                alwaysShowLabel = true,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.NavigationDockItem(
+    destination: TopDestination,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val iconColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val labelColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .semantics(mergeDescendants = true) {
+                contentDescription = destination.accessibilityLabel
+            }
+            .selectable(
+                selected = selected,
+                role = Role.Tab,
+                onClick = onClick
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = .92f)
+        } else {
+            Color.Transparent
+        },
+        border = if (selected) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .28f))
+        } else {
+            null
+        },
+        shadowElevation = if (selected) 2.dp else 0.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 3.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Surface(
+                modifier = Modifier.size(if (selected) 30.dp else 28.dp),
+                shape = RoundedCornerShape(11.dp),
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = .14f)
+                } else {
+                    Color.Transparent
+                }
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(if (selected) 22.dp else 21.dp),
+                        tint = iconColor
+                    )
+                }
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = destination.label,
+                color = labelColor,
+                maxLines = 1,
+                fontSize = if (selected) 10.5.sp else 10.sp,
+                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold
             )
         }
     }
@@ -372,7 +457,7 @@ private fun AppNavigationRail(
                 icon = {
                     Icon(
                         destination.icon,
-                        destination.label,
+                        destination.accessibilityLabel,
                         modifier = Modifier.size(23.dp)
                     )
                 },
