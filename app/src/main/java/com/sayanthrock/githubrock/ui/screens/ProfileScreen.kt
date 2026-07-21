@@ -147,7 +147,7 @@ fun ProfileScreen(
             StandardScreenHeader(
                 title = "Profile",
                 subtitle = when (mode) {
-                    AppMode.Connected -> "Identity, activity, controls, and account"
+                    AppMode.Connected -> "Identity, controls, and account"
                     AppMode.Guest -> "Public browsing session"
                     AppMode.Demo -> "Isolated demonstration workspace"
                 }
@@ -194,10 +194,6 @@ fun ProfileScreen(
                     onOpenLink = openExternal
                 )
             }
-        }
-
-        details?.contributionsLastYear?.let { total ->
-            item { ActivityCard(total = total, details = details, profileUrl = profileUrl, onOpenGitHubUrl = onOpenGitHubUrl) }
         }
 
         item { StandardSectionHeader("Control deck") }
@@ -485,37 +481,6 @@ private fun IdentityCard(
             details?.orcid?.let { orcid ->
                 OutlinedButton(onClick = { onOpenLink(orcid.url) }, modifier = Modifier.fillMaxWidth()) {
                     Text("ORCID · ${orcid.displayName}", maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActivityCard(
-    total: Int,
-    details: GitHubProfileDetails,
-    profileUrl: String?,
-    onOpenGitHubUrl: (String) -> Unit
-) {
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("$total contributions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-            Text(
-                "Activity recorded during the last year",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (details.organizationCount > 0) {
-                Text("${details.organizationCount} organizations", fontWeight = FontWeight.SemiBold)
-            }
-            if (details.highlights.isNotEmpty()) {
-                Text(details.highlights.joinToString(" · "), color = MaterialTheme.colorScheme.primary)
-                profileUrl?.let { url ->
-                    TextButton(onClick = { onOpenGitHubUrl(url) }) {
-                        Text("View achievements on GitHub")
-                        Spacer(Modifier.width(6.dp))
-                        Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                    }
                 }
             }
         }
