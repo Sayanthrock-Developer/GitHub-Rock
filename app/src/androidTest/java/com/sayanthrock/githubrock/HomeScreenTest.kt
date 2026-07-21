@@ -4,7 +4,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.Owner
@@ -18,8 +17,7 @@ import org.junit.Test
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedDashboardShowsClearStatusAndBuildAction() {
-        var openedBuilds = false
+    @Test fun connectedDashboardOmitsTheQuickActionsSection() {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
@@ -32,7 +30,7 @@ class HomeScreenTest {
                     repositories = emptyList(),
                     runs = emptyList(),
                     onOpenRepo = {},
-                    onOpenBuilds = { openedBuilds = true }
+                    onOpenBuilds = {}
                 )
             }
         }
@@ -46,8 +44,9 @@ class HomeScreenTest {
         compose.onNodeWithText("97 / 100").assertDoesNotExist()
         compose.onNodeWithText("Build activity").assertDoesNotExist()
         compose.onNodeWithText("Recent workflow results at a glance").assertDoesNotExist()
-        compose.onNodeWithText("Build APK").performScrollTo().performClick()
-        compose.runOnIdle { assertTrue(openedBuilds) }
+        compose.onNodeWithText("Quick actions").assertDoesNotExist()
+        compose.onNodeWithText("Build APK").assertDoesNotExist()
+        compose.onNodeWithText("Open repository").assertDoesNotExist()
     }
 
     @Test fun repositoryDescriptionUsesFullCardTouchTarget() {
