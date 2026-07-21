@@ -62,6 +62,8 @@ private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val SETTINGS_ROUTE = "settings"
 private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
+private val MobileDockHeight = 78.dp
+private val MobileDockContentClearance = 94.dp
 
 private val topDestinations = listOf(
     TopDestination.Home,
@@ -114,7 +116,7 @@ fun MainNavigation(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(scaffoldPadding)
-                    .padding(bottom = if (showNavigation && !useNavigationRail) 92.dp else 0.dp)
+                    .padding(bottom = if (showNavigation && !useNavigationRail) MobileDockContentClearance else 0.dp)
             ) {
                 if (showNavigation && useNavigationRail) {
                     AppNavigationRail(
@@ -309,7 +311,7 @@ internal fun AppNavigationBar(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(78.dp),
+                .height(MobileDockHeight),
             shape = RoundedCornerShape(30.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .96f),
             contentColor = MaterialTheme.colorScheme.onSurface,
