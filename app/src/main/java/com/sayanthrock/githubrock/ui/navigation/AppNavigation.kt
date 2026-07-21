@@ -358,14 +358,14 @@ private fun RowScope.NavigationDockItem(
         modifier = Modifier
             .weight(1f)
             .fillMaxHeight()
-            .semantics(mergeDescendants = true) {
-                contentDescription = destination.accessibilityLabel
-            }
             .selectable(
                 selected = selected,
                 role = Role.Tab,
                 onClick = onClick
-            ),
+            )
+            .semantics(mergeDescendants = true) {
+                contentDescription = destination.accessibilityLabel
+            },
         shape = RoundedCornerShape(20.dp),
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = .92f)
