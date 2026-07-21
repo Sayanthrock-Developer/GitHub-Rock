@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -73,7 +74,7 @@ class ProfileScreenTest {
         compose.onNodeWithText("Visual developer control centre").assertDoesNotExist()
     }
 
-    @Test fun ownProfileShowsMobileDetailsWithoutProfileSearch() {
+    @Test fun ownProfileKeepsIdentityDetailsWithoutActivitySummary() {
         val viewedProfile = GitHubUser(
             login = "SayanthRock",
             id = 1,
@@ -118,10 +119,13 @@ class ProfileScreenTest {
             }
         }
 
-        compose.onNodeWithText("321 contributions").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Pronouns").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("ORCID · 0000-0002-1825-0097").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("View achievements on GitHub").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("321 contributions").assertDoesNotExist()
+        compose.onNodeWithText("Activity recorded during the last year").assertDoesNotExist()
+        compose.onNodeWithText("1 organizations").assertDoesNotExist()
+        compose.onNodeWithText("GitHub Star").assertDoesNotExist()
+        compose.onNodeWithText("View achievements on GitHub").assertDoesNotExist()
         compose.onNodeWithText("Repository library").assertDoesNotExist()
         compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
         compose.onNodeWithText("GitHub username").assertDoesNotExist()
