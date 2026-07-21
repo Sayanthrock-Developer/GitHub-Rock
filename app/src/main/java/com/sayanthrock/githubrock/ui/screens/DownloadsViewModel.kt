@@ -9,6 +9,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
 import com.sayanthrock.githubrock.core.model.DownloadMirror
+import com.sayanthrock.githubrock.core.util.ApkInspection
+import com.sayanthrock.githubrock.core.util.ApkInspector
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.download.DownloadWorker
@@ -16,21 +18,25 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
     private val dao: DownloadDao,
     @ApplicationContext context: Context
 ) : ViewModel() {
-    private val workManager = WorkManager.getInstance(context)
-    private val downloadsDirectory = File(context.filesDir, "downloads")
-    private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private val applicationContext = context.applicationContext
+    private val workManager = WorkManager.getInstance(applicationContext)
+    private val downloadsDirectory = File(applicationContext.filesDir, "downloads")
+    private val preferences = applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     private val _selectedMirror = MutableStateFlow(
         DownloadMirror.fromId(preferences.getString(KEY_DOWNLOAD_MIRROR, null))
     )
@@ -45,12 +51,7 @@ class DownloadsViewModel @Inject constructor(
         preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
     }
 
-    /**
-     * Adds a download to the queue and schedules it for background execution.
-     *
-     * @param url The original trusted GitHub source URL.
-     * @param fileName The name of the local file.
-     */
+    /** Adds a trusted GitHub download and schedules it for background execution. */
     fun enqueue(url: String, fileName: String) = viewModelScope.launch {
         val resolvedUrl = runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
         val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued")
@@ -84,6 +85,23 @@ class DownloadsViewModel @Inject constructor(
     }
 
     fun retry(download: DownloadEntity) = resume(download)
+
+    /** Parses APK metadata, signing certificates, and hashes on a worker dispatcher. */
+    fun inspectApk(file: File, onResult: (Result<ApkInspection>) -> Unit) = viewModelScope.launch {
+        val result = withContext(Dispatchers.IO) {
+            try {
+                Result.success(
+                    ApkInspector.inspect(applicationContext, file)
+                        ?: error("Android could not read APK metadata from this file.")
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (problem: Throwable) {
+                Result.failure(problem)
+            }
+        }
+        onResult(result)
+    }
 
     private fun schedule(download: DownloadEntity) {
         val input = Data.Builder()
