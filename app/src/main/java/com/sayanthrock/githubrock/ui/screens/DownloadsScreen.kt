@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,7 +30,6 @@ import com.sayanthrock.githubrock.core.model.ManualDownloadRequest
 import com.sayanthrock.githubrock.core.model.ManualDownloadType
 import com.sayanthrock.githubrock.core.model.validateManualDownload
 import com.sayanthrock.githubrock.core.util.ApkInspection
-import com.sayanthrock.githubrock.core.util.ApkInspector
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -52,6 +50,8 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     var actionTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var inspection by remember { mutableStateOf<ApkInspection?>(null) }
     var inspectionFile by remember { mutableStateOf<File?>(null) }
+    var inspectionLoading by remember { mutableStateOf(false) }
+    var inspectionError by remember { mutableStateOf<String?>(null) }
     var deleteTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var cancelTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var showAddDownload by rememberSaveable { mutableStateOf(false) }
@@ -77,9 +77,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         }
 
         if (downloads.isEmpty()) {
-            item {
-                EmptyDownloadsCard(onAddDownload = { showAddDownload = true })
-            }
+            item { EmptyDownloadsCard(onAddDownload = { showAddDownload = true }) }
         }
 
         items(downloads, key = { it.id }) { item ->
@@ -137,9 +135,22 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     actionTarget = null
                 },
                 onInspect = {
-                    inspectionFile = item.localPath?.let(::File)
-                    inspection = inspectionFile?.let { ApkInspector.inspect(context, it) }
+                    val file = item.localPath?.let(::File)?.takeIf(File::exists)
                     actionTarget = null
+                    if (file == null) {
+                        inspectionError = "The downloaded APK file is no longer available."
+                    } else {
+                        inspectionFile = file
+                        inspectionLoading = true
+                        inspectionError = null
+                        viewModel.inspectApk(file) { result ->
+                            inspectionLoading = false
+                            inspection = result.getOrNull()
+                            inspectionError = result.exceptionOrNull()?.message?.takeIf(String::isNotBlank)
+                                ?: if (result.isFailure) "Unable to inspect this APK." else null
+                            if (inspection == null) inspectionFile = null
+                        }
+                    }
                 },
                 onShare = {
                     shareDownload(context, item)
@@ -150,6 +161,17 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     deleteTarget = item
                 }
             )
+        }
+    }
+
+    if (inspectionLoading) {
+        ModalBottomSheet(
+            onDismissRequest = {},
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            dragHandle = null
+        ) {
+            ApkInspectionLoadingSheet()
         }
     }
 
@@ -174,6 +196,18 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 }
             )
         }
+    }
+
+    inspectionError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { inspectionError = null },
+            icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null) },
+            title = { Text("APK inspection failed") },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { inspectionError = null }) { Text("Close") }
+            }
+        )
     }
 
     cancelTarget?.let { item ->
@@ -524,6 +558,23 @@ private fun DownloadSheetAction(
 }
 
 @Composable
+private fun ApkInspectionLoadingSheet() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 42.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        CircularProgressIndicator()
+        Text("Inspecting APK", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(
+            "Reading the package, SDK requirements, signing certificate, file hash, and permissions.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
 private fun ApkInspectionSheet(
     apk: ApkInspection,
     installEnabled: Boolean,
@@ -683,11 +734,7 @@ private fun SelectableHash(label: String, value: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         SelectionContainer {
-            Text(
-                value,
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace
-            )
+            Text(value, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
         }
     }
 }
