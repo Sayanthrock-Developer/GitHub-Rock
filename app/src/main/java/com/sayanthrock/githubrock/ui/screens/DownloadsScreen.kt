@@ -2,17 +2,71 @@ package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Android
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.InstallMobile
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,15 +101,29 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     val selectedMirror by viewModel.selectedMirror.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    var actionTarget by remember { mutableStateOf<DownloadEntity?>(null) }
+    var actionTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val actionTarget = actionTargetId?.let { id -> downloads.firstOrNull { it.id == id } }
+
     var inspection by remember { mutableStateOf<ApkInspection?>(null) }
     var inspectionFile by remember { mutableStateOf<File?>(null) }
     var inspectionLoading by remember { mutableStateOf(false) }
     var inspectionError by remember { mutableStateOf<String?>(null) }
+    var inspectionRequestKey by remember { mutableStateOf(0L) }
+
     var deleteTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var cancelTarget by remember { mutableStateOf<DownloadEntity?>(null) }
     var showAddDownload by rememberSaveable { mutableStateOf(false) }
     var showMirrors by rememberSaveable { mutableStateOf(false) }
+
+    val cancelInspection: () -> Unit = {
+        inspectionRequestKey += 1
+        inspectionLoading = false
+        inspectionFile = null
+    }
+
+    LaunchedEffect(actionTargetId, actionTarget) {
+        if (actionTargetId != null && actionTarget == null) actionTargetId = null
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -86,7 +154,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 onPause = { viewModel.pause(item) },
                 onResume = { viewModel.resume(item) },
                 onRetry = { viewModel.retry(item) },
-                onOpenActions = { actionTarget = item }
+                onOpenActions = { actionTargetId = item.id }
             )
         }
     }
@@ -112,7 +180,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
 
     actionTarget?.let { item ->
         ModalBottomSheet(
-            onDismissRequest = { actionTarget = null },
+            onDismissRequest = { actionTargetId = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ) {
@@ -120,44 +188,49 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 item = item,
                 onPause = {
                     viewModel.pause(item)
-                    actionTarget = null
+                    actionTargetId = null
                 },
                 onResume = {
                     viewModel.resume(item)
-                    actionTarget = null
+                    actionTargetId = null
                 },
                 onCancel = {
-                    actionTarget = null
+                    actionTargetId = null
                     cancelTarget = item
                 },
                 onRetry = {
                     viewModel.retry(item)
-                    actionTarget = null
+                    actionTargetId = null
                 },
                 onInspect = {
                     val file = item.localPath?.let(::File)?.takeIf(File::exists)
-                    actionTarget = null
+                    actionTargetId = null
                     if (file == null) {
                         inspectionError = "The downloaded APK file is no longer available."
                     } else {
+                        val requestKey = inspectionRequestKey + 1
+                        inspectionRequestKey = requestKey
                         inspectionFile = file
                         inspectionLoading = true
                         inspectionError = null
                         viewModel.inspectApk(file) { result ->
-                            inspectionLoading = false
-                            inspection = result.getOrNull()
-                            inspectionError = result.exceptionOrNull()?.message?.takeIf(String::isNotBlank)
-                                ?: if (result.isFailure) "Unable to inspect this APK." else null
-                            if (inspection == null) inspectionFile = null
+                            if (inspectionRequestKey == requestKey) {
+                                inspectionLoading = false
+                                inspection = result.getOrNull()
+                                inspectionError = result.exceptionOrNull()?.message
+                                    ?.takeIf(String::isNotBlank)
+                                    ?: if (result.isFailure) "Unable to inspect this APK." else null
+                                if (inspection == null) inspectionFile = null
+                            }
                         }
                     }
                 },
                 onShare = {
                     shareDownload(context, item)
-                    actionTarget = null
+                    actionTargetId = null
                 },
                 onDelete = {
-                    actionTarget = null
+                    actionTargetId = null
                     deleteTarget = item
                 }
             )
@@ -166,12 +239,12 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
 
     if (inspectionLoading) {
         ModalBottomSheet(
-            onDismissRequest = {},
+            onDismissRequest = cancelInspection,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             dragHandle = null
         ) {
-            ApkInspectionLoadingSheet()
+            ApkInspectionLoadingSheet(onCancel = cancelInspection)
         }
     }
 
@@ -188,7 +261,12 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 apk = apk,
                 installEnabled = inspectionFile?.exists() == true,
                 onInstall = {
-                    inspectionFile?.takeIf(File::exists)?.let { file -> installApk(context, file) }
+                    inspectionFile?.takeIf(File::exists)?.let { file ->
+                        installApk(context, file).onFailure { problem ->
+                            inspectionError = problem.message?.takeIf(String::isNotBlank)
+                                ?: "Android could not open the package installer. Allow installs from this source and try again."
+                        }
+                    }
                 },
                 onClose = {
                     inspection = null
@@ -202,7 +280,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         AlertDialog(
             onDismissRequest = { inspectionError = null },
             icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null) },
-            title = { Text("APK inspection failed") },
+            title = { Text("APK action unavailable") },
             text = { Text(message) },
             confirmButton = {
                 TextButton(onClick = { inspectionError = null }) { Text("Close") }
@@ -270,8 +348,17 @@ internal fun DownloadCommandBar(
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Download source", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(selectedMirror.label, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        "Download source",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        selectedMirror.label,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 Text("Change", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -303,7 +390,12 @@ private fun EmptyDownloadsCard(onAddDownload: () -> Unit) {
                 color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        Icons.Default.Download,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             Text("No downloads yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -374,7 +466,12 @@ private fun DownloadCard(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text("$progressLevel%", style = MaterialTheme.typography.labelMedium, color = accent, fontWeight = FontWeight.Bold)
+                    Text(
+                        "$progressLevel%",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -495,8 +592,17 @@ private fun DownloadActionsSheet(
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text(item.fileName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${downloadTypeLabel(item.fileName)} · ${downloadFormatLabel(item.fileName)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    item.fileName,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "${downloadTypeLabel(item.fileName)} · ${downloadFormatLabel(item.fileName)}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -509,19 +615,46 @@ private fun DownloadActionsSheet(
             DownloadSheetAction(Icons.Default.PlayArrow, "Resume download", "Continue from the saved progress", onResume)
         }
         if (DownloadControl.Retry in controls) {
-            DownloadSheetAction(Icons.Default.Refresh, if (item.status == "cancelled") "Restart download" else "Retry download", "Start this transfer again", onRetry)
+            DownloadSheetAction(
+                Icons.Default.Refresh,
+                if (item.status == "cancelled") "Restart download" else "Retry download",
+                "Start this transfer again",
+                onRetry
+            )
         }
         if (DownloadControl.Cancel in controls) {
-            DownloadSheetAction(Icons.Default.Cancel, "Cancel download", "Remove the current partial file", onCancel, destructive = true)
+            DownloadSheetAction(
+                Icons.Default.Cancel,
+                "Cancel download",
+                "Remove the current partial file",
+                onCancel,
+                destructive = true
+            )
         }
         if (item.status == "completed" && isApk) {
-            DownloadSheetAction(Icons.Default.Security, "Inspect APK", "Review package, SDK, signature, hash, and permissions", onInspect)
+            DownloadSheetAction(
+                Icons.Default.Security,
+                "Inspect APK",
+                "Review package, SDK, signature, hash, and permissions",
+                onInspect
+            )
         }
         if (item.status == "completed" && hasLocalFile) {
-            DownloadSheetAction(Icons.Default.Share, "Share file", "Send the completed file using Android share", onShare)
+            DownloadSheetAction(
+                Icons.Default.Share,
+                "Share file",
+                "Send the completed file using Android share",
+                onShare
+            )
         }
         if (!isActive && item.status != "paused") {
-            DownloadSheetAction(Icons.Default.Delete, "Delete history and file", "Permanently remove the local file and record", onDelete, destructive = true)
+            DownloadSheetAction(
+                Icons.Default.Delete,
+                "Delete history and file",
+                "Permanently remove the local file and record",
+                onDelete,
+                destructive = true
+            )
         }
     }
 }
@@ -558,7 +691,7 @@ private fun DownloadSheetAction(
 }
 
 @Composable
-private fun ApkInspectionLoadingSheet() {
+private fun ApkInspectionLoadingSheet(onCancel: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 42.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -571,6 +704,7 @@ private fun ApkInspectionLoadingSheet() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
+        TextButton(onClick = onCancel) { Text("Cancel") }
     }
 }
 
@@ -611,12 +745,28 @@ private fun ApkInspectionSheet(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(30.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        Icons.Default.Android,
+                        contentDescription = null,
+                        modifier = Modifier.size(30.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(apk.appName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(apk.packageName, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    apk.appName,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    apk.packageName,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
 
@@ -637,7 +787,10 @@ private fun ApkInspectionSheet(
             border = BorderStroke(1.dp, signatureAccent.copy(alpha = .24f))
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Icon(
                         if (apk.installedSignatureMatches == false) Icons.Default.ErrorOutline else Icons.Default.CheckCircle,
                         contentDescription = null,
@@ -656,7 +809,7 @@ private fun ApkInspectionSheet(
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .50f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(16.dp)) {
                 SelectableHash(label = "File SHA-256", value = apk.fileSha256)
             }
         }
@@ -672,7 +825,12 @@ private fun ApkInspectionSheet(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.tertiary.copy(alpha = .08f)
             ) {
-                Text("No requested permissions", Modifier.padding(16.dp), color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold)
+                Text(
+                    "No requested permissions",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.Bold
+                )
             }
         } else {
             apk.permissions.forEach { permission ->
@@ -686,7 +844,12 @@ private fun ApkInspectionSheet(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(
+                            Icons.Default.Key,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Text(permission, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                     }
                 }
@@ -751,7 +914,10 @@ private fun DownloadMirrorDialog(
         title = { Text("Download source") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("Select the endpoint used for new downloads. Direct GitHub is the official and safest default.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Select the endpoint used for new downloads. Direct GitHub is the official and safest default.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 MirrorSection("Official", listOf(DownloadMirror.Direct), pending) { pending = it }
                 MirrorSection("Community", DownloadMirror.entries.filter { it.community }, pending) { pending = it }
                 Text(
@@ -795,7 +961,11 @@ private fun MirrorSection(
                             Column(Modifier.weight(1f)) {
                                 Text(mirror.label, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    if (mirror == DownloadMirror.Direct) "Official GitHub endpoint" else "Third-party community endpoint",
+                                    if (mirror == DownloadMirror.Direct) {
+                                        "Official GitHub endpoint"
+                                    } else {
+                                        "Third-party community endpoint"
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -842,7 +1012,9 @@ private fun ManualDownloadDialog(
                             error = null
                         },
                         label = { Text("Image") },
-                        leadingIcon = { Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
@@ -852,7 +1024,9 @@ private fun ManualDownloadDialog(
                             error = null
                         },
                         label = { Text("File") },
-                        leadingIcon = { Icon(Icons.Default.InsertDriveFile, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.InsertDriveFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -960,7 +1134,7 @@ private fun shareDownload(context: android.content.Context, item: DownloadEntity
     }, "Share ${item.fileName}"))
 }
 
-private fun installApk(context: android.content.Context, file: File) {
+private fun installApk(context: android.content.Context, file: File): Result<Unit> = runCatching {
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
     context.startActivity(Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(uri, "application/vnd.android.package-archive")
@@ -980,4 +1154,5 @@ private val downloadTimeFormatter = DateTimeFormatter
     .withZone(ZoneId.systemDefault())
 
 private fun formatDownloadTime(epochMillis: Long): String =
-    runCatching { downloadTimeFormatter.format(Instant.ofEpochMilli(epochMillis)) }.getOrDefault("Time unavailable")
+    runCatching { downloadTimeFormatter.format(Instant.ofEpochMilli(epochMillis)) }
+        .getOrDefault("Time unavailable")
