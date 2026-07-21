@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -215,7 +216,10 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                     }
                 },
                 onShare = {
-                    shareDownload(context, item)
+                    shareDownload(context, item).onFailure { problem ->
+                        inspectionError = problem.message?.takeIf(String::isNotBlank)
+                            ?: "Android could not share this file."
+                    }
                     actionTargetId = null
                 },
                 onDelete = {
@@ -269,7 +273,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         AlertDialog(
             onDismissRequest = { inspectionError = null },
             icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null) },
-            title = { Text("APK action unavailable") },
+            title = { Text("File action unavailable") },
             text = { Text(message) },
             confirmButton = {
                 TextButton(onClick = { inspectionError = null }) { Text("Close") }
@@ -385,7 +389,7 @@ internal fun DownloadCommandBar(
 }
 
 @Composable
-private fun EmptyDownloadsCard() {
+internal fun EmptyDownloadsCard() {
     GlassCard {
         Column(
             modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
@@ -881,12 +885,13 @@ private fun ApkInspectionSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    val signatureIcon = when (apk.installedSignatureMatches) {
+                        true -> Icons.Default.CheckCircle
+                        false -> Icons.Default.ErrorOutline
+                        null -> Icons.Default.HelpOutline
+                    }
                     Icon(
-                        if (apk.installedSignatureMatches == false) {
-                            Icons.Default.ErrorOutline
-                        } else {
-                            Icons.Default.CheckCircle
-                        },
+                        signatureIcon,
                         contentDescription = null,
                         tint = signatureAccent
                     )
@@ -1253,9 +1258,13 @@ private fun downloadMimeType(fileName: String): String =
 private fun shareDownload(
     context: Context,
     item: DownloadEntity
-) {
-    val file = item.localPath?.let(::File) ?: return
-    if (!file.exists()) return
+): Result<Unit> = runCatching {
+    val file = requireNotNull(item.localPath?.let(::File)) {
+        "The downloaded file is no longer available."
+    }
+    require(file.exists()) {
+        "The downloaded file is no longer available."
+    }
 
     val uri = FileProvider.getUriForFile(
         context,
