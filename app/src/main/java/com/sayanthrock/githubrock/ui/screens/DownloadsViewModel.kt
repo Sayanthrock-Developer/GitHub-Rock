@@ -18,6 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -88,9 +89,15 @@ class DownloadsViewModel @Inject constructor(
     /** Parses APK metadata, signing certificates, and hashes on a worker dispatcher. */
     fun inspectApk(file: File, onResult: (Result<ApkInspection>) -> Unit) = viewModelScope.launch {
         val result = withContext(Dispatchers.IO) {
-            runCatching {
-                ApkInspector.inspect(applicationContext, file)
-                    ?: error("Android could not read APK metadata from this file.")
+            try {
+                Result.success(
+                    ApkInspector.inspect(applicationContext, file)
+                        ?: error("Android could not read APK metadata from this file.")
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (problem: Throwable) {
+                Result.failure(problem)
             }
         }
         onResult(result)
