@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -12,29 +13,29 @@ import org.junit.Rule
 import org.junit.Test
 
 class DownloadsScreenUiTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule
+    val compose = createComposeRule()
 
-    @Test fun commandBarShowsFullSourceAndSeparateAddAction() {
+    @Test
+    fun commandBarShowsSourceWithoutManualAddAction() {
         var changedSource = false
-        var addedDownload = false
 
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 DownloadCommandBar(
                     selectedMirror = DownloadMirror.Direct,
-                    onChangeMirror = { changedSource = true },
-                    onAddDownload = { addedDownload = true }
+                    onChangeMirror = { changedSource = true }
                 )
             }
         }
 
         compose.onNodeWithText("Download source").assertIsDisplayed()
         compose.onNodeWithText("Direct GitHub").assertIsDisplayed().performClick()
-        compose.onNodeWithText("Add download").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Add download").assertDoesNotExist()
+        compose.onNodeWithText("Download image or file").assertDoesNotExist()
 
         compose.runOnIdle {
             assertTrue(changedSource)
-            assertTrue(addedDownload)
         }
     }
 }
