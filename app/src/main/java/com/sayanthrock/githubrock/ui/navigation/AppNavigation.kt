@@ -62,6 +62,8 @@ private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val SETTINGS_ROUTE = "settings"
 private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
+private val MobileDockHeight = 78.dp
+private val MobileDockContentClearance = 94.dp
 
 private val topDestinations = listOf(
     TopDestination.Home,
@@ -108,20 +110,13 @@ fun MainNavigation(
         val useNavigationRail = navigationLayout == MainNavigationLayout.NavigationRail
 
         Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                if (showNavigation && !useNavigationRail) {
-                    AppNavigationBar(
-                        selectedRoute = route,
-                        onDestinationSelected = navigateToTopDestination
-                    )
-                }
-            }
+            containerColor = MaterialTheme.colorScheme.background
         ) { scaffoldPadding ->
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(if (showNavigation) scaffoldPadding else PaddingValues())
+                    .padding(scaffoldPadding)
+                    .padding(bottom = if (showNavigation && !useNavigationRail) MobileDockContentClearance else 0.dp)
             ) {
                 if (showNavigation && useNavigationRail) {
                     AppNavigationRail(
@@ -289,32 +284,42 @@ fun MainNavigation(
                 }
             }
         }
+
+        if (showNavigation && !useNavigationRail) {
+            AppNavigationBar(
+                selectedRoute = route,
+                onDestinationSelected = navigateToTopDestination,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }
 
 @Composable
 internal fun AppNavigationBar(
     selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit
+    onDestinationSelected: (TopDestination) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp),
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .98f),
+                .height(MobileDockHeight),
+            shape = RoundedCornerShape(30.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .96f),
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
-            shadowElevation = 10.dp,
+            shadowElevation = 14.dp,
             border = BorderStroke(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .78f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .66f)
             )
         ) {
             Row(
@@ -344,7 +349,7 @@ private fun RowScope.NavigationDockItem(
     onClick: () -> Unit
 ) {
     val iconColor = if (selected) {
-        MaterialTheme.colorScheme.primary
+        MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -366,48 +371,38 @@ private fun RowScope.NavigationDockItem(
             .semantics(mergeDescendants = true) {
                 contentDescription = destination.accessibilityLabel
             },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = .92f)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = .98f)
         } else {
             Color.Transparent
         },
         border = if (selected) {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .28f))
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .26f))
         } else {
             null
         },
-        shadowElevation = if (selected) 2.dp else 0.dp
+        shadowElevation = if (selected) 8.dp else 0.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 3.dp, vertical = 6.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 2.dp, vertical = 7.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Surface(
-                modifier = Modifier.size(if (selected) 30.dp else 28.dp),
-                shape = RoundedCornerShape(11.dp),
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = .14f)
-                } else {
-                    Color.Transparent
-                }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(if (selected) 22.dp else 21.dp),
-                        tint = iconColor
-                    )
-                }
-            }
-            Spacer(Modifier.height(2.dp))
+            Icon(
+                imageVector = destination.icon,
+                contentDescription = null,
+                modifier = Modifier.size(if (selected) 26.dp else 23.dp),
+                tint = iconColor
+            )
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = destination.label,
                 color = labelColor,
                 maxLines = 1,
-                fontSize = if (selected) 10.5.sp else 10.sp,
+                fontSize = if (selected) 11.sp else 10.5.sp,
                 fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold
             )
         }
