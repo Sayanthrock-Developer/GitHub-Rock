@@ -15,5 +15,6 @@ class OAuthScopeContractTest {
         assertTrue("user:email" in scopes)
         assertTrue("read:org" in scopes)
         assertTrue("notifications" in scopes)
+        assertTrue("user:follow" in scopes)
     }
 }
