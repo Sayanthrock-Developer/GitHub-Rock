@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock
 
 import android.content.Intent
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,6 +34,10 @@ class MainActivity : ComponentActivity() {
             return
         }
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            window.navigationBarColor = Color.TRANSPARENT
+            window.isNavigationBarContrastEnforced = false
+        }
         setContent {
             val appearance by appPreferences.appearance.collectAsStateWithLifecycle(
                 initialValue = AppearancePreferences(showImages = false)

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -108,6 +109,8 @@ fun MainNavigation(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val navigationLayout = mainNavigationLayout(maxWidth.value)
         val useNavigationRail = navigationLayout == MainNavigationLayout.NavigationRail
+        val scrollCaptureInProgress = LocalScrollCaptureInProgress.current
+        val showMobileDock = showNavigation && !useNavigationRail && !scrollCaptureInProgress
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background
@@ -116,7 +119,7 @@ fun MainNavigation(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(scaffoldPadding)
-                    .padding(bottom = if (showNavigation && !useNavigationRail) MobileDockContentClearance else 0.dp)
+                    .padding(bottom = if (showMobileDock) MobileDockContentClearance else 0.dp)
             ) {
                 if (showNavigation && useNavigationRail) {
                     AppNavigationRail(
@@ -285,7 +288,7 @@ fun MainNavigation(
             }
         }
 
-        if (showNavigation && !useNavigationRail) {
+        if (showMobileDock) {
             AppNavigationBar(
                 selectedRoute = route,
                 onDestinationSelected = navigateToTopDestination,
