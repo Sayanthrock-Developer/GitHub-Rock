@@ -33,6 +33,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
+import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
+import com.sayanthrock.githubrock.core.navigation.nativeProfileDestination
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
 import com.sayanthrock.githubrock.ui.screens.AppearanceScreen
@@ -42,6 +45,7 @@ import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
+import com.sayanthrock.githubrock.ui.screens.NativeProfileScreen
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoryHubScreen
@@ -63,6 +67,7 @@ private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val SETTINGS_ROUTE = "settings"
 private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
+private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 private val MobileDockHeight = 78.dp
 private val MobileDockContentClearance = 94.dp
 
@@ -97,6 +102,11 @@ fun MainNavigation(
     val openRepo: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit = { repo ->
         onRememberRepository(repo)
         navController.navigate("repo/${repo.owner.login}/${repo.name}?demo=${mode == AppMode.Demo}")
+    }
+    val openNativeProfile: (String, NativeProfileSection) -> Unit = { login, section ->
+        navController.navigate(NativeProfileDestination(login, section).route) {
+            launchSingleTop = true
+        }
     }
     val navigateToTopDestination: (TopDestination) -> Unit = { destination ->
         navController.navigate(destination.route) {
@@ -176,8 +186,35 @@ fun MainNavigation(
                                 onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
                                 onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                                 onOpenAppInfo = { navController.navigate(APP_INFORMATION_ROUTE) },
-                                onOpenGitHubUrl = onOpenGitHubUrl,
+                                onOpenGitHubUrl = { url ->
+                                    val destination = nativeProfileDestination(url)
+                                    if (destination != null) {
+                                        openNativeProfile(destination.login, destination.section)
+                                    } else {
+                                        onOpenGitHubUrl(url)
+                                    }
+                                },
                                 onLogout = onLogout
+                            )
+                        }
+                        composable(
+                            route = NATIVE_PROFILE_ROUTE,
+                            arguments = listOf(
+                                navArgument("login") { type = NavType.StringType },
+                                navArgument("section") { type = NavType.StringType }
+                            ),
+                            deepLinks = listOf(
+                                navDeepLink { uriPattern = "githubrock://profile/{login}/{section}" }
+                            )
+                        ) {
+                            NativeProfileScreen(
+                                mode = mode,
+                                ownLogin = state.profile?.login,
+                                onBack = navController::navigateUp,
+                                onOpenRepository = openRepo,
+                                onOpenProfile = { login ->
+                                    openNativeProfile(login, NativeProfileSection.Repositories)
+                                }
                             )
                         }
                         composable(SETTINGS_ROUTE) {
