@@ -271,6 +271,7 @@ fun NativeProfileScreen(
     viewModel: NativeProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val errorMessage = state.error
 
     LaunchedEffect(mode, ownLogin) {
         viewModel.configureFollow(mode == AppMode.Connected, ownLogin)
@@ -343,10 +344,10 @@ fun NativeProfileScreen(
                         CircularProgressIndicator()
                     }
                 }
-                state.error != null -> item {
+                errorMessage != null -> item {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(state.error, color = MaterialTheme.colorScheme.error)
+                            Text(errorMessage, color = MaterialTheme.colorScheme.error)
                             OutlinedButton(onClick = viewModel::refresh) {
                                 Icon(Icons.Default.Refresh, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
@@ -365,7 +366,7 @@ fun NativeProfileScreen(
                     items = state.repositories,
                     key = { it.id }
                 ) { repository ->
-                    RepositoryCard(repository, onClick = { onOpenRepository(repository) })
+                    NativeRepositoryCard(repository) { onOpenRepository(repository) }
                 }
                 else -> items(
                     items = state.people,
@@ -544,6 +545,46 @@ private fun ProfileMetric(label: String, value: Int, modifier: Modifier = Modifi
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
+        }
+    }
+}
+
+@Composable
+private fun NativeRepositoryCard(repository: GitHubRepositoryModel, onClick: () -> Unit) {
+    GlassCard(onClick = onClick) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = repository.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = repository.owner.login,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = repository.description ?: "No repository description.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("★ ${repository.stars}", style = MaterialTheme.typography.labelMedium)
+                Text("Forks ${repository.forks}", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    text = repository.language ?: "Repository",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
