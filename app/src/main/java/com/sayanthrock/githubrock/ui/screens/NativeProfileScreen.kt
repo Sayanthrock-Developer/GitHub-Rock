@@ -58,15 +58,14 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class NativeProfileUiState(
+
+data class NativeProfileUiState(
     val profile: GitHubUser? = null,
     val section: NativeProfileSection = NativeProfileSection.Repositories,
     val repositories: List<GitHubRepositoryModel> = emptyList(),
@@ -82,7 +81,7 @@ internal data class NativeProfileUiState(
 )
 
 @HiltViewModel
-internal class NativeProfileViewModel @Inject constructor(
+class NativeProfileViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: NativeProfileRepository
 ) : ViewModel() {
@@ -101,7 +100,7 @@ internal class NativeProfileViewModel @Inject constructor(
 
     fun configureFollow(connected: Boolean, ownLogin: String?) {
         val normalizedOwnLogin = normalizedGitHubLogin(ownLogin)
-        val isOwnProfile = normalizedOwnLogin.equals(login, ignoreCase = true)
+        val isOwnProfile = normalizedOwnLogin?.equals(login, ignoreCase = true) == true
         val configuration = connected to normalizedOwnLogin
         if (followConfiguration == configuration && _state.value.followStateLoaded) return
         followConfiguration = configuration
@@ -132,6 +131,7 @@ internal class NativeProfileViewModel @Inject constructor(
         val current = _state.value
         if (!current.canFollow || !current.followStateLoaded || current.followUpdating) return
         val desired = !current.isFollowing
+
         followJob?.cancel()
         followJob = viewModelScope.launch {
             _state.update { it.copy(followUpdating = true, followError = null) }
@@ -144,18 +144,18 @@ internal class NativeProfileViewModel @Inject constructor(
                                 followError = "GitHub did not accept the follow change. Sign out and sign in again if Follow permission was not granted."
                             )
                         }
-                        return@onSuccess
-                    }
-                    _state.update { state ->
-                        val followerDelta = if (desired) 1 else -1
-                        state.copy(
-                            profile = state.profile?.copy(
-                                followers = (state.profile.followers + followerDelta).coerceAtLeast(0)
-                            ),
-                            isFollowing = desired,
-                            followUpdating = false,
-                            followError = null
-                        )
+                    } else {
+                        _state.update { state ->
+                            val followerDelta = if (desired) 1 else -1
+                            state.copy(
+                                profile = state.profile?.copy(
+                                    followers = (state.profile.followers + followerDelta).coerceAtLeast(0)
+                                ),
+                                isFollowing = desired,
+                                followUpdating = false,
+                                followError = null
+                            )
+                        }
                     }
                 }
                 .onFailure { error ->
@@ -177,49 +177,61 @@ internal class NativeProfileViewModel @Inject constructor(
                     section = section,
                     loading = true,
                     error = null,
-                    repositories = if (section == NativeProfileSection.Repositories) it.repositories else emptyList(),
-                    people = if (section == NativeProfileSection.Repositories) emptyList() else it.people
+                    repositories = emptyList(),
+                    people = emptyList()
                 )
             }
 
-            val result = runCatchingPreservingCancellation {
-                coroutineScope {
-                    val profile = async { repository.profile(login) }
-                    val content = async {
-                        when (section) {
-                            NativeProfileSection.Repositories -> repository.repositories(login)
-                            NativeProfileSection.Followers -> repository.followers(login)
-                            NativeProfileSection.Following -> repository.following(login)
-                        }
-                    }
-                    profile.await() to content.await()
-                }
+            val profileResult = runCatchingPreservingCancellation { repository.profile(login) }
+            val profile = profileResult.getOrElse { error ->
+                _state.update { it.copy(loading = false, error = error.profileMessage()) }
+                return@launch
             }
 
-            result.onSuccess { (profile, content) ->
-                _state.update {
-                    when (section) {
-                        NativeProfileSection.Repositories -> it.copy(
-                            profile = profile,
-                            repositories = content.filterIsInstance<GitHubRepositoryModel>(),
-                            people = emptyList(),
-                            loading = false,
-                            error = null
-                        )
-                        NativeProfileSection.Followers,
-                        NativeProfileSection.Following -> it.copy(
-                            profile = profile,
-                            repositories = emptyList(),
-                            people = content.filterIsInstance<GitHubUser>(),
-                            loading = false,
-                            error = null
-                        )
-                    }
+            when (section) {
+                NativeProfileSection.Repositories -> {
+                    runCatchingPreservingCancellation { repository.repositories(login) }
+                        .onSuccess { repositories ->
+                            _state.update {
+                                it.copy(
+                                    profile = profile,
+                                    repositories = repositories,
+                                    people = emptyList(),
+                                    loading = false,
+                                    error = null
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            _state.update {
+                                it.copy(profile = profile, loading = false, error = error.profileMessage())
+                            }
+                        }
                 }
-            }.onFailure { error ->
-                _state.update { it.copy(loading = false, error = error.profileMessage()) }
+                NativeProfileSection.Followers -> loadPeople(profile) { repository.followers(login) }
+                NativeProfileSection.Following -> loadPeople(profile) { repository.following(login) }
             }
         }
+    }
+
+    private suspend fun loadPeople(profile: GitHubUser, loader: suspend () -> List<GitHubUser>) {
+        runCatchingPreservingCancellation { loader() }
+            .onSuccess { people ->
+                _state.update {
+                    it.copy(
+                        profile = profile,
+                        repositories = emptyList(),
+                        people = people,
+                        loading = false,
+                        error = null
+                    )
+                }
+            }
+            .onFailure { error ->
+                _state.update {
+                    it.copy(profile = profile, loading = false, error = error.profileMessage())
+                }
+            }
     }
 
     private fun loadFollowStatus() {
@@ -261,10 +273,7 @@ fun NativeProfileScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(mode, ownLogin) {
-        viewModel.configureFollow(
-            connected = mode == AppMode.Connected,
-            ownLogin = ownLogin
-        )
+        viewModel.configureFollow(mode == AppMode.Connected, ownLogin)
     }
 
     Scaffold(
@@ -310,10 +319,7 @@ fun NativeProfileScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                NativeProfileHeader(
-                    state = state,
-                    onToggleFollow = viewModel::toggleFollow
-                )
+                NativeProfileHeader(state = state, onToggleFollow = viewModel::toggleFollow)
             }
             item {
                 ProfileSectionTabs(
@@ -324,9 +330,7 @@ fun NativeProfileScreen(
 
             state.followError?.let { message ->
                 item {
-                    GlassCard {
-                        Text(message, color = MaterialTheme.colorScheme.error)
-                    }
+                    GlassCard { Text(message, color = MaterialTheme.colorScheme.error) }
                 }
             }
 
@@ -375,10 +379,7 @@ fun NativeProfileScreen(
 }
 
 @Composable
-private fun NativeProfileHeader(
-    state: NativeProfileUiState,
-    onToggleFollow: () -> Unit
-) {
+private fun NativeProfileHeader(state: NativeProfileUiState, onToggleFollow: () -> Unit) {
     val profile = state.profile
     GlassCard(contentPadding = PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -421,7 +422,7 @@ private fun NativeProfileHeader(
                             fontWeight = FontWeight.SemiBold
                         )
                     }
-                    profile?.bio?.takeIf(String::isNotBlank)?.let {
+                    profile?.bio?.takeIf { it.isNotBlank() }?.let {
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = it,
@@ -586,7 +587,7 @@ private fun NativeProfilePersonCard(person: GitHubUser, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
-                person.bio?.takeIf(String::isNotBlank)?.let {
+                person.bio?.takeIf { it.isNotBlank() }?.let {
                     Text(
                         text = it,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
