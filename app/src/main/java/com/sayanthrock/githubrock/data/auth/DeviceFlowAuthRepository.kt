@@ -16,7 +16,7 @@ import javax.inject.Singleton
 class DeviceFlowException(message: String) : IllegalStateException(message)
 
 internal const val GITHUB_OAUTH_SCOPES =
-    "repo workflow read:user user:email read:org notifications"
+    "repo workflow read:user user:email read:org notifications user:follow"
 
 @Singleton
 class DeviceFlowAuthRepository @Inject constructor(
