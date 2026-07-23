@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Security
@@ -29,10 +30,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,16 +50,24 @@ fun AppInformationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val information = remember(context) { AppInformationProvider.read(context) }
     var showCapabilities by rememberSaveable { mutableStateOf(false) }
+    var showBackend by rememberSaveable { mutableStateOf(false) }
 
-    if (showCapabilities) {
-        AndroidCapabilityCenterScreen(onBack = { showCapabilities = false })
-        return
+    when {
+        showCapabilities -> {
+            AndroidCapabilityCenterScreen(onBack = { showCapabilities = false })
+            return
+        }
+        showBackend -> {
+            BackendConnectionScreen(onBack = { showBackend = false })
+            return
+        }
     }
 
     AppInformationContent(
         information = information,
         onBack = onBack,
         onOpenCapabilities = { showCapabilities = true },
+        onOpenBackend = { showBackend = true },
         onOpenSystemSettings = {
             context.startActivity(
                 Intent(
@@ -76,6 +85,7 @@ fun AppInformationContent(
     information: AppInformation,
     onBack: () -> Unit,
     onOpenCapabilities: () -> Unit,
+    onOpenBackend: () -> Unit,
     onOpenSystemSettings: () -> Unit
 ) {
     Scaffold(
@@ -97,7 +107,7 @@ fun AppInformationContent(
             item {
                 StandardScreenHeader(
                     title = information.appName,
-                    subtitle = "Application, Android SDK, device, installation, and permission details"
+                    subtitle = "Application, backend, Android SDK, device, installation, and permission details"
                 )
             }
             item { StandardSectionHeader("Application") }
@@ -132,6 +142,16 @@ fun AppInformationContent(
                         "Supported ABIs" to information.supportedAbis.joinToString().ifBlank { "Not reported" }
                     )
                 )
+            }
+            item {
+                OutlinedButton(
+                    onClick = onOpenBackend,
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Icon(Icons.Default.Dns, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("GitHub Rock Backend connection", fontWeight = FontWeight.Bold)
+                }
             }
             item {
                 OutlinedButton(

@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 45
     env:
       GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
+      GITHUB_ROCK_BACKEND_URL: ${{ vars.GITHUB_ROCK_BACKEND_URL || '' }}
       EXPECTED_RELEASE_CERT_SHA256: ${{ vars.EXPECTED_RELEASE_CERT_SHA256 }}
       INPUT_VERSION: ${{ inputs.version }}
       INPUT_PRERELEASE: ${{ inputs.prerelease }}

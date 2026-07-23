@@ -23,6 +23,11 @@ val githubClientId = sequenceOf(
     System.getenv("GITHUB_CLIENT_ID"),
     bundledGitHubClientId
 ).firstOrNull { !it.isNullOrBlank() }.orEmpty()
+val backendBaseUrl = sequenceOf(
+    localProperties.getProperty("GITHUB_ROCK_BACKEND_URL"),
+    System.getenv("GITHUB_ROCK_BACKEND_URL"),
+    providers.gradleProperty("GITHUB_ROCK_BACKEND_URL").orNull
+).firstOrNull { !it.isNullOrBlank() }.orEmpty()
 val configuredVersionName = providers.gradleProperty("GITHUB_ROCK_VERSION_NAME").orNull
     ?.trim()?.takeIf(String::isNotBlank) ?: "0.1.0"
 val configuredVersionCode = providers.gradleProperty("GITHUB_ROCK_VERSION_CODE").orNull
@@ -45,6 +50,11 @@ android {
             "String",
             "GITHUB_CLIENT_ID",
             quotedBuildConfig(githubClientId)
+        )
+        buildConfigField(
+            "String",
+            "BACKEND_BASE_URL",
+            quotedBuildConfig(backendBaseUrl)
         )
         buildConfigField("String", "GITHUB_API_VERSION", "\"2022-11-28\"")
     }

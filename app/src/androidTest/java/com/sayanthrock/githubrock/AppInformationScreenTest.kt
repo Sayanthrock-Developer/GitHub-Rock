@@ -36,6 +36,7 @@ class AppInformationScreenTest {
                     ),
                     onBack = {},
                     onOpenCapabilities = {},
+                    onOpenBackend = {},
                     onOpenSystemSettings = {}
                 )
             }
@@ -44,6 +45,7 @@ class AppInformationScreenTest {
         compose.onNodeWithText("SDK information").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Target Android").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("API 36", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("GitHub Rock Backend connection").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Android capabilities & permissions").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Open Android app settings").performScrollTo().assertIsDisplayed()
     }
