@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,7 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -43,9 +48,17 @@ import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 fun AppInformationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val information = remember(context) { AppInformationProvider.read(context) }
+    var showCapabilities by rememberSaveable { mutableStateOf(false) }
+
+    if (showCapabilities) {
+        AndroidCapabilityCenterScreen(onBack = { showCapabilities = false })
+        return
+    }
+
     AppInformationContent(
         information = information,
         onBack = onBack,
+        onOpenCapabilities = { showCapabilities = true },
         onOpenSystemSettings = {
             context.startActivity(
                 Intent(
@@ -62,6 +75,7 @@ fun AppInformationScreen(onBack: () -> Unit) {
 fun AppInformationContent(
     information: AppInformation,
     onBack: () -> Unit,
+    onOpenCapabilities: () -> Unit,
     onOpenSystemSettings: () -> Unit
 ) {
     Scaffold(
@@ -83,7 +97,7 @@ fun AppInformationContent(
             item {
                 StandardScreenHeader(
                     title = information.appName,
-                    subtitle = "Application, Android SDK, device, and installation details"
+                    subtitle = "Application, Android SDK, device, installation, and permission details"
                 )
             }
             item { StandardSectionHeader("Application") }
@@ -118,6 +132,16 @@ fun AppInformationContent(
                         "Supported ABIs" to information.supportedAbis.joinToString().ifBlank { "Not reported" }
                     )
                 )
+            }
+            item {
+                OutlinedButton(
+                    onClick = onOpenCapabilities,
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Icon(Icons.Default.Security, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Android capabilities & permissions", fontWeight = FontWeight.Bold)
+                }
             }
             item {
                 OutlinedButton(
