@@ -1,10 +1,16 @@
 package com.sayanthrock.githubrock
 
 import com.sayanthrock.githubrock.core.network.BackendDeviceTokenResponse
+import com.sayanthrock.githubrock.core.network.BackendPublicConfigResponse
+import com.sayanthrock.githubrock.data.backend.isVersionAtLeast
 import com.sayanthrock.githubrock.data.backend.normalizedBackendBaseUrl
 import com.sayanthrock.githubrock.data.backend.toDeviceTokenResponse
+import com.sayanthrock.githubrock.data.backend.validateBackendForApp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BackendContractTest {
@@ -57,5 +63,36 @@ class BackendContractTest {
             "access_denied",
             BackendDeviceTokenResponse(state = "denied").toDeviceTokenResponse().error,
         )
+    }
+
+    @Test fun semanticVersionPolicyHandlesDebugAndPatchVersions() {
+        assertTrue(isVersionAtLeast("0.2.0-debug", "0.1.9"))
+        assertTrue(isVersionAtLeast("v1.0.0", "1.0"))
+        assertFalse(isVersionAtLeast("0.1.9", "0.2.0"))
+    }
+
+    @Test fun maintenanceAndDisabledFeaturesRejectTheBackendPath() {
+        val ready = BackendPublicConfigResponse(
+            minSupportedAppVersion = "0.1.0",
+            latestAppVersion = "0.2.0",
+            maintenanceMode = false,
+            features = mapOf("oauthDeviceProxy" to true),
+        )
+        validateBackendForApp(ready, "oauthDeviceProxy", currentVersion = "0.1.0")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            validateBackendForApp(
+                ready.copy(maintenanceMode = true),
+                "oauthDeviceProxy",
+                currentVersion = "0.1.0",
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            validateBackendForApp(
+                ready.copy(features = emptyMap()),
+                "oauthDeviceProxy",
+                currentVersion = "0.1.0",
+            )
+        }
     }
 }
