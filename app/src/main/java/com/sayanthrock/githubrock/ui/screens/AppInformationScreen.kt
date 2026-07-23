@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,12 +41,16 @@ import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 
 @Composable
-fun AppInformationScreen(onBack: () -> Unit) {
+fun AppInformationScreen(
+    onBack: () -> Unit,
+    onOpenCapabilities: () -> Unit
+) {
     val context = LocalContext.current
     val information = remember(context) { AppInformationProvider.read(context) }
     AppInformationContent(
         information = information,
         onBack = onBack,
+        onOpenCapabilities = onOpenCapabilities,
         onOpenSystemSettings = {
             context.startActivity(
                 Intent(
@@ -62,6 +67,7 @@ fun AppInformationScreen(onBack: () -> Unit) {
 fun AppInformationContent(
     information: AppInformation,
     onBack: () -> Unit,
+    onOpenCapabilities: () -> Unit,
     onOpenSystemSettings: () -> Unit
 ) {
     Scaffold(
@@ -83,7 +89,7 @@ fun AppInformationContent(
             item {
                 StandardScreenHeader(
                     title = information.appName,
-                    subtitle = "Application, Android SDK, device, and installation details"
+                    subtitle = "Application, Android SDK, device, installation, and permission details"
                 )
             }
             item { StandardSectionHeader("Application") }
@@ -118,6 +124,16 @@ fun AppInformationContent(
                         "Supported ABIs" to information.supportedAbis.joinToString().ifBlank { "Not reported" }
                     )
                 )
+            }
+            item {
+                OutlinedButton(
+                    onClick = onOpenCapabilities,
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Icon(Icons.Default.Security, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Android capabilities & permissions", fontWeight = FontWeight.Bold)
+                }
             }
             item {
                 OutlinedButton(
