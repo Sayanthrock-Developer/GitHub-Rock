@@ -138,7 +138,6 @@ data class AppearancePreferences(
     val dynamicColor: Boolean = false,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
-    // Native tools are permanently available. These compatibility values are no longer configurable.
     val workflowPreview: Boolean = true,
     val workflowStepDetails: Boolean = true,
     val statusColors: Boolean = true,
@@ -176,6 +175,13 @@ class AppPreferences @Inject constructor(
     val favoriteRepositories: Flow<Set<String>> = context.dataStore.data.map { preferences ->
         preferences[FAVORITE_REPOSITORIES].orEmpty()
     }
+    val repositorySearchHistory: Flow<List<String>> = context.dataStore.data.map { preferences ->
+        preferences[REPOSITORY_SEARCH_HISTORY]
+            ?.split(HISTORY_SEPARATOR)
+            ?.map(String::trim)
+            ?.filter(String::isNotBlank)
+            .orEmpty()
+    }
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
@@ -191,6 +197,25 @@ class AppPreferences @Inject constructor(
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
+
+    suspend fun addRepositorySearch(query: String) {
+        val normalized = query.trim().replace(HISTORY_SEPARATOR, " ").takeIf(String::isNotBlank) ?: return
+        context.dataStore.edit { preferences ->
+            val current = preferences[REPOSITORY_SEARCH_HISTORY]
+                ?.split(HISTORY_SEPARATOR)
+                ?.filter(String::isNotBlank)
+                .orEmpty()
+            val updated = buildList {
+                add(normalized)
+                current.filterNot { it.equals(normalized, ignoreCase = true) }.forEach(::add)
+            }.take(MAX_SEARCH_HISTORY)
+            preferences[REPOSITORY_SEARCH_HISTORY] = updated.joinToString(HISTORY_SEPARATOR)
+        }
+    }
+
+    suspend fun clearRepositorySearchHistory() = context.dataStore.edit {
+        it.remove(REPOSITORY_SEARCH_HISTORY)
+    }
 
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
         preferences.remove(THEME_MODE)
@@ -230,6 +255,9 @@ class AppPreferences @Inject constructor(
     }
 
     private companion object {
+        const val HISTORY_SEPARATOR = "\u001F"
+        const val MAX_SEARCH_HISTORY = 8
+
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val THEME_STYLE = stringPreferencesKey("theme_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
@@ -245,5 +273,6 @@ class AppPreferences @Inject constructor(
         val SHOW_IMAGES = booleanPreferencesKey("show_images")
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
+        val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
     }
 }
