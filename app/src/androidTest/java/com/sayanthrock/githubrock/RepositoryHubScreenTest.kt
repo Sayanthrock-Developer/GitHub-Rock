@@ -10,6 +10,8 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
+import com.sayanthrock.githubrock.ui.screens.RepositoryAppInstallPanel
+import com.sayanthrock.githubrock.ui.screens.RepositoryAppPackageState
 import com.sayanthrock.githubrock.ui.screens.RepositoryHubContent
 import com.sayanthrock.githubrock.ui.screens.RepositoryWorkspaceTopBar
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
@@ -110,6 +112,66 @@ class RepositoryHubScreenTest {
         compose.onNodeWithText("README.md").performScrollTo().assertIsDisplayed()
     }
 
+    @Test fun installedApplicationShowsUninstallAndOpenActions() {
+        var uninstallRequested = false
+        var openRequested = false
+        val state = RepositoryAppPackageState(
+            appName = "Echo Music",
+            packageName = "com.echo.music",
+            versionName = "5.2.8",
+            apkPath = "/tmp/echo.apk",
+            installed = true,
+            openable = true
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                RepositoryAppInstallPanel(
+                    state = state,
+                    onInstall = {},
+                    onOpen = { openRequested = true },
+                    onUninstall = { uninstallRequested = true }
+                )
+            }
+        }
+
+        compose.onNodeWithText("Echo Music").assertIsDisplayed()
+        compose.onNodeWithText("Installed").assertIsDisplayed()
+        compose.onNodeWithText("Uninstall").performClick()
+        compose.onNodeWithText("Open").performClick()
+        compose.runOnIdle {
+            assertTrue(uninstallRequested)
+            assertTrue(openRequested)
+        }
+    }
+
+    @Test fun downloadedApplicationShowsInstallActionUntilInstalled() {
+        var installRequested = false
+        val state = RepositoryAppPackageState(
+            appName = "Echo Music",
+            packageName = "com.echo.music",
+            versionName = "5.2.8",
+            apkPath = "/tmp/echo.apk",
+            installed = false,
+            openable = false
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                RepositoryAppInstallPanel(
+                    state = state,
+                    onInstall = { installRequested = true },
+                    onOpen = {},
+                    onUninstall = {}
+                )
+            }
+        }
+
+        compose.onNodeWithText("Ready to install").assertIsDisplayed()
+        compose.onNodeWithText("Install downloaded APK").performClick()
+        compose.runOnIdle { assertTrue(installRequested) }
+    }
+
     @Test fun compactTopBarReplacesTheLargeRepositoryIdentityCard() {
         var managerOpened = false
         var filesOpened = false
@@ -147,6 +209,33 @@ class RepositoryHubScreenTest {
         }
         compose.onNodeWithText("Default branch").assertDoesNotExist()
         compose.onNodeWithText("Repository tools are ready inside the app.").assertDoesNotExist()
+    }
+
+    @Test fun topBarShowsInstalledStatusWhenPackageIsResolved() {
+        val repository = GitHubRepositoryModel(
+            id = 1,
+            name = "Echo-Music",
+            fullName = "EchoMusicApp/Echo-Music",
+            owner = Owner(login = "EchoMusicApp"),
+            defaultBranch = "main"
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                RepositoryWorkspaceTopBar(
+                    repository = repository,
+                    repositoryReady = true,
+                    repositoryLoading = false,
+                    repositoryHasError = false,
+                    onBack = {},
+                    onOpenManager = {},
+                    onOpenFiles = {},
+                    applicationStatus = "Installed"
+                )
+            }
+        }
+
+        compose.onNodeWithText("Public · main · Installed").assertIsDisplayed()
     }
 
     @Test fun topBarShowsUnavailableAfterRepositoryLoadFailure() {

@@ -19,14 +19,22 @@ class AndroidCapabilityContractTest {
         assertTrue("android.permission.FOREGROUND_SERVICE_DATA_SYNC" in manifest)
         assertTrue("android.permission.RECEIVE_BOOT_COMPLETED" in manifest)
         assertTrue("android.permission.REQUEST_INSTALL_PACKAGES" in manifest)
+        assertTrue("android.permission.REQUEST_DELETE_PACKAGES" in manifest)
         assertTrue("com.termux.permission.RUN_COMMAND" in manifest)
+    }
+
+    @Test fun installedAppControlsUseTargetedLauncherVisibility() {
+        val manifest = androidManifestText()
+
+        assertTrue("android.intent.action.MAIN" in manifest)
+        assertTrue("android.intent.category.LAUNCHER" in manifest)
+        assertFalse("android.permission.QUERY_ALL_PACKAGES" in manifest)
     }
 
     @Test fun broadOrUnimplementedPrivilegesRemainAbsent() {
         val manifest = androidManifestText()
 
         assertFalse("android.permission.QUERY_ALL_PACKAGES" in manifest)
-        assertFalse("android.permission.REQUEST_DELETE_PACKAGES" in manifest)
         assertFalse("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" in manifest)
         assertFalse("moe.shizuku.manager.permission.API_V23" in manifest)
         assertFalse("com.rosan.dhizuku.permission.API" in manifest)

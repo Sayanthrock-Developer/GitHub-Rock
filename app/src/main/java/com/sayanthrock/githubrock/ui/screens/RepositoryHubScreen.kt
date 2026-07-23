@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -51,16 +53,19 @@ fun RepositoryHubScreen(
     downloadsViewModel: DownloadsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val downloads by downloadsViewModel.downloads.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var workspacePage by rememberSaveable { mutableStateOf("overview") }
+    var confirmUninstall by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(repository?.id) {
         viewModel.start(repository)
     }
 
     val displayedRepository = state.repository ?: repository
+    val appState = rememberRepositoryAppPackageState(downloads, state.releases)
 
     when (workspacePage) {
         "manager" -> {
@@ -106,7 +111,8 @@ fun RepositoryHubScreen(
                 repositoryHasError = state.error != null,
                 onBack = onBack,
                 onOpenManager = { workspacePage = "manager" },
-                onOpenFiles = { workspacePage = "files" }
+                onOpenFiles = { workspacePage = "files" },
+                applicationStatus = appState?.statusLabel
             )
         }
     ) { padding ->
@@ -138,7 +144,68 @@ fun RepositoryHubScreen(
                 },
                 modifier = Modifier.weight(1f)
             )
+
+            appState?.let { installedApp ->
+                RepositoryAppInstallPanel(
+                    state = installedApp,
+                    onInstall = {
+                        installRepositoryApk(context, installedApp).onFailure { problem ->
+                            scope.launch {
+                                snackbar.showSnackbar(
+                                    problem.message
+                                        ?: "Android could not open the package installer."
+                                )
+                            }
+                        }
+                    },
+                    onOpen = {
+                        openRepositoryApp(context, installedApp).onFailure { problem ->
+                            scope.launch {
+                                snackbar.showSnackbar(
+                                    problem.message ?: "Android could not open this application."
+                                )
+                            }
+                        }
+                    },
+                    onUninstall = { confirmUninstall = true }
+                )
+            }
         }
+    }
+
+    val uninstallTarget = appState
+    if (confirmUninstall && uninstallTarget != null) {
+        AlertDialog(
+            onDismissRequest = { confirmUninstall = false },
+            title = { Text("Uninstall ${uninstallTarget.appName}?") },
+            text = {
+                Text(
+                    "Android will open its uninstall confirmation for ${uninstallTarget.packageName}. " +
+                        "GitHub Rock cannot remove an app silently."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmUninstall = false
+                        requestRepositoryAppUninstall(context, uninstallTarget).onFailure { problem ->
+                            scope.launch {
+                                snackbar.showSnackbar(
+                                    problem.message ?: "Android could not open the uninstall screen."
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmUninstall = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -151,7 +218,8 @@ internal fun RepositoryWorkspaceTopBar(
     repositoryHasError: Boolean,
     onBack: () -> Unit,
     onOpenManager: () -> Unit,
-    onOpenFiles: () -> Unit
+    onOpenFiles: () -> Unit,
+    applicationStatus: String? = null
 ) {
     TopAppBar(
         title = {
@@ -165,7 +233,11 @@ internal fun RepositoryWorkspaceTopBar(
                 Text(
                     text = repository?.let {
                         val visibility = if (it.private) "Private" else "Public"
-                        "$visibility · ${it.defaultBranch}"
+                        listOfNotNull(
+                            visibility,
+                            it.defaultBranch,
+                            applicationStatus
+                        ).joinToString(" · ")
                     } ?: when {
                         repositoryHasError -> "Repository unavailable"
                         repositoryLoading -> "Loading repository"
