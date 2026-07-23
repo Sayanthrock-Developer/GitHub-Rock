@@ -69,6 +69,7 @@ class BackendContractTest {
         assertTrue(isVersionAtLeast("0.2.0-debug", "0.1.9"))
         assertTrue(isVersionAtLeast("v1.0.0", "1.0"))
         assertFalse(isVersionAtLeast("0.1.9", "0.2.0"))
+        assertFalse(isVersionAtLeast("0.1.0", "0.1.1"))
     }
 
     @Test fun maintenanceAndDisabledFeaturesRejectTheBackendPath() {
@@ -90,6 +91,13 @@ class BackendContractTest {
         assertThrows(IllegalArgumentException::class.java) {
             validateBackendForApp(
                 ready.copy(features = emptyMap()),
+                "oauthDeviceProxy",
+                currentVersion = "0.1.0",
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            validateBackendForApp(
+                ready.copy(apiVersion = "v2"),
                 "oauthDeviceProxy",
                 currentVersion = "0.1.0",
             )
