@@ -1,6 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import android.content.pm.ApplicationInfo
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Adds application artwork above the existing full download manager. */
 @Composable
@@ -76,21 +79,27 @@ fun DownloadsHubScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
 @Composable
 private fun DownloadApplicationArtwork(item: DownloadEntity) {
     val context = LocalContext.current
-    val archiveIcon = remember(item.localPath, item.status) {
-        item.localPath
-            ?.let(::File)
-            ?.takeIf { it.exists() && it.extension.equals("apk", ignoreCase = true) }
-            ?.let { apk ->
-                runCatching {
-                    val packageManager = context.packageManager
-                    val packageInfo = packageManager.getPackageArchiveInfo(apk.absolutePath, 0)
-                    packageInfo?.applicationInfo?.let { applicationInfo ->
-                        applicationInfo.sourceDir = apk.absolutePath
-                        applicationInfo.publicSourceDir = apk.absolutePath
-                        applicationInfo.loadIcon(packageManager)
-                    }
-                }.getOrNull()
-            }
+    val archiveIcon by produceState<Drawable?>(
+        initialValue = null,
+        key1 = item.localPath,
+        key2 = item.status
+    ) {
+        value = withContext(Dispatchers.IO) {
+            item.localPath
+                ?.let(::File)
+                ?.takeIf { it.exists() && it.extension.equals("apk", ignoreCase = true) }
+                ?.let { apk ->
+                    runCatching {
+                        val packageManager = context.packageManager
+                        val packageInfo = packageManager.getPackageArchiveInfo(apk.absolutePath, 0)
+                        packageInfo?.applicationInfo?.let { applicationInfo ->
+                            applicationInfo.sourceDir = apk.absolutePath
+                            applicationInfo.publicSourceDir = apk.absolutePath
+                            applicationInfo.loadIcon(packageManager)
+                        }
+                    }.getOrNull()
+                }
+        }
     }
     val artwork = archiveIcon ?: remember(item.sourceUrl) { githubOwnerArtwork(item.sourceUrl) }
 
