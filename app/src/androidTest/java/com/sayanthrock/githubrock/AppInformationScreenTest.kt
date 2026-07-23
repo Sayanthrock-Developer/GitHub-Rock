@@ -32,9 +32,10 @@ class AppInformationScreenTest {
                         supportedAbis = listOf("arm64-v8a"),
                         firstInstalled = "18 Jul 2026, 12:00",
                         lastUpdated = "18 Jul 2026, 12:30",
-                        requestedPermissions = 8
+                        requestedPermissions = 11
                     ),
                     onBack = {},
+                    onOpenCapabilities = {},
                     onOpenSystemSettings = {}
                 )
             }
@@ -43,6 +44,7 @@ class AppInformationScreenTest {
         compose.onNodeWithText("SDK information").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Target Android").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("API 36", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Android capabilities & permissions").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Open Android app settings").performScrollTo().assertIsDisplayed()
     }
 }
