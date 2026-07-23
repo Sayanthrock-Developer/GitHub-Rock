@@ -7,6 +7,7 @@ import android.webkit.CookieManager
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
@@ -48,7 +49,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,8 +56,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.sayanthrock.githubrock.core.navigation.GitHubSettingOpenMode
 import com.sayanthrock.githubrock.core.navigation.GitHubWebDestination
 import com.sayanthrock.githubrock.core.navigation.GitHubWebSection
@@ -120,10 +121,7 @@ fun GitHubSettingsScreen(
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 40.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                GitHubSettingsHero(totalDestinations)
-            }
-
+            item { GitHubSettingsHero(totalDestinations) }
             item {
                 StandardSectionHeader(
                     title = "GitHub Rock",
@@ -148,7 +146,6 @@ fun GitHubSettingsScreen(
                     )
                 }
             }
-
             item {
                 OutlinedTextField(
                     value = query,
@@ -167,7 +164,6 @@ fun GitHubSettingsScreen(
                     }
                 )
             }
-
             item {
                 Text(
                     if (query.isBlank()) {
@@ -181,20 +177,15 @@ fun GitHubSettingsScreen(
             }
 
             visibleSections.forEach { section ->
-                item(key = "header-${section.id}") {
-                    StandardSectionHeader(section.title)
-                }
+                item(key = "header-${section.id}") { StandardSectionHeader(section.title) }
                 item(key = section.id) {
-                    GitHubSettingsSection(
-                        section = section,
-                        onOpenDestination = { destination ->
-                            when (githubSettingOpenMode(destination)) {
-                                GitHubSettingOpenMode.NativeProfile,
-                                GitHubSettingOpenMode.NativeRepositories -> onOpenGitHubUrl(destination.url)
-                                GitHubSettingOpenMode.InAppGitHub -> inAppDestinationId = destination.id
-                            }
+                    GitHubSettingsSection(section) { destination ->
+                        when (githubSettingOpenMode(destination)) {
+                            GitHubSettingOpenMode.NativeProfile,
+                            GitHubSettingOpenMode.NativeRepositories -> onOpenGitHubUrl(destination.url)
+                            GitHubSettingOpenMode.InAppGitHub -> inAppDestinationId = destination.id
                         }
-                    )
+                    }
                 }
             }
 
@@ -202,7 +193,7 @@ fun GitHubSettingsScreen(
                 item {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("No matching GitHub setting", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                            Text("No matching GitHub setting", fontWeight = FontWeight.Bold)
                             Text(
                                 "Try a shorter search such as security, apps, repositories, or billing.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -241,10 +232,10 @@ private fun GitHubSettingsHero(totalDestinations: Int) {
                     Text(
                         "Mobile settings experience",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black
+                        fontWeight = FontWeight.Black
                     )
                     Text(
-                        "Profile and repositories use native screens. Every other supported GitHub setting opens inside GitHub Rock instead of sending you to an external browser.",
+                        "Profile and repositories use native screens. Every other supported GitHub setting opens inside GitHub Rock instead of an external browser.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -254,10 +245,10 @@ private fun GitHubSettingsHero(totalDestinations: Int) {
                 "$totalDestinations GitHub tools available in the app",
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
             Text(
-                "Password, passkey, token, session, authorization, and billing changes remain on GitHub's secure pages, displayed inside a protected in-app panel. GitHub Rock never injects your OAuth token into web content.",
+                "Password, passkey, token, session, authorization, and billing changes remain on GitHub's secure pages inside a protected in-app panel. GitHub Rock never injects your OAuth token into web content.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -284,7 +275,7 @@ private fun GitHubSettingsSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (mode == GitHubSettingOpenMode.InAppGitHub) "IN APP" else "NATIVE",
+                            if (mode == GitHubSettingOpenMode.InAppGitHub) "IN APP" else "NATIVE",
                             style = MaterialTheme.typography.labelSmall,
                             color = if (mode == GitHubSettingOpenMode.InAppGitHub) {
                                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -293,11 +284,7 @@ private fun GitHubSettingsSection(
                             }
                         )
                         Icon(
-                            imageVector = if (mode == GitHubSettingOpenMode.InAppGitHub) {
-                                Icons.Default.Lock
-                            } else {
-                                Icons.Default.ChevronRight
-                            },
+                            if (mode == GitHubSettingOpenMode.InAppGitHub) Icons.Default.Lock else Icons.Default.ChevronRight,
                             contentDescription = "Open ${destination.title} inside GitHub Rock",
                             tint = if (mode == GitHubSettingOpenMode.InAppGitHub) {
                                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -322,13 +309,13 @@ private fun GitHubInAppSettingsBrowser(
     onBack: () -> Unit
 ) {
     var webView by remember { mutableStateOf<WebView?>(null) }
-    var progress by rememberSaveable(destination.id) { mutableIntStateOf(0) }
+    var progress by rememberSaveable(destination.id) { mutableStateOf(0) }
     var loading by rememberSaveable(destination.id) { mutableStateOf(true) }
     var errorMessage by rememberSaveable(destination.id) { mutableStateOf<String?>(null) }
 
     BackHandler {
-        val activeWebView = webView
-        if (activeWebView?.canGoBack() == true) activeWebView.goBack() else onBack()
+        val active = webView
+        if (active?.canGoBack() == true) active.goBack() else onBack()
     }
 
     Scaffold(
@@ -348,8 +335,8 @@ private fun GitHubInAppSettingsBrowser(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            val activeWebView = webView
-                            if (activeWebView?.canGoBack() == true) activeWebView.goBack() else onBack()
+                            val active = webView
+                            if (active?.canGoBack() == true) active.goBack() else onBack()
                         }
                     ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -382,7 +369,6 @@ private fun GitHubInAppSettingsBrowser(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceContainer
@@ -421,7 +407,7 @@ private fun GitHubInAppSettingsBrowser(
                                 allowContentAccess = false
                                 javaScriptCanOpenWindowsAutomatically = false
                                 setSupportMultipleWindows(false)
-                                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                                mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                                 safeBrowsingEnabled = true
                             }
                             webChromeClient = object : WebChromeClient() {
@@ -470,9 +456,9 @@ private fun GitHubInAppSettingsBrowser(
                             }
                         }
                     },
-                    update = { activeWebView ->
-                        if (activeWebView.url.isNullOrBlank() && errorMessage == null) {
-                            activeWebView.loadUrl(destination.url)
+                    update = { active ->
+                        if (active.url.isNullOrBlank() && errorMessage == null) {
+                            active.loadUrl(destination.url)
                         }
                     }
                 )
@@ -496,12 +482,9 @@ private fun GitHubInAppSettingsBrowser(
                             Text(
                                 "Page blocked for safety",
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                fontWeight = FontWeight.Bold
                             )
-                            Text(
-                                message,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Button(
                                 onClick = {
                                     errorMessage = null
@@ -520,8 +503,6 @@ private fun GitHubInAppSettingsBrowser(
     DisposableEffect(destination.id) {
         onDispose {
             webView?.stopLoading()
-            webView?.webChromeClient = null
-            webView?.webViewClient = null
             webView?.destroy()
             webView = null
         }
