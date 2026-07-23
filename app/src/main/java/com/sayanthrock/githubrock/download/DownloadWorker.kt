@@ -1,20 +1,27 @@
 package com.sayanthrock.githubrock.download
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
+import android.content.pm.ServiceInfo
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.sayanthrock.githubrock.core.util.ChecksumVerifier
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.File
-import java.io.FileOutputStream
 
 @HiltWorker
 class DownloadWorker @AssistedInject constructor(
@@ -23,12 +30,7 @@ class DownloadWorker @AssistedInject constructor(
     private val client: OkHttpClient,
     private val dao: DownloadDao
 ) : CoroutineWorker(context, params) {
-    /**
-     * Downloads the requested file, supports resuming partial downloads, verifies its checksum when provided,
-     * and records progress and completion status.
-     *
-     * @return The successful, retry, or failure result based on the download outcome.
-     */
+
     override suspend fun doWork(): Result {
         val id = inputData.getLong(KEY_ID, -1)
         val url = inputData.getString(KEY_URL) ?: return Result.failure()
@@ -40,6 +42,8 @@ class DownloadWorker @AssistedInject constructor(
         val partial = resumedPath ?: File(directory, "$id-$name.part")
         val final = File(directory, "$id-$name")
         var knownTotal = 0L
+
+        setForeground(downloadForegroundInfo(id, name, 0L, 0L))
 
         return try {
             val existing = partial.takeIf(File::exists)?.length() ?: 0L
@@ -66,8 +70,10 @@ class DownloadWorker @AssistedInject constructor(
                     path = partial.absolutePath,
                     sha = null
                 )
+                setForeground(downloadForegroundInfo(id, name, startingBytes, knownTotal))
                 copyResponseWithProgress(
                     id = id,
+                    fileName = name,
                     body = body.byteStream(),
                     target = partial,
                     append = append,
@@ -103,18 +109,9 @@ class DownloadWorker @AssistedInject constructor(
         }
     }
 
-    /**
-     * Copies response data to the target file and periodically records download progress.
-     *
-     * @param id The download identifier.
-     * @param body The response stream to copy.
-     * @param target The file receiving the response data.
-     * @param append Whether to append data to the target file.
-     * @param startingBytes The number of bytes already downloaded.
-     * @param totalBytes The expected total download size.
-     */
     private suspend fun copyResponseWithProgress(
         id: Long,
+        fileName: String,
         body: java.io.InputStream,
         target: File,
         append: Boolean,
@@ -134,20 +131,70 @@ class DownloadWorker @AssistedInject constructor(
                     downloaded += count
                     if (downloaded - lastPublished >= PROGRESS_UPDATE_BYTES) {
                         dao.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
+                        setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
                         lastPublished = downloaded
                     }
                 }
             }
         }
         dao.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
+        setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
     }
 
-    /**
- * Replaces characters that are unsafe for filenames with underscores.
- *
- * @return A filename containing only letters, digits, periods, underscores, and hyphens.
- */
-private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_")
+    private fun downloadForegroundInfo(
+        downloadId: Long,
+        fileName: String,
+        downloadedBytes: Long,
+        totalBytes: Long
+    ): ForegroundInfo {
+        ensureDownloadChannel()
+        val hasKnownTotal = totalBytes > 0
+        val percent = if (hasKnownTotal) {
+            (downloadedBytes.coerceAtLeast(0) * 100 / totalBytes).toInt().coerceIn(0, 100)
+        } else {
+            0
+        }
+        val notification = NotificationCompat.Builder(applicationContext, DOWNLOAD_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle("Downloading $fileName")
+            .setContentText(if (hasKnownTotal) "$percent% complete" else "Preparing download")
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setProgress(if (hasKnownTotal) 100 else 0, percent, !hasKnownTotal)
+            .build()
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(
+                notificationId(downloadId),
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            ForegroundInfo(notificationId(downloadId), notification)
+        }
+    }
+
+    private fun ensureDownloadChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = applicationContext.getSystemService(Service.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(
+            NotificationChannel(
+                DOWNLOAD_CHANNEL_ID,
+                "Downloads",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "GitHub release, artifact, image, and APK download progress"
+                setShowBadge(false)
+            }
+        )
+    }
+
+    private fun notificationId(downloadId: Long): Int =
+        ((downloadId xor (downloadId ushr 32)).toInt() and Int.MAX_VALUE).coerceAtLeast(1)
+
+    private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_")
 
     companion object {
         const val KEY_ID = "download_id"
@@ -155,15 +202,10 @@ private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_
         const val KEY_NAME = "download_name"
         const val KEY_SHA256 = "download_sha256"
         const val KEY_PARTIAL_PATH = "download_partial_path"
+        private const val DOWNLOAD_CHANNEL_ID = "github_rock_downloads"
         private const val PROGRESS_UPDATE_BYTES = 256 * 1024L
         private const val MAX_AUTOMATIC_RETRIES = 2
 
-        /**
- * Creates the unique WorkManager name for a download.
- *
- * @param id The download identifier.
- * @return The standardized work name for the download.
- */
-fun workName(id: Long): String = "github-rock-download-$id"
+        fun workName(id: Long): String = "github-rock-download-$id"
     }
 }
