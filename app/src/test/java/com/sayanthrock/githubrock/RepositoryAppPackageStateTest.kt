@@ -33,6 +33,7 @@ class RepositoryAppPackageStateTest {
         val older = DownloadEntity(
             id = 1,
             fileName = "echo-music-universal.apk",
+            sourceUrl = "https://example.com/old.apk",
             localPath = "/tmp/old.apk",
             status = "completed",
             createdAt = 100
@@ -40,6 +41,7 @@ class RepositoryAppPackageStateTest {
         val newer = DownloadEntity(
             id = 2,
             fileName = "Echo-Music-Universal.APK",
+            sourceUrl = "https://example.com/new.apk",
             localPath = "/tmp/new.apk",
             status = "completed",
             createdAt = 200
@@ -47,6 +49,7 @@ class RepositoryAppPackageStateTest {
         val failed = DownloadEntity(
             id = 3,
             fileName = "echo-music-universal.apk",
+            sourceUrl = "https://example.com/failed.apk",
             localPath = "/tmp/failed.apk",
             status = "failed",
             createdAt = 300
@@ -54,6 +57,7 @@ class RepositoryAppPackageStateTest {
         val unrelated = DownloadEntity(
             id = 4,
             fileName = "another-app.apk",
+            sourceUrl = "https://example.com/another.apk",
             localPath = "/tmp/another.apk",
             status = "completed",
             createdAt = 400
@@ -75,6 +79,7 @@ class RepositoryAppPackageStateTest {
                     DownloadEntity(
                         id = 1,
                         fileName = "echo-music-universal.apk",
+                        sourceUrl = "https://example.com/partial.apk",
                         localPath = "/tmp/partial.apk",
                         status = "downloading"
                     )
