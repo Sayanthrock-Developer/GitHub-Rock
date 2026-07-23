@@ -2,6 +2,8 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,19 +17,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Announcement
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,77 +43,44 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
+import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.core.util.ProfileExportFormatter
-import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
-import com.sayanthrock.githubrock.data.repository.NativeProfileRepository
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
-import com.sayanthrock.githubrock.ui.components.GlassCard
-import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Repository content loaded for the connected-account profile dashboard. */
+/** Retained for source compatibility with existing previews and tests. */
 data class ConnectedProfileDashboardUiState(
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null
 )
 
-@HiltViewModel
-class ConnectedProfileDashboardViewModel @Inject constructor(
-    private val repository: NativeProfileRepository
-) : ViewModel() {
-    private val _state = MutableStateFlow(ConnectedProfileDashboardUiState())
-    val state: StateFlow<ConnectedProfileDashboardUiState> = _state.asStateFlow()
-    private var loadedLogin: String? = null
+private data class ProfileMenuItem(
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String,
+    val onClick: () -> Unit,
+    val destructive: Boolean = false
+)
 
-    fun load(login: String) {
-        if (loadedLogin.equals(login, ignoreCase = true) && _state.value.repositories.isNotEmpty()) return
-        loadedLogin = login
-        viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null) }
-            runCatchingPreservingCancellation { repository.repositories(login) }
-                .onSuccess { repositories ->
-                    _state.value = ConnectedProfileDashboardUiState(repositories = repositories)
-                }
-                .onFailure { problem ->
-                    _state.value = ConnectedProfileDashboardUiState(
-                        loading = false,
-                        error = problem.message ?: "Unable to load repositories."
-                    )
-                }
-        }
-    }
-
-    fun refresh(login: String) {
-        loadedLogin = null
-        load(login)
-    }
-}
-
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun ProfileScreen(
     mode: AppMode,
@@ -117,103 +91,18 @@ fun ProfileScreen(
     onOpenFeatures: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAppInfo: () -> Unit = {},
+    onOpenTweaks: () -> Unit = {},
+    onOpenLibrary: (ProfileLibrarySection) -> Unit = {},
+    onOpenUpdates: (ProfileUpdateSection) -> Unit = {},
     onOpenGitHubUrl: (String) -> Unit,
     onLogout: () -> Unit,
     dashboardStateOverride: ConnectedProfileDashboardUiState? = null
 ) {
-    if (dashboardStateOverride != null) {
-        ProfileDashboardRuntime(
-            mode = mode,
-            profile = profile,
-            explorerState = explorerState,
-            repositoryState = dashboardStateOverride,
-            onInspectProfile = onInspectProfile,
-            onRefreshRepositories = {},
-            onOpenDownloads = onOpenDownloads,
-            onOpenFeatures = onOpenFeatures,
-            onOpenSettings = onOpenSettings,
-            onOpenAppInfo = onOpenAppInfo,
-            onOpenGitHubUrl = onOpenGitHubUrl,
-            onLogout = onLogout
-        )
-    } else {
-        ConnectedProfileDashboardRoute(
-            mode = mode,
-            profile = profile,
-            explorerState = explorerState,
-            onInspectProfile = onInspectProfile,
-            onOpenDownloads = onOpenDownloads,
-            onOpenFeatures = onOpenFeatures,
-            onOpenSettings = onOpenSettings,
-            onOpenAppInfo = onOpenAppInfo,
-            onOpenGitHubUrl = onOpenGitHubUrl,
-            onLogout = onLogout
-        )
-    }
-}
-
-@Composable
-private fun ConnectedProfileDashboardRoute(
-    mode: AppMode,
-    profile: GitHubUser?,
-    explorerState: ProfileExplorerState,
-    onInspectProfile: (String) -> Unit,
-    onOpenDownloads: () -> Unit,
-    onOpenFeatures: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenAppInfo: () -> Unit,
-    onOpenGitHubUrl: (String) -> Unit,
-    onLogout: () -> Unit,
-    viewModel: ConnectedProfileDashboardViewModel = hiltViewModel()
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
     val displayedProfile = explorerState.snapshot?.profile ?: profile
-    val login = normalizedGitHubLogin(displayedProfile?.login)
-
-    LaunchedEffect(login) {
-        login?.let(viewModel::load)
-    }
-
-    ProfileDashboardRuntime(
-        mode = mode,
-        profile = profile,
-        explorerState = explorerState,
-        repositoryState = state,
-        onInspectProfile = onInspectProfile,
-        onRefreshRepositories = { login?.let(viewModel::refresh) },
-        onOpenDownloads = onOpenDownloads,
-        onOpenFeatures = onOpenFeatures,
-        onOpenSettings = onOpenSettings,
-        onOpenAppInfo = onOpenAppInfo,
-        onOpenGitHubUrl = onOpenGitHubUrl,
-        onLogout = onLogout
-    )
-}
-
-@Composable
-private fun ProfileDashboardRuntime(
-    mode: AppMode,
-    profile: GitHubUser?,
-    explorerState: ProfileExplorerState,
-    repositoryState: ConnectedProfileDashboardUiState,
-    onInspectProfile: (String) -> Unit,
-    onRefreshRepositories: () -> Unit,
-    onOpenDownloads: () -> Unit,
-    onOpenFeatures: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenAppInfo: () -> Unit,
-    onOpenGitHubUrl: (String) -> Unit,
-    onLogout: () -> Unit
-) {
-    val displayedProfile = explorerState.snapshot?.profile ?: profile
-    val details = explorerState.snapshot?.details
     val login = normalizedGitHubLogin(displayedProfile?.login)
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
-    var query by rememberSaveable(login) { mutableStateOf("") }
-    var filter by rememberSaveable(login) { mutableStateOf(ProfileRepositoryFilter.All) }
-    var exportMessage by remember { mutableStateOf<String?>(null) }
+    var exportMessage by remember(displayedProfile?.id) { mutableStateOf<String?>(null) }
     var pendingExportProfile by remember { mutableStateOf<GitHubUser?>(null) }
 
     LaunchedEffect(mode, login) {
@@ -229,8 +118,8 @@ private fun ProfileDashboardRuntime(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use {
-                        it.write(ProfileExportFormatter.toJson(target))
+                    context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
+                        writer.write(ProfileExportFormatter.toJson(target))
                     } ?: error("Unable to create the profile file")
                 }
             }.onSuccess {
@@ -241,172 +130,185 @@ private fun ProfileDashboardRuntime(
         }
     }
 
-    val openUrl: (String) -> Unit = { rawUrl ->
-        val value = rawUrl.trim()
-        if (value.startsWith("https://github.com/", ignoreCase = true) ||
-            value.startsWith("https://gist.github.com/", ignoreCase = true)
-        ) {
-            onOpenGitHubUrl(value)
-        } else if (value.startsWith("https://", ignoreCase = true)) {
-            runCatching { uriHandler.openUri(value) }
-        }
+    val openFullProfile = login?.let { normalizedLogin ->
+        { onOpenGitHubUrl("https://github.com/$normalizedLogin?tab=repositories") }
     }
 
-    val repositories = remember(repositoryState.repositories, query, filter) {
-        filterProfileRepositories(repositoryState.repositories, query, filter)
+    val libraryItems = listOf(
+        ProfileMenuItem(
+            icon = Icons.Default.Star,
+            title = "Stars",
+            subtitle = "Your starred repositories from GitHub",
+            onClick = { onOpenLibrary(ProfileLibrarySection.Stars) }
+        ),
+        ProfileMenuItem(
+            icon = Icons.Default.Favorite,
+            title = "Favourites",
+            subtitle = "Repositories pinned inside GitHub Rock",
+            onClick = { onOpenLibrary(ProfileLibrarySection.Favourites) }
+        ),
+        ProfileMenuItem(
+            icon = Icons.Default.History,
+            title = "Recently viewed",
+            subtitle = "Repositories you have opened on this device",
+            onClick = { onOpenLibrary(ProfileLibrarySection.RecentlyViewed) }
+        )
+    )
+
+    val updateItems = listOf(
+        ProfileMenuItem(
+            icon = Icons.Default.AutoAwesome,
+            title = "What's new",
+            subtitle = "Highlights from recent GitHub Rock updates",
+            onClick = { onOpenUpdates(ProfileUpdateSection.WhatsNew) }
+        ),
+        ProfileMenuItem(
+            icon = Icons.Default.Announcement,
+            title = "Announcements",
+            subtitle = "Security, account, and important app notices",
+            onClick = { onOpenUpdates(ProfileUpdateSection.Announcements) }
+        )
+    )
+
+    val appItems = listOf(
+        ProfileMenuItem(
+            icon = Icons.Default.Tune,
+            title = "Tweaks",
+            subtitle = "Appearance, theme, display, and app behaviour",
+            onClick = onOpenTweaks
+        ),
+        ProfileMenuItem(
+            icon = Icons.Default.Settings,
+            title = "GitHub settings",
+            subtitle = "Account, security, notifications, and applications",
+            onClick = onOpenSettings
+        ),
+        ProfileMenuItem(
+            icon = Icons.Default.Download,
+            title = "Downloads",
+            subtitle = "Applications, artifacts, files, and APK safety",
+            onClick = onOpenDownloads
+        ),
+        ProfileMenuItem(
+            icon = Icons.Default.Info,
+            title = "About",
+            subtitle = "Version, Android capabilities, community, and legal",
+            onClick = onOpenAppInfo
+        )
+    )
+
+    val accountItems = buildList {
+        add(
+            ProfileMenuItem(
+                icon = Icons.Default.AccountCircle,
+                title = "Accounts & organizations",
+                subtitle = "Connected account, organizations, and public profiles",
+                onClick = onOpenFeatures
+            )
+        )
+        displayedProfile?.let { target ->
+            add(
+                ProfileMenuItem(
+                    icon = Icons.Default.SaveAlt,
+                    title = "Download profile",
+                    subtitle = "Save this public profile as a JSON file",
+                    onClick = {
+                        exportMessage = null
+                        pendingExportProfile = target
+                        exportLauncher.launch(ProfileExportFormatter.fileName(target))
+                    }
+                )
+            )
+        }
+        add(
+            ProfileMenuItem(
+                icon = Icons.Default.Logout,
+                title = if (mode == AppMode.Connected) "Logout" else "Exit ${mode.name.lowercase()} mode",
+                subtitle = if (mode == AppMode.Connected) {
+                    "Remove the connected GitHub session from this device"
+                } else {
+                    "Close the current ${mode.name.lowercase()} session"
+                },
+                onClick = onLogout,
+                destructive = true
+            )
+        )
     }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 36.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            ProfileDashboardHeader(
-                profile = displayedProfile,
-                isOwnProfile = mode == AppMode.Connected,
-                canFollow = false,
-                followStateLoaded = true,
-                isFollowing = false,
-                followUpdating = false,
-                onToggleFollow = {},
-                onRepositories = login?.let { { onOpenGitHubUrl("https://github.com/$it?tab=repositories") } },
-                onFollowers = login?.let { { onOpenGitHubUrl("https://github.com/$it?tab=followers") } },
-                onFollowing = login?.let { { onOpenGitHubUrl("https://github.com/$it?tab=following") } }
+            Text(
+                text = "Profile",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
             )
         }
 
-        item { ContributionActivityCard(details) }
-        item { ProfileIdentitySummary(displayedProfile, details, openUrl) }
+        item {
+            CompactProfileCard(
+                profile = displayedProfile,
+                mode = mode,
+                onClick = openFullProfile
+            )
+        }
 
         if (explorerState.loading) {
             item {
-                Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 }
             }
         }
+
         explorerState.error?.let { message ->
-            item { GlassCard { Text(message, color = MaterialTheme.colorScheme.error) } }
-        }
-
-        item {
-            ProfileRepositoryToolbar(
-                query = query,
-                onQueryChange = { query = it },
-                selectedFilter = filter,
-                onFilterChange = { filter = it },
-                shown = repositories.size,
-                total = repositoryState.repositories.size
-            )
-        }
-
-        when {
-            repositoryState.loading -> item {
-                Box(Modifier.fillMaxWidth().padding(vertical = 42.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-            repositoryState.error != null -> item {
-                GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(repositoryState.error, color = MaterialTheme.colorScheme.error)
-                        OutlinedButton(onClick = onRefreshRepositories) { Text("Retry") }
-                    }
-                }
-            }
-            repositories.isEmpty() -> item {
-                GlassCard {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.errorContainer
+                ) {
                     Text(
-                        if (query.isBlank() && filter == ProfileRepositoryFilter.All) {
-                            "No public repositories to show."
-                        } else {
-                            "No repositories match this search and filter."
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        message,
+                        modifier = Modifier.padding(14.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
             }
-            else -> items(repositories, key = GitHubRepositoryModel::id) { repository ->
-                ProfileRepositoryCard(repository) {
-                    onOpenGitHubUrl(repository.htmlUrl.ifBlank { "https://github.com/${repository.fullName}" })
-                }
-            }
         }
 
-        item { StandardSectionHeader("Profile controls") }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DashboardControlButton(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Settings,
-                    label = "Settings",
-                    onClick = onOpenSettings
-                )
-                DashboardControlButton(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.AccountCircle,
-                    label = "Accounts",
-                    onClick = onOpenFeatures
-                )
-                DashboardControlButton(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Download,
-                    label = "Downloads",
-                    onClick = onOpenDownloads
-                )
-            }
-        }
-
-        item {
-            GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = onOpenAppInfo, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Info, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("App information")
-                    }
-                    displayedProfile?.let { target ->
-                        OutlinedButton(
-                            onClick = {
-                                exportMessage = null
-                                pendingExportProfile = target
-                                exportLauncher.launch(ProfileExportFormatter.fileName(target))
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Download profile")
-                        }
-                    }
-                    login?.let {
-                        OutlinedButton(
-                            onClick = { onOpenGitHubUrl("https://github.com/$it") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Open GitHub profile")
-                        }
-                    }
-                    Button(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Logout, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (mode == AppMode.Connected) "Log out" else "Exit ${mode.name.lowercase()} mode")
-                    }
-                }
-            }
-        }
+        item { ProfileMenuGroup(title = "Library", items = libraryItems) }
+        item { ProfileMenuGroup(title = "Updates", items = updateItems) }
+        item { ProfileMenuGroup(title = "App", items = appItems) }
+        item { ProfileMenuGroup(title = "Account", items = accountItems) }
 
         exportMessage?.let { message ->
             item {
-                GlassCard {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = if (message.contains("success", ignoreCase = true)) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.errorContainer
+                    }
+                ) {
                     Text(
                         message,
-                        color = if (message.contains("success", ignoreCase = true)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold
+                        modifier = Modifier.padding(14.dp),
+                        color = if (message.contains("success", ignoreCase = true)) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onErrorContainer
+                        },
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -415,26 +317,213 @@ private fun ProfileDashboardRuntime(
 }
 
 @Composable
-private fun DashboardControlButton(
-    modifier: Modifier,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit
+private fun CompactProfileCard(
+    profile: GitHubUser?,
+    mode: AppMode,
+    onClick: (() -> Unit)?
 ) {
     Surface(
-        onClick = onClick,
-        modifier = modifier.height(86.dp),
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(7.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                if (!profile?.avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = profile?.avatarUrl,
+                        contentDescription = "${profile?.login} avatar",
+                        modifier = Modifier.size(82.dp).clip(MaterialTheme.shapes.extraLarge)
+                    )
+                } else {
+                    Surface(
+                        modifier = Modifier.size(82.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                profile?.login?.take(2)?.uppercase(Locale.getDefault()) ?: "GR",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        profile?.name ?: profile?.login ?: "GitHub Rock",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        profile?.login?.let { "@$it" } ?: mode.name,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    profile?.bio?.takeIf(String::isNotBlank)?.let { bio ->
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            bio,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CompactProfileMetric(
+                    value = profile?.publicRepos ?: 0,
+                    label = "Repos",
+                    modifier = Modifier.weight(1f)
+                )
+                MetricDivider()
+                CompactProfileMetric(
+                    value = profile?.followers ?: 0,
+                    label = "Followers",
+                    modifier = Modifier.weight(1f)
+                )
+                MetricDivider()
+                CompactProfileMetric(
+                    value = profile?.following ?: 0,
+                    label = "Following",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactProfileMetric(value: Int, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(value.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun MetricDivider() {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .height(36.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant)
+    )
+}
+
+@Composable
+private fun ProfileMenuGroup(title: String, items: List<ProfileMenuItem>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Black
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            Column {
+                items.forEachIndexed { index, item ->
+                    ProfileMenuRow(item)
+                    if (index < items.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 74.dp, end = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileMenuRow(item: ProfileMenuItem) {
+    val accent = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val iconTint = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+    val iconBackground = if (item.destructive) {
+        MaterialTheme.colorScheme.error.copy(alpha = .08f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = item.onClick)
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        horizontalArrangement = Arrangement.spacedBy(13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(44.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = iconBackground
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(item.icon, contentDescription = null, tint = iconTint)
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                item.title,
+                color = accent,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                item.subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        if (!item.destructive) {
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
