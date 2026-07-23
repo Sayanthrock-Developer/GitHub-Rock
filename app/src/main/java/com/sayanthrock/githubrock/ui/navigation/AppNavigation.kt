@@ -42,7 +42,7 @@ import com.sayanthrock.githubrock.ui.screens.AccountSwitcherScreen
 import com.sayanthrock.githubrock.ui.screens.AppearanceScreen
 import com.sayanthrock.githubrock.ui.screens.AppInformationScreen
 import com.sayanthrock.githubrock.ui.screens.BuildsScreen
-import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
+import com.sayanthrock.githubrock.ui.screens.DownloadsHubScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
@@ -172,7 +172,7 @@ fun MainNavigation(
                         composable(TopDestination.Builds.route) {
                             BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
                         }
-                        composable(TopDestination.Downloads.route) { DownloadsScreen() }
+                        composable(TopDestination.Downloads.route) { DownloadsHubScreen() }
                         composable(TopDestination.Profile.route) {
                             ProfileScreen(
                                 mode = mode,
