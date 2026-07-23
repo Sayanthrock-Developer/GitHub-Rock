@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +48,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -101,41 +100,49 @@ enum class ProfileLibrarySection(
 }
 
 data class ProfileLibraryUiState(
-    val section: ProfileLibrarySection,
+    val section: ProfileLibrarySection = ProfileLibrarySection.Stars,
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val favouriteKeys: Set<String> = emptySet(),
-    val loading: Boolean = true,
+    val loading: Boolean = false,
     val error: String? = null
 )
 
 @HiltViewModel
 class ProfileLibraryViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
     private val api: GitHubRestApi,
     private val repositoryDao: RepositoryDao,
     @ApplicationContext context: Context
 ) : ViewModel() {
-    private val section = ProfileLibrarySection.fromRoute(savedStateHandle.get<String>("section"))
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     private val _state = MutableStateFlow(
-        ProfileLibraryUiState(
-            section = section,
-            favouriteKeys = readFavouriteKeys()
-        )
+        ProfileLibraryUiState(favouriteKeys = readFavouriteKeys())
     )
     val state: StateFlow<ProfileLibraryUiState> = _state.asStateFlow()
+    private var loadedSection: ProfileLibrarySection? = null
 
-    init {
+    fun open(section: ProfileLibrarySection) {
+        if (loadedSection == section) {
+            _state.update { it.copy(section = section, favouriteKeys = readFavouriteKeys()) }
+            return
+        }
+        _state.value = ProfileLibraryUiState(
+            section = section,
+            favouriteKeys = readFavouriteKeys(),
+            loading = true
+        )
         refresh()
     }
 
     fun refresh() {
+        val section = _state.value.section
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null, favouriteKeys = readFavouriteKeys()) }
             runCatchingPreservingCancellation { loadRepositories(section) }
                 .onSuccess { repositories ->
+                    loadedSection = section
                     _state.update {
                         it.copy(
+                            section = section,
                             repositories = repositories,
                             favouriteKeys = readFavouriteKeys(),
                             loading = false,
@@ -144,8 +151,10 @@ class ProfileLibraryViewModel @Inject constructor(
                     }
                 }
                 .onFailure { problem ->
+                    loadedSection = section
                     _state.update {
                         it.copy(
+                            section = section,
                             loading = false,
                             error = problem.libraryMessage()
                         )
@@ -207,12 +216,18 @@ class ProfileLibraryViewModel @Inject constructor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileLibraryScreen(
+    section: ProfileLibrarySection,
     onBack: () -> Unit,
     onOpenRepository: (GitHubRepositoryModel) -> Unit,
     viewModel: ProfileLibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var query by rememberSaveable(state.section.route) { mutableStateOf("") }
+    var query by rememberSaveable(section.route) { mutableStateOf("") }
+
+    LaunchedEffect(section) {
+        viewModel.open(section)
+    }
+
     val visibleRepositories = remember(state.repositories, query) {
         val normalized = query.trim()
         if (normalized.isBlank()) {
@@ -234,9 +249,9 @@ fun ProfileLibraryScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(state.section.title, fontWeight = FontWeight.Black)
+                        Text(section.title, fontWeight = FontWeight.Black)
                         Text(
-                            state.section.subtitle,
+                            section.subtitle,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -251,7 +266,7 @@ fun ProfileLibraryScreen(
                 },
                 actions = {
                     IconButton(onClick = viewModel::refresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh ${state.section.title}")
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh ${section.title}")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -265,9 +280,9 @@ fun ProfileLibraryScreen(
         ) {
             item {
                 ProfileLibrarySummary(
-                    icon = state.section.icon,
-                    title = state.section.title,
-                    subtitle = state.section.subtitle,
+                    icon = section.icon,
+                    title = section.title,
+                    subtitle = section.subtitle,
                     count = state.repositories.size
                 )
             }
@@ -278,7 +293,7 @@ fun ProfileLibraryScreen(
                     onValueChange = { query = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text("Search ${state.section.title.lowercase()}") }
+                    label = { Text("Search ${section.title.lowercase()}") }
                 )
             }
 
@@ -306,7 +321,7 @@ fun ProfileLibraryScreen(
                 }
 
                 visibleRepositories.isEmpty() -> item {
-                    ProfileLibraryEmpty(state.section, query.isNotBlank())
+                    ProfileLibraryEmpty(section, query.isNotBlank())
                 }
 
                 else -> items(visibleRepositories, key = GitHubRepositoryModel::id) { repository ->
