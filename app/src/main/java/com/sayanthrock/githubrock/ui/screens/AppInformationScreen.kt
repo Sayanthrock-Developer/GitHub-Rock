@@ -29,7 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -41,16 +45,20 @@ import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 
 @Composable
-fun AppInformationScreen(
-    onBack: () -> Unit,
-    onOpenCapabilities: () -> Unit
-) {
+fun AppInformationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val information = remember(context) { AppInformationProvider.read(context) }
+    var showCapabilities by rememberSaveable { mutableStateOf(false) }
+
+    if (showCapabilities) {
+        AndroidCapabilityCenterScreen(onBack = { showCapabilities = false })
+        return
+    }
+
     AppInformationContent(
         information = information,
         onBack = onBack,
-        onOpenCapabilities = onOpenCapabilities,
+        onOpenCapabilities = { showCapabilities = true },
         onOpenSystemSettings = {
             context.startActivity(
                 Intent(
