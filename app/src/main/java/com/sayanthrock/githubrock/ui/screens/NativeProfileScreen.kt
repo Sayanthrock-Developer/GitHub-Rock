@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -72,7 +70,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-internal data class NativeProfileUiState(
+data class NativeProfileUiState(
     val profile: GitHubUser? = null,
     val details: GitHubProfileDetails? = null,
     val section: NativeProfileSection = NativeProfileSection.Repositories,
@@ -89,7 +87,7 @@ internal data class NativeProfileUiState(
 )
 
 @HiltViewModel
-internal class NativeProfileViewModel @Inject constructor(
+class NativeProfileViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: NativeProfileRepository,
     private val detailsResolver: GitHubProfileDetailsResolver
@@ -254,6 +252,7 @@ fun NativeProfileScreen(
     viewModel: NativeProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val errorMessage = state.error
     val context = LocalContext.current
     var query by rememberSaveable(state.profile?.login) { mutableStateOf("") }
     var filter by rememberSaveable(state.profile?.login) { mutableStateOf(ProfileRepositoryFilter.All) }
@@ -367,10 +366,10 @@ fun NativeProfileScreen(
                         CircularProgressIndicator()
                     }
                 }
-                state.error != null -> item {
+                errorMessage != null -> item {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(state.error, color = MaterialTheme.colorScheme.error)
+                            Text(errorMessage, color = MaterialTheme.colorScheme.error)
                             OutlinedButton(onClick = viewModel::refresh) {
                                 Icon(Icons.Default.Refresh, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
