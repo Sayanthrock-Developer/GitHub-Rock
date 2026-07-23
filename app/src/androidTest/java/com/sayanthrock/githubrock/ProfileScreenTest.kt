@@ -9,10 +9,13 @@ import com.sayanthrock.githubrock.core.model.GitHubContributionDay
 import com.sayanthrock.githubrock.core.model.GitHubOrganization
 import com.sayanthrock.githubrock.core.model.GitHubProfileDetails
 import com.sayanthrock.githubrock.core.model.GitHubProfileSnapshot
+import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubSocialAccount
 import com.sayanthrock.githubrock.core.model.GitHubUser
+import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
+import com.sayanthrock.githubrock.ui.screens.ConnectedProfileDashboardUiState
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertEquals
@@ -23,58 +26,81 @@ import org.junit.Test
 class ProfileScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedProfileShowsCommandDeckAndNativeActions() {
-        var openedFeatures = false
+    @Test
+    fun connectedProfileOpensAsDashboardAndKeepsNativeControls() {
         var openedSettings = false
+        var openedAccounts = false
         var openedGitHubUrl: String? = null
+        val profile = GitHubUser(
+            login = "SayanthRock",
+            id = 202829406,
+            name = "Sayanth Rock",
+            bio = "Android developer",
+            publicRepos = 24,
+            followers = 120,
+            following = 48
+        )
+        val repository = GitHubRepositoryModel(
+            id = 1,
+            name = "GitHub-Rock",
+            fullName = "SayanthRock/GitHub-Rock",
+            owner = Owner("SayanthRock"),
+            description = "Native GitHub control centre",
+            language = "Kotlin",
+            stars = 10,
+            topics = listOf("android", "compose")
+        )
+
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ProfileScreen(
                     mode = AppMode.Connected,
-                    profile = GitHubUser(
-                        login = "SayanthRock",
-                        id = 202829406,
-                        publicRepos = 24,
-                        followers = 120,
-                        following = 48
+                    profile = profile,
+                    explorerState = ProfileExplorerState(
+                        snapshot = GitHubProfileSnapshot(
+                            profile = profile,
+                            details = GitHubProfileDetails(
+                                contributionsLastYear = 321,
+                                contributionDays = listOf(
+                                    GitHubContributionDay("2026-07-18", 4, "SECOND_QUARTILE")
+                                )
+                            )
+                        )
                     ),
                     onOpenDownloads = {},
-                    onOpenFeatures = { openedFeatures = true },
+                    onOpenFeatures = { openedAccounts = true },
                     onOpenSettings = { openedSettings = true },
                     onOpenGitHubUrl = { openedGitHubUrl = it },
-                    onLogout = {}
+                    onLogout = {},
+                    dashboardStateOverride = ConnectedProfileDashboardUiState(
+                        repositories = listOf(repository)
+                    )
                 )
             }
         }
 
-        compose.onNodeWithText("Repositories").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("24").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Followers").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("120").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Following").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("48").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Followers").performScrollTo().performClick()
+        compose.onNodeWithText("Sayanth Rock").assertIsDisplayed()
+        compose.onNodeWithText("24").assertIsDisplayed()
+        compose.onNodeWithText("Followers").performClick()
         compose.runOnIdle {
             assertEquals("https://github.com/SayanthRock?tab=followers", openedGitHubUrl)
         }
 
-        compose.onNodeWithText("View profile on GitHub").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("GitHub settings").performScrollTo().assertIsDisplayed().performClick()
-        compose.runOnIdle { assertTrue(openedSettings) }
+        compose.onNodeWithText("Contribution activity").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("321 this year").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Search repositories…").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("GitHub-Rock").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("APP").performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithText("Show").performScrollTo().performClick()
-        compose.onNodeWithText("Download profile").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("GitHub services").performScrollTo().assertIsDisplayed().performClick()
-        compose.runOnIdle { assertTrue(openedFeatures) }
-        compose.onNodeWithText("GitHub security").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Repository library").assertDoesNotExist()
-        compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
-        compose.onNodeWithText("GitHub username").assertDoesNotExist()
-        compose.onNodeWithText("Visual developer control centre").assertDoesNotExist()
+        compose.onNodeWithText("Settings").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(openedSettings) }
+        compose.onNodeWithText("Accounts").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(openedAccounts) }
     }
 
-    @Test fun ownProfileKeepsIdentityDetailsWithoutActivitySummary() {
-        val viewedProfile = GitHubUser(
+    @Test
+    fun identityAndContributionDetailsAppearInsideProfileDashboard() {
+        val profile = GitHubUser(
             login = "SayanthRock",
             id = 1,
             name = "The Octocat",
@@ -105,28 +131,26 @@ class ProfileScreenTest {
             GitHubRockTheme(dynamicColor = false) {
                 ProfileScreen(
                     mode = AppMode.Connected,
-                    profile = viewedProfile,
+                    profile = profile,
                     explorerState = ProfileExplorerState(
-                        snapshot = GitHubProfileSnapshot(viewedProfile, details)
+                        snapshot = GitHubProfileSnapshot(profile, details)
                     ),
                     onOpenDownloads = {},
                     onOpenFeatures = {},
                     onOpenSettings = {},
                     onOpenGitHubUrl = {},
-                    onLogout = {}
+                    onLogout = {},
+                    dashboardStateOverride = ConnectedProfileDashboardUiState()
                 )
             }
         }
 
-        compose.onNodeWithText("Pronouns").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Contribution activity").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("321 this year").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("@github").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("San Francisco").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("they/them").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("github.blog").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("ORCID · 0000-0002-1825-0097").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("321 contributions").assertDoesNotExist()
-        compose.onNodeWithText("Activity recorded during the last year").assertDoesNotExist()
-        compose.onNodeWithText("1 organizations").assertDoesNotExist()
-        compose.onNodeWithText("GitHub Star").assertDoesNotExist()
-        compose.onNodeWithText("View achievements on GitHub").assertDoesNotExist()
-        compose.onNodeWithText("Repository library").assertDoesNotExist()
-        compose.onNodeWithText("Find a GitHub profile").assertDoesNotExist()
-        compose.onNodeWithText("GitHub username").assertDoesNotExist()
     }
 }
