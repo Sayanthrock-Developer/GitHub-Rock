@@ -1,12 +1,15 @@
 package com.sayanthrock.githubrock.data.repository
 
+import com.sayanthrock.githubrock.core.model.GitHubOrganizationAccount
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.network.GitHubProfileApi
+import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 @Singleton
 class NativeProfileRepository @Inject constructor(
@@ -18,7 +21,23 @@ class NativeProfileRepository @Inject constructor(
     }
 
     suspend fun repositories(login: String): List<GitHubRepositoryModel> = withContext(Dispatchers.IO) {
-        artworkResolver.attach(api.repositories(login))
+        val userRepositories = runCatchingPreservingCancellation { api.repositories(login) }
+        val repositories = userRepositories.getOrElse { error ->
+            if (error is HttpException && error.code() == 404) {
+                api.organizationRepositories(login)
+            } else {
+                throw error
+            }
+        }
+        artworkResolver.attach(repositories)
+    }
+
+    suspend fun organizationRepositories(login: String): List<GitHubRepositoryModel> = withContext(Dispatchers.IO) {
+        artworkResolver.attach(api.organizationRepositories(login))
+    }
+
+    suspend fun organizations(): List<GitHubOrganizationAccount> = withContext(Dispatchers.IO) {
+        api.organizations()
     }
 
     suspend fun followers(login: String): List<GitHubUser> = withContext(Dispatchers.IO) {
