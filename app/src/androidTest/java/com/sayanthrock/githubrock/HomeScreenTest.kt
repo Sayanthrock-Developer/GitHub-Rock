@@ -5,9 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
-import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.model.Owner
-import com.sayanthrock.githubrock.core.model.RateLimit
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertTrue
@@ -17,16 +15,10 @@ import org.junit.Test
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun connectedDashboardOmitsTheQuickActionsSection() {
+    @Test fun homeStartsDirectlyWithDiscoveryFeedWithoutWelcomeCard() {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
-                    profile = GitHubUser(
-                        login = "SayanthRock",
-                        id = 202829406,
-                        name = "Sayanth Rock"
-                    ),
-                    rateLimit = RateLimit(limit = 5_000, remaining = 4_862, reset = 0),
                     repositories = emptyList(),
                     runs = emptyList(),
                     onOpenRepo = {},
@@ -35,18 +27,12 @@ class HomeScreenTest {
             }
         }
 
-        compose.onNodeWithText("Workspace status").assertIsDisplayed()
-        compose.onNodeWithText("GitHub account").assertIsDisplayed()
-        compose.onNodeWithText("Connected as @SayanthRock").assertIsDisplayed()
-        compose.onNodeWithText("GitHub API").assertIsDisplayed()
-        compose.onNodeWithText("4862 of 5000 requests available").assertIsDisplayed()
-        compose.onNodeWithText("100 / 100").assertDoesNotExist()
-        compose.onNodeWithText("97 / 100").assertDoesNotExist()
-        compose.onNodeWithText("Build activity").assertDoesNotExist()
-        compose.onNodeWithText("Recent workflow results at a glance").assertDoesNotExist()
-        compose.onNodeWithText("Quick actions").assertDoesNotExist()
-        compose.onNodeWithText("Build APK").assertDoesNotExist()
-        compose.onNodeWithText("Open repository").assertDoesNotExist()
+        compose.onNodeWithText("GitHub Rock").assertDoesNotExist()
+        compose.onNodeWithText("A focused GitHub control centre with a store-style discovery experience for repositories, releases and Android builds.").assertDoesNotExist()
+        compose.onNodeWithText("API left").assertDoesNotExist()
+        compose.onNodeWithText("Open Builds").assertDoesNotExist()
+        compose.onNodeWithText("Recent").assertIsDisplayed()
+        compose.onNodeWithText("No repositories found").assertIsDisplayed()
     }
 
     @Test fun repositoryDescriptionUsesFullCardTouchTarget() {
@@ -62,8 +48,6 @@ class HomeScreenTest {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
-                    profile = null,
-                    rateLimit = null,
                     repositories = listOf(repository),
                     runs = emptyList(),
                     onOpenRepo = { openedRepository = it.id == repository.id },
@@ -80,8 +64,6 @@ class HomeScreenTest {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
-                    profile = null,
-                    rateLimit = null,
                     repositories = emptyList(),
                     runs = emptyList(),
                     onOpenRepo = {},
@@ -91,7 +73,7 @@ class HomeScreenTest {
             }
         }
 
-        compose.onNodeWithText("Loading your GitHub workspace…").assertIsDisplayed()
-        compose.onNodeWithText("No repositories to show. Pull down to refresh.").assertDoesNotExist()
+        compose.onNodeWithText("Loading your workspace…").assertIsDisplayed()
+        compose.onNodeWithText("No repositories found").assertDoesNotExist()
     }
 }
