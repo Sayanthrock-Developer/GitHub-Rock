@@ -1,5 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,18 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,9 +33,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,27 +48,31 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
-import coil.compose.AsyncImage
+import com.sayanthrock.githubrock.core.model.GitHubProfileDetails
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
+import com.sayanthrock.githubrock.data.repository.GitHubProfileDetailsResolver
 import com.sayanthrock.githubrock.data.repository.NativeProfileRepository
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
+import retrofit2.HttpException
 
 data class NativeProfileUiState(
     val profile: GitHubUser? = null,
+    val details: GitHubProfileDetails? = null,
     val section: NativeProfileSection = NativeProfileSection.Repositories,
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val people: List<GitHubUser> = emptyList(),
@@ -83,13 +89,13 @@ data class NativeProfileUiState(
 @HiltViewModel
 class NativeProfileViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val repository: NativeProfileRepository
+    private val repository: NativeProfileRepository,
+    private val detailsResolver: GitHubProfileDetailsResolver
 ) : ViewModel() {
     private val login: String = checkNotNull(savedStateHandle["login"])
     private val initialSection = NativeProfileSection.fromRoute(savedStateHandle["section"])
     private val _state = MutableStateFlow(NativeProfileUiState(section = initialSection))
     val state: StateFlow<NativeProfileUiState> = _state.asStateFlow()
-
     private var contentJob: Job? = null
     private var followJob: Job? = null
     private var followConfiguration: Pair<Boolean, String?>? = null
@@ -104,7 +110,6 @@ class NativeProfileViewModel @Inject constructor(
         val configuration = connected to normalizedOwnLogin
         if (followConfiguration == configuration && _state.value.followStateLoaded) return
         followConfiguration = configuration
-
         val canFollow = connected && !isOwnProfile
         _state.update {
             it.copy(
@@ -131,25 +136,24 @@ class NativeProfileViewModel @Inject constructor(
         val current = _state.value
         if (!current.canFollow || !current.followStateLoaded || current.followUpdating) return
         val desired = !current.isFollowing
-
         followJob?.cancel()
         followJob = viewModelScope.launch {
             _state.update { it.copy(followUpdating = true, followError = null) }
             runCatchingPreservingCancellation { repository.setFollowing(login, desired) }
-                .onSuccess { success ->
-                    if (!success) {
+                .onSuccess { accepted ->
+                    if (!accepted) {
                         _state.update {
                             it.copy(
                                 followUpdating = false,
-                                followError = "GitHub did not accept the follow change. Sign out and sign in again if Follow permission was not granted."
+                                followError = "GitHub did not accept the follow change. Sign in again if Follow permission was not granted."
                             )
                         }
                     } else {
                         _state.update { state ->
-                            val followerDelta = if (desired) 1 else -1
+                            val delta = if (desired) 1 else -1
                             state.copy(
                                 profile = state.profile?.copy(
-                                    followers = (state.profile.followers + followerDelta).coerceAtLeast(0)
+                                    followers = (state.profile.followers + delta).coerceAtLeast(0)
                                 ),
                                 isFollowing = desired,
                                 followUpdating = false,
@@ -158,12 +162,9 @@ class NativeProfileViewModel @Inject constructor(
                         }
                     }
                 }
-                .onFailure { error ->
+                .onFailure { problem ->
                     _state.update {
-                        it.copy(
-                            followUpdating = false,
-                            followError = error.profileMessage(followAction = true)
-                        )
+                        it.copy(followUpdating = false, followError = problem.profileMessage(followAction = true))
                     }
                 }
         }
@@ -173,65 +174,44 @@ class NativeProfileViewModel @Inject constructor(
         contentJob?.cancel()
         contentJob = viewModelScope.launch {
             _state.update {
-                it.copy(
-                    section = section,
-                    loading = true,
-                    error = null,
-                    repositories = emptyList(),
-                    people = emptyList()
-                )
+                it.copy(section = section, loading = true, error = null, people = emptyList())
             }
-
-            val profileResult = runCatchingPreservingCancellation { repository.profile(login) }
-            val profile = profileResult.getOrElse { error ->
-                _state.update { it.copy(loading = false, error = error.profileMessage()) }
-                return@launch
-            }
-
-            when (section) {
-                NativeProfileSection.Repositories -> {
-                    runCatchingPreservingCancellation { repository.repositories(login) }
-                        .onSuccess { repositories ->
-                            _state.update {
-                                it.copy(
-                                    profile = profile,
-                                    repositories = repositories,
-                                    people = emptyList(),
-                                    loading = false,
-                                    error = null
-                                )
-                            }
+            runCatchingPreservingCancellation {
+                coroutineScope {
+                    val profileTask = async { repository.profile(login) }
+                    val detailsTask = async { runCatchingPreservingCancellation { detailsResolver.resolve(login) }.getOrNull() }
+                    val repositoriesTask = async {
+                        if (_state.value.repositories.isNotEmpty()) _state.value.repositories else repository.repositories(login)
+                    }
+                    val peopleTask = async {
+                        when (section) {
+                            NativeProfileSection.Repositories -> emptyList()
+                            NativeProfileSection.Followers -> repository.followers(login)
+                            NativeProfileSection.Following -> repository.following(login)
                         }
-                        .onFailure { error ->
-                            _state.update {
-                                it.copy(profile = profile, loading = false, error = error.profileMessage())
-                            }
-                        }
+                    }
+                    LoadedProfile(
+                        profile = profileTask.await(),
+                        details = detailsTask.await(),
+                        repositories = repositoriesTask.await(),
+                        people = peopleTask.await()
+                    )
                 }
-                NativeProfileSection.Followers -> loadPeople(profile) { repository.followers(login) }
-                NativeProfileSection.Following -> loadPeople(profile) { repository.following(login) }
-            }
-        }
-    }
-
-    private suspend fun loadPeople(profile: GitHubUser, loader: suspend () -> List<GitHubUser>) {
-        runCatchingPreservingCancellation { loader() }
-            .onSuccess { people ->
+            }.onSuccess { loaded ->
                 _state.update {
                     it.copy(
-                        profile = profile,
-                        repositories = emptyList(),
-                        people = people,
+                        profile = loaded.profile,
+                        details = loaded.details,
+                        repositories = loaded.repositories,
+                        people = loaded.people,
                         loading = false,
                         error = null
                     )
                 }
+            }.onFailure { problem ->
+                _state.update { it.copy(loading = false, error = problem.profileMessage()) }
             }
-            .onFailure { error ->
-                _state.update {
-                    it.copy(profile = profile, loading = false, error = error.profileMessage())
-                }
-            }
+        }
     }
 
     private fun loadFollowStatus() {
@@ -240,24 +220,25 @@ class NativeProfileViewModel @Inject constructor(
             _state.update { it.copy(followStateLoaded = false, followError = null) }
             runCatchingPreservingCancellation { repository.isFollowing(login) }
                 .onSuccess { following ->
-                    _state.update {
-                        it.copy(
-                            isFollowing = following,
-                            followStateLoaded = true,
-                            followError = null
-                        )
-                    }
+                    _state.update { it.copy(isFollowing = following, followStateLoaded = true) }
                 }
-                .onFailure { error ->
+                .onFailure { problem ->
                     _state.update {
                         it.copy(
                             followStateLoaded = true,
-                            followError = error.profileMessage(followAction = true)
+                            followError = problem.profileMessage(followAction = true)
                         )
                     }
                 }
         }
     }
+
+    private data class LoadedProfile(
+        val profile: GitHubUser,
+        val details: GitHubProfileDetails?,
+        val repositories: List<GitHubRepositoryModel>,
+        val people: List<GitHubUser>
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -272,9 +253,23 @@ fun NativeProfileScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val errorMessage = state.error
+    val context = LocalContext.current
+    var query by rememberSaveable(state.profile?.login) { mutableStateOf("") }
+    var filter by rememberSaveable(state.profile?.login) { mutableStateOf(ProfileRepositoryFilter.All) }
 
     LaunchedEffect(mode, ownLogin) {
         viewModel.configureFollow(mode == AppMode.Connected, ownLogin)
+    }
+
+    val filteredRepositories = remember(state.repositories, query, filter) {
+        filterProfileRepositories(state.repositories, query, filter)
+    }
+
+    val openExternal: (String) -> Unit = { rawUrl ->
+        val url = if (rawUrl.startsWith("https://", ignoreCase = true)) rawUrl else "https://$rawUrl"
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
     }
 
     Scaffold(
@@ -282,21 +277,12 @@ fun NativeProfileScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = state.profile?.name ?: state.profile?.login ?: "GitHub profile",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            fontWeight = FontWeight.Bold
-                        )
-                        state.profile?.login?.let {
-                            Text(
-                                text = "@$it",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Text(
+                        state.profile?.login ?: "GitHub profile",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Black
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -304,41 +290,77 @@ fun NativeProfileScreen(
                     }
                 },
                 actions = {
+                    state.profile?.login?.let { login ->
+                        IconButton(
+                            onClick = {
+                                val share = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "https://github.com/$login")
+                                }
+                                context.startActivity(Intent.createChooser(share, "Share profile"))
+                            }
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Share profile")
+                        }
+                    }
                     IconButton(onClick = viewModel::refresh) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh profile")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 36.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                NativeProfileHeader(state = state, onToggleFollow = viewModel::toggleFollow)
+                ProfileDashboardHeader(
+                    profile = state.profile,
+                    isOwnProfile = state.isOwnProfile,
+                    canFollow = state.canFollow,
+                    followStateLoaded = state.followStateLoaded,
+                    isFollowing = state.isFollowing,
+                    followUpdating = state.followUpdating,
+                    onToggleFollow = viewModel::toggleFollow,
+                    onRepositories = { viewModel.selectSection(NativeProfileSection.Repositories) },
+                    onFollowers = { viewModel.selectSection(NativeProfileSection.Followers) },
+                    onFollowing = { viewModel.selectSection(NativeProfileSection.Following) }
+                )
             }
+
+            item { ContributionActivityCard(state.details) }
+            item { ProfileIdentitySummary(state.profile, state.details, openExternal) }
             item {
-                ProfileSectionTabs(
+                ProfileSectionSelector(
                     selected = state.section,
                     onSelected = viewModel::selectSection
                 )
             }
 
             state.followError?.let { message ->
+                item { GlassCard { Text(message, color = MaterialTheme.colorScheme.error) } }
+            }
+
+            if (state.section == NativeProfileSection.Repositories) {
                 item {
-                    GlassCard { Text(message, color = MaterialTheme.colorScheme.error) }
+                    ProfileRepositoryToolbar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        selectedFilter = filter,
+                        onFilterChange = { filter = it },
+                        shown = filteredRepositories.size,
+                        total = state.repositories.size
+                    )
                 }
             }
 
             when {
                 state.loading -> item {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 54.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator()
@@ -356,23 +378,26 @@ fun NativeProfileScreen(
                         }
                     }
                 }
-                state.section == NativeProfileSection.Repositories && state.repositories.isEmpty() -> item {
-                    NativeProfileEmpty("No public repositories to show.")
+                state.section == NativeProfileSection.Repositories && filteredRepositories.isEmpty() -> item {
+                    ProfileEmpty(
+                        if (query.isBlank() && filter == ProfileRepositoryFilter.All) {
+                            "No public repositories to show."
+                        } else {
+                            "No repositories match this search and filter."
+                        }
+                    )
                 }
                 state.section != NativeProfileSection.Repositories && state.people.isEmpty() -> item {
-                    NativeProfileEmpty("No ${state.section.title.lowercase()} to show.")
+                    ProfileEmpty("No ${state.section.title.lowercase()} to show.")
                 }
                 state.section == NativeProfileSection.Repositories -> items(
-                    items = state.repositories,
-                    key = { it.id }
+                    items = filteredRepositories,
+                    key = GitHubRepositoryModel::id
                 ) { repository ->
-                    NativeRepositoryCard(repository) { onOpenRepository(repository) }
+                    ProfileRepositoryCard(repository) { onOpenRepository(repository) }
                 }
-                else -> items(
-                    items = state.people,
-                    key = { it.id }
-                ) { person ->
-                    NativeProfilePersonCard(person) { onOpenProfile(person.login) }
+                else -> items(items = state.people, key = GitHubUser::id) { person ->
+                    ProfilePersonCard(person) { onOpenProfile(person.login) }
                 }
             }
         }
@@ -380,112 +405,7 @@ fun NativeProfileScreen(
 }
 
 @Composable
-private fun NativeProfileHeader(state: NativeProfileUiState, onToggleFollow: () -> Unit) {
-    val profile = state.profile
-    GlassCard(contentPadding = PaddingValues(18.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (!profile?.avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = profile?.avatarUrl,
-                        contentDescription = "${profile?.login} avatar",
-                        modifier = Modifier.size(76.dp).clip(MaterialTheme.shapes.extraLarge)
-                    )
-                } else {
-                    Surface(
-                        modifier = Modifier.size(76.dp),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = profile?.login?.take(2)?.uppercase() ?: "GH",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = profile?.name ?: profile?.login ?: "Loading profile",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    profile?.login?.let {
-                        Text(
-                            text = "@$it",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    profile?.bio?.takeIf { it.isNotBlank() }?.let {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = it,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ProfileMetric("Repositories", profile?.publicRepos ?: 0, Modifier.weight(1f))
-                ProfileMetric("Followers", profile?.followers ?: 0, Modifier.weight(1f))
-                ProfileMetric("Following", profile?.following ?: 0, Modifier.weight(1f))
-            }
-
-            if (state.canFollow) {
-                Button(
-                    onClick = onToggleFollow,
-                    enabled = state.followStateLoaded && !state.followUpdating,
-                    modifier = Modifier.fillMaxWidth().height(50.dp)
-                ) {
-                    if (!state.followStateLoaded || state.followUpdating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Icon(
-                            imageVector = if (state.isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
-                            contentDescription = null
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (state.isFollowing) "Unfollow" else "Follow", fontWeight = FontWeight.Bold)
-                    }
-                }
-            } else if (state.isOwnProfile) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .10f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .24f))
-                ) {
-                    Text(
-                        text = "This is your connected GitHub account",
-                        modifier = Modifier.padding(14.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileSectionTabs(
+private fun ProfileSectionSelector(
     selected: NativeProfileSection,
     onSelected: (NativeProfileSection) -> Unit
 ) {
@@ -503,22 +423,14 @@ private fun ProfileSectionTabs(
                     onClick = { onSelected(section) },
                     modifier = Modifier.weight(1f),
                     shape = MaterialTheme.shapes.large,
-                    color = if (section == selected) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    },
-                    contentColor = if (section == selected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color = if (selected == section) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = if (selected == section) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
                     Text(
-                        text = section.title,
+                        section.title,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (section == selected) FontWeight.Black else FontWeight.SemiBold,
+                        fontWeight = if (selected == section) FontWeight.Black else FontWeight.SemiBold,
                         maxLines = 1
                     )
                 }
@@ -528,124 +440,10 @@ private fun ProfileSectionTabs(
 }
 
 @Composable
-private fun ProfileMetric(label: String, value: Int, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(value.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-        }
-    }
-}
-
-@Composable
-private fun NativeRepositoryCard(repository: GitHubRepositoryModel, onClick: () -> Unit) {
-    GlassCard(onClick = onClick) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = repository.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = repository.owner.login,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = repository.description ?: "No repository description.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text("★ ${repository.stars}", style = MaterialTheme.typography.labelMedium)
-                Text("Forks ${repository.forks}", style = MaterialTheme.typography.labelMedium)
-                Text(
-                    text = repository.language ?: "Repository",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun NativeProfilePersonCard(person: GitHubUser, onClick: () -> Unit) {
-    GlassCard(onClick = onClick) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (person.avatarUrl.isNotBlank()) {
-                AsyncImage(
-                    model = person.avatarUrl,
-                    contentDescription = "${person.login} avatar",
-                    modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.extraLarge)
-                )
-            } else {
-                Surface(
-                    modifier = Modifier.size(56.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = person.login.take(2).uppercase(),
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = person.name ?: person.login,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "@${person.login}",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                person.bio?.takeIf { it.isNotBlank() }?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NativeProfileEmpty(message: String) {
+private fun ProfileEmpty(message: String) {
     GlassCard {
         Text(
-            text = message,
+            message,
             modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.titleMedium
@@ -654,10 +452,10 @@ private fun NativeProfileEmpty(message: String) {
 }
 
 private fun Throwable.profileMessage(followAction: Boolean = false): String = when (this) {
-    is retrofit2.HttpException -> when (code()) {
+    is HttpException -> when (code()) {
         401 -> "Your GitHub session expired. Sign in again."
         403 -> if (followAction) {
-            "GitHub denied Follow access. Sign out and sign in again to grant the user:follow permission."
+            "GitHub denied Follow access. Sign out and sign in again to grant user:follow permission."
         } else {
             "GitHub denied this profile request or the API limit was reached."
         }
