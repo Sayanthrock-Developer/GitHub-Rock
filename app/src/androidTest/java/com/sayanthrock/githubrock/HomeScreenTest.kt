@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
@@ -15,24 +16,42 @@ import org.junit.Test
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun homeStartsDirectlyWithDiscoveryFeedWithoutWelcomeCard() {
+    @Test fun homeStartsWithPlatformAndCategoryDiscovery() {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
                     repositories = emptyList(),
-                    runs = emptyList(),
                     onOpenRepo = {},
-                    onOpenBuilds = {}
                 )
             }
         }
 
-        compose.onNodeWithText("GitHub Rock").assertDoesNotExist()
-        compose.onNodeWithText("A focused GitHub control centre with a store-style discovery experience for repositories, releases and Android builds.").assertDoesNotExist()
-        compose.onNodeWithText("API left").assertDoesNotExist()
-        compose.onNodeWithText("Open Builds").assertDoesNotExist()
-        compose.onNodeWithText("Recent").assertIsDisplayed()
+        compose.onNodeWithText("GitHub Rock").assertIsDisplayed()
+        compose.onNodeWithText("Browsing").assertIsDisplayed()
+        compose.onNodeWithText("All Platforms").assertIsDisplayed()
+        compose.onAllNodesWithText("All")[0].assertIsDisplayed()
+        compose.onNodeWithText("AI").assertIsDisplayed()
+        compose.onNodeWithText("Privacy").assertIsDisplayed()
+        compose.onNodeWithText("Updated").assertIsDisplayed()
         compose.onNodeWithText("No repositories found").assertIsDisplayed()
+        compose.onNodeWithText("A focused GitHub control centre with a store-style discovery experience for repositories, releases and Android builds.")
+            .assertDoesNotExist()
+    }
+
+    @Test fun platformButtonOpensOperatingSystemPicker() {
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                HomeScreen(
+                    repositories = emptyList(),
+                    onOpenRepo = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("All Platforms").performClick()
+        compose.onNodeWithText("Choose your OS").assertIsDisplayed()
+        compose.onNodeWithText("Android").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Android").assertIsDisplayed()
     }
 
     @Test fun repositoryDescriptionUsesFullCardTouchTarget() {
@@ -42,16 +61,16 @@ class HomeScreenTest {
             name = "GitHub-Rock",
             fullName = "SayanthRock/GitHub-Rock",
             owner = Owner(login = "SayanthRock"),
-            description = "Native Android GitHub control centre"
+            description = "Native Android GitHub control centre",
+            language = "Kotlin",
+            topics = listOf("android", "developer-tool"),
         )
 
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
                     repositories = listOf(repository),
-                    runs = emptyList(),
                     onOpenRepo = { openedRepository = it.id == repository.id },
-                    onOpenBuilds = {}
                 )
             }
         }
@@ -60,15 +79,13 @@ class HomeScreenTest {
         compose.runOnIdle { assertTrue(openedRepository) }
     }
 
-    @Test fun loadingDashboardShowsProgressInsteadOfFalseEmptyState() {
+    @Test fun loadingHomeShowsProgressInsteadOfFalseEmptyState() {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 HomeScreen(
                     repositories = emptyList(),
-                    runs = emptyList(),
                     onOpenRepo = {},
-                    onOpenBuilds = {},
-                    isLoading = true
+                    isLoading = true,
                 )
             }
         }

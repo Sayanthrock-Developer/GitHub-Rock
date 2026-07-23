@@ -149,9 +149,7 @@ fun MainNavigation(
                         composable(TopDestination.Home.route) {
                             HomeScreen(
                                 repositories = state.repositories,
-                                runs = state.workflowRuns,
                                 onOpenRepo = openRepo,
-                                onOpenBuilds = { navController.navigate(TopDestination.Builds.route) },
                                 isLoading = state.isLoading,
                                 isRefreshing = state.isRefreshing,
                                 onRefresh = onRefresh
