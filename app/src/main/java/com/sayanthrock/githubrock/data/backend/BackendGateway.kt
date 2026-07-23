@@ -21,7 +21,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 
-internal data class BackendConnectionSnapshot(
+data class BackendConnectionSnapshot(
     val endpoint: String,
     val health: BackendHealthResponse,
     val config: BackendPublicConfigResponse,
