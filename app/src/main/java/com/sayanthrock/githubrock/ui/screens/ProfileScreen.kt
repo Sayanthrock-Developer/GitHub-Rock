@@ -1,7 +1,5 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +23,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -51,7 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
-import com.sayanthrock.githubrock.core.model.GitHubProfileDetails
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
@@ -63,7 +59,6 @@ import com.sayanthrock.githubrock.ui.ProfileExplorerState
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,14 +68,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal data class ConnectedProfileDashboardUiState(
+/** Repository content loaded for the connected-account profile dashboard. */
+data class ConnectedProfileDashboardUiState(
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null
 )
 
 @HiltViewModel
-internal class ConnectedProfileDashboardViewModel @Inject constructor(
+class ConnectedProfileDashboardViewModel @Inject constructor(
     private val repository: NativeProfileRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(ConnectedProfileDashboardUiState())
