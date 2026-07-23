@@ -121,7 +121,6 @@ fun GitHubSettingsScreen(
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 40.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { GitHubSettingsHero(totalDestinations) }
             item {
                 StandardSectionHeader(
                     title = "GitHub Rock",
@@ -203,55 +202,6 @@ fun GitHubSettingsScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun GitHubSettingsHero(totalDestinations: Int) {
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(54.dp),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
-                ) {
-                    Icon(
-                        Icons.Default.Settings,
-                        contentDescription = null,
-                        modifier = Modifier.padding(14.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        "Mobile settings experience",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        "Profile and repositories use native screens. Every other supported GitHub setting opens inside GitHub Rock instead of an external browser.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-            Text(
-                "$totalDestinations GitHub tools available in the app",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "Password, passkey, token, session, authorization, and billing changes remain on GitHub's secure pages inside a protected in-app panel. GitHub Rock never injects your OAuth token into web content.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
         }
     }
 }
