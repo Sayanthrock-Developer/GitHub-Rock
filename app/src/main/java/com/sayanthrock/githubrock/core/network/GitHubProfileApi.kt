@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.core.network
 
+import com.sayanthrock.githubrock.core.model.GitHubOrganizationAccount
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import retrofit2.Response
@@ -22,6 +23,22 @@ interface GitHubProfileApi {
         @Query("per_page") perPage: Int = 100,
         @Query("page") page: Int = 1
     ): List<GitHubRepositoryModel>
+
+    @GET("orgs/{organization}/repos")
+    suspend fun organizationRepositories(
+        @Path("organization") organization: String,
+        @Query("type") type: String = "public",
+        @Query("sort") sort: String = "updated",
+        @Query("direction") direction: String = "desc",
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<GitHubRepositoryModel>
+
+    @GET("user/orgs")
+    suspend fun organizations(
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<GitHubOrganizationAccount>
 
     @GET("users/{username}/followers")
     suspend fun followers(
