@@ -3,28 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07111f">
-  <meta name="description" content="GitHub Rock is a secure Android developer control centre for GitHub repositories, Actions, releases, downloads, and APK inspection.">
-  <title>GitHub Rock — Developer control centre for Android</title>
+  <meta name="theme-color" content="#090b10">
+  <meta name="description" content="GitHub Rock is a native Android control centre for repositories, Actions, releases, downloads, and secure GitHub workflows.">
+  <meta property="og:title" content="GitHub Rock — GitHub, made mobile">
+  <meta property="og:description" content="A secure native Android workspace for repositories, Actions, releases, downloads, and APK inspection.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sayanthrock-developer.github.io/GitHub-Rock/">
+  <title>GitHub Rock — GitHub, made mobile</title>
   <link rel="stylesheet" href="./assets/styles.css">
   <script defer src="./assets/app.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="site-header" data-header>
     <div class="shell nav-shell">
       <a class="brand" href="./" aria-label="GitHub Rock home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 48 48" role="img"><path d="M14 10h20a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8V18a8 8 0 0 1 8-8Z"/><path d="m18 19-5 5 5 5M30 19l5 5-5 5M27 16l-6 16"/></svg>
         </span>
-        <span>GitHub Rock</span>
+        <span class="brand-copy"><strong>GitHub Rock</strong><small>Developer control centre</small></span>
       </a>
 
       <nav class="desktop-nav" aria-label="Primary navigation">
-        <a href="#features">Features</a>
+        <a href="#discover">Discover</a>
+        <a href="#capabilities">Capabilities</a>
         <a href="#security">Security</a>
-        <a href="./privacy-policy/">Privacy</a>
-        <a href="./terms/">Terms</a>
+        <a href="#roadmap">Roadmap</a>
       </nav>
 
       <div class="nav-actions">
@@ -32,7 +37,8 @@
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41"/></svg>
           <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
         </button>
-        <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a>
+        <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">Source</a>
+        <a class="button button-small button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Get the app</a>
       </div>
     </div>
   </header>
@@ -40,58 +46,128 @@
   <main id="main">
     <section class="hero shell">
       <div class="hero-copy reveal">
-        <div class="eyebrow"><span class="status-dot"></span> Open-source Android developer tool</div>
-        <h1>Control your GitHub workflow from one clean Android workspace.</h1>
-        <p class="hero-lead">Browse repositories, manage issues and pull requests, monitor Actions, download verified artifacts, and inspect APK files without giving the app your GitHub password.</p>
+        <div class="eyebrow"><span class="status-dot"></span> Native Android · Open source</div>
+        <h1>GitHub, made <span>mobile.</span></h1>
+        <p class="hero-lead">A focused Android workspace for discovering repositories, managing real GitHub work, monitoring Actions, handling releases, and inspecting downloads without handing over your password.</p>
         <div class="hero-actions">
-          <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download releases</a>
-          <a class="button button-secondary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">Explore on GitHub</a>
+          <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download GitHub Rock</a>
+          <a class="button button-secondary" href="#discover">Explore the experience</a>
         </div>
         <div class="trust-row" aria-label="Product qualities">
           <span>Android 10+</span>
           <span>OAuth Device Flow</span>
-          <span>Apache 2.0</span>
+          <span>Review-first changes</span>
+          <span>SHA-256 verification</span>
         </div>
       </div>
 
-      <div class="hero-visual reveal" aria-label="GitHub Rock interface preview">
-        <div class="glow glow-one"></div>
-        <div class="glow glow-two"></div>
-        <div class="phone-frame">
-          <div class="phone-bar"><span></span><strong>GitHub Rock</strong><i></i></div>
-          <div class="profile-card">
+      <div class="hero-visual reveal" aria-label="GitHub Rock mobile interface preview">
+        <div class="ambient ambient-one"></div>
+        <div class="ambient ambient-two"></div>
+        <div class="device-shell">
+          <div class="device-topbar">
+            <span class="device-time">9:41</span>
+            <span class="device-island"></span>
+            <span class="device-status">● ●</span>
+          </div>
+          <div class="app-head">
+            <div>
+              <small>Good evening</small>
+              <strong>Sayanth Rock</strong>
+            </div>
             <div class="avatar">SR</div>
-            <div><strong>Sayanth Rock</strong><span>Connected securely</span></div>
-            <div class="secure-badge">Protected</div>
           </div>
-          <div class="metric-grid">
-            <div><span>Repositories</span><strong>24</strong></div>
-            <div><span>Actions</span><strong>8</strong></div>
-            <div><span>Downloads</span><strong>12</strong></div>
+          <label class="preview-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" placeholder="Find a repository" aria-label="Find a repository in the preview" data-repo-search>
+          </label>
+          <div class="preview-tabs" role="tablist" aria-label="Repository feed">
+            <button class="is-active" type="button" data-feed-filter="all">Discover</button>
+            <button type="button" data-feed-filter="android">Android</button>
+            <button type="button" data-feed-filter="automation">Actions</button>
           </div>
-          <div class="activity-card">
-            <div class="activity-head"><strong>Workflow activity</strong><span>Live</span></div>
-            <div class="activity-line"><i class="success"></i><span>Android CI</span><b>Passed</b></div>
-            <div class="activity-line"><i class="running"></i><span>Release build</span><b>Running</b></div>
-            <div class="activity-line"><i></i><span>APK verification</span><b>Ready</b></div>
+          <div class="preview-list" data-preview-list>
+            <article class="repo-card" data-repo-card data-name="GitHub Rock" data-tags="android actions kotlin releases">
+              <div class="repo-icon repo-icon-rock">R</div>
+              <div class="repo-copy"><strong>GitHub Rock</strong><span>Native GitHub control centre</span><div><em>Kotlin</em><b>★ 128</b></div></div>
+              <span class="repo-arrow">↗</span>
+            </article>
+            <article class="repo-card" data-repo-card data-name="Rock Release Hub" data-tags="android releases automation">
+              <div class="repo-icon repo-icon-release">RH</div>
+              <div class="repo-copy"><strong>Rock Release Hub</strong><span>Release discovery and downloads</span><div><em>Compose</em><b>12 assets</b></div></div>
+              <span class="repo-arrow">↗</span>
+            </article>
+            <article class="repo-card" data-repo-card data-name="Android Build" data-tags="actions automation android ci">
+              <div class="repo-icon repo-icon-build">CI</div>
+              <div class="repo-copy"><strong>Android Build</strong><span>Release workflow is running</span><div><em class="status-running">In progress</em><b>2m 14s</b></div></div>
+              <span class="repo-arrow">↗</span>
+            </article>
           </div>
+          <div class="preview-empty" data-preview-empty hidden>No matching repository</div>
+          <div class="device-nav" aria-hidden="true"><span class="is-active">⌂</span><span>⌕</span><span>⇩</span><span>◎</span></div>
         </div>
       </div>
     </section>
 
-    <section class="section shell" id="features">
+    <section class="section shell" id="discover">
+      <div class="section-heading centered reveal">
+        <div class="eyebrow">Discovery-first experience</div>
+        <h2>Everything important, surfaced before you search.</h2>
+        <p>GitHub Rock brings repository discovery, workflow activity, releases, and downloads into one coherent mobile workspace.</p>
+      </div>
+
+      <div class="workspace reveal">
+        <div class="workspace-sidebar">
+          <div class="workspace-brand"><span class="brand-mark mini" aria-hidden="true">R</span><strong>GitHub Rock</strong></div>
+          <div class="workspace-tabs" role="tablist" aria-label="Workspace preview">
+            <button class="is-active" type="button" data-workspace-tab="discover-panel"><span>01</span>Discover</button>
+            <button type="button" data-workspace-tab="actions-panel"><span>02</span>Actions</button>
+            <button type="button" data-workspace-tab="releases-panel"><span>03</span>Releases</button>
+          </div>
+          <div class="workspace-account"><span class="avatar small">SR</span><div><strong>Sayanth Rock</strong><small>Securely connected</small></div></div>
+        </div>
+
+        <div class="workspace-content">
+          <section class="workspace-panel is-active" id="discover-panel" data-workspace-panel>
+            <div class="workspace-head"><div><small>Explore</small><h3>Find your next project</h3></div><span class="live-chip">Live data ready</span></div>
+            <div class="segment-row"><span class="is-active">Recent</span><span>Popular</span><span>Activity</span></div>
+            <div class="project-grid">
+              <article class="project-card featured"><div class="project-rank">01</div><div class="project-logo">GR</div><div><strong>GitHub Rock</strong><p>Repositories, Actions, releases, code, and downloads.</p><div class="project-meta"><span>Kotlin</span><span>★ 128</span><span>Updated today</span></div></div></article>
+              <article class="project-card"><div class="project-rank">02</div><div class="project-logo purple">CI</div><div><strong>Build workflows</strong><p>Dispatch, monitor, inspect logs, and collect artifacts.</p><div class="project-meta"><span>YAML</span><span>8 runs</span><span>2 active</span></div></div></article>
+              <article class="project-card"><div class="project-rank">03</div><div class="project-logo green">APK</div><div><strong>Verified downloads</strong><p>Pause, resume, checksum, inspect, share, and install safely.</p><div class="project-meta"><span>SHA-256</span><span>12 files</span><span>Protected</span></div></div></article>
+            </div>
+          </section>
+
+          <section class="workspace-panel" id="actions-panel" data-workspace-panel hidden>
+            <div class="workspace-head"><div><small>Automation</small><h3>Workflow activity</h3></div><span class="live-chip warning">2 running</span></div>
+            <div class="run-list">
+              <article><span class="run-state success">✓</span><div><strong>Android CI</strong><small>main · assembleDebug</small></div><b>Passed</b></article>
+              <article><span class="run-state running">↻</span><div><strong>Publish Android Release</strong><small>v0.2.0 · certificate verification</small></div><b>Running</b></article>
+              <article><span class="run-state neutral">•</span><div><strong>GitHub Pages</strong><small>website deployment</small></div><b>Queued</b></article>
+            </div>
+          </section>
+
+          <section class="workspace-panel" id="releases-panel" data-workspace-panel hidden>
+            <div class="workspace-head"><div><small>Release centre</small><h3>Assets for every platform</h3></div><span class="live-chip">Verified</span></div>
+            <div class="release-card"><div class="release-top"><div><strong>GitHub Rock v0.2.0</strong><small>Latest stable release</small></div><span>Latest</span></div><div class="asset-row"><div><b>APK</b><span>Android · arm64-v8a</span></div><strong>24.8 MB</strong><button type="button">Download</button></div><div class="asset-row"><div><b>SHA256</b><span>Checksum file</span></div><strong>128 B</strong><button type="button">Verify</button></div><div class="asset-row"><div><b>CERT</b><span>Signing certificate fingerprint</span></div><strong>128 B</strong><button type="button">Inspect</button></div></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="capabilities">
       <div class="section-heading reveal">
-        <div class="eyebrow">Everything in one place</div>
-        <h2>Built for real GitHub work, not simulated screens.</h2>
-        <p>Every connected action uses GitHub’s official APIs or trusted system components, with clear confirmations for sensitive operations.</p>
+        <div class="eyebrow">One control centre</div>
+        <h2>Real GitHub work. Native Android clarity.</h2>
+        <p>The interface stays simple while the underlying workflows remain capable, transparent, and safe.</p>
       </div>
       <div class="feature-grid">
-        <article class="feature-card reveal"><div class="feature-icon">01</div><h3>Repository control</h3><p>Browse code, issues, pull requests, releases, branches, and repository activity from an adaptive Android interface.</p></article>
-        <article class="feature-card reveal"><div class="feature-icon">02</div><h3>Actions monitoring</h3><p>Dispatch supported workflows, follow jobs and steps, inspect logs, and move completed artifacts into Downloads.</p></article>
-        <article class="feature-card reveal"><div class="feature-icon">03</div><h3>Safe code changes</h3><p>Create review branches and pull requests for file edits instead of silently overwriting protected default branches.</p></article>
-        <article class="feature-card reveal"><div class="feature-icon">04</div><h3>Verified downloads</h3><p>Track transfers, calculate SHA-256 fingerprints, inspect APK metadata, and hand installation to Android’s official installer.</p></article>
-        <article class="feature-card reveal"><div class="feature-icon">05</div><h3>Custom interface</h3><p>Choose display density, typography, themes, accent colors, loading styles, code palettes, and reduced motion.</p></article>
-        <article class="feature-card reveal"><div class="feature-icon">06</div><h3>Guest and demo access</h3><p>Explore public repositories or use an isolated demo workspace without mixing sample data with a connected account.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">01</div><h3>Repository discovery</h3><p>Browse authorized and public repositories with clear filters, rich metadata, recent activity, and adaptive layouts.</p><span>Explore repositories →</span></article>
+        <article class="feature-card reveal"><div class="feature-icon">02</div><h3>Actions command centre</h3><p>Dispatch workflows, monitor jobs and steps, inspect full logs, rerun failures, and collect build artifacts.</p><span>Follow every run →</span></article>
+        <article class="feature-card reveal"><div class="feature-icon">03</div><h3>Review-first editing</h3><p>Create, edit, move, rename, and delete repository files through reviewed branches and pull requests.</p><span>Protect default branches →</span></article>
+        <article class="feature-card reveal"><div class="feature-icon">04</div><h3>Release browser</h3><p>Understand release assets by platform, format, architecture, version, and file size before downloading.</p><span>Choose the right asset →</span></article>
+        <article class="feature-card reveal"><div class="feature-icon">05</div><h3>Verified downloads</h3><p>Pause, resume, retry, calculate SHA-256, inspect APK metadata, and hand installation to Android.</p><span>Download with confidence →</span></article>
+        <article class="feature-card reveal"><div class="feature-icon">06</div><h3>Personalized workspace</h3><p>Use system, light, dark, AMOLED, accent, typography, log, motion, and feature-control preferences.</p><span>Make it yours →</span></article>
       </div>
     </section>
 
@@ -99,35 +175,46 @@
       <div class="security-panel reveal">
         <div class="security-copy">
           <div class="eyebrow">Security by design</div>
-          <h2>Your GitHub password never enters GitHub Rock.</h2>
-          <p>Sign-in uses GitHub OAuth Device Flow in your trusted browser. Tokens stay encrypted on your device using Android Keystore-backed storage.</p>
-          <a class="text-link" href="./privacy-policy/">Read the full privacy policy <span aria-hidden="true">→</span></a>
+          <h2>Your GitHub password never enters the app.</h2>
+          <p>Authorization happens on GitHub’s trusted page. GitHub Rock stores session tokens locally using Android Keystore-backed encryption and keeps sensitive operations explicit.</p>
+          <div class="security-actions"><a class="button button-primary" href="./privacy-policy/">Privacy policy</a><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/security">Security policy</a></div>
         </div>
-        <div class="security-list">
-          <div><span class="check">✓</span><p><strong>Official authorization</strong><small>Account approval happens on GitHub’s website.</small></p></div>
-          <div><span class="check">✓</span><p><strong>Encrypted local session</strong><small>Access tokens are protected by Android Keystore-backed encryption.</small></p></div>
-          <div><span class="check">✓</span><p><strong>No cleartext traffic</strong><small>Network communication uses HTTPS and sensitive headers are redacted.</small></p></div>
-          <div><span class="check">✓</span><p><strong>Review-first changes</strong><small>Repository edits can be isolated in branches and pull requests.</small></p></div>
+        <div class="security-stack">
+          <article><span>01</span><div><strong>Official OAuth Device Flow</strong><p>Approve access only on GitHub’s own authorization page.</p></div></article>
+          <article><span>02</span><div><strong>Encrypted local tokens</strong><p>Android Keystore-backed storage protects the connected session.</p></div></article>
+          <article><span>03</span><div><strong>Verified release pipeline</strong><p>Checksums and certificate fingerprints are produced before publication.</p></div></article>
+          <article><span>04</span><div><strong>No silent branch bypass</strong><p>Code changes are designed around review branches and pull requests.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="roadmap">
+      <div class="roadmap-panel reveal">
+        <div class="roadmap-copy"><div class="eyebrow">Built in public</div><h2>The next layer is already mapped.</h2><p>GitHub Rock evolves through testable phases instead of decorative promises.</p></div>
+        <div class="roadmap-list">
+          <article><span>Now</span><strong>Discovery feed and repository ranking</strong><small>Recent, popular, and activity-led browsing.</small></article>
+          <article><span>Next</span><strong>Richer diffs and dynamic workflow inputs</strong><small>More complete pull-request and Actions workflows.</small></article>
+          <article><span>Later</span><strong>Biometrics, foldables, and GraphQL batching</strong><small>Stronger security and large-screen performance.</small></article>
         </div>
       </div>
     </section>
 
     <section class="section shell">
       <div class="cta-panel reveal">
-        <div><div class="eyebrow">Open development</div><h2>Inspect the code. Follow every change.</h2><p>GitHub Rock is developed publicly, with Android CI, release verification, and documented security practices.</p></div>
-        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">Open repository</a><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">Get support</a></div>
+        <div><div class="eyebrow">Your repositories. Your workflow.</div><h2>Take GitHub Rock with you.</h2><p>Download the latest release, inspect the source, and follow development directly on GitHub.</p></div>
+        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download release</a><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="shell footer-grid">
-      <div><a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M14 10h20a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8V18a8 8 0 0 1 8-8Z"/><path d="m18 19-5 5 5 5M30 19l5 5-5 5M27 16l-6 16"/></svg></span><span>GitHub Rock</span></a><p>Native Android developer control centre for GitHub.</p></div>
-      <div><strong>Product</strong><a href="#features">Features</a><a href="#security">Security</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a></div>
+      <div><a class="brand" href="./"><span class="brand-mark mini" aria-hidden="true">R</span><span class="brand-copy"><strong>GitHub Rock</strong><small>GitHub, made mobile.</small></span></a><p>Native Android developer control centre for GitHub.</p></div>
+      <div><strong>Product</strong><a href="#discover">Discover</a><a href="#capabilities">Capabilities</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a></div>
       <div><strong>Legal</strong><a href="./privacy-policy/">Privacy Policy</a><a href="./terms/">Terms of Service</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/LICENSE">License</a></div>
       <div><strong>Community</strong><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock">GitHub</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">Support</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/security">Security</a></div>
     </div>
-    <div class="shell footer-bottom"><span>© 2026 Sayanth Rock.</span><span>GitHub Rock is not affiliated with GitHub, Inc.</span></div>
+    <div class="shell footer-bottom"><span>© 2026 Sayanth Rock.</span><span>Independent open-source project. Not affiliated with GitHub, Inc.</span></div>
   </footer>
 </body>
 </html>
