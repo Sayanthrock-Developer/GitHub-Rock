@@ -1,8 +1,8 @@
 package com.sayanthrock.githubrock
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
@@ -29,7 +29,7 @@ class HomeScreenTest {
         compose.onNodeWithText("GitHub Rock").assertIsDisplayed()
         compose.onNodeWithText("Browsing").assertIsDisplayed()
         compose.onNodeWithText("All Platforms").assertIsDisplayed()
-        compose.onNodeWithText("All").assertIsDisplayed()
+        compose.onAllNodesWithText("All")[0].assertIsDisplayed()
         compose.onNodeWithText("AI").assertIsDisplayed()
         compose.onNodeWithText("Privacy").assertIsDisplayed()
         compose.onNodeWithText("Updated").assertIsDisplayed()
