@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,11 +44,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -91,13 +92,32 @@ fun ProfileScreen(
     onOpenFeatures: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAppInfo: () -> Unit = {},
-    onOpenTweaks: () -> Unit = {},
-    onOpenLibrary: (ProfileLibrarySection) -> Unit = {},
-    onOpenUpdates: (ProfileUpdateSection) -> Unit = {},
     onOpenGitHubUrl: (String) -> Unit,
     onLogout: () -> Unit,
     dashboardStateOverride: ConnectedProfileDashboardUiState? = null
 ) {
+    var activeLibraryRoute by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeUpdateRoute by rememberSaveable { mutableStateOf<String?>(null) }
+
+    activeLibraryRoute?.let { route ->
+        ProfileLibraryScreen(
+            section = ProfileLibrarySection.fromRoute(route),
+            onBack = { activeLibraryRoute = null },
+            onOpenRepository = { repository ->
+                onOpenGitHubUrl(repository.htmlUrl.ifBlank { "https://github.com/${repository.fullName}" })
+            }
+        )
+        return
+    }
+
+    activeUpdateRoute?.let { route ->
+        ProfileUpdatesScreen(
+            section = ProfileUpdateSection.fromRoute(route),
+            onBack = { activeUpdateRoute = null }
+        )
+        return
+    }
+
     val displayedProfile = explorerState.snapshot?.profile ?: profile
     val login = normalizedGitHubLogin(displayedProfile?.login)
     val context = LocalContext.current
@@ -139,19 +159,19 @@ fun ProfileScreen(
             icon = Icons.Default.Star,
             title = "Stars",
             subtitle = "Your starred repositories from GitHub",
-            onClick = { onOpenLibrary(ProfileLibrarySection.Stars) }
+            onClick = { activeLibraryRoute = ProfileLibrarySection.Stars.route }
         ),
         ProfileMenuItem(
             icon = Icons.Default.Favorite,
             title = "Favourites",
             subtitle = "Repositories pinned inside GitHub Rock",
-            onClick = { onOpenLibrary(ProfileLibrarySection.Favourites) }
+            onClick = { activeLibraryRoute = ProfileLibrarySection.Favourites.route }
         ),
         ProfileMenuItem(
             icon = Icons.Default.History,
             title = "Recently viewed",
             subtitle = "Repositories you have opened on this device",
-            onClick = { onOpenLibrary(ProfileLibrarySection.RecentlyViewed) }
+            onClick = { activeLibraryRoute = ProfileLibrarySection.RecentlyViewed.route }
         )
     )
 
@@ -160,13 +180,13 @@ fun ProfileScreen(
             icon = Icons.Default.AutoAwesome,
             title = "What's new",
             subtitle = "Highlights from recent GitHub Rock updates",
-            onClick = { onOpenUpdates(ProfileUpdateSection.WhatsNew) }
+            onClick = { activeUpdateRoute = ProfileUpdateSection.WhatsNew.route }
         ),
         ProfileMenuItem(
             icon = Icons.Default.Announcement,
             title = "Announcements",
             subtitle = "Security, account, and important app notices",
-            onClick = { onOpenUpdates(ProfileUpdateSection.Announcements) }
+            onClick = { activeUpdateRoute = ProfileUpdateSection.Announcements.route }
         )
     )
 
@@ -174,8 +194,8 @@ fun ProfileScreen(
         ProfileMenuItem(
             icon = Icons.Default.Tune,
             title = "Tweaks",
-            subtitle = "Appearance, theme, display, and app behaviour",
-            onClick = onOpenTweaks
+            subtitle = "App settings, theme, network, and display",
+            onClick = onOpenSettings
         ),
         ProfileMenuItem(
             icon = Icons.Default.Settings,
@@ -328,7 +348,7 @@ private fun CompactProfileCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainer,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shadowElevation = 1.dp
     ) {
         Column(
