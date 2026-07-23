@@ -74,10 +74,15 @@ class BackendGateway @Inject constructor(
         val endpoint = rawEndpoint?.let(::requireBackendBaseUrl)
             ?: requireNotNull(endpointStore.endpoint()) { "GitHub Rock Backend is not connected." }
         val api = api(endpoint)
+        val health = api.health()
+        val config = api.config()
+        require(config.apiVersion == SUPPORTED_API_VERSION) {
+            "Backend API ${config.apiVersion} is not compatible with this app."
+        }
         return BackendConnectionSnapshot(
             endpoint = endpoint,
-            health = api.health(),
-            config = api.config(),
+            health = health,
+            config = config,
         )
     }
 
@@ -96,18 +101,23 @@ class BackendGateway @Inject constructor(
         }
     }
 
-    suspend fun startDeviceFlow(): DeviceCodeResponse =
-        apiForConfiguredEndpoint().startDeviceFlow()
+    suspend fun startDeviceFlow(): DeviceCodeResponse {
+        val api = apiForConfiguredEndpoint()
+        validateBackendForApp(api.config(), "oauthDeviceProxy")
+        return api.startDeviceFlow()
+    }
 
     suspend fun pollDeviceFlow(deviceCode: String): DeviceTokenResponse =
         apiForConfiguredEndpoint()
             .pollDeviceFlow(BackendDevicePollRequest(deviceCode))
             .toDeviceTokenResponse()
 
-    suspend fun refreshToken(refreshToken: String): DeviceTokenResponse =
-        apiForConfiguredEndpoint()
-            .refreshToken(BackendTokenRefreshRequest(refreshToken))
+    suspend fun refreshToken(refreshToken: String): DeviceTokenResponse {
+        val api = apiForConfiguredEndpoint()
+        validateBackendForApp(api.config(), "oauthRefreshProxy")
+        return api.refreshToken(BackendTokenRefreshRequest(refreshToken))
             .toDeviceTokenResponse()
+    }
 
     private fun apiForConfiguredEndpoint(): GitHubRockBackendApi {
         val endpoint = requireNotNull(endpointStore.endpoint()) {
@@ -131,6 +141,10 @@ class BackendGateway @Inject constructor(
                 }
         }
     }
+
+    private companion object {
+        const val SUPPORTED_API_VERSION = "v1"
+    }
 }
 
 internal fun normalizedBackendBaseUrl(raw: String?): String? {
@@ -146,6 +160,47 @@ internal fun requireBackendBaseUrl(raw: String): String =
     requireNotNull(normalizedBackendBaseUrl(raw)) {
         "Use a valid HTTPS backend URL without query parameters or credentials."
     }
+
+internal fun validateBackendForApp(
+    config: BackendPublicConfigResponse,
+    requiredFeature: String,
+    currentVersion: String = BuildConfig.VERSION_NAME,
+) {
+    require(config.apiVersion == "v1") {
+        "Backend API ${config.apiVersion} is not compatible with this app."
+    }
+    require(!config.maintenanceMode) {
+        "GitHub Rock Backend is temporarily in maintenance mode."
+    }
+    require(isVersionAtLeast(currentVersion, config.minSupportedAppVersion)) {
+        "GitHub Rock ${config.minSupportedAppVersion} or newer is required by the backend."
+    }
+    require(config.features[requiredFeature] == true) {
+        "Backend feature $requiredFeature is not available."
+    }
+}
+
+internal fun isVersionAtLeast(current: String, minimum: String): Boolean {
+    val currentParts = versionParts(current)
+    val minimumParts = versionParts(minimum)
+    val width = maxOf(currentParts.size, minimumParts.size)
+    return (0 until width).firstNotNullOfOrNull { index ->
+        val currentPart = currentParts.getOrElse(index) { 0 }
+        val minimumPart = minimumParts.getOrElse(index) { 0 }
+        when {
+            currentPart > minimumPart -> true
+            currentPart < minimumPart -> false
+            else -> null
+        }
+    } ?: true
+}
+
+private fun versionParts(value: String): List<Int> = value
+    .trim()
+    .removePrefix("v")
+    .substringBefore('-')
+    .split('.')
+    .map { it.toIntOrNull() ?: 0 }
 
 internal fun BackendDeviceTokenResponse.toDeviceTokenResponse(): DeviceTokenResponse = when (state) {
     "authorized" -> DeviceTokenResponse(
