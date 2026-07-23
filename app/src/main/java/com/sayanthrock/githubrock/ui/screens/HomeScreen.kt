@@ -14,32 +14,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,8 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
-import com.sayanthrock.githubrock.core.model.GitHubUser
-import com.sayanthrock.githubrock.core.model.RateLimit
 import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
@@ -83,8 +72,6 @@ private enum class HomeFeed(val label: String, val subtitle: String) {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun HomeScreen(
-    profile: GitHubUser?,
-    rateLimit: RateLimit?,
     repositories: List<GitHubRepositoryModel>,
     runs: List<WorkflowRun>,
     onOpenRepo: (GitHubRepositoryModel) -> Unit,
@@ -103,10 +90,6 @@ fun HomeScreen(
             HomeFeed.Activity -> repositories.sortedByDescending { it.updatedAt }
         }
     }
-    val running = remember(runs) {
-        runs.count { it.displayState() in setOf(WorkflowDisplayState.Running, WorkflowDisplayState.Queued) }
-    }
-    val failed = remember(runs) { runs.count { it.displayState() == WorkflowDisplayState.Failed } }
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -118,18 +101,6 @@ fun HomeScreen(
             contentPadding = StandardScreenPadding,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item {
-                RockMasthead(
-                    profile = profile,
-                    rateLimit = rateLimit,
-                    repositoryCount = repositories.size,
-                    runningCount = running,
-                    failedCount = failed,
-                    onRefresh = onRefresh,
-                    onOpenBuilds = onOpenBuilds
-                )
-            }
-
             if (isLoading) {
                 item { LoadingWorkspaceCard() }
             }
@@ -227,109 +198,6 @@ fun HomeScreen(
 }
 
 @Composable
-private fun RockMasthead(
-    profile: GitHubUser?,
-    rateLimit: RateLimit?,
-    repositoryCount: Int,
-    runningCount: Int,
-    failedCount: Int,
-    onRefresh: () -> Unit,
-    onOpenBuilds: () -> Unit
-) {
-    GlassCard(contentPadding = PaddingValues(20.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(56.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.primary
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "GR",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-                }
-
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = "GitHub Rock",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        text = profile?.let { "Welcome back, @${it.login}" }
-                            ?: "Discover, manage, build and release",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(onClick = onRefresh) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh workspace")
-                }
-            }
-
-            Text(
-                text = "A focused GitHub control centre with a store-style discovery experience for repositories, releases and Android builds.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                item { MetricPill(Icons.Default.Folder, repositoryCount.toString(), "Repos") }
-                item { MetricPill(Icons.Default.CloudQueue, runningCount.toString(), "Running") }
-                item {
-                    MetricPill(
-                        icon = if (failedCount > 0) Icons.Default.ErrorOutline else Icons.Default.CheckCircle,
-                        value = failedCount.toString(),
-                        label = "Failed",
-                        warning = failedCount > 0
-                    )
-                }
-                item {
-                    MetricPill(
-                        icon = Icons.Default.CloudQueue,
-                        value = rateLimit?.remaining?.toString() ?: "—",
-                        label = "API left"
-                    )
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick = onOpenBuilds,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Build, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Open Builds")
-                }
-                OutlinedButton(
-                    onClick = onRefresh,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Refresh")
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun FeedTabs(
     selected: HomeFeed,
     onSelected: (HomeFeed) -> Unit
@@ -390,31 +258,6 @@ private fun SectionHeading(title: String, subtitle: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
-        }
-    }
-}
-
-@Composable
-private fun MetricPill(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    warning: Boolean = false
-) {
-    val accent = if (warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-    Surface(
-        shape = MaterialTheme.shapes.extraLarge,
-        color = accent.copy(alpha = .10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = .22f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp), tint = accent)
-            Text(value, color = accent, fontWeight = FontWeight.Black)
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
