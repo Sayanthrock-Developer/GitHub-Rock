@@ -148,8 +148,6 @@ fun MainNavigation(
                     ) {
                         composable(TopDestination.Home.route) {
                             HomeScreen(
-                                profile = state.profile,
-                                rateLimit = state.rateLimit,
                                 repositories = state.repositories,
                                 runs = state.workflowRuns,
                                 onOpenRepo = openRepo,
