@@ -38,10 +38,11 @@ import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.core.navigation.nativeProfileDestination
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
+import com.sayanthrock.githubrock.ui.screens.AccountSwitcherScreen
 import com.sayanthrock.githubrock.ui.screens.AppearanceScreen
 import com.sayanthrock.githubrock.ui.screens.AppInformationScreen
 import com.sayanthrock.githubrock.ui.screens.BuildsScreen
-import com.sayanthrock.githubrock.ui.screens.DownloadsScreen
+import com.sayanthrock.githubrock.ui.screens.DownloadsHubScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
@@ -67,6 +68,7 @@ private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val SETTINGS_ROUTE = "settings"
 private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
+private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 private val MobileDockHeight = 78.dp
 private val MobileDockContentClearance = 94.dp
@@ -122,9 +124,7 @@ fun MainNavigation(
         val scrollCaptureInProgress = LocalScrollCaptureInProgress.current
         val showMobileDock = showNavigation && !useNavigationRail && !scrollCaptureInProgress
 
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background
-        ) { scaffoldPadding ->
+        Scaffold(containerColor = MaterialTheme.colorScheme.background) { scaffoldPadding ->
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -165,13 +165,14 @@ fun MainNavigation(
                                 loading = state.isLoading,
                                 onSearch = onSearch,
                                 creationEnabled = mode == AppMode.Connected,
-                                onOpen = openRepo
+                                onOpen = openRepo,
+                                connectedLogin = state.profile?.login
                             )
                         }
                         composable(TopDestination.Builds.route) {
                             BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
                         }
-                        composable(TopDestination.Downloads.route) { DownloadsScreen() }
+                        composable(TopDestination.Downloads.route) { DownloadsHubScreen() }
                         composable(TopDestination.Profile.route) {
                             ProfileScreen(
                                 mode = mode,
@@ -183,7 +184,7 @@ fun MainNavigation(
                                         launchSingleTop = true
                                     }
                                 },
-                                onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
+                                onOpenFeatures = { navController.navigate(ACCOUNT_SWITCHER_ROUTE) },
                                 onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                                 onOpenAppInfo = { navController.navigate(APP_INFORMATION_ROUTE) },
                                 onOpenGitHubUrl = { url ->
@@ -195,6 +196,17 @@ fun MainNavigation(
                                     }
                                 },
                                 onLogout = onLogout
+                            )
+                        }
+                        composable(ACCOUNT_SWITCHER_ROUTE) {
+                            AccountSwitcherScreen(
+                                mode = mode,
+                                connectedProfile = state.profile,
+                                onBack = navController::navigateUp,
+                                onOpenProfile = { login ->
+                                    openNativeProfile(login, NativeProfileSection.Repositories)
+                                },
+                                onReplaceConnectedAccount = onLogout
                             )
                         }
                         composable(
@@ -349,9 +361,7 @@ internal fun AppNavigationBar(
         contentAlignment = Alignment.BottomCenter
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(MobileDockHeight),
+            modifier = Modifier.fillMaxWidth().height(MobileDockHeight),
             shape = RoundedCornerShape(30.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .96f),
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -363,10 +373,7 @@ internal fun AppNavigationBar(
             )
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(6.dp)
-                    .selectableGroup(),
+                modifier = Modifier.fillMaxSize().padding(6.dp).selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -388,46 +395,24 @@ private fun RowScope.NavigationDockItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val iconColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val labelColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val iconColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(
         modifier = Modifier
             .weight(1f)
             .fillMaxHeight()
-            .selectable(
-                selected = selected,
-                role = Role.Tab,
-                onClick = onClick
-            )
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .semantics(mergeDescendants = true) {
                 contentDescription = destination.accessibilityLabel
             },
         shape = RoundedCornerShape(24.dp),
-        color = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = .98f)
-        } else {
-            Color.Transparent
-        },
-        border = if (selected) {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .26f))
-        } else {
-            null
-        },
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .98f) else Color.Transparent,
+        border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .26f)) else null,
         shadowElevation = if (selected) 8.dp else 0.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 2.dp, vertical = 7.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 7.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
