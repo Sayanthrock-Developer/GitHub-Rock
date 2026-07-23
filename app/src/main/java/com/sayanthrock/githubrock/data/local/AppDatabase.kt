@@ -42,6 +42,9 @@ interface RepositoryDao {
     @Query("SELECT * FROM recent_repositories ORDER BY openedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int = 10): Flow<List<RepositoryEntity>>
 
+    @Query("SELECT * FROM recent_repositories ORDER BY openedAt DESC LIMIT :limit")
+    suspend fun recent(limit: Int = 100): List<RepositoryEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(repository: RepositoryEntity)
 
@@ -72,7 +75,7 @@ interface DownloadDao {
     /**
      * Updates the status of a download.
      *
-     * @param id The identifier of the download to update.
+     * @param id The identifier of the download.
      * @param status The new status value.
      */
     @Query("UPDATE downloads SET status = :status WHERE id = :id")
@@ -96,4 +99,3 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun repositoryDao(): RepositoryDao
     abstract fun downloadDao(): DownloadDao
 }
-
