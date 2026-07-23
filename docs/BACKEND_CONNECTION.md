@@ -15,7 +15,16 @@ GET https://your-backend.example/v1/health
 GET https://your-backend.example/v1/config
 ```
 
-`/v1/config` should report `oauthDeviceProxy=true`. Token refresh through the backend additionally requires `oauthRefreshProxy=true`.
+Before connecting a release build, confirm all of the following:
+
+- `/v1/health` responds from the public HTTPS hostname.
+- `/v1/config` reports `apiVersion=v1`.
+- `maintenanceMode` is false.
+- `oauthDeviceProxy` is true.
+- `oauthRefreshProxy` is true when expiring OAuth tokens are enabled.
+- `minSupportedAppVersion` does not exceed the installed GitHub Rock version.
+
+GitHub Rock enforces this compatibility contract before using the backend for authentication. An incompatible or unavailable backend is skipped in favor of the direct-GitHub fallback when the public OAuth client ID is available.
 
 ## 2. Connect from the Android app
 
