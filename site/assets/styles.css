@@ -381,6 +381,75 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
 }
 .install-guidance strong { font-size: .92rem; }
 .install-guidance p { margin: 5px 0 0; color: var(--muted); font-size: .82rem; }
+.install-dialog {
+  width: min(560px, calc(100% - 28px));
+  max-height: calc(100dvh - 28px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--line));
+  border-radius: 28px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(255, 255, 255, .06);
+  backdrop-filter: blur(24px);
+}
+.install-dialog:not([open]) { display: none; }
+.install-dialog::backdrop {
+  background: rgba(3, 6, 12, .72);
+  backdrop-filter: blur(10px);
+}
+.install-dialog-panel { padding: clamp(24px, 5vw, 36px); }
+.install-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.install-dialog h3 { margin-top: 9px; font-size: clamp(1.55rem, 4vw, 2.2rem); }
+.install-dialog p { margin: 18px 0 0; color: var(--muted); line-height: 1.7; }
+.dialog-close {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--text);
+  background: var(--surface-soft);
+  cursor: pointer;
+  font-size: 1.4rem;
+}
+.dialog-close:hover { border-color: color-mix(in srgb, var(--primary) 38%, var(--line)); color: var(--primary); }
+.install-steps {
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  counter-reset: install-step;
+}
+.install-steps li {
+  min-height: 54px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  line-height: 1.5;
+  counter-increment: install-step;
+}
+.install-steps li::before {
+  content: counter(install-step);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: .75rem;
+  font-weight: 900;
+}
+.install-dialog-actions { margin-top: 24px; display: flex; justify-content: flex-end; }
 
 .workspace {
   min-height: 630px;

@@ -17,6 +17,16 @@ The web companion provides the project website, live GitHub Release assets, docu
 | Linux | Browser-installed PWA | Web companion |
 | iOS / iPadOS | Safari → Share → Add to Home Screen | Web companion |
 
+## Installation requirements
+
+- **macOS:** Safari 17 or newer can use **File → Add to Dock**. Chrome and Edge expose an install action in the address bar or browser menu.
+- **Windows:** Chrome and Edge can install the site as a standalone app and add it to Start.
+- **Linux:** Chrome, Chromium, Brave, and other Chromium-based browsers can install the site as an app. Firefox desktop does not currently provide the same PWA installation surface.
+- **iOS / iPadOS:** Apple requires Safari's **Share → Add to Home Screen** flow; a website cannot trigger that confirmation automatically.
+- **Android:** Chrome can install the web companion, while GitHub Releases provides the full native APK.
+
+The website always exposes an installation button. When the browser provides a native install prompt, the button opens it. Otherwise, it opens exact instructions for the detected operating system.
+
 ## Why one Android build cannot create every native package
 
 The current application depends on Android-only APIs and libraries, including Android components, Hilt integration, Room, DataStore, WorkManager, Android Keystore, package inspection, the system package installer, notifications, and Compose for Android. A workflow matrix can run the same source on several runners, but it cannot turn those dependencies into a signed `.dmg`, `.msix`, `.AppImage`, or `.ipa`.

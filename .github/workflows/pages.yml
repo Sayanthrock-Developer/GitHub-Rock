@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "tools/web/**"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "tools/web/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -18,11 +24,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy website
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
+    name: Validate installable website
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -55,6 +58,20 @@ jobs:
           node --check site/assets/app.js
           node --check site/sw.js
           jq empty site/manifest.webmanifest
+          node tools/web/test-pwa-installability.mjs
+
+  deploy:
+    name: Deploy website
+    if: github.event_name != 'pull_request'
+    needs: validate
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
 
       # GitHub Pages must be enabled once in Repository Settings with
       # Build and deployment -> Source set to "GitHub Actions".

@@ -82,27 +82,147 @@
 
   const installButtons = [...document.querySelectorAll('[data-install-app]')];
   const installStatus = document.querySelector('[data-install-status]');
+  const installDialog = document.querySelector('[data-install-dialog]');
+  const installDialogTitle = installDialog?.querySelector('[data-install-dialog-title]');
+  const installDialogCopy = installDialog?.querySelector('[data-install-dialog-copy]');
+  const installDialogSteps = installDialog?.querySelector('[data-install-dialog-steps]');
+  const userAgent = navigator.userAgent.toLowerCase();
+  const platformHint = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
   const iosDevice = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const platform = (() => {
+    if (iosDevice) return 'ios';
+    if (/android/.test(userAgent)) return 'android';
+    if (/mac/.test(platformHint) || /macintosh/.test(userAgent)) return 'macos';
+    if (/win/.test(platformHint) || /windows/.test(userAgent)) return 'windows';
+    if (/linux/.test(platformHint) || /linux/.test(userAgent)) return 'linux';
+    return 'other';
+  })();
   const standalone = window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
   let installPrompt = null;
 
-  const setInstallButtons = (visible, label = 'Install web companion') => {
+  const installGuides = {
+    ios: {
+      buttonLabel: 'Add to Home Screen',
+      title: 'Install on iPhone or iPad',
+      copy: 'Apple requires installation from Safari’s Share menu.',
+      status: 'On iPhone or iPad, open this page in Safari, tap Share, then choose Add to Home Screen.',
+      steps: [
+        'Open this page in Safari.',
+        'Tap the Share button in the Safari toolbar.',
+        'Choose Add to Home Screen.',
+        'Confirm the name, then tap Add.'
+      ]
+    },
+    macos: {
+      buttonLabel: 'Install on macOS',
+      title: 'Install on macOS',
+      copy: 'Use Safari 17 or newer, Chrome, or Edge to add GitHub Rock as an app.',
+      status: 'On macOS, use Safari → File → Add to Dock, or use the Install option in Chrome or Edge.',
+      steps: [
+        'In Safari 17 or newer, choose File → Add to Dock.',
+        'In Chrome or Edge, choose Install GitHub Rock from the address bar or browser menu.',
+        'Confirm Add or Install, then open GitHub Rock from the Dock or Applications.'
+      ]
+    },
+    windows: {
+      buttonLabel: 'Install on Windows',
+      title: 'Install on Windows',
+      copy: 'Chrome and Microsoft Edge can install the web companion as a standalone app.',
+      status: 'On Windows, open the browser menu and choose Apps or Install GitHub Rock.',
+      steps: [
+        'Open this page in Chrome or Microsoft Edge.',
+        'Select the install icon in the address bar, or open the browser menu and choose Apps → Install this site as an app.',
+        'Confirm Install, then open GitHub Rock from Start.'
+      ]
+    },
+    linux: {
+      buttonLabel: 'Install on Linux',
+      title: 'Install on Linux',
+      copy: 'Use Chrome, Chromium, Brave, or another Chromium-based browser.',
+      status: 'On Linux, use a Chromium-based browser and choose Install page as app from its menu.',
+      steps: [
+        'Open this page in a Chromium-based browser.',
+        'Open the browser menu and choose Install page as app or Create shortcut.',
+        'Enable Open as window when offered, then confirm Install.'
+      ]
+    },
+    android: {
+      buttonLabel: 'Install web companion',
+      title: 'Install on Android',
+      copy: 'Install the lightweight web companion or download the full native APK.',
+      status: 'On Android, use Chrome’s Install app option for the web companion, or download the native APK.',
+      steps: [
+        'Open this page in Chrome.',
+        'Tap the browser menu and choose Install app or Add to Home screen.',
+        'Confirm Install. For the full app, use the Download APK button instead.'
+      ]
+    },
+    other: {
+      buttonLabel: 'Installation instructions',
+      title: 'Install the web companion',
+      copy: 'Use a browser that supports installable web apps.',
+      status: 'Open your browser menu and look for Install app, Add to Home Screen, or Create shortcut.',
+      steps: [
+        'Open this page in an installable-web-app browser.',
+        'Open the browser menu and choose Install app, Add to Home Screen, or Create shortcut.',
+        'Confirm the installation.'
+      ]
+    }
+  };
+  const installGuide = installGuides[platform];
+
+  const setInstallButtons = (visible, currentPlatformLabel = null) => {
     installButtons.forEach((button) => {
+      const requestedPlatform = button.dataset.installPlatform;
+      const buttonGuide = installGuides[requestedPlatform] || installGuide;
+      const targetsCurrentPlatform = !requestedPlatform || requestedPlatform === platform;
       button.hidden = !visible;
-      button.textContent = label;
+      button.textContent = currentPlatformLabel && targetsCurrentPlatform
+        ? currentPlatformLabel
+        : buttonGuide.buttonLabel;
     });
   };
+
+  const showInstallGuide = (guide = installGuide) => {
+    if (!installDialog || !installDialogSteps) return;
+    if (installDialogTitle) installDialogTitle.textContent = guide.title;
+    if (installDialogCopy) installDialogCopy.textContent = guide.copy;
+    installDialogSteps.replaceChildren();
+    guide.steps.forEach((step) => {
+      const item = document.createElement('li');
+      item.textContent = step;
+      installDialogSteps.append(item);
+    });
+
+    if (typeof installDialog.showModal === 'function') {
+      if (!installDialog.open) installDialog.showModal();
+    } else {
+      installDialog.setAttribute('open', '');
+      installDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  installDialog?.querySelectorAll('[data-install-dialog-close]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (typeof installDialog.close === 'function') installDialog.close();
+      else installDialog.removeAttribute('open');
+    });
+  });
+
+  installDialog?.addEventListener('click', (event) => {
+    if (event.target === installDialog && typeof installDialog.close === 'function') {
+      installDialog.close();
+    }
+  });
 
   if (standalone) {
     setInstallButtons(false);
     if (installStatus) installStatus.textContent = 'The web companion is installed on this device.';
-  } else if (iosDevice) {
-    setInstallButtons(true, 'Add to Home Screen');
-    if (installStatus) {
-      installStatus.textContent = 'On iPhone or iPad, open this page in Safari, tap Share, then choose Add to Home Screen.';
-    }
+  } else {
+    setInstallButtons(true, installGuide.buttonLabel);
+    if (installStatus) installStatus.textContent = installGuide.status;
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -116,14 +236,13 @@
 
   installButtons.forEach((button) => {
     button.addEventListener('click', async () => {
-      if (iosDevice) {
-        if (installStatus) {
-          installStatus.textContent = 'In Safari, tap the Share button, then choose Add to Home Screen.';
-        }
-        document.querySelector('#downloads')?.scrollIntoView({ behavior: 'smooth' });
+      const requestedPlatform = button.dataset.installPlatform;
+      const buttonGuide = installGuides[requestedPlatform] || installGuide;
+      const targetsCurrentPlatform = !requestedPlatform || requestedPlatform === platform;
+      if (!installPrompt || !targetsCurrentPlatform) {
+        showInstallGuide(buttonGuide);
         return;
       }
-      if (!installPrompt) return;
 
       installPrompt.prompt();
       const choice = await installPrompt.userChoice;
@@ -131,6 +250,9 @@
       if (choice.outcome === 'accepted') {
         setInstallButtons(false);
         if (installStatus) installStatus.textContent = 'Installation accepted. GitHub Rock is being added to this device.';
+      } else {
+        setInstallButtons(true);
+        if (installStatus) installStatus.textContent = installGuide.status;
       }
     });
   });

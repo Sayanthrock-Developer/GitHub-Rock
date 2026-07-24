@@ -3,12 +3,15 @@
   "name": "GitHub Rock Web Companion",
   "short_name": "GitHub Rock",
   "description": "An installable cross-platform companion for GitHub Rock releases, documentation, and project links.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090b10",
   "theme_color": "#17b8dd",
   "orientation": "any",
+  "prefer_related_applications": false,
   "categories": [
     "productivity",
     "utilities"
@@ -18,13 +21,13 @@
       "src": "./assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

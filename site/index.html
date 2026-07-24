@@ -59,7 +59,7 @@
         <p class="hero-lead">Use the full native Android control centre, or install the lightweight web companion on macOS, Windows, Linux, iPhone, and iPad for releases, documentation, and project access.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download Android APK</a>
-          <button class="button button-secondary" type="button" data-install-app hidden>Install web companion</button>
+          <button class="button button-secondary" type="button" data-install-app>Install web companion</button>
           <a class="button button-secondary" href="#discover">Explore the experience</a>
         </div>
         <div class="trust-row" aria-label="Product qualities">
@@ -137,25 +137,25 @@
           <span class="platform-icon" aria-hidden="true">M</span>
           <div><strong>macOS</strong><small>Safari, Chrome, or Edge</small></div>
           <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app hidden>Install web companion</button>
+          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="macos">Install on macOS</button>
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">W</span>
           <div><strong>Windows</strong><small>Chrome or Edge</small></div>
           <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app hidden>Install web companion</button>
+          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="windows">Install on Windows</button>
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">L</span>
           <div><strong>Linux</strong><small>Chromium-based browser</small></div>
           <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app hidden>Install web companion</button>
+          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="linux">Install on Linux</button>
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">i</span>
           <div><strong>iOS / iPadOS</strong><small>Safari · Add to Home Screen</small></div>
           <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app hidden>Install web companion</button>
+          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="ios">Add to Home Screen</button>
         </article>
       </div>
 
@@ -166,6 +166,23 @@
         </div>
         <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a>
       </div>
+
+      <dialog class="install-dialog" id="install-dialog" data-install-dialog aria-labelledby="install-dialog-title">
+        <div class="install-dialog-panel">
+          <div class="install-dialog-head">
+            <div>
+              <span class="eyebrow">Install GitHub Rock</span>
+              <h3 id="install-dialog-title" data-install-dialog-title>Install the web companion</h3>
+            </div>
+            <button class="dialog-close" type="button" data-install-dialog-close aria-label="Close installation instructions">×</button>
+          </div>
+          <p data-install-dialog-copy>Follow the steps for your browser and device.</p>
+          <ol class="install-steps" data-install-dialog-steps></ol>
+          <div class="install-dialog-actions">
+            <button class="button button-primary" type="button" data-install-dialog-close>Done</button>
+          </div>
+        </div>
+      </dialog>
     </section>
 
     <section class="section shell" id="discover">
@@ -273,7 +290,7 @@
     <section class="section shell">
       <div class="cta-panel reveal">
         <div><div class="eyebrow">Your repositories. Your workflow.</div><h2>Take GitHub Rock with you.</h2><p>Download the native Android release, install the cross-platform web companion, or inspect the source directly on GitHub.</p></div>
-        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download Android APK</a><button class="button button-secondary" type="button" data-install-app hidden>Install web companion</button><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
+        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download Android APK</a><button class="button button-secondary" type="button" data-install-app>Install web companion</button><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
       </div>
     </section>
   </main>

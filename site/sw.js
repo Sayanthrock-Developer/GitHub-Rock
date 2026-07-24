@@ -1,12 +1,14 @@
-const CACHE_NAME = 'github-rock-web-v1';
+const CACHE_NAME = 'github-rock-web-v2';
 const APP_SHELL = [
   './',
   './index.html',
   './404.html',
+  './manifest.webmanifest',
   './assets/app.js',
   './assets/styles.css',
   './assets/icon-192.png',
   './assets/icon-512.png',
+  './assets/apple-touch-icon.png',
   './privacy-policy/',
   './terms/'
 ];
