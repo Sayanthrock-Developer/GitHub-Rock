@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -152,20 +149,13 @@ fun RepositoryArtwork(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    modifier = Modifier.size(if (compact) 26.dp else 30.dp),
-                    shape = RoundedCornerShape(if (compact) 9.dp else 10.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(if (compact) 15.dp else 17.dp)
-                        )
-                    }
-                }
+                GitHubAvatar(
+                    imageUrl = repository.owner.avatarUrl,
+                    fallbackText = repository.owner.login,
+                    contentDescription = "@${repository.owner.login} GitHub account profile image",
+                    modifier = Modifier.size(if (compact) 28.dp else 32.dp),
+                    shape = RoundedCornerShape(if (compact) 9.dp else 10.dp)
+                )
                 Column(Modifier.weight(1f)) {
                     Text(
                         "@${repository.owner.login}",
