@@ -33,7 +33,7 @@ class HomeScreenTest {
         compose.onNodeWithText("AI").assertIsDisplayed()
         compose.onNodeWithText("Privacy").assertIsDisplayed()
         compose.onNodeWithText("Updated").assertIsDisplayed()
-        compose.onNodeWithText("No repositories found").assertIsDisplayed()
+        compose.onNodeWithText("No public repositories found").assertIsDisplayed()
         compose.onNodeWithText("A focused GitHub control centre with a store-style discovery experience for repositories, releases and Android builds.")
             .assertDoesNotExist()
     }
@@ -79,6 +79,29 @@ class HomeScreenTest {
         compose.runOnIdle { assertTrue(openedRepository) }
     }
 
+    @Test fun privateRepositoriesAreNotExposedOnHome() {
+        val privateRepository = GitHubRepositoryModel(
+            id = 2,
+            name = "Private-Rock",
+            fullName = "SayanthRock/Private-Rock",
+            owner = Owner(login = "SayanthRock"),
+            description = "Private repository content",
+            private = true,
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                HomeScreen(
+                    repositories = listOf(privateRepository),
+                    onOpenRepo = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("Private-Rock").assertDoesNotExist()
+        compose.onNodeWithText("No public repositories found").assertIsDisplayed()
+    }
+
     @Test fun loadingHomeShowsProgressInsteadOfFalseEmptyState() {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
@@ -91,6 +114,6 @@ class HomeScreenTest {
         }
 
         compose.onNodeWithText("Loading your workspace…").assertIsDisplayed()
-        compose.onNodeWithText("No repositories found").assertDoesNotExist()
+        compose.onNodeWithText("No public repositories found").assertDoesNotExist()
     }
 }

@@ -68,6 +68,46 @@ class HomeDiscoveryFilterTest {
     }
 
     @Test
+    fun unclassifiedPublicRepositoryIsAvailableAsCrossPlatform() {
+        val crossPlatformRepository = repository(
+            id = 4,
+            name = "Rock-Tools",
+            description = "General purpose repository",
+            language = "TypeScript",
+        )
+
+        HomePlatform.entries
+            .filterNot { it == HomePlatform.All }
+            .forEach { platform ->
+                assertEquals(
+                    listOf(crossPlatformRepository),
+                    homeRepositoryFeed(
+                        repositories = listOf(crossPlatformRepository),
+                        platform = platform,
+                        category = HomeCategory.All,
+                        sort = HomeSort.Updated,
+                    ),
+                )
+            }
+    }
+
+    @Test
+    fun privateRepositoryIsNeverExposedInHomeDiscovery() {
+        val publicRepository = repository(id = 5, name = "Public-Rock")
+        val privateRepository = repository(id = 6, name = "Private-Rock", private = true)
+
+        assertEquals(
+            listOf(publicRepository),
+            homeRepositoryFeed(
+                repositories = listOf(privateRepository, publicRepository),
+                platform = HomePlatform.All,
+                category = HomeCategory.All,
+                sort = HomeSort.Updated,
+            ),
+        )
+    }
+
+    @Test
     fun relativeUpdateTimeUsesCompactStoreStyleLabels() {
         assertEquals(
             "2 w ago",
@@ -86,6 +126,7 @@ class HomeDiscoveryFilterTest {
         topics: List<String> = emptyList(),
         stars: Int = 0,
         updatedAt: String = "2026-07-23T12:00:00Z",
+        private: Boolean = false,
     ) = GitHubRepositoryModel(
         id = id,
         name = name,
@@ -96,5 +137,6 @@ class HomeDiscoveryFilterTest {
         topics = topics,
         stars = stars,
         updatedAt = updatedAt,
+        private = private,
     )
 }
