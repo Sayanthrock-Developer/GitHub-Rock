@@ -29,6 +29,30 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Deep-link routes and Android-system installer permission model
 - Unit, Compose UI, lint, CI, debug APK, and manually dispatched release workflow configuration
 
+## Copilot workspace parity program
+
+The v1.0.22–v1.0.26 session, MCP, pull-request review, automation, accessibility, files, extensions, and desktop-integration requests are tracked in [issue #163](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/163).
+
+These capabilities are not treated as complete merely because they appear in another product's changelog. Each item must have the correct platform implementation, permission checks, loading/error/empty states, accessibility, tests, and CI evidence before it is marked supported.
+
+Status rules:
+
+- **Native Android** — works inside GitHub Rock on Android 10+.
+- **Connected** — requires GitHub authorization and the minimum repository/account permissions.
+- **Backend-dependent** — requires a secure service for secrets, schedules, or long-running jobs.
+- **Companion-only** — operating-system integration that belongs in the Tauri desktop companion rather than the Android app.
+- **Roadmap** — visible as planned work, never presented as functioning until release evidence exists.
+
+The active parity phases are:
+
+1. Issue/PR handoff, commit navigation, review progress, incremental diffs, stale-data recovery, and permission-aware controls.
+2. Trusted project MCP settings with OAuth, refresh, enable/disable, and secure credential handling.
+3. Local and cloud automations with quarter-hour scheduling, live run states, filters, and accessible timestamps.
+4. Session recovery and tool-approval commands, including `/allow-all-tools` and `/yolo` state controls.
+5. Files and extensions panels, trusted URL installation, workspace persistence, and storage warnings.
+6. Complete TalkBack, keyboard, large-text, contrast, focus, and announcement coverage.
+7. Windows, macOS, and Linux companion integration for clipboard, browser, tray, PATH, WSL, VS Code, and terminal attachment behavior.
+
 ## Next implementation milestones
 
 1. Richer language grammars plus PR diff and conflict presentation.
@@ -38,3 +62,4 @@ This file separates working alpha functionality from roadmap scope so the applic
 5. Complete TalkBack, large-font, keyboard, contrast, and physical-device screenshot validation.
 6. Extract portable domain and network layers before moving Android-only control-centre features into the packaged desktop and iOS companion.
 7. Continue moving high-value web-hub destinations into native screens when GitHub permissions and APIs support them safely.
+8. Implement issue #163 phase by phase; update this file and the in-app feature status only after each merged, tested capability is actually available.
