@@ -43,9 +43,21 @@ class ReleaseAssetClassifierTest {
         )
     }
 
+    @Test fun explicitLinuxPackagingWinsOverTheAmbiguousApkExtension() {
+        val alpinePackage = ReleaseAssetClassifier.classify("github-rock-alpine-x64.apk")
+        val androidPackage = ReleaseAssetClassifier.classify("github-rock-android-x64.apk")
+
+        assertEquals(ReleasePlatform.Linux, alpinePackage.platform)
+        assertEquals("Alpine APK", alpinePackage.format)
+        assertTrue(alpinePackage.isInstallablePackage)
+        assertEquals(ReleasePlatform.Android, androidPackage.platform)
+        assertEquals("APK", androidPackage.format)
+    }
+
     @Test fun identifiesSupportFilesAndDoesNotCallThemInstallers() {
         val info = ReleaseAssetClassifier.classify("github-rock-v1.4.0.checksums")
         val androidChecksum = ReleaseAssetClassifier.classify("github-rock-arm64-v8a.apk.sha256")
+        val macUpdateMetadata = ReleaseAssetClassifier.classify("github-rock-macos.dmg.blockmap")
 
         assertEquals(ReleasePlatform.Other, info.platform)
         assertEquals("Checksum", info.format)
@@ -54,6 +66,10 @@ class ReleaseAssetClassifierTest {
         assertEquals(ReleasePlatform.Android, androidChecksum.platform)
         assertEquals("SHA-256", androidChecksum.format)
         assertTrue(androidChecksum.isSupportFile)
+        assertEquals(ReleasePlatform.MacOS, macUpdateMetadata.platform)
+        assertEquals("Update metadata", macUpdateMetadata.format)
+        assertTrue(macUpdateMetadata.isSupportFile)
+        assertFalse(macUpdateMetadata.isInstallablePackage)
     }
 
     @Test fun choosesTheMostUsefulFileForEachPlatform() {
@@ -74,6 +90,20 @@ class ReleaseAssetClassifierTest {
         )
         assertEquals(ReleasePlatform.Android, ReleaseAssetClassifier.preferredPlatform(assets))
         assertEquals(ReleasePlatform.Android, ReleaseAssetClassifier.preferredPlatform(emptyList()))
+    }
+
+    @Test fun presentsPlatformsInTheRequestedDownloadOrder() {
+        assertEquals(
+            listOf(
+                ReleasePlatform.Android,
+                ReleasePlatform.MacOS,
+                ReleasePlatform.Windows,
+                ReleasePlatform.Linux,
+                ReleasePlatform.IOS,
+                ReleasePlatform.Other
+            ),
+            ReleasePlatform.entries
+        )
     }
 
     private fun asset(id: Long, name: String) = ReleaseAsset(

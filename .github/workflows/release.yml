@@ -35,18 +35,20 @@ jobs:
       INPUT_VERSION: ${{ inputs.version }}
       INPUT_PRERELEASE: ${{ inputs.prerelease }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.13'
       - name: Generate Gradle wrapper
         run: gradle wrapper --gradle-version 8.13
       - name: Resolve release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -67,13 +69,25 @@ jobs:
             if [ -n "$REQUESTED_VERSION" ]; then
               VERSION="$REQUESTED_VERSION"
             else
-              VERSION="0.1.$GITHUB_RUN_NUMBER"
+              LATEST_VERSION="$(
+                gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+                  --jq '.[].tag_name' |
+                  sed -n -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+)(-[A-Za-z0-9.-]+)?$/\1/p' |
+                  sort -V |
+                  tail -n 1
+              )"
+              if [ -z "$LATEST_VERSION" ]; then
+                VERSION="0.1.0"
+              else
+                IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
+                VERSION="$MAJOR.$MINOR.$((10#$PATCH + 1))"
+              fi
             fi
             RELEASE_TAG="v$VERSION"
             PRERELEASE="$(printf '%s' "${INPUT_PRERELEASE:-false}" | tr '[:upper:]' '[:lower:]')"
           fi
 
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || {
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || {
             echo "Use a version such as 0.2.0 or 0.2.0-beta.1."
             exit 1
           }
@@ -112,10 +126,32 @@ jobs:
             exit 1
           }
 
-          [ -n "$EXPECTED_RELEASE_CERT_SHA256" ] || {
-            echo "Set the EXPECTED_RELEASE_CERT_SHA256 Actions variable to the trusted release-key fingerprint."
+          PINNED_CERT_FILE=".github/release-signing-cert.sha256"
+          [ -s "$PINNED_CERT_FILE" ] || {
+            echo "The reviewed signing-certificate pin is missing: $PINNED_CERT_FILE"
             exit 1
           }
+
+          normalize_fingerprint() {
+            printf '%s' "$1" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]'
+          }
+
+          PINNED_CERT_SHA256="$(normalize_fingerprint "$(cat "$PINNED_CERT_FILE")")"
+          [[ "$PINNED_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
+            echo "The reviewed signing-certificate pin is not a valid SHA-256 fingerprint."
+            exit 1
+          }
+
+          if [ -n "$EXPECTED_RELEASE_CERT_SHA256" ]; then
+            VARIABLE_CERT_SHA256="$(normalize_fingerprint "$EXPECTED_RELEASE_CERT_SHA256")"
+            [ "$VARIABLE_CERT_SHA256" = "$PINNED_CERT_SHA256" ] || {
+              echo "EXPECTED_RELEASE_CERT_SHA256 does not match $PINNED_CERT_FILE."
+              echo "Update the reviewed pin and repository variable together after an intentional key rotation."
+              exit 1
+            }
+          fi
+
+          echo "EXPECTED_RELEASE_CERT_SHA256=$PINNED_CERT_SHA256" >> "$GITHUB_ENV"
 
           missing=()
           [ -n "${KEYSTORE_BASE64:-}" ] || missing+=(ANDROID_KEYSTORE_BASE64)
@@ -129,7 +165,7 @@ jobs:
             exit 1
           fi
 
-          echo "All required signing secrets and the expected certificate fingerprint are present."
+          echo "Signing secrets and the reviewed certificate fingerprint are present."
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "Release $RELEASE_TAG already exists. Choose a new version or tag."
@@ -193,34 +229,13 @@ jobs:
           CERT_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK" 2>&1)"
           printf '%s\n' "$CERT_OUTPUT"
 
-          CERT_SHA256="$(
+          ACTUAL_CERT_SHA256="$(
             printf '%s\n' "$CERT_OUTPUT" |
-              sed -n 's/^Signer #1 certificate SHA-256 digest: //p' |
-              head -n 1
+              bash tools/release/extract-apksigner-cert-sha256.sh
           )"
-          [ -n "$CERT_SHA256" ] || {
-            echo "Unable to read the signer certificate SHA-256 fingerprint."
-            exit 1
-          }
-
-          normalize_fingerprint() {
-            printf '%s' "$1" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]'
-          }
-
-          ACTUAL_CERT_SHA256="$(normalize_fingerprint "$CERT_SHA256")"
-          EXPECTED_CERT_SHA256="$(normalize_fingerprint "$EXPECTED_RELEASE_CERT_SHA256")"
-
-          [[ "$ACTUAL_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
-            echo "The APK signer certificate fingerprint is not a valid SHA-256 value."
-            exit 1
-          }
-          [[ "$EXPECTED_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
-            echo "EXPECTED_RELEASE_CERT_SHA256 is not a valid SHA-256 value."
-            exit 1
-          }
-          [ "$ACTUAL_CERT_SHA256" = "$EXPECTED_CERT_SHA256" ] || {
+          [ "$ACTUAL_CERT_SHA256" = "$EXPECTED_RELEASE_CERT_SHA256" ] || {
             echo "Release signing certificate mismatch."
-            echo "Expected: $EXPECTED_CERT_SHA256"
+            echo "Expected: $EXPECTED_RELEASE_CERT_SHA256"
             echo "Actual:   $ACTUAL_CERT_SHA256"
             exit 1
           }
@@ -237,7 +252,7 @@ jobs:
             echo "Verified SHA-256: \`$ACTUAL_CERT_SHA256\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload verified workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GitHub-Rock-${{ env.VERSION }}
           path: dist/*

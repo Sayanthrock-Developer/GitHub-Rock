@@ -19,7 +19,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Full workflow logs in a configurable scrollable popup or high-performance, syntax-highlighted terminal with line numbers and copy-all
 - In-app application, Android SDK, device, installation, and permission information
 - Connected profile with public repository count, API rate-limit health, repository search/cache foundation, workflow runs, issues, pull requests, code directory listings, and releases
-- Platform-aware GitHub Release picker for Android, Windows, Linux, iOS, and macOS assets, with file-format and architecture guidance
+- Platform-aware GitHub Release picker for Android, macOS, Windows, Linux, and iOS assets, with file-format and architecture guidance
 - Deterministic Android project detection and safe workflow generation for `assembleDebug` and `assembleRelease`, followed by reviewed-branch PR creation, merged-workflow dispatch, durable run tracking, completion notifications, and artifact handoff to Downloads
 - Background download queue with live byte progress, pause/resume, confirmed cancel, retry without duplicate history, SHA-256 fingerprinting and expected-checksum verification, duplicate-safe file finalization, and Room recovery
 - APK metadata, permission, SDK, signing fingerprint, installed-signature comparison, and file hash inspection foundation
@@ -28,6 +28,18 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Direct API-backed deep links for public, private, and unlisted repositories, plus builds, releases, and standard GitHub repository URLs
 - Unit tests for authentication responses, workflow status, Android workflow generation, project detection, release-asset classification, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
+
+## Platform availability
+
+| Platform | Available now | Scope |
+| --- | --- | --- |
+| Android | Native APK | Full GitHub Rock control centre on Android 10+ |
+| macOS | Installable web companion | Releases, documentation, and project access; not the native Android feature set |
+| Windows | Installable web companion | Releases, documentation, and project access; not the native Android feature set |
+| Linux | Installable web companion | Releases, documentation, and project access; not the native Android feature set |
+| iOS / iPadOS | Add-to-Home-Screen web companion | Releases, documentation, and project access; not the native Android feature set |
+
+The GitHub Pages site includes a web app manifest, service worker, offline application shell, live GitHub Release assets, and platform-specific installation guidance. Producing genuine native macOS, Windows, Linux, and iOS binaries requires a deliberate multiplatform migration; release-file renaming or extra workflow jobs cannot convert Android code into those applications. See [Cross-platform distribution](docs/CROSS_PLATFORM_DISTRIBUTION.md).
 
 ## Screenshots
 
@@ -137,23 +149,25 @@ Create these GitHub Actions repository or environment secrets:
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 
-Independently read the SHA-256 certificate fingerprint from the intended release keystore and create the public Actions variable `EXPECTED_RELEASE_CERT_SHA256`. The release workflow fails closed if this value is missing, malformed, or does not match the APK signer.
+The reviewed trust pin is stored in [`.github/release-signing-cert.sha256`](.github/release-signing-cert.sha256). The release workflow fails closed if the file is missing, malformed, or does not match the APK signer. An optional public Actions variable named `EXPECTED_RELEASE_CERT_SHA256` may mirror the value; when present, the workflow requires both pins to match.
 
 The workflow decodes the keystore into the runner's temporary directory and exposes passwords only as masked environment variables. `app/build.gradle.kts` activates the release signing configuration only when `GITHUB_ROCK_KEYSTORE_PATH` exists in the build environment. Secret values are never written into YAML, source, logs, artifacts, or the APK.
 
-Each published release includes both the APK file checksum (`.apk.sha256`) and the signing-certificate fingerprint (`.apk.certificate.sha256`). The certificate asset is a convenience copy, not the root of trust; compare it with the independently published trusted project fingerprint.
+New releases produced by the current workflow include both the APK file checksum (`.apk.sha256`) and the signing-certificate fingerprint (`.apk.certificate.sha256`). The certificate asset is a convenience copy, not the root of trust; compare it with the independently published trusted project fingerprint.
 
 ## Publish and install the app
 
-1. Add the four Android signing secrets listed above and set `EXPECTED_RELEASE_CERT_SHA256` from the independently verified release keystore. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_OAUTH_CLIENT_ID`.
+1. Add the four Android signing secrets listed above and verify that `.github/release-signing-cert.sha256` matches that keystore. Forks using another key must update the reviewed pin. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_OAUTH_CLIENT_ID`.
 2. Open **Actions → Publish Android Release → Run workflow**.
-3. Enter a new version such as `0.2.0` and choose whether it is a prerelease.
+3. Enter a new version such as `0.2.2`, or leave it blank to increment the highest published patch version, and choose whether it is a prerelease.
 4. Wait for pinned certificate verification, checksum generation, and release publication to finish.
 5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk`, `GitHub-Rock-<version>.apk.sha256`, and `GitHub-Rock-<version>.apk.certificate.sha256`.
 6. Compare the APK's SHA-256 checksum with the `.apk.sha256` file. Compare the detected signing certificate with the fingerprint previously published through an independently trusted project channel.
 7. On Android 10 or newer, allow **Install unknown apps** only for the browser or file manager you used, open the APK, and approve Android's official Package Installer prompt.
 
 If Android reports an incompatible signature, the installed copy was signed with a different key. Uninstall that older release before installing the new APK, or rebuild with the original signing key. Uninstalling removes that app's local data. Never bypass Play Protect or Android's package-signature checks.
+
+The published `v0.2.0` and `v0.2.1` APKs use different signing certificates. The `v0.2.1` certificate is the reviewed pin for future releases, so a `v0.2.0` installation cannot upgrade in place and must be uninstalled first.
 
 ## Security
 
@@ -164,7 +178,7 @@ If Android reports an incompatible signature, the installed copy was signed with
 - The central GitHub REST version header is `BuildConfig.GITHUB_API_VERSION`.
 - The network stack rejects cleartext traffic.
 - APK installation is delegated to Android's official package installer; there is no silent install or security bypass.
-- Release publication verifies the APK signer against `EXPECTED_RELEASE_CERT_SHA256` before creating release assets.
+- Release publication verifies the APK signer against the reviewed certificate pin before creating release assets.
 - SHA-256 is calculated locally for every completed file. Publisher identity is established only when that fingerprint is compared with a trusted checksum or signature.
 - Destructive GitHub operations require an explicit confirmation in the product flow.
 - Website-only actions open through an allow-listed HTTPS GitHub host in a Custom Tab. Credentials, passkeys, tokens, billing details, and Marketplace purchases remain on GitHub's pages and are never collected by GitHub Rock.

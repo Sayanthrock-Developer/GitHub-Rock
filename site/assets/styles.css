@@ -157,9 +157,12 @@ html[data-theme="light"] .sun-icon { display: none; }
   gap: 8px;
   border: 1px solid transparent;
   border-radius: 16px;
+  cursor: pointer;
+  font: inherit;
   font-weight: 850;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease;
 }
+.button[hidden] { display: none; }
 .button:hover { transform: translateY(-2px); }
 .button-small { min-height: 42px; padding: 0 15px; border-radius: 13px; font-size: .9rem; }
 .button-primary {
@@ -310,6 +313,75 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
 .cta-panel p,
 .policy-hero p { color: var(--muted); font-size: 1.04rem; }
 
+.platform-section { scroll-margin-top: 70px; }
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+.platform-card {
+  min-height: 260px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 15px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(150deg, var(--surface), color-mix(in srgb, var(--surface-soft) 88%, transparent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.platform-card-native {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--line));
+  background: linear-gradient(150deg, var(--primary-soft), var(--surface));
+}
+.platform-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 1rem;
+  font-weight: 950;
+}
+.platform-card strong,
+.platform-card small { display: block; }
+.platform-card strong { font-size: 1.02rem; }
+.platform-card small { margin-top: 5px; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+.platform-card .button { width: 100%; margin-top: auto; }
+.availability {
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 850;
+}
+.availability-ready {
+  border-color: color-mix(in srgb, var(--green) 34%, transparent);
+  color: var(--green);
+  background: var(--green-soft);
+}
+.availability-web {
+  border-color: color-mix(in srgb, var(--violet) 34%, transparent);
+  color: var(--violet);
+  background: var(--violet-soft);
+}
+.install-guidance {
+  margin-top: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+}
+.install-guidance strong { font-size: .92rem; }
+.install-guidance p { margin: 5px 0 0; color: var(--muted); font-size: .82rem; }
+
 .workspace {
   min-height: 630px;
   display: grid;
@@ -377,7 +449,8 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
 .asset-row b { font-size: .78rem; }
 .asset-row span { margin-top: 3px; color: var(--muted); font-size: .67rem; }
 .asset-row > strong { color: var(--muted); font-size: .68rem; }
-.asset-row button { min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); cursor: pointer; font-size: .68rem; font-weight: 780; }
+.asset-row button,
+.asset-row > a { min-height: 34px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); cursor: pointer; font-size: .68rem; font-weight: 780; }
 
 .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .feature-card { min-height: 285px; padding: 25px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-md); background: linear-gradient(150deg, var(--surface), color-mix(in srgb, var(--surface-soft) 88%, transparent)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
@@ -457,6 +530,7 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
   .security-panel, .roadmap-panel { grid-template-columns: 1fr; }
   .cta-panel { align-items: flex-start; flex-direction: column; }
   .cta-actions { min-width: 0; flex-direction: row; flex-wrap: wrap; }
+  .install-guidance { align-items: flex-start; flex-direction: column; }
   .policy-layout { grid-template-columns: 1fr; }
   .policy-nav { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
   .policy-nav strong { grid-column: 1 / -1; }
@@ -491,6 +565,7 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
   .asset-row > strong { display: none; }
   .feature-grid { grid-template-columns: 1fr; }
   .feature-card { min-height: 245px; }
+  .platform-card { min-height: 230px; }
   .security-panel, .roadmap-panel, .cta-panel, .policy-article { border-radius: 24px; }
   .cta-actions { width: 100%; flex-direction: column; }
   .policy-hero { padding-block: 60px 36px; }

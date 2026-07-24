@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify static website
         shell: bash
@@ -36,6 +36,13 @@ jobs:
           required_files=(
             site/index.html
             site/404.html
+            site/manifest.webmanifest
+            site/sw.js
+            site/assets/app.js
+            site/assets/styles.css
+            site/assets/icon-192.png
+            site/assets/icon-512.png
+            site/assets/apple-touch-icon.png
             site/privacy-policy/index.html
             site/terms/index.html
           )
@@ -45,18 +52,21 @@ jobs:
               exit 1
             }
           done
+          node --check site/assets/app.js
+          node --check site/sw.js
+          jq empty site/manifest.webmanifest
 
       # GitHub Pages must be enabled once in Repository Settings with
       # Build and deployment -> Source set to "GitHub Actions".
       # A workflow GITHUB_TOKEN cannot create the Pages site itself.
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload static website
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

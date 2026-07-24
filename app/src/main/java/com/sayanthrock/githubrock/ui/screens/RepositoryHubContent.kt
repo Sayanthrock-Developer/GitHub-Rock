@@ -79,10 +79,25 @@ import com.sayanthrock.githubrock.core.util.ReleasePlatform
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
-private enum class ReleaseFilter(val label: String) {
+internal enum class ReleaseFilter(val label: String) {
     Stable("Stable"),
     PreRelease("Pre-release"),
     All("All")
+}
+
+internal fun initialReleaseFilter(
+    releases: List<Release>,
+    initialTag: String?
+): ReleaseFilter {
+    val published = releases.filterNot(Release::draft)
+    val linkedRelease = published.firstOrNull { it.tagName == initialTag }
+    return when {
+        linkedRelease?.prerelease == true -> ReleaseFilter.PreRelease
+        linkedRelease != null -> ReleaseFilter.Stable
+        published.any { !it.prerelease } -> ReleaseFilter.Stable
+        published.any(Release::prerelease) -> ReleaseFilter.PreRelease
+        else -> ReleaseFilter.All
+    }
 }
 
 @Composable
@@ -349,11 +364,7 @@ private fun RepositoryReleasePanel(
     onDownload: (ReleaseAsset) -> Unit
 ) {
     var filter by rememberSaveable(initialTag, releases) {
-        mutableStateOf(
-            releases.firstOrNull { it.tagName == initialTag && it.prerelease }
-                ?.let { ReleaseFilter.PreRelease }
-                ?: ReleaseFilter.Stable
-        )
+        mutableStateOf(initialReleaseFilter(releases, initialTag))
     }
     val visibleReleases = releases.filterNot { it.draft }.filter { release ->
         when (filter) {
