@@ -4,8 +4,6 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 
 > Status: **first functional alpha**. The implemented screens and API calls are real. Demo mode is clearly labelled and isolated. Features listed under “Planned next” are intentionally not presented as complete in the app.
 
-> **Source of truth:** the Git repository and passing GitHub Actions runs are authoritative. Early exported PDF scaffold documents are historical references only; they contain placeholders, simulated success states, obsolete dependency versions, and invisible formatting characters and must not be copied back into source.
-
 ## Highlights
 
 - Kotlin, Jetpack Compose, Material 3, Gradle Kotlin DSL, and a version catalog
