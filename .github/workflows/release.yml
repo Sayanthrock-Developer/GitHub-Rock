@@ -14,8 +14,12 @@ on:
         default: false
         type: boolean
   push:
+    branches:
+      - main
     tags:
       - "v*"
+    paths:
+      - ".github/release-request.json"
 
 permissions:
   contents: write
@@ -58,11 +62,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            [ "$GITHUB_REF_TYPE" = "tag" ] || {
-              echo "Automatic releases must be triggered by a tag."
-              exit 1
-            }
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
             RELEASE_TAG="$GITHUB_REF_NAME"
             VERSION="${RELEASE_TAG#v}"
             if [[ "$VERSION" == *-* ]]; then
@@ -70,6 +70,27 @@ jobs:
             else
               PRERELEASE=false
             fi
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            [ "$GITHUB_REF_NAME" = "main" ] || {
+              echo "Reviewed release requests must be merged to main."
+              exit 1
+            }
+
+            RELEASE_REQUEST_FILE=".github/release-request.json"
+            jq -e '
+              type == "object" and
+              (.version | type == "string") and
+              (.prerelease | type == "boolean") and
+              (.public == true)
+            ' "$RELEASE_REQUEST_FILE" >/dev/null || {
+              echo "The release request must contain version, boolean prerelease, and public=true."
+              exit 1
+            }
+
+            VERSION="$(jq -r '.version' "$RELEASE_REQUEST_FILE")"
+            VERSION="${VERSION#v}"
+            RELEASE_TAG="v$VERSION"
+            PRERELEASE="$(jq -r '.prerelease' "$RELEASE_REQUEST_FILE")"
           else
             REQUESTED_VERSION="${INPUT_VERSION#v}"
             if [ -n "$REQUESTED_VERSION" ]; then
@@ -180,6 +201,12 @@ jobs:
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "Release $RELEASE_TAG already exists. Choose a new version or tag."
+            exit 1
+          fi
+
+          if [ "$GITHUB_REF_TYPE" != "tag" ] &&
+            git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG already exists without a release. Choose a new version or publish from that tag."
             exit 1
           fi
       - name: Prepare signing keystore
@@ -348,7 +375,7 @@ jobs:
           if [ "$PRERELEASE" = "true" ]; then
             FLAGS+=(--prerelease)
           fi
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             FLAGS+=(--verify-tag)
           else
             TARGET_FLAGS+=(--target "$GITHUB_SHA")
