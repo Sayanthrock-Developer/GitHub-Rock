@@ -2,12 +2,10 @@ package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,7 +24,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -333,12 +330,6 @@ fun NativeProfileScreen(
 
             item { ContributionActivityCard(state.details) }
             item { ProfileIdentitySummary(state.profile, state.details, openExternal) }
-            item {
-                ProfileSectionSelector(
-                    selected = state.section,
-                    onSelected = viewModel::selectSection
-                )
-            }
 
             state.followError?.let { message ->
                 item { GlassCard { Text(message, color = MaterialTheme.colorScheme.error) } }
@@ -398,41 +389,6 @@ fun NativeProfileScreen(
                 }
                 else -> items(items = state.people, key = GitHubUser::id) { person ->
                     ProfilePersonCard(person) { onOpenProfile(person.login) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileSectionSelector(
-    selected: NativeProfileSection,
-    onSelected: (NativeProfileSection) -> Unit
-) {
-    Surface(
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(5.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            NativeProfileSection.entries.forEach { section ->
-                Surface(
-                    onClick = { onSelected(section) },
-                    modifier = Modifier.weight(1f),
-                    shape = MaterialTheme.shapes.large,
-                    color = if (selected == section) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = if (selected == section) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Text(
-                        section.title,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (selected == section) FontWeight.Black else FontWeight.SemiBold,
-                        maxLines = 1
-                    )
                 }
             }
         }
