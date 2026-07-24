@@ -31,15 +31,15 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 
 ## Platform availability
 
-| Platform | Available now | Scope |
+| Platform | Release package | Scope |
 | --- | --- | --- |
 | Android | Native APK | Full GitHub Rock control centre on Android 10+ |
-| macOS | Installable web companion | Releases, documentation, and project access; not the native Android feature set |
-| Windows | Installable web companion | Releases, documentation, and project access; not the native Android feature set |
-| Linux | Installable web companion | Releases, documentation, and project access; not the native Android feature set |
-| iOS / iPadOS | Add-to-Home-Screen web companion | Releases, documentation, and project access; not the native Android feature set |
+| macOS | Tauri companion: Apple Silicon and Intel `.dmg` / `.pkg` | Releases, documentation, and project access; not the Android-only feature set |
+| Windows | Tauri companion: x64 `.msi`, setup `.exe`, and portable `.zip` | Releases, documentation, and project access; not the Android-only feature set |
+| Linux | Tauri companion: x64 `.AppImage`, `.deb`, `.rpm`, and `.pkg.tar.zst` | Releases, documentation, and project access; not the Android-only feature set |
+| iOS / iPadOS | Signed Tauri companion `.ipa` when Apple signing is configured | TestFlight, App Store, or another Apple-permitted route; not the Android-only feature set |
 
-The GitHub Pages site includes a web app manifest, service worker, offline application shell, live GitHub Release assets, and platform-specific installation guidance. Producing genuine native macOS, Windows, Linux, and iOS binaries requires a deliberate multiplatform migration; release-file renaming or extra workflow jobs cannot convert Android code into those applications. See [Cross-platform distribution](docs/CROSS_PLATFORM_DISTRIBUTION.md).
+The packaged companion embeds the GitHub Pages experience in a native Tauri 2 shell. The site remains installable as a progressive web app and includes a manifest, service worker, offline application shell, live GitHub Release assets, and platform-specific guidance. Packaging makes the companion installable on each operating system; it does not convert Android-only APIs into desktop or iOS feature parity. See [Cross-platform distribution](docs/CROSS_PLATFORM_DISTRIBUTION.md).
 
 ## Screenshots
 
@@ -158,12 +158,14 @@ New releases produced by the current workflow include both the APK file checksum
 ## Publish and install the app
 
 1. Add the four Android signing secrets listed above and verify that `.github/release-signing-cert.sha256` matches that keystore. Forks using another key must update the reviewed pin. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_OAUTH_CLIENT_ID`.
-2. Open **Actions → Publish Android Release → Run workflow**.
+2. Open **Actions → Publish GitHub Rock Release → Run workflow**.
 3. Enter a new version such as `0.2.2`, or leave it blank to increment the highest published patch version, and choose whether it is a prerelease.
-4. Wait for pinned certificate verification, checksum generation, and release publication to finish.
-5. Open the repository's **Releases** page and download `GitHub-Rock-<version>.apk`, `GitHub-Rock-<version>.apk.sha256`, and `GitHub-Rock-<version>.apk.certificate.sha256`.
+4. Wait for the Android signature check plus the macOS, Windows, and Linux package builds. The workflow validates the complete required asset matrix before publication.
+5. Open the repository's **Releases** page. Android users can download `GitHub-Rock-<version>.apk`; desktop users can choose the installer listed in the platform table above. Every package has a same-name `.sha256` file.
 6. Compare the APK's SHA-256 checksum with the `.apk.sha256` file. Compare the detected signing certificate with the fingerprint previously published through an independently trusted project channel.
 7. On Android 10 or newer, allow **Install unknown apps** only for the browser or file manager you used, open the APK, and approve Android's official Package Installer prompt.
+
+To publish the iOS IPA as well, configure the Apple Developer variable and secrets documented in [Cross-platform distribution](docs/CROSS_PLATFORM_DISTRIBUTION.md), then set `ENABLE_IOS_RELEASE` to `true`. Apple signing is mandatory for installation on end-user iPhones and iPads.
 
 If Android reports an incompatible signature, the installed copy was signed with a different key. Uninstall that older release before installing the new APK, or rebuild with the original signing key. Uninstalling removes that app's local data. Never bypass Play Protect or Android's package-signature checks.
 
@@ -204,7 +206,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Markdown edit/preview mode with safe headings, lists, quotes, dividers, and fenced code rendering; syntax previews for Kotlin, Java, XML, JSON, YAML, and Markdown
 - Recoverable fingerprinted download queue with live progress, pause/resume, confirmed cancel, retry, sharing, deletion confirmation, Room history, and APK inspection
 - Own-repository CI and manual APK workflows
-- Signed, versioned GitHub Release workflow with APK signature verification, pinned signing-certificate validation, APK checksums, and certificate fingerprint assets
+- Signed, versioned GitHub Release workflow with APK signature verification, pinned signing-certificate validation, cross-platform companion installers, complete asset-matrix validation, and per-file checksums
 - Actionable All GitHub hub covering 45 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, enterprises, Marketplace, accessibility, security settings, billing, and community discovery
 
 ## Planned next

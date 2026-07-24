@@ -21,7 +21,7 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Searchable All GitHub services hub with 45 allow-listed official web destinations and personalized profile, repository, project, package, and Gist links
 - GitHub reads for profile, rate limit, repositories, directories, issues, pull requests, workflows, runs, and releases, including direct public/private repository resolution for deep links
 - Five-platform release-asset picker for Android, macOS, Windows, Linux, and iOS with deterministic format and architecture classification
-- Installable GitHub Pages web companion with an offline application shell, live release assets, and honest native-platform availability labels
+- Installable GitHub Pages web companion plus a Tauri 2 package shell for macOS, Windows, Linux, and signed iOS builds, with an offline application shell, live release assets, and honest scope labels
 - Verified workflow dispatch/cancel/rerun repository methods
 - Android project detection and safe debug/release APK workflow YAML generation
 - Room cache schema, DataStore settings, recoverable WorkManager download worker
@@ -36,5 +36,5 @@ This file separates working alpha functionality from roadmap scope so the applic
 3. Storage Access Framework download locations, mirror selection, and trusted checksum-file matching.
 4. Biometric lock controls, foldable list-detail panes, and Paging-backed large lists.
 5. Complete TalkBack, large-font, keyboard, contrast, and physical-device screenshot validation.
-6. Extract portable domain and network layers before introducing genuine desktop or iOS targets.
+6. Extract portable domain and network layers before moving Android-only control-centre features into the packaged desktop and iOS companion.
 7. Continue moving high-value web-hub destinations into native screens when GitHub permissions and APIs support them safely.

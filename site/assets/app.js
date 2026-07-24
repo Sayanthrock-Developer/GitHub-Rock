@@ -86,6 +86,7 @@
   const installDialogTitle = installDialog?.querySelector('[data-install-dialog-title]');
   const installDialogCopy = installDialog?.querySelector('[data-install-dialog-copy]');
   const installDialogSteps = installDialog?.querySelector('[data-install-dialog-steps]');
+  const nativeShell = Boolean(window.__TAURI_INTERNALS__ || window.__TAURI__);
   const userAgent = navigator.userAgent.toLowerCase();
   const platformHint = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
   const iosDevice = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
@@ -98,7 +99,8 @@
     if (/linux/.test(platformHint) || /linux/.test(userAgent)) return 'linux';
     return 'other';
   })();
-  const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+  const standalone = nativeShell ||
+    window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
   let installPrompt = null;
 
@@ -219,7 +221,11 @@
 
   if (standalone) {
     setInstallButtons(false);
-    if (installStatus) installStatus.textContent = 'The web companion is installed on this device.';
+    if (installStatus) {
+      installStatus.textContent = nativeShell
+        ? 'The GitHub Rock companion is installed on this device.'
+        : 'The web companion is installed on this device.';
+    }
   } else {
     setInstallButtons(true, installGuide.buttonLabel);
     if (installStatus) installStatus.textContent = installGuide.status;
@@ -262,13 +268,27 @@
     if (installStatus) installStatus.textContent = 'The web companion is installed and ready to open.';
   });
 
-  if ('serviceWorker' in navigator) {
+  if (!nativeShell && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => {
         if (installStatus) {
           installStatus.textContent = 'The web companion is available online, but offline installation could not be prepared in this browser.';
         }
       });
+    });
+  }
+
+  if (nativeShell && window.__TAURI__?.opener?.openUrl) {
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest?.('a[href]');
+      if (!link) return;
+
+      const destination = new URL(link.href, window.location.href);
+      if (!['http:', 'https:'].includes(destination.protocol) ||
+          destination.origin === window.location.origin) return;
+
+      event.preventDefault();
+      window.__TAURI__.opener.openUrl(destination.href);
     });
   }
 
@@ -290,8 +310,14 @@
     const normalized = name.toLowerCase();
     if (normalized.endsWith('.apk')) return 'Android package';
     if (normalized.endsWith('.dmg') || normalized.endsWith('.pkg')) return 'macOS package';
-    if (normalized.endsWith('.msi') || normalized.endsWith('.msix') || normalized.endsWith('.exe')) return 'Windows package';
-    if (normalized.endsWith('.appimage') || normalized.endsWith('.deb') || normalized.endsWith('.rpm')) return 'Linux package';
+    if (normalized.endsWith('.msi') ||
+        normalized.endsWith('.msix') ||
+        normalized.endsWith('.exe') ||
+        (normalized.includes('windows') && normalized.endsWith('.zip'))) return 'Windows package';
+    if (normalized.endsWith('.appimage') ||
+        normalized.endsWith('.deb') ||
+        normalized.endsWith('.rpm') ||
+        normalized.endsWith('.pkg.tar.zst')) return 'Linux package';
     if (normalized.endsWith('.ipa')) return 'iOS package';
     if (normalized.includes('sha256')) return 'SHA-256 checksum';
     if (normalized.endsWith('.sig') || normalized.endsWith('.asc')) return 'Signature';

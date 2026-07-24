@@ -54,12 +54,7 @@ object ReleaseAssetClassifier {
             platform = platform,
             format = format,
             architecture = assetArchitecture(normalized),
-            isInstallablePackage = when (format) {
-                "APK", "IPA", "DMG", "PKG", "MSI", "MSIX", "MSIX bundle", "EXE",
-                "APPX", "APPX bundle", "AppImage", "DEB", "RPM", "Flatpak", "Snap",
-                "Alpine APK", "Arch package" -> true
-                else -> false
-            },
+            isInstallablePackage = isInstallablePackage(packageName, platform, format),
             isSupportFile = supportSuffix != null
         )
     }
@@ -115,6 +110,30 @@ object ReleaseAssetClassifier {
         name.endsWith(".ipa") ||
             name.endsWith(".xcarchive") ||
             name.endsWith(".xcarchive.zip")
+
+    private fun isInstallablePackage(
+        name: String,
+        platform: ReleasePlatform,
+        format: String
+    ): Boolean {
+        if (format in setOf(
+                "APK", "IPA", "DMG", "PKG", "MSI", "MSIX", "MSIX bundle", "EXE",
+                "APPX", "APPX bundle", "AppImage", "DEB", "RPM", "Flatpak", "Snap",
+                "Alpine APK", "Arch package"
+            )
+        ) {
+            return true
+        }
+
+        return when (platform) {
+            ReleasePlatform.Windows -> format == "ZIP" && hasToken(name, "portable")
+            ReleasePlatform.MacOS -> format == "ZIP" && name.endsWith(".app.zip")
+            ReleasePlatform.Linux ->
+                format in setOf("ZIP", "TAR.GZ", "TAR.XZ", "TAR.ZST") &&
+                    hasToken(name, "portable")
+            else -> false
+        }
+    }
 
     private fun hasToken(name: String, token: String): Boolean =
         Regex("(^|[._\\- ])${Regex.escape(token)}([._\\- ]|$)").containsMatchIn(name)

@@ -133,7 +133,7 @@ app/build/outputs/apk/debug/
 
 ## 🔏 APK signing certificate
 
-Official releases are signed in GitHub Actions. The release workflow verifies the APK with Android `apksigner`, compares the detected signer certificate with a reviewed trusted fingerprint, and only then publishes release assets.
+Official releases are signed in GitHub Actions. The release workflow verifies the APK with Android `apksigner`, compares the detected signer certificate with a reviewed trusted fingerprint, builds the required desktop companion packages, and only then publishes one release.
 
 ### Pin the trusted release certificate
 
@@ -170,8 +170,11 @@ The workflow decodes the keystore only inside the temporary Actions runner, vali
 
 | Release asset | Meaning |
 | --- | --- |
+| `GitHub-Rock-<version>.apk` | Verified Android application |
 | `GitHub-Rock-<version>.apk.sha256` | SHA-256 checksum of the APK file |
 | `GitHub-Rock-<version>.apk.certificate.sha256` | SHA-256 fingerprint detected from the APK signing certificate |
+| macOS, Windows, and Linux packages | Installable Tauri companion packages documented in [Cross-platform distribution](CROSS_PLATFORM_DISTRIBUTION.md) |
+| `<package-name>.sha256` | SHA-256 checksum for each desktop or iOS package |
 
 The certificate file is a convenience copy, not the root of trust. Compare it with a fingerprint previously published through an independently trusted project channel.
 

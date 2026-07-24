@@ -1,4 +1,4 @@
-name: Publish Android Release
+name: Publish GitHub Rock Release
 
 on:
   workflow_dispatch:
@@ -21,13 +21,18 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-android-release-${{ github.ref }}
+  group: publish-github-rock-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  android:
+    name: Build and verify Android APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      version: ${{ steps.release_metadata.outputs.version }}
+      release_tag: ${{ steps.release_metadata.outputs.release_tag }}
+      prerelease: ${{ steps.release_metadata.outputs.prerelease }}
     env:
       GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
       GITHUB_ROCK_BACKEND_URL: ${{ vars.GITHUB_ROCK_BACKEND_URL || '' }}
@@ -46,7 +51,8 @@ jobs:
           gradle-version: '8.13'
       - name: Generate Gradle wrapper
         run: gradle wrapper --gradle-version 8.13
-      - name: Resolve release metadata
+      - id: release_metadata
+        name: Resolve release metadata
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -102,6 +108,11 @@ jobs:
             echo "RELEASE_TAG=$RELEASE_TAG"
             echo "PRERELEASE=$PRERELEASE"
           } >> "$GITHUB_ENV"
+          {
+            echo "version=$VERSION"
+            echo "release_tag=$RELEASE_TAG"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
 
           {
             echo "### Release request"
@@ -257,9 +268,78 @@ jobs:
           name: GitHub-Rock-${{ env.VERSION }}
           path: dist/*
           if-no-files-found: error
+
+  companions:
+    name: Build desktop and optional iOS packages
+    needs: android
+    uses: ./.github/workflows/cross-platform-build.yml
+    with:
+      version: ${{ needs.android.outputs.version }}
+      build_ios: ${{ vars.ENABLE_IOS_RELEASE == 'true' }}
+      apple_team_id: ${{ vars.APPLE_TEAM_ID || '' }}
+    secrets:
+      APPLE_IOS_CERTIFICATE_BASE64: ${{ secrets.APPLE_IOS_CERTIFICATE_BASE64 }}
+      APPLE_IOS_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_IOS_CERTIFICATE_PASSWORD }}
+      APPLE_IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_IOS_PROVISIONING_PROFILE_BASE64 }}
+
+  publish:
+    name: Publish verified release assets
+    needs:
+      - android
+      - companions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download every verified package
+        uses: actions/download-artifact@v8
+        with:
+          pattern: GitHub-Rock-${{ needs.android.outputs.version }}*
+          path: dist
+          merge-multiple: true
+      - name: Validate release asset matrix
+        env:
+          VERSION: ${{ needs.android.outputs.version }}
+          REQUIRE_IOS: ${{ vars.ENABLE_IOS_RELEASE == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=(
+            "GitHub-Rock-$VERSION.apk"
+            "GitHub-Rock-$VERSION-macos-arm64.dmg"
+            "GitHub-Rock-$VERSION-macos-arm64.pkg"
+            "GitHub-Rock-$VERSION-macos-x64.dmg"
+            "GitHub-Rock-$VERSION-macos-x64.pkg"
+            "GitHub-Rock-$VERSION-windows-x64.msi"
+            "GitHub-Rock-$VERSION-windows-x64-setup.exe"
+            "GitHub-Rock-$VERSION-windows-x64-portable.zip"
+            "GitHub-Rock-$VERSION-linux-x64.AppImage"
+            "GitHub-Rock-$VERSION-linux-x64.deb"
+            "GitHub-Rock-$VERSION-linux-x64.rpm"
+            "GitHub-Rock-$VERSION-linux-x64.pkg.tar.zst"
+          )
+          if [ "$REQUIRE_IOS" = "true" ]; then
+            expected+=("GitHub-Rock-$VERSION-ios-arm64.ipa")
+          fi
+
+          for asset in "${expected[@]}"; do
+            test -s "dist/$asset" || {
+              echo "Required release asset is missing or empty: $asset" >&2
+              exit 1
+            }
+            test -s "dist/$asset.sha256" || {
+              echo "Required checksum is missing or empty: $asset.sha256" >&2
+              exit 1
+            }
+          done
+
+          find dist -maxdepth 1 -type f -printf '%f\n' | sort
       - name: Publish public GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.android.outputs.version }}
+          RELEASE_TAG: ${{ needs.android.outputs.release_tag }}
+          PRERELEASE: ${{ needs.android.outputs.prerelease }}
         run: |
           set -euo pipefail
           FLAGS=()

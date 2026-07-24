@@ -1,4 +1,4 @@
-const CACHE_NAME = 'github-rock-web-v2';
+const CACHE_NAME = 'github-rock-web-v3';
 const APP_SHELL = [
   './',
   './index.html',

@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="GitHub Rock">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="GitHub Rock is a native Android control centre with an installable cross-platform web companion for releases, documentation, and project access.">
+  <meta name="description" content="GitHub Rock is a native Android control centre with packaged companions for macOS, Windows, Linux, and signed iOS distribution.">
   <meta property="og:title" content="GitHub Rock — GitHub, made mobile">
-  <meta property="og:description" content="A secure native Android workspace plus an installable web companion for macOS, Windows, Linux, iOS, and Android.">
+  <meta property="og:description" content="A secure native Android workspace plus installable companion packages for macOS, Windows, Linux, and iOS.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://sayanthrock-developer.github.io/GitHub-Rock/">
   <title>GitHub Rock — GitHub, made mobile</title>
@@ -54,17 +54,17 @@
   <main id="main">
     <section class="hero shell">
       <div class="hero-copy reveal">
-        <div class="eyebrow"><span class="status-dot"></span> Native Android + web companion · Open source</div>
+        <div class="eyebrow"><span class="status-dot"></span> Native Android + packaged companion · Open source</div>
         <h1>GitHub, made <span>mobile.</span></h1>
-        <p class="hero-lead">Use the full native Android control centre, or install the lightweight web companion on macOS, Windows, Linux, iPhone, and iPad for releases, documentation, and project access.</p>
+        <p class="hero-lead">Use the full native Android control centre, or install the lightweight companion on macOS, Windows, Linux, iPhone, and iPad for releases, documentation, and project access.</p>
         <div class="hero-actions">
-          <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download Android APK</a>
-          <button class="button button-secondary" type="button" data-install-app>Install web companion</button>
+          <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download for your device</a>
+          <button class="button button-secondary" type="button" data-install-app>Install web fallback</button>
           <a class="button button-secondary" href="#discover">Explore the experience</a>
         </div>
         <div class="trust-row" aria-label="Product qualities">
           <span>Android 10+</span>
-          <span>Installable web companion</span>
+          <span>Desktop installers</span>
           <span>OAuth Device Flow</span>
           <span>Review-first changes</span>
           <span>SHA-256 verification</span>
@@ -123,7 +123,7 @@
       <div class="section-heading reveal">
         <div class="eyebrow">One project · Every device</div>
         <h2>Choose the version that genuinely works on your device.</h2>
-        <p>The full GitHub control centre is currently native to Android. Other platforms can install the web companion today; native desktop and iOS binaries require a future multiplatform app, signing, and platform-specific testing.</p>
+        <p>The release workflow publishes the full Android APK plus an installable companion for macOS, Windows, and Linux. Signed iOS builds are produced when the required Apple Developer credentials are configured.</p>
       </div>
 
       <div class="platform-grid">
@@ -135,34 +135,34 @@
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">M</span>
-          <div><strong>macOS</strong><small>Safari, Chrome, or Edge</small></div>
-          <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="macos">Install on macOS</button>
+          <div><strong>macOS</strong><small>Apple Silicon + Intel</small></div>
+          <span class="availability availability-ready">DMG + PKG</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Choose macOS package</a>
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">W</span>
-          <div><strong>Windows</strong><small>Chrome or Edge</small></div>
-          <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="windows">Install on Windows</button>
+          <div><strong>Windows</strong><small>64-bit Windows 10 / 11</small></div>
+          <span class="availability availability-ready">MSI + EXE + ZIP</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Choose Windows package</a>
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">L</span>
-          <div><strong>Linux</strong><small>Chromium-based browser</small></div>
-          <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="linux">Install on Linux</button>
+          <div><strong>Linux</strong><small>64-bit Linux</small></div>
+          <span class="availability availability-ready">AppImage + packages</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Choose Linux package</a>
         </article>
         <article class="platform-card reveal">
           <span class="platform-icon" aria-hidden="true">i</span>
-          <div><strong>iOS / iPadOS</strong><small>Safari · Add to Home Screen</small></div>
-          <span class="availability availability-web">Web companion</span>
-          <button class="button button-small button-ghost" type="button" data-install-app data-install-platform="ios">Add to Home Screen</button>
+          <div><strong>iOS / iPadOS</strong><small>Signed IPA or Safari fallback</small></div>
+          <span class="availability availability-web">Apple signing required</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/docs/CROSS_PLATFORM_DISTRIBUTION.md#ios-and-ipados">View iOS options</a>
         </article>
       </div>
 
       <div class="install-guidance reveal" role="status" aria-live="polite">
         <div>
           <strong>Cross-platform status</strong>
-          <p data-install-status>Open this page on the device where you want to install the web companion.</p>
+          <p data-install-status>Use a GitHub Release package, or install this page as the no-download web fallback.</p>
         </div>
         <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a>
       </div>
@@ -218,7 +218,7 @@
             <div class="workspace-head"><div><small>Automation</small><h3>Workflow activity</h3></div><span class="live-chip warning">2 running</span></div>
             <div class="run-list">
               <article><span class="run-state success">✓</span><div><strong>Android CI</strong><small>main · assembleDebug</small></div><b>Passed</b></article>
-              <article><span class="run-state running">↻</span><div><strong>Publish Android Release</strong><small>v0.2.0 · certificate verification</small></div><b>Running</b></article>
+              <article><span class="run-state running">↻</span><div><strong>Publish GitHub Rock Release</strong><small>v0.2.2 · cross-platform packages</small></div><b>Running</b></article>
               <article><span class="run-state neutral">•</span><div><strong>GitHub Pages</strong><small>website deployment</small></div><b>Queued</b></article>
             </div>
           </section>
@@ -289,8 +289,8 @@
 
     <section class="section shell">
       <div class="cta-panel reveal">
-        <div><div class="eyebrow">Your repositories. Your workflow.</div><h2>Take GitHub Rock with you.</h2><p>Download the native Android release, install the cross-platform web companion, or inspect the source directly on GitHub.</p></div>
-        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download Android APK</a><button class="button button-secondary" type="button" data-install-app>Install web companion</button><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
+        <div><div class="eyebrow">Your repositories. Your workflow.</div><h2>Take GitHub Rock with you.</h2><p>Choose the Android, macOS, Windows, Linux, or signed iOS package, install the web fallback, or inspect the source.</p></div>
+        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">View all downloads</a><button class="button button-secondary" type="button" data-install-app>Install web fallback</button><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
       </div>
     </section>
   </main>

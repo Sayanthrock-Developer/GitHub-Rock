@@ -1,69 +1,79 @@
 # Cross-platform distribution
 
-GitHub Rock currently has two honest distribution surfaces:
+GitHub Rock has a full native Android application and a packaged cross-platform companion. The companion uses Tauri 2 to put the project website, live GitHub Release files, documentation, and project links into an installable application window. It does not represent Android-only repository management, WorkManager, Keystore, APK inspection, or package-installer features as desktop or iOS functionality.
 
-1. A full native Android application for Android 10 and newer.
-2. An installable web companion for macOS, Windows, Linux, iOS, iPadOS, and Android browsers.
+## Release package matrix
 
-The web companion provides the project website, live GitHub Release assets, documentation, source links, offline application-shell access, and installation guidance. It does not claim the Android app's authenticated repository, Actions, download-worker, APK-inspection, or Android Keystore features.
+The release workflow builds and verifies every required desktop package before it creates a public GitHub Release.
 
-## Current platform matrix
+| Platform | Architectures | Release files | Installation |
+| --- | --- | --- | --- |
+| Android 10+ | Android package ABIs | `GitHub-Rock-<version>.apk` | Android Package Installer |
+| macOS 11+ | Apple Silicon (`arm64`) and Intel (`x64`) | `.dmg` and `.pkg` | Drag from the DMG or run the installer package |
+| Windows 10/11 | `x64` | `.msi`, setup `.exe`, and portable `.zip` | Windows Installer, setup wizard, or unzip and run |
+| Linux | `x64` | `.AppImage`, `.deb`, `.rpm`, and `.pkg.tar.zst` | AppImage or the distribution's package manager |
+| iOS / iPadOS 15+ | `arm64` | Signed `.ipa` when Apple signing is enabled | TestFlight, App Store, or another Apple-permitted distribution route |
 
-| Platform | Package or installation | Current status |
+Each package also has a same-name `.sha256` file. The Android release additionally includes the independently reviewed signing-certificate fingerprint.
+
+The GitHub Pages progressive web app remains available as a no-download fallback on macOS, Windows, Linux, iOS, iPadOS, and Android.
+
+## Install the packages
+
+### macOS
+
+Choose the `arm64` asset for Apple Silicon Macs and `x64` for Intel Macs. Open the `.dmg` and copy GitHub Rock to Applications, or run the matching `.pkg`.
+
+A package built without an Apple Developer ID signature can still be produced, but macOS Gatekeeper may require an explicit approval in Privacy & Security. Production releases should be signed and notarized with an Apple Developer ID certificate.
+
+### Windows
+
+Use the `.msi` for Windows Installer, the `-setup.exe` for the guided installer, or the portable `.zip` when installation is not desired. The package targets 64-bit Windows.
+
+Unsigned Windows applications can run after the user acknowledges Microsoft SmartScreen. A production publisher should configure a Windows code-signing certificate to remove avoidable trust warnings.
+
+### Linux
+
+- Make the `.AppImage` executable and run it.
+- Install the `.deb` on Debian or Ubuntu.
+- Install the `.rpm` on Fedora, RHEL, or a compatible distribution.
+- Install the `.pkg.tar.zst` on Arch Linux or a compatible distribution.
+
+The Linux packages target `x86_64` and require the WebKitGTK runtime supplied by the distribution.
+
+### iOS and iPadOS
+
+iOS does not permit a universal unsigned GitHub Release download that installs on every device. The workflow therefore builds an IPA only when valid Apple Developer signing material is configured. That IPA must then be distributed through TestFlight, the App Store, or another route Apple permits for the publisher and users.
+
+Configure these Actions values before setting `ENABLE_IOS_RELEASE` to `true`:
+
+| Type | Name | Value |
 | --- | --- | --- |
-| Android | Signed `.apk` | Full native application |
-| macOS | Browser-installed PWA | Web companion |
-| Windows | Browser-installed PWA | Web companion |
-| Linux | Browser-installed PWA | Web companion |
-| iOS / iPadOS | Safari → Share → Add to Home Screen | Web companion |
+| Variable | `ENABLE_IOS_RELEASE` | `true` |
+| Variable | `APPLE_TEAM_ID` | Apple Developer team identifier |
+| Secret | `APPLE_IOS_CERTIFICATE_BASE64` | Base64 Apple Distribution `.p12` |
+| Secret | `APPLE_IOS_CERTIFICATE_PASSWORD` | Password for the `.p12` |
+| Secret | `APPLE_IOS_PROVISIONING_PROFILE_BASE64` | Base64 App Store Connect provisioning profile |
 
-## Installation requirements
+The registered Apple App ID and provisioning profile must match `com.sayanthrock.githubrock.companion`.
 
-- **macOS:** Safari 17 or newer can use **File → Add to Dock**. Chrome and Edge expose an install action in the address bar or browser menu.
-- **Windows:** Chrome and Edge can install the site as a standalone app and add it to Start.
-- **Linux:** Chrome, Chromium, Brave, and other Chromium-based browsers can install the site as an app. Firefox desktop does not currently provide the same PWA installation surface.
-- **iOS / iPadOS:** Apple requires Safari's **Share → Add to Home Screen** flow; a website cannot trigger that confirmation automatically.
-- **Android:** Chrome can install the web companion, while GitHub Releases provides the full native APK.
+## Build workflows
 
-The website always exposes an installation button. When the browser provides a native install prompt, the button opens it. Otherwise, it opens exact instructions for the detected operating system.
+- `.github/workflows/cross-platform-build.yml` validates the Tauri configuration on pull requests and builds macOS, Windows, and Linux packages. Its manual dispatch can also build the signed iOS IPA.
+- `.github/workflows/release.yml` first verifies the signed Android APK, calls the cross-platform build, checks the complete asset matrix, and only then publishes one GitHub Release.
+- `tools/release/collect-desktop-artifacts.mjs` gives generated installers predictable release names.
+- `tools/release/write-checksums.mjs` creates SHA-256 sidecars.
+- `tools/release/package-arch.sh` creates the Arch Linux package.
 
-## Why one Android build cannot create every native package
+The desktop companion can be checked locally with:
 
-The current application depends on Android-only APIs and libraries, including Android components, Hilt integration, Room, DataStore, WorkManager, Android Keystore, package inspection, the system package installer, notifications, and Compose for Android. A workflow matrix can run the same source on several runners, but it cannot turn those dependencies into a signed `.dmg`, `.msix`, `.AppImage`, or `.ipa`.
-
-iOS distribution also requires an Apple bundle identifier, an Apple Developer team, signing certificates, provisioning profiles, and App Store Connect or another permitted distribution channel. A generic unsigned IPA is not a usable public release.
-
-## Native multiplatform roadmap
-
-1. Extract GitHub models, API contracts, release classification, checksums, workflow policies, and validation into platform-neutral Kotlin modules.
-2. Define interfaces for secure storage, persistence, background work, notifications, file access, sharing, and installation.
-3. Keep Android implementations behind those interfaces while preserving the current application.
-4. Add Compose Multiplatform desktop targets for macOS, Windows, and Linux.
-5. Add an iOS target and replace Android-specific flows with Apple-supported equivalents.
-6. Add platform-specific signing:
-   - Android keystore and APK signing
-   - Apple Developer ID, notarization, and iOS provisioning
-   - Windows code signing
-   - Linux package checksums and optional repository signatures
-7. Publish only after each platform has loading, error, empty, permission, update, accessibility, and physical-device validation.
-
-## Release asset naming contract
-
-The Android app classifies assets from their names. Publishers should include the platform, architecture, and native extension:
-
-```text
-GitHub-Rock-1.0.0-android-arm64-v8a.apk
-GitHub-Rock-1.0.0-macos-universal.dmg
-GitHub-Rock-1.0.0-windows-x64.msix
-GitHub-Rock-1.0.0-linux-x86_64.AppImage
-GitHub-Rock-1.0.0-ios-arm64.ipa
+```bash
+npm ci --prefix desktop
+npm run check --prefix desktop
 ```
 
-Checksums and signatures should keep the full package name:
+## Why the platform scopes differ
 
-```text
-GitHub-Rock-1.0.0-android-arm64-v8a.apk.sha256
-GitHub-Rock-1.0.0-macos-universal.dmg.sha256
-```
+The Android application depends on Android components, Hilt, Room, DataStore, WorkManager, Android Keystore, package inspection, notifications, and the Android package installer. Tauri packages the platform-neutral website as a real desktop or iOS application, but it does not convert those Android APIs into equivalents on other operating systems.
 
-An asset appears for a platform only when the publisher actually uploads it. GitHub Rock does not synthesize unavailable installers or represent a source archive as a native application.
+A later feature-parity migration would still need portable domain modules plus platform implementations for secure storage, persistence, background work, notifications, files, installation, and code signing. Until then, release descriptions and the UI must distinguish the full Android control centre from the cross-platform companion.

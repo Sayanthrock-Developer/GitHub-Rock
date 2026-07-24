@@ -43,6 +43,60 @@ class ReleaseAssetClassifierTest {
         )
     }
 
+    @Test fun supportsThePublishedCrossPlatformPackageMatrix() {
+        val cases = listOf(
+            Case("GitHub-Rock-0.2.2.apk", ReleasePlatform.Android, "APK", "Architecture not specified"),
+            Case("GitHub-Rock-0.2.2-macos-arm64.dmg", ReleasePlatform.MacOS, "DMG", "ARM64"),
+            Case("GitHub-Rock-0.2.2-macos-x64.pkg", ReleasePlatform.MacOS, "PKG", "x64"),
+            Case("GitHub-Rock-0.2.2-windows-x64.msi", ReleasePlatform.Windows, "MSI", "x64"),
+            Case("GitHub-Rock-0.2.2-windows-x64-setup.exe", ReleasePlatform.Windows, "EXE", "x64"),
+            Case(
+                "GitHub-Rock-0.2.2-windows-x64-portable.zip",
+                ReleasePlatform.Windows,
+                "ZIP",
+                "x64"
+            ),
+            Case("GitHub-Rock-0.2.2-linux-x64.AppImage", ReleasePlatform.Linux, "AppImage", "x64"),
+            Case("GitHub-Rock-0.2.2-linux-x64.deb", ReleasePlatform.Linux, "DEB", "x64"),
+            Case("GitHub-Rock-0.2.2-linux-x64.rpm", ReleasePlatform.Linux, "RPM", "x64"),
+            Case(
+                "GitHub-Rock-0.2.2-linux-x64.pkg.tar.zst",
+                ReleasePlatform.Linux,
+                "Arch package",
+                "x64"
+            ),
+            Case("GitHub-Rock-0.2.2-ios-arm64.ipa", ReleasePlatform.IOS, "IPA", "ARM64")
+        )
+
+        cases.forEach { case ->
+            val info = ReleaseAssetClassifier.classify(case.name)
+            assertEquals(case.name, case.platform, info.platform)
+            assertEquals(case.name, case.format, info.format)
+            assertEquals(case.name, case.architecture, info.architecture)
+            assertTrue(case.name, info.isInstallablePackage)
+            assertFalse(case.name, info.isSupportFile)
+        }
+    }
+
+    @Test fun supportsThePackageNamesShownInTheReferenceRelease() {
+        val expected = mapOf(
+            "komi-store-1.9.2-1-x86_64.pkg.tar.zst" to ReleasePlatform.Linux,
+            "Komi-Store-1.9.2-arm64.dmg" to ReleasePlatform.MacOS,
+            "Komi-Store-1.9.2-arm64.pkg" to ReleasePlatform.MacOS,
+            "Komi-Store-1.9.2-windows-portable.zip" to ReleasePlatform.Windows,
+            "Komi-Store-1.9.2-x64.dmg" to ReleasePlatform.MacOS,
+            "Komi-Store-1.9.2-x64.pkg" to ReleasePlatform.MacOS,
+            "Komi-Store-1.9.2.apk" to ReleasePlatform.Android,
+            "Komi-Store-1.9.2.exe" to ReleasePlatform.Windows,
+            "Komi-Store-1.9.2.msi" to ReleasePlatform.Windows,
+            "Komi-Store-x86_64.AppImage" to ReleasePlatform.Linux
+        )
+
+        expected.forEach { (name, platform) ->
+            assertEquals(name, platform, ReleaseAssetClassifier.classify(name).platform)
+        }
+    }
+
     @Test fun explicitLinuxPackagingWinsOverTheAmbiguousApkExtension() {
         val alpinePackage = ReleaseAssetClassifier.classify("github-rock-alpine-x64.apk")
         val androidPackage = ReleaseAssetClassifier.classify("github-rock-android-x64.apk")
