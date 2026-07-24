@@ -203,6 +203,12 @@ jobs:
             echo "Release $RELEASE_TAG already exists. Choose a new version or tag."
             exit 1
           fi
+
+          if [ "$GITHUB_REF_TYPE" != "tag" ] &&
+            git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG already exists without a release. Choose a new version or publish from that tag."
+            exit 1
+          fi
       - name: Prepare signing keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
