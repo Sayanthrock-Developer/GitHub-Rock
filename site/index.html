@@ -4,12 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090b10">
-  <meta name="description" content="GitHub Rock is a native Android control centre for repositories, Actions, releases, downloads, and secure GitHub workflows.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="GitHub Rock">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="GitHub Rock is a native Android control centre with packaged companions for macOS, Windows, Linux, and signed iOS distribution.">
   <meta property="og:title" content="GitHub Rock — GitHub, made mobile">
-  <meta property="og:description" content="A secure native Android workspace for repositories, Actions, releases, downloads, and APK inspection.">
+  <meta property="og:description" content="A secure native Android workspace plus installable companion packages for macOS, Windows, Linux, and iOS.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://sayanthrock-developer.github.io/GitHub-Rock/">
   <title>GitHub Rock — GitHub, made mobile</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
   <link rel="stylesheet" href="./assets/styles.css">
   <script defer src="./assets/app.js"></script>
 </head>
@@ -26,6 +33,7 @@
       </a>
 
       <nav class="desktop-nav" aria-label="Primary navigation">
+        <a href="#downloads">Downloads</a>
         <a href="#discover">Discover</a>
         <a href="#capabilities">Capabilities</a>
         <a href="#security">Security</a>
@@ -38,7 +46,7 @@
           <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
         </button>
         <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">Source</a>
-        <a class="button button-small button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Get the app</a>
+        <a class="button button-small button-primary" href="#downloads">Get the app</a>
       </div>
     </div>
   </header>
@@ -46,15 +54,17 @@
   <main id="main">
     <section class="hero shell">
       <div class="hero-copy reveal">
-        <div class="eyebrow"><span class="status-dot"></span> Native Android · Open source</div>
+        <div class="eyebrow"><span class="status-dot"></span> Native Android + packaged companion · Open source</div>
         <h1>GitHub, made <span>mobile.</span></h1>
-        <p class="hero-lead">A focused Android workspace for discovering repositories, managing real GitHub work, monitoring Actions, handling releases, and inspecting downloads without handing over your password.</p>
+        <p class="hero-lead">Use the full native Android control centre, or install the lightweight companion on macOS, Windows, Linux, iPhone, and iPad for releases, documentation, and project access.</p>
         <div class="hero-actions">
-          <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download GitHub Rock</a>
+          <a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download for your device</a>
+          <button class="button button-secondary" type="button" data-install-app>Install web fallback</button>
           <a class="button button-secondary" href="#discover">Explore the experience</a>
         </div>
         <div class="trust-row" aria-label="Product qualities">
           <span>Android 10+</span>
+          <span>Desktop installers</span>
           <span>OAuth Device Flow</span>
           <span>Review-first changes</span>
           <span>SHA-256 verification</span>
@@ -109,6 +119,72 @@
       </div>
     </section>
 
+    <section class="section shell platform-section" id="downloads">
+      <div class="section-heading reveal">
+        <div class="eyebrow">One project · Every device</div>
+        <h2>Choose the version that genuinely works on your device.</h2>
+        <p>The release workflow publishes the full Android APK plus an installable companion for macOS, Windows, and Linux. Signed iOS builds are produced when the required Apple Developer credentials are configured.</p>
+      </div>
+
+      <div class="platform-grid">
+        <article class="platform-card platform-card-native reveal">
+          <span class="platform-icon" aria-hidden="true">A</span>
+          <div><strong>Android</strong><small>Native app · Android 10+</small></div>
+          <span class="availability availability-ready">APK available</span>
+          <a class="button button-small button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download APK</a>
+        </article>
+        <article class="platform-card reveal">
+          <span class="platform-icon" aria-hidden="true">M</span>
+          <div><strong>macOS</strong><small>Apple Silicon + Intel</small></div>
+          <span class="availability availability-ready">DMG + PKG</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Choose macOS package</a>
+        </article>
+        <article class="platform-card reveal">
+          <span class="platform-icon" aria-hidden="true">W</span>
+          <div><strong>Windows</strong><small>64-bit Windows 10 / 11</small></div>
+          <span class="availability availability-ready">MSI + EXE + ZIP</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Choose Windows package</a>
+        </article>
+        <article class="platform-card reveal">
+          <span class="platform-icon" aria-hidden="true">L</span>
+          <div><strong>Linux</strong><small>64-bit Linux</small></div>
+          <span class="availability availability-ready">AppImage + packages</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Choose Linux package</a>
+        </article>
+        <article class="platform-card reveal">
+          <span class="platform-icon" aria-hidden="true">i</span>
+          <div><strong>iOS / iPadOS</strong><small>Signed IPA or Safari fallback</small></div>
+          <span class="availability availability-web">Apple signing required</span>
+          <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/docs/CROSS_PLATFORM_DISTRIBUTION.md#ios-and-ipados">View iOS options</a>
+        </article>
+      </div>
+
+      <div class="install-guidance reveal" role="status" aria-live="polite">
+        <div>
+          <strong>Cross-platform status</strong>
+          <p data-install-status>Use a GitHub Release package, or install this page as the no-download web fallback.</p>
+        </div>
+        <a class="button button-small button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a>
+      </div>
+
+      <dialog class="install-dialog" id="install-dialog" data-install-dialog aria-labelledby="install-dialog-title">
+        <div class="install-dialog-panel">
+          <div class="install-dialog-head">
+            <div>
+              <span class="eyebrow">Install GitHub Rock</span>
+              <h3 id="install-dialog-title" data-install-dialog-title>Install the web companion</h3>
+            </div>
+            <button class="dialog-close" type="button" data-install-dialog-close aria-label="Close installation instructions">×</button>
+          </div>
+          <p data-install-dialog-copy>Follow the steps for your browser and device.</p>
+          <ol class="install-steps" data-install-dialog-steps></ol>
+          <div class="install-dialog-actions">
+            <button class="button button-primary" type="button" data-install-dialog-close>Done</button>
+          </div>
+        </div>
+      </dialog>
+    </section>
+
     <section class="section shell" id="discover">
       <div class="section-heading centered reveal">
         <div class="eyebrow">Discovery-first experience</div>
@@ -142,14 +218,26 @@
             <div class="workspace-head"><div><small>Automation</small><h3>Workflow activity</h3></div><span class="live-chip warning">2 running</span></div>
             <div class="run-list">
               <article><span class="run-state success">✓</span><div><strong>Android CI</strong><small>main · assembleDebug</small></div><b>Passed</b></article>
-              <article><span class="run-state running">↻</span><div><strong>Publish Android Release</strong><small>v0.2.0 · certificate verification</small></div><b>Running</b></article>
+              <article><span class="run-state running">↻</span><div><strong>Publish GitHub Rock Release</strong><small>v0.2.2 · cross-platform packages</small></div><b>Running</b></article>
               <article><span class="run-state neutral">•</span><div><strong>GitHub Pages</strong><small>website deployment</small></div><b>Queued</b></article>
             </div>
           </section>
 
           <section class="workspace-panel" id="releases-panel" data-workspace-panel hidden>
-            <div class="workspace-head"><div><small>Release centre</small><h3>Assets for every platform</h3></div><span class="live-chip">Verified</span></div>
-            <div class="release-card"><div class="release-top"><div><strong>GitHub Rock v0.2.0</strong><small>Latest stable release</small></div><span>Latest</span></div><div class="asset-row"><div><b>APK</b><span>Android · arm64-v8a</span></div><strong>24.8 MB</strong><button type="button">Download</button></div><div class="asset-row"><div><b>SHA256</b><span>Checksum file</span></div><strong>128 B</strong><button type="button">Verify</button></div><div class="asset-row"><div><b>CERT</b><span>Signing certificate fingerprint</span></div><strong>128 B</strong><button type="button">Inspect</button></div></div>
+            <div class="workspace-head"><div><small>Release centre</small><h3>Published release assets</h3></div><span class="live-chip">Live GitHub data</span></div>
+            <div class="release-card" data-latest-release>
+              <div class="release-top">
+                <div><strong data-release-name>Latest GitHub Release</strong><small data-release-date>Loading published assets…</small></div>
+                <span data-release-status>Loading</span>
+              </div>
+              <div data-release-assets>
+                <div class="asset-row">
+                  <div><b>GitHub Releases</b><span>Open the publisher’s current files</span></div>
+                  <strong>Live</strong>
+                  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Open</a>
+                </div>
+              </div>
+            </div>
           </section>
         </div>
       </div>
@@ -201,8 +289,8 @@
 
     <section class="section shell">
       <div class="cta-panel reveal">
-        <div><div class="eyebrow">Your repositories. Your workflow.</div><h2>Take GitHub Rock with you.</h2><p>Download the latest release, inspect the source, and follow development directly on GitHub.</p></div>
-        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Download release</a><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
+        <div><div class="eyebrow">Your repositories. Your workflow.</div><h2>Take GitHub Rock with you.</h2><p>Choose the Android, macOS, Windows, Linux, or signed iOS package, install the web fallback, or inspect the source.</p></div>
+        <div class="cta-actions"><a class="button button-primary" href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">View all downloads</a><button class="button button-secondary" type="button" data-install-app>Install web fallback</button><a class="button button-ghost" href="https://github.com/Sayanthrock-Developer/GitHub-Rock">View source</a></div>
       </div>
     </section>
   </main>
@@ -210,7 +298,7 @@
   <footer class="site-footer">
     <div class="shell footer-grid">
       <div><a class="brand" href="./"><span class="brand-mark mini" aria-hidden="true"><svg viewBox="0 0 16 16" role="img"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z"/></svg></span><span class="brand-copy"><strong>GitHub Rock</strong><small>GitHub, made mobile.</small></span></a><p>Native Android developer control centre for GitHub.</p></div>
-      <div><strong>Product</strong><a href="#discover">Discover</a><a href="#capabilities">Capabilities</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a></div>
+      <div><strong>Product</strong><a href="#downloads">Downloads</a><a href="#discover">Discover</a><a href="#capabilities">Capabilities</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a></div>
       <div><strong>Legal</strong><a href="./privacy-policy/">Privacy Policy</a><a href="./terms/">Terms of Service</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/LICENSE">License</a></div>
       <div><strong>Community</strong><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock">GitHub</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">Support</a><a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/security">Security</a></div>
     </div>

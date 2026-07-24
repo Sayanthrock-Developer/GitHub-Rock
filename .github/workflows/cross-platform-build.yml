@@ -1,0 +1,273 @@
+name: Build cross-platform companion
+
+on:
+  pull_request:
+    paths:
+      - "desktop/**"
+      - "site/**"
+      - "tools/release/collect-desktop-artifacts.mjs"
+      - "tools/release/package-arch.sh"
+      - "tools/release/set-companion-version.mjs"
+      - "tools/release/test-cross-platform-config.mjs"
+      - "tools/release/write-checksums.mjs"
+      - ".github/workflows/cross-platform-build.yml"
+  workflow_call:
+    inputs:
+      version:
+        description: Semantic version to apply to every companion package
+        required: true
+        type: string
+      build_ios:
+        description: Build a signed iOS IPA
+        required: false
+        default: false
+        type: boolean
+      apple_team_id:
+        description: Apple Developer team identifier used by the signed iOS build
+        required: false
+        default: ""
+        type: string
+    secrets:
+      APPLE_IOS_CERTIFICATE_BASE64:
+        required: false
+      APPLE_IOS_CERTIFICATE_PASSWORD:
+        required: false
+      APPLE_IOS_PROVISIONING_PROFILE_BASE64:
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional semantic version; defaults to desktop/package.json
+        required: false
+        default: ""
+        type: string
+      build_ios:
+        description: Build a signed iOS IPA using the configured Apple secrets
+        required: false
+        default: false
+        type: boolean
+      apple_team_id:
+        description: Apple Developer team identifier used by the signed iOS build
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-platform-companion-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  metadata:
+    name: Resolve companion version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: version
+        name: Validate package version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${REQUESTED_VERSION:-}"
+          if [ -z "$VERSION" ]; then
+            VERSION="$(node -p "require('./desktop/package.json').version")"
+          fi
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || {
+            echo "Use a semantic version such as 0.2.2 or 0.3.0-beta.1." >&2
+            exit 1
+          }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  desktop:
+    name: ${{ matrix.label }}
+    needs: metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Linux x64 packages
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb,rpm
+            platform: linux
+            architecture: x64
+          - label: Windows x64 packages
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: msi,nsis
+            platform: windows
+            architecture: x64
+          - label: macOS Apple Silicon packages
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+            platform: macos
+            architecture: arm64
+          - label: macOS Intel packages
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+            platform: macos
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+      TARGET: ${{ matrix.target }}
+      ASSET_PLATFORM: ${{ matrix.platform }}
+      ASSET_ARCHITECTURE: ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Install Linux packaging dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            xdg-utils \
+            zstd
+      - name: Install Tauri CLI
+        run: npm ci --prefix desktop
+      - name: Apply release version
+        run: node tools/release/set-companion-version.mjs "${{ env.VERSION }}"
+      - name: Validate companion configuration
+        run: node tools/release/test-cross-platform-config.mjs
+      - name: Build native installers
+        uses: tauri-apps/tauri-action@v1
+        with:
+          projectPath: desktop
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --ci
+          retryAttempts: 1
+      - name: Collect Tauri installers
+        shell: bash
+        run: |
+          node tools/release/collect-desktop-artifacts.mjs \
+            "desktop/src-tauri/target/$TARGET/release/bundle" \
+            dist \
+            "$VERSION" \
+            "$ASSET_PLATFORM" \
+            "$ASSET_ARCHITECTURE"
+      - name: Create macOS installer package
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$(
+            find "desktop/src-tauri/target/$TARGET/release/bundle/macos" \
+              -maxdepth 1 -type d -name '*.app' -print -quit
+          )"
+          test -n "$APP_PATH"
+          productbuild \
+            --component "$APP_PATH" /Applications \
+            "dist/GitHub-Rock-$VERSION-macos-$ASSET_ARCHITECTURE.pkg"
+      - name: Create Windows portable package
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $binary = "desktop/src-tauri/target/$env:TARGET/release/github-rock-companion.exe"
+          if (-not (Test-Path $binary)) {
+            throw "The Windows companion binary was not produced: $binary"
+          }
+          Compress-Archive `
+            -Path $binary `
+            -DestinationPath "dist/GitHub-Rock-$env:VERSION-windows-$env:ASSET_ARCHITECTURE-portable.zip"
+      - name: Create Arch Linux package
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          bash tools/release/package-arch.sh \
+            "desktop/src-tauri/target/$TARGET/release/github-rock-companion" \
+            site/assets/icon-512.png \
+            "dist/GitHub-Rock-$VERSION-linux-$ASSET_ARCHITECTURE.pkg.tar.zst" \
+            "$VERSION" \
+            x86_64
+      - name: Generate SHA-256 checksums
+        run: node tools/release/write-checksums.mjs dist
+      - name: Upload installable packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: GitHub-Rock-${{ env.VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}
+          path: dist/*
+          if-no-files-found: error
+
+  ios:
+    name: Signed iOS IPA
+    if: inputs.build_ios == true
+    needs: metadata
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+      APPLE_DEVELOPMENT_TEAM: ${{ inputs.apple_team_id }}
+      IOS_CERTIFICATE: ${{ secrets.APPLE_IOS_CERTIFICATE_BASE64 }}
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_IOS_CERTIFICATE_PASSWORD }}
+      IOS_MOBILE_PROVISION: ${{ secrets.APPLE_IOS_PROVISIONING_PROFILE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+      - name: Validate Apple signing inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          test -n "$APPLE_DEVELOPMENT_TEAM" || missing+=(APPLE_TEAM_ID)
+          test -n "$IOS_CERTIFICATE" || missing+=(APPLE_IOS_CERTIFICATE_BASE64)
+          test -n "$IOS_CERTIFICATE_PASSWORD" || missing+=(APPLE_IOS_CERTIFICATE_PASSWORD)
+          test -n "$IOS_MOBILE_PROVISION" || missing+=(APPLE_IOS_PROVISIONING_PROFILE_BASE64)
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing iOS signing value: %s\n' "${missing[@]}" >&2
+            exit 1
+          fi
+      - name: Install Tauri CLI
+        run: npm ci --prefix desktop
+      - name: Apply release version
+        run: node tools/release/set-companion-version.mjs "$VERSION"
+      - name: Initialize and build signed iOS application
+        working-directory: desktop
+        shell: bash
+        run: |
+          npm run tauri ios init -- --ci
+          npm run tauri ios build -- \
+            --ci \
+            --export-method app-store-connect \
+            --build-number "${{ github.run_number }}"
+      - name: Collect signed IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          IPA_PATH="$(find desktop/src-tauri/gen/apple/build -type f -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
+          mkdir -p dist
+          cp "$IPA_PATH" "dist/GitHub-Rock-$VERSION-ios-arm64.ipa"
+          node tools/release/write-checksums.mjs dist
+      - name: Upload signed iOS package
+        uses: actions/upload-artifact@v7
+        with:
+          name: GitHub-Rock-${{ env.VERSION }}-ios-arm64
+          path: dist/*
+          if-no-files-found: error

@@ -1,0 +1,13 @@
+{
+  "name": "github-rock-companion",
+  "version": "0.2.2",
+  "private": true,
+  "description": "Installable GitHub Rock companion for macOS, Windows, Linux, and iOS.",
+  "scripts": {
+    "tauri": "tauri",
+    "check": "node ../tools/release/test-cross-platform-config.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.4"
+  }
+}

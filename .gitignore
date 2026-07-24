@@ -9,3 +9,7 @@ keystore.properties
 *.keystore
 captures/
 .DS_Store
+node_modules/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+dist/
