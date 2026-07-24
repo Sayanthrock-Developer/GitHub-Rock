@@ -120,13 +120,12 @@ img, svg { display: block; max-width: 100%; }
 }
 .brand-mark svg {
   width: 26px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.35;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  height: 26px;
+  fill: currentColor;
+  stroke: none;
 }
 .brand-mark.mini { width: 34px; height: 34px; border-radius: 12px; font-size: .82rem; }
+.brand-mark.mini svg { width: 18px; height: 18px; fill: currentColor; }
 .brand-copy { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-copy strong { font-size: .98rem; font-weight: 900; }
 .brand-copy small { margin-top: 4px; color: var(--muted); font-size: .68rem; font-weight: 700; }
@@ -521,4 +520,18 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .reveal { opacity: 1; transform: none; }
+}
+
+/* GitHub Logo Animation */
+@keyframes bounceSpin {
+  0% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(90deg); }
+  50% { transform: translateY(0) rotate(180deg); }
+  75% { transform: translateY(-4px) rotate(270deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}
+
+.animated-logo {
+  animation: bounceSpin 3s ease-in-out infinite;
+  transform-origin: center;
 }
