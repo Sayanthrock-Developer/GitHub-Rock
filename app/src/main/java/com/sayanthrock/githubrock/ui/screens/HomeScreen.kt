@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -161,6 +161,9 @@ fun HomeScreen(
     val selectedSort = HomeSort.entries.firstOrNull { it.name == selectedSortName }
         ?: HomeSort.Updated
 
+    val publicRepositoryCount = remember(repositories) {
+        repositories.count { !it.private }
+    }
     val visibleRepositories = remember(
         repositories,
         selectedPlatform,
@@ -229,7 +232,7 @@ fun HomeScreen(
             if (!isLoading && visibleRepositories.isEmpty()) {
                 item {
                     EmptyDiscoveryCard(
-                        hasRepositories = repositories.isNotEmpty(),
+                        hasPublicRepositories = publicRepositoryCount > 0,
                         onClearFilters = {
                             selectedPlatformName = HomePlatform.All.name
                             selectedCategoryName = HomeCategory.All.name
@@ -391,7 +394,7 @@ private fun LoadingWorkspaceCard() {
             Column {
                 Text("Loading your workspace…", fontWeight = FontWeight.Bold)
                 Text(
-                    "Fetching repositories and discovery metadata.",
+                    "Fetching public repositories and discovery metadata.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -401,7 +404,7 @@ private fun LoadingWorkspaceCard() {
 
 @Composable
 private fun EmptyDiscoveryCard(
-    hasRepositories: Boolean,
+    hasPublicRepositories: Boolean,
     onClearFilters: () -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -418,21 +421,25 @@ private fun EmptyDiscoveryCard(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = if (hasRepositories) "No repositories match" else "No repositories found",
+                text = if (hasPublicRepositories) {
+                    "No public repositories match"
+                } else {
+                    "No public repositories found"
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = if (hasRepositories) {
+                text = if (hasPublicRepositories) {
                     "Try another platform or category."
                 } else {
-                    "Pull down to refresh your GitHub workspace."
+                    "Pull down to refresh public repositories."
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
-            TextButton(onClick = if (hasRepositories) onClearFilters else onRefresh) {
-                Text(if (hasRepositories) "Show all repositories" else "Refresh")
+            TextButton(onClick = if (hasPublicRepositories) onClearFilters else onRefresh) {
+                Text(if (hasPublicRepositories) "Show all public repositories" else "Refresh")
             }
         }
     }
@@ -545,6 +552,10 @@ private fun DiscoveryRepositoryCard(
                         )
                     }
                 }
+                RepositoryPlatformChip(
+                    icon = Icons.Default.Check,
+                    label = "Public",
+                )
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -715,8 +726,14 @@ internal fun homeRepositoryFeed(
     sort: HomeSort,
 ): List<GitHubRepositoryModel> {
     val filtered = repositories.asSequence()
+        .filterNot(GitHubRepositoryModel::private)
         .filter { repository ->
-            platform == HomePlatform.All || platform in repositoryPlatforms(repository)
+            if (platform == HomePlatform.All) {
+                true
+            } else {
+                val supportedPlatforms = repositoryPlatforms(repository)
+                supportedPlatforms.isEmpty() || platform in supportedPlatforms
+            }
         }
         .filter { repositoryMatchesCategory(it, category) }
 
