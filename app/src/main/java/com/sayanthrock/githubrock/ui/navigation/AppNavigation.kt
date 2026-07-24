@@ -1,6 +1,10 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -16,7 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.semantics.Role
@@ -70,8 +77,16 @@ private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
 private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
-private val MobileDockHeight = 78.dp
-private val MobileDockContentClearance = 94.dp
+
+private val MobileDockHeight = 88.dp
+private val MobileDockContentClearance = 106.dp
+private val MobileDockBackground = Color(0xFF060706)
+private val MobileDockBorder = Color(0xFF2A2D2A)
+private val MobileDockMuted = Color(0xFFB8BBB3)
+private val MobileDockSelectedTop = Color(0xFF4BA642)
+private val MobileDockSelectedBottom = Color(0xFF235F2B)
+private val MobileDockSelectedBorder = Color(0xFF57B94F)
+private val MobileDockSelectedContent = Color(0xFFF7FAF4)
 
 private val topDestinations = listOf(
     TopDestination.Home,
@@ -353,24 +368,27 @@ internal fun AppNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth().height(MobileDockHeight),
-            shape = RoundedCornerShape(30.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .96f),
-            contentColor = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 560.dp)
+                .height(MobileDockHeight),
+            shape = RoundedCornerShape(38.dp),
+            color = MobileDockBackground.copy(alpha = .985f),
+            contentColor = MobileDockSelectedContent,
             tonalElevation = 0.dp,
-            shadowElevation = 14.dp,
-            border = BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .66f)
-            )
+            shadowElevation = 18.dp,
+            border = BorderStroke(1.dp, MobileDockBorder)
         ) {
             Row(
-                modifier = Modifier.fillMaxSize().padding(6.dp).selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 topDestinations.forEach { destination ->
@@ -391,40 +409,69 @@ private fun RowScope.NavigationDockItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val iconColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-    val labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val itemHeight by animateDpAsState(
+        targetValue = if (selected) 76.dp else 64.dp,
+        animationSpec = tween(durationMillis = 220),
+        label = "navigation item height"
+    )
+    val iconSize by animateDpAsState(
+        targetValue = if (selected) 29.dp else 25.dp,
+        animationSpec = tween(durationMillis = 180),
+        label = "navigation icon size"
+    )
+    val elevation by animateDpAsState(
+        targetValue = if (selected) 10.dp else 0.dp,
+        animationSpec = tween(durationMillis = 220),
+        label = "navigation item elevation"
+    )
+    val shape = RoundedCornerShape(32.dp)
 
-    Surface(
+    Box(
         modifier = Modifier
             .weight(1f)
-            .fillMaxHeight()
+            .height(itemHeight)
+            .shadow(elevation = elevation, shape = shape, clip = false)
+            .clip(shape)
+            .then(
+                if (selected) {
+                    Modifier
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MobileDockSelectedTop,
+                                    MobileDockSelectedBottom
+                                )
+                            )
+                        )
+                        .border(1.dp, MobileDockSelectedBorder.copy(alpha = .72f), shape)
+                } else {
+                    Modifier
+                }
+            )
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .semantics(mergeDescendants = true) {
                 contentDescription = destination.accessibilityLabel
             },
-        shape = RoundedCornerShape(24.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .98f) else Color.Transparent,
-        border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .26f)) else null,
-        shadowElevation = if (selected) 8.dp else 0.dp
+        contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 7.dp),
+            modifier = Modifier.padding(horizontal = 2.dp, vertical = 7.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = destination.icon,
                 contentDescription = null,
-                modifier = Modifier.size(if (selected) 26.dp else 23.dp),
-                tint = iconColor
+                modifier = Modifier.size(iconSize),
+                tint = if (selected) MobileDockSelectedContent else MobileDockMuted
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(5.dp))
             Text(
                 text = destination.label,
-                color = labelColor,
+                color = if (selected) MobileDockSelectedContent else MobileDockMuted,
                 maxLines = 1,
-                fontSize = if (selected) 11.sp else 10.5.sp,
-                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold
+                fontSize = if (selected) 12.sp else 11.sp,
+                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
             )
         }
     }
