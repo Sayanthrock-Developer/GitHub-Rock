@@ -12,6 +12,7 @@ const packageJson = JSON.parse(await readFile(path.join(desktopRoot, 'package.js
 const packageLock = JSON.parse(await readFile(path.join(desktopRoot, 'package-lock.json'), 'utf8'));
 const config = JSON.parse(await readFile(path.join(tauriRoot, 'tauri.conf.json'), 'utf8'));
 const cargoToml = await readFile(path.join(tauriRoot, 'Cargo.toml'), 'utf8');
+const rustEntryPoint = await readFile(path.join(tauriRoot, 'src', 'main.rs'), 'utf8');
 const appScript = await readFile(path.join(repositoryRoot, 'site', 'assets', 'app.js'), 'utf8');
 const buildWorkflow = await readFile(
   path.join(repositoryRoot, '.github', 'workflows', 'cross-platform-build.yml'),
@@ -26,6 +27,7 @@ assert.equal(packageJson.version, config.version, 'npm and Tauri versions must m
 assert.equal(packageLock.version, config.version, 'npm lockfile and Tauri versions must match.');
 assert.equal(packageLock.packages[''].version, config.version);
 assert.match(cargoToml, new RegExp(`^version = "${config.version.replaceAll('.', '\\.')}"$`, 'm'));
+assert.match(rustEntryPoint, /windows_subsystem = "windows"/);
 assert.equal(config.identifier, 'com.sayanthrock.githubrock.companion');
 assert.equal(config.build.frontendDist, '../../site');
 assert.equal(config.app.withGlobalTauri, true);
