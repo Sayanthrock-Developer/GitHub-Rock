@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -80,7 +82,9 @@ private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
 private val MobileDockHeight = 88.dp
 private val MobileDockContentClearance = 106.dp
-private val MobileDockBackground = Color(0xFF060706)
+private val MobileDockGlassTop = Color(0xD9060706)
+private val MobileDockGlassBottom = Color(0xB3000000)
+private val MobileDockBackdrop = Color(0x99000000)
 private val MobileDockBorder = Color(0xFF2A2D2A)
 private val MobileDockMuted = Color(0xFFB8BBB3)
 private val MobileDockSelectedTop = Color(0xFF4BA642)
@@ -364,6 +368,8 @@ internal fun AppNavigationBar(
     onDestinationSelected: (TopDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dockShape = RoundedCornerShape(38.dp)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -371,32 +377,67 @@ internal fun AppNavigationBar(
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 560.dp)
-                .height(MobileDockHeight),
-            shape = RoundedCornerShape(38.dp),
-            color = MobileDockBackground.copy(alpha = .985f),
-            contentColor = MobileDockSelectedContent,
-            tonalElevation = 0.dp,
-            shadowElevation = 18.dp,
-            border = BorderStroke(1.dp, MobileDockBorder)
+                .height(MobileDockHeight)
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 6.dp, vertical = 6.dp)
-                    .selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                topDestinations.forEach { destination ->
-                    NavigationDockItem(
-                        destination = destination,
-                        selected = selectedRoute == destination.route,
-                        onClick = { onDestinationSelected(destination) }
+                    .matchParentSize()
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .blur(22.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                    .clip(dockShape)
+                    .background(MobileDockBackdrop.copy(alpha = .48f))
+            )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .shadow(elevation = 18.dp, shape = dockShape, clip = false)
+                    .clip(dockShape)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MobileDockGlassTop,
+                                MobileDockGlassBottom
+                            )
+                        )
                     )
+                    .border(1.dp, MobileDockBorder.copy(alpha = .82f), dockShape)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .padding(horizontal = 32.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = .18f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
+                        .selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    topDestinations.forEach { destination ->
+                        NavigationDockItem(
+                            destination = destination,
+                            selected = selectedRoute == destination.route,
+                            onClick = { onDestinationSelected(destination) }
+                        )
+                    }
                 }
             }
         }
