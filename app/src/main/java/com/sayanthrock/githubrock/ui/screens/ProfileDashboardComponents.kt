@@ -215,19 +215,6 @@ internal fun ProfileDashboardHeader(
                         Text(if (isFollowing) "Unfollow" else "Follow", fontWeight = FontWeight.Bold)
                     }
                 }
-                isOwnProfile -> Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .10f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .24f))
-                ) {
-                    Text(
-                        "Connected GitHub account",
-                        modifier = Modifier.padding(13.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
         }
     }
