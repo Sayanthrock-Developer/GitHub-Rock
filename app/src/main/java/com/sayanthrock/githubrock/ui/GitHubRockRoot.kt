@@ -21,6 +21,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
+import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
+import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
+import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.MainNavigation
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
@@ -77,6 +80,15 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
             }
         }
     }
+    val openNativeProfile = remember(navController) {
+        { login: String ->
+            navController.navigate(
+                NativeProfileDestination(login, NativeProfileSection.Repositories).route
+            ) {
+                launchSingleTop = true
+            }
+        }
+    }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -105,16 +117,18 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 onDemo = viewModel::enterDemo
             )
         } else {
-            MainNavigation(
-                navController = navController,
-                state = state,
-                onSearch = viewModel::searchRepositories,
-                onInspectProfile = viewModel::inspectProfile,
-                onRememberRepository = viewModel::rememberRepository,
-                onOpenGitHubUrl = openGitHubUrl,
-                onRefresh = viewModel::refresh,
-                onLogout = viewModel::logout
-            )
+            CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
+                MainNavigation(
+                    navController = navController,
+                    state = state,
+                    onSearch = viewModel::searchRepositories,
+                    onInspectProfile = viewModel::inspectProfile,
+                    onRememberRepository = viewModel::rememberRepository,
+                    onOpenGitHubUrl = openGitHubUrl,
+                    onRefresh = viewModel::refresh,
+                    onLogout = viewModel::logout
+                )
+            }
         }
         SnackbarHost(
             hostState = snackbar,

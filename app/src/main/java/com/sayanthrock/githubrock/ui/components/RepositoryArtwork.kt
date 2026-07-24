@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,12 +20,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,6 +35,9 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
+
+/** Opens a repository owner's profile inside GitHub Rock when a host navigation graph provides it. */
+val LocalOpenGitHubProfile = staticCompositionLocalOf<((String) -> Unit)?> { null }
 
 /**
  * Branded repository artwork with a privacy-aware image fallback.
@@ -47,6 +53,7 @@ fun RepositoryArtwork(
     compact: Boolean = false
 ) {
     val showImages = LocalRemoteImagesEnabled.current
+    val openProfile = LocalOpenGitHubProfile.current
     val previewHeight = if (compact) 92.dp else 124.dp
     val identityHeight = if (compact) 40.dp else 52.dp
     val artworkHeight = previewHeight + identityHeight
@@ -121,7 +128,14 @@ fun RepositoryArtwork(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(identityHeight),
+                .height(identityHeight)
+                .clickable(
+                    enabled = openProfile != null,
+                    onClickLabel = "Open @${repository.owner.login} GitHub profile",
+                    role = Role.Button
+                ) {
+                    openProfile?.invoke(repository.owner.login)
+                },
             color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .96f),
             border = BorderStroke(
                 width = 1.dp,
