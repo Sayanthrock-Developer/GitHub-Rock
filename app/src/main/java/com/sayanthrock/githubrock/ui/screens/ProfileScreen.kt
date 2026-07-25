@@ -90,6 +90,7 @@ fun ProfileScreen(
     onInspectProfile: (String) -> Unit = {},
     onOpenDownloads: () -> Unit,
     onOpenFeatures: () -> Unit,
+    onOpenAccounts: () -> Unit = onOpenFeatures,
     onOpenSettings: () -> Unit,
     onOpenAppInfo: () -> Unit = {},
     onOpenGitHubUrl: (String) -> Unit,
@@ -204,6 +205,12 @@ fun ProfileScreen(
             onClick = onOpenSettings
         ),
         ProfileMenuItem(
+            icon = Icons.Default.AutoAwesome,
+            title = "GitHub features",
+            subtitle = "Native, connected, and roadmap capabilities",
+            onClick = onOpenFeatures
+        ),
+        ProfileMenuItem(
             icon = Icons.Default.Download,
             title = "Downloads",
             subtitle = "Applications, artifacts, files, and APK safety",
@@ -223,7 +230,7 @@ fun ProfileScreen(
                 icon = Icons.Default.AccountCircle,
                 title = "Accounts & organizations",
                 subtitle = "Connected account, organizations, and public profiles",
-                onClick = onOpenFeatures
+                onClick = onOpenAccounts
             )
         )
         displayedProfile?.let { target ->
