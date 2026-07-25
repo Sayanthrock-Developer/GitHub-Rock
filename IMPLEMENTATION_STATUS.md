@@ -53,13 +53,34 @@ The active parity phases are:
 6. Complete TalkBack, keyboard, large-text, contrast, focus, and announcement coverage.
 7. Windows, macOS, and Linux companion integration for clipboard, browser, tray, PATH, WSL, VS Code, and terminal attachment behavior.
 
+## Copilot CLI, Copilot app, and gh-ost integration program
+
+The broader reference-feature request is tracked in [issue #172](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/172) and documented in [Reference feature integration](docs/REFERENCE_FEATURE_INTEGRATION.md).
+
+This program is currently **Roadmap**. Creating the issue and feature matrix does not mark the runtime capabilities as implemented.
+
+The program separates features by their real execution boundary:
+
+- **Native Android / Connected GitHub** — My Work, GitHub references, review state, workflow/check visibility, permission-aware actions, agent-session client UI, automation monitoring, and approved remote-job controls.
+- **Backend-dependent** — cloud agents, model-provider access, schedules, remote MCP, installation credentials, audit services, and long-running operations.
+- **Companion-only** — local worktrees, terminal/shell execution, sandbox processes, IDE focus, LSP servers, local plugins, and local `gh-ost` execution.
+- **Remote operations** — MySQL topology access and migration execution remain on an approved server or companion. Android may use only a typed, authenticated, allow-listed control API.
+
+No GitHub Copilot entitlement, model access, unrestricted tool execution, desktop worktree, or MySQL migration capability may be advertised as working merely because a UI entry or documentation checklist exists.
+
 ## Next implementation milestones
 
-1. Richer language grammars plus PR diff and conflict presentation.
-2. Dynamic `workflow_dispatch` input forms and workflow failure annotations.
-3. Storage Access Framework download locations, mirror selection, and trusted checksum-file matching.
-4. Biometric lock controls, foldable list-detail panes, and Paging-backed large lists.
-5. Complete TalkBack, large-font, keyboard, contrast, and physical-device screenshot validation.
-6. Extract portable domain and network layers before moving Android-only control-centre features into the packaged desktop and iOS companion.
-7. Continue moving high-value web-hub destinations into native screens when GitHub permissions and APIs support them safely.
-8. Implement issue #163 phase by phase; update this file and the in-app feature status only after each merged, tested capability is actually available.
+1. Build issue #172 Phase A: native My Work foundation, GitHub reference hand-off, cached-first detail, and permission-aware actions.
+2. Add the agent-session client contract with honest provider/backend availability and reversible tool-approval state.
+3. Implement desktop worktrees, terminal, sandbox, IDE hand-off, and local MCP/LSP/plugin processes in the companion rather than Android.
+4. Add extensibility canvases, automation run history, and Agent Merge readiness without bypassing repository protections.
+5. Design the typed `gh-ost` backend contract and validate it only against disposable MySQL test environments before exposing migration controls.
+6. Richer language grammars plus PR diff and conflict presentation.
+7. Dynamic `workflow_dispatch` input forms and workflow failure annotations.
+8. Storage Access Framework download locations, mirror selection, and trusted checksum-file matching.
+9. Biometric lock controls, foldable list-detail panes, and Paging-backed large lists.
+10. Complete TalkBack, large-font, keyboard, contrast, and physical-device screenshot validation.
+11. Extract portable domain and network layers before moving Android-only control-centre features into the packaged desktop and iOS companion.
+12. Continue moving high-value web-hub destinations into native screens when GitHub permissions and APIs support them safely.
+
+Every milestone must update this file and the in-app feature status only after the implementation, tests, permission checks, accessibility validation, and CI evidence are merged.
