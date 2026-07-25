@@ -199,7 +199,8 @@ fun MainNavigation(
                                         launchSingleTop = true
                                     }
                                 },
-                                onOpenFeatures = { navController.navigate(ACCOUNT_SWITCHER_ROUTE) },
+                                onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
+                                onOpenAccounts = { navController.navigate(ACCOUNT_SWITCHER_ROUTE) },
                                 onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                                 onOpenAppInfo = { navController.navigate(APP_INFORMATION_ROUTE) },
                                 onOpenGitHubUrl = { url ->
