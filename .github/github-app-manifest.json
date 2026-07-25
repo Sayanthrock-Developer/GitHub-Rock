@@ -1,0 +1,30 @@
+{
+  "name": "GitHub Rock Read-Only Backend",
+  "url": "https://github.com/Sayanthrock-Developer/GitHub-Rock",
+  "description": "Read-only GitHub App for GitHub Rock backend release, Actions, checks, pull-request, issue, and repository metadata access.",
+  "redirect_url": "https://replace-me.invalid/github/app/manifest/callback",
+  "hook_attributes": {
+    "url": "https://replace-me.invalid/github/webhooks",
+    "active": true
+  },
+  "public": false,
+  "request_oauth_on_install": false,
+  "default_permissions": {
+    "actions": "read",
+    "checks": "read",
+    "contents": "read",
+    "issues": "read",
+    "metadata": "read",
+    "pull_requests": "read"
+  },
+  "default_events": [
+    "check_run",
+    "check_suite",
+    "issues",
+    "pull_request",
+    "release",
+    "repository",
+    "workflow_job",
+    "workflow_run"
+  ]
+}

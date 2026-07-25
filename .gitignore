@@ -13,3 +13,14 @@ node_modules/
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
 dist/
+
+# Local and backend secrets
+.env
+.env.*
+!*.env.example
+!**/*.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
