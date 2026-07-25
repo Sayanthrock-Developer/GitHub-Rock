@@ -23,6 +23,7 @@ class ProfileScreenTest {
     @Test
     fun connectedProfileUsesCompactGroupedMenuAndOpensNativeDashboard() {
         var openedSettings = false
+        var openedFeatures = false
         var openedAccounts = false
         var openedDownloads = false
         var openedAbout = false
@@ -46,7 +47,8 @@ class ProfileScreenTest {
                         snapshot = GitHubProfileSnapshot(profile)
                     ),
                     onOpenDownloads = { openedDownloads = true },
-                    onOpenFeatures = { openedAccounts = true },
+                    onOpenFeatures = { openedFeatures = true },
+                    onOpenAccounts = { openedAccounts = true },
                     onOpenSettings = { openedSettings = true },
                     onOpenAppInfo = { openedAbout = true },
                     onOpenGitHubUrl = { openedGitHubUrl = it },
@@ -72,6 +74,8 @@ class ProfileScreenTest {
 
         compose.onNodeWithText("GitHub settings").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(openedSettings) }
+        compose.onNodeWithText("GitHub features").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertTrue(openedFeatures) }
         compose.onNodeWithText("Downloads").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(openedDownloads) }
         compose.onNodeWithText("About").performScrollTo().performClick()
@@ -98,6 +102,7 @@ class ProfileScreenTest {
                     profile = profile,
                     onOpenDownloads = {},
                     onOpenFeatures = {},
+                    onOpenAccounts = {},
                     onOpenSettings = {},
                     onOpenGitHubUrl = {},
                     onLogout = {}
