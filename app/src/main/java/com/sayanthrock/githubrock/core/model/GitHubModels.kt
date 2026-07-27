@@ -231,6 +231,7 @@ data class DeviceCodeResponse(
     @SerialName("device_code") val deviceCode: String,
     @SerialName("user_code") val userCode: String,
     @SerialName("verification_uri") val verificationUri: String,
+    @SerialName("verification_uri_complete") val verificationUriComplete: String? = null,
     @SerialName("expires_in") val expiresIn: Int,
     val interval: Int = 5
 )

@@ -36,7 +36,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val verificationUri = state.auth.code?.verificationUri
+    val verificationUri = state.auth.code?.let { it.verificationUriComplete ?: it.verificationUri }
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 

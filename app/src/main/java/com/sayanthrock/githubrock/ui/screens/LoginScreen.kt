@@ -90,7 +90,7 @@ fun LoginScreen(
     var showAccountSetup by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(code?.deviceCode, onOpenGitHubUrl) {
-        val verificationUri = code?.verificationUri
+        val verificationUri = code?.verificationUriComplete ?: code?.verificationUri
         if (verificationUri != null && !hasOpenedVerificationUri) {
             hasOpenedVerificationUri = true
             onOpenGitHubUrl(verificationUri)
@@ -122,11 +122,11 @@ fun LoginScreen(
                     showAccountSetup = showAccountSetup,
                     onShowAccountSetup = {
                         showAccountSetup = true
-                        onOpenGitHubUrl(GITHUB_SIGN_UP_URL)
+                        onLogin()
                     },
                     onHideAccountSetup = { showAccountSetup = false },
                     onLogin = onLogin,
-                    onOpenSignup = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
+                    onOpenSignup = onLogin,
                     onGuest = onGuest,
                     onDemo = onDemo
                 )
@@ -140,7 +140,7 @@ fun LoginScreen(
                             ClipData.newPlainText("GitHub verification code", code.userCode)
                         )
                     },
-                    onOpen = { onOpenGitHubUrl(code.verificationUri) },
+                    onOpen = { onOpenGitHubUrl(code.verificationUriComplete ?: code.verificationUri) },
                     onCheck = onCheckAuthorization,
                     onRestart = onLogin,
                     onGuest = onGuest
