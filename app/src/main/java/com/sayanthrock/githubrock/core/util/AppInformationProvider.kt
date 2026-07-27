@@ -45,9 +45,10 @@ object AppInformationProvider {
         )
     }
 
+    private val DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
+        .withZone(ZoneId.systemDefault())
+
     private fun Long.asReadableDate(): String = runCatching {
-        DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochMilli(this))
+        DATE_FORMATTER.format(Instant.ofEpochMilli(this))
     }.getOrDefault("Unknown")
 }
