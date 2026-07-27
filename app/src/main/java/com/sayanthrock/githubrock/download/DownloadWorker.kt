@@ -38,7 +38,7 @@ class DownloadWorker @AssistedInject constructor(
         val expectedSha = inputData.getString(KEY_SHA256)
         val directory = File(applicationContext.filesDir, "downloads").apply { mkdirs() }
         val resumedPath = inputData.getString(KEY_PARTIAL_PATH)?.let(::File)
-            ?.takeIf { it.parentFile == directory && it.name.endsWith(".part") }
+            ?.takeIf { it.canonicalFile.parentFile == directory.canonicalFile && it.name.endsWith(".part") }
         val partial = resumedPath ?: File(directory, "$id-$name.part")
         val final = File(directory, "$id-$name")
         var knownTotal = 0L
