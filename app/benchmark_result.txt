@@ -1,1 +1,0 @@
-Time to highlight large JSON: 5337 ms
