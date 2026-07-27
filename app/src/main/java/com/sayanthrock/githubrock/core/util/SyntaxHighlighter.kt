@@ -85,6 +85,7 @@ object SyntaxHighlighter {
 
     private fun highlightJsonYaml(source: String, json: Boolean): List<SyntaxSpan> {
         val property = if (json) jsonProperty else yamlProperty
+        val propertyStarts = property.findAll(source).map { it.range.first }.toSet()
         return tokenize(
             source,
             listOf(
@@ -96,7 +97,7 @@ object SyntaxHighlighter {
                 Regex("\\b(?:true|false|null)\\b") to SyntaxTokenKind.Keyword
             )
         ).filterNot { span ->
-            span.kind == SyntaxTokenKind.String && property.findAll(source).any { it.range.first == span.start }
+            span.kind == SyntaxTokenKind.String && propertyStarts.contains(span.start)
         }
     }
 
