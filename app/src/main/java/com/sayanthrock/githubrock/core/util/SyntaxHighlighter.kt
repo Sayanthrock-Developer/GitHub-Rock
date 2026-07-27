@@ -78,13 +78,29 @@ object SyntaxHighlighter {
     private fun highlightXml(source: String): List<SyntaxSpan> {
         val spans = tokenize(source, listOf(xmlComment to SyntaxTokenKind.Comment, xmlTag to SyntaxTokenKind.Tag))
         val occupied = spans.filter { it.kind == SyntaxTokenKind.Comment }
+
+        fun isOccupied(candidate: SyntaxSpan): Boolean {
+            var low = 0
+            var high = occupied.size - 1
+            while (low <= high) {
+                val mid = (low + high) / 2
+                val span = occupied[mid]
+                if (span.overlaps(candidate)) return true
+                if (candidate.start < span.start) high = mid - 1
+                else low = mid + 1
+            }
+            return false
+        }
+
         val attributes = xmlAttribute.findAll(source).map { it.range.toSpan(SyntaxTokenKind.Attribute) }
-            .filterNot { candidate -> occupied.any { it.overlaps(candidate) } }
+            .filterNot { candidate -> isOccupied(candidate) }
         return (spans + attributes).sortedBy { it.start }
     }
 
     private fun highlightJsonYaml(source: String, json: Boolean): List<SyntaxSpan> {
         val property = if (json) jsonProperty else yamlProperty
+        val propertyStarts = property.findAll(source).map { it.range.first }.toSet()
+
         return tokenize(
             source,
             listOf(
@@ -96,7 +112,7 @@ object SyntaxHighlighter {
                 Regex("\\b(?:true|false|null)\\b") to SyntaxTokenKind.Keyword
             )
         ).filterNot { span ->
-            span.kind == SyntaxTokenKind.String && property.findAll(source).any { it.range.first == span.start }
+            span.kind == SyntaxTokenKind.String && propertyStarts.contains(span.start)
         }
     }
 
@@ -111,7 +127,7 @@ object SyntaxHighlighter {
         }.sortedWith(compareBy<SyntaxSpan> { it.start }.thenByDescending { it.end - it.start })
         val accepted = mutableListOf<SyntaxSpan>()
         candidates.forEach { candidate ->
-            if (candidate.start < candidate.end && accepted.none { it.overlaps(candidate) }) accepted += candidate
+            if (candidate.start < candidate.end && (accepted.isEmpty() || candidate.start >= accepted.last().end)) accepted += candidate
         }
         return accepted.sortedBy { it.start }
     }
