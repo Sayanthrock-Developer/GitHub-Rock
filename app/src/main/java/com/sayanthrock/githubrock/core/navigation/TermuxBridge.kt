@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.core.navigation
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import com.sayanthrock.githubrock.core.util.TermuxCommand
 
 /** Explicit, user-confirmed bridge to Termux's RUN_COMMAND service. */
 object TermuxBridge {
@@ -29,9 +30,9 @@ object TermuxBridge {
         context.startActivity(intent)
     }
 
-    fun runCommand(context: Context, command: String): Result<Unit> = runCatching {
-        require(command.isNotBlank()) { "The command is empty" }
-        require(command.length <= MAX_COMMAND_LENGTH) { "The command is too long" }
+    fun runCommand(context: Context, command: TermuxCommand): Result<Unit> = runCatching {
+        require(command.value.isNotBlank()) { "The command is empty" }
+        require(command.value.length <= MAX_COMMAND_LENGTH) { "The command is too long" }
         check(isInstalled(context)) { "Termux is not installed" }
         check(hasRunCommandPermission(context)) {
             "Grant GitHub Rock permission to run commands in Termux"
@@ -40,7 +41,7 @@ object TermuxBridge {
         val intent = Intent(RUN_COMMAND_ACTION).apply {
             setClassName(PACKAGE_NAME, RUN_COMMAND_SERVICE)
             putExtra("com.termux.RUN_COMMAND_PATH", COMMAND_PATH)
-            putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf("-lc", command))
+            putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf("-lc", command.value))
             putExtra("com.termux.RUN_COMMAND_WORKDIR", HOME_PATH)
             putExtra("com.termux.RUN_COMMAND_BACKGROUND", false)
             putExtra("com.termux.RUN_COMMAND_SESSION_ACTION", SESSION_ACTION_SWITCH_TO_NEW_SESSION)

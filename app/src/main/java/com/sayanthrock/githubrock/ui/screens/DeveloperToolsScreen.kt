@@ -57,11 +57,12 @@ import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.navigation.TermuxBridge
 import com.sayanthrock.githubrock.core.util.DeveloperCommandBuilder
+import com.sayanthrock.githubrock.core.util.TermuxCommand
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import kotlinx.coroutines.launch
 
-private data class PendingTermuxCommand(val label: String, val command: String)
+private data class PendingTermuxCommand(val label: String, val command: TermuxCommand)
 private data class ApiProviderOption(val label: String, val variable: String)
 
 private val apiProviders = listOf(
@@ -122,13 +123,13 @@ fun DeveloperToolsScreen(
         scope.launch { snackbar.showSnackbar("$label copied") }
     }
 
-    fun requestTermux(label: String, command: String) {
+    fun requestTermux(label: String, command: TermuxCommand?) {
         refreshTermuxState()
         if (!termuxInstalled) {
             scope.launch { snackbar.showSnackbar("Termux is not installed") }
         } else if (!termuxPermissionGranted) {
             scope.launch { snackbar.showSnackbar("Grant GitHub Rock permission to run commands in Termux") }
-        } else if (command.isBlank()) {
+        } else if (command == null) {
             scope.launch { snackbar.showSnackbar("Complete the required fields first") }
         } else {
             pendingCommand = PendingTermuxCommand(label, command)
@@ -144,7 +145,7 @@ fun DeveloperToolsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("GitHub Rock will ask Termux to open a visible terminal session and run this command:")
                     Text(
-                        pending.command,
+                        pending.command.value,
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -251,7 +252,7 @@ fun DeveloperToolsScreen(
                         }
                     }
                     OutlinedButton(
-                        onClick = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE) },
+                        onClick = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE.value) },
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
                         Icon(Icons.Default.ContentCopy, contentDescription = null)
@@ -265,28 +266,28 @@ fun DeveloperToolsScreen(
                 title = "1. Enable external apps in Termux",
                 description = "Run this once inside Termux, restart Termux, then grant GitHub Rock the Android Run commands in Termux permission above. Both protections are required.",
                 command = DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE,
-                onCopy = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE) },
+                onCopy = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE.value) },
                 onSend = null
             )
             CommandCard(
                 title = "2. Install coding tools",
                 description = "Installs Git, GitHub CLI and OpenSSH from Termux packages.",
                 command = DeveloperCommandBuilder.INSTALL_TOOLCHAIN,
-                onCopy = { copy("Toolchain setup", DeveloperCommandBuilder.INSTALL_TOOLCHAIN) },
+                onCopy = { copy("Toolchain setup", DeveloperCommandBuilder.INSTALL_TOOLCHAIN.value) },
                 onSend = { requestTermux("Toolchain setup", DeveloperCommandBuilder.INSTALL_TOOLCHAIN) }
             )
             CommandCard(
                 title = "3. Connect GitHub account",
                 description = "GitHub CLI opens secure browser authorization. Your password and app OAuth token are not shared.",
                 command = DeveloperCommandBuilder.GITHUB_LOGIN,
-                onCopy = { copy("GitHub login", DeveloperCommandBuilder.GITHUB_LOGIN) },
+                onCopy = { copy("GitHub login", DeveloperCommandBuilder.GITHUB_LOGIN.value) },
                 onSend = { requestTermux("GitHub login", DeveloperCommandBuilder.GITHUB_LOGIN) }
             )
             CommandCard(
                 title = "4. Configure Git authentication",
                 description = "Connects Git operations to GitHub CLI and verifies the active account.",
                 command = DeveloperCommandBuilder.GITHUB_SETUP_GIT,
-                onCopy = { copy("Git setup", DeveloperCommandBuilder.GITHUB_SETUP_GIT) },
+                onCopy = { copy("Git setup", DeveloperCommandBuilder.GITHUB_SETUP_GIT.value) },
                 onSend = { requestTermux("Git setup", DeveloperCommandBuilder.GITHUB_SETUP_GIT) }
             )
 
@@ -349,28 +350,28 @@ fun DeveloperToolsScreen(
                 "Checkout pull request",
                 "Checks out the selected PR with GitHub CLI.",
                 checkoutCommand,
-                { copy("Checkout command", checkoutCommand) },
+                { checkoutCommand?.let { copy("Checkout command", it.value) } },
                 { requestTermux("Checkout command", checkoutCommand) }
             )
             CommandCard(
                 "View pull request",
                 "Opens the pull request in the browser from Termux.",
                 viewCommand,
-                { copy("View command", viewCommand) },
+                { viewCommand?.let { copy("View command", it.value) } },
                 { requestTermux("View command", viewCommand) }
             )
             CommandCard(
                 "GitHub API request",
                 "Uses the authenticated gh session without embedding an API token.",
                 apiCommand,
-                { copy("API command", apiCommand) },
+                { apiCommand?.let { copy("API command", it.value) } },
                 { requestTermux("API command", apiCommand) }
             )
             CommandCard(
                 "Clone repository",
                 "Clones the selected repository into Termux home storage.",
                 cloneCommand,
-                { copy("Clone command", cloneCommand) },
+                { cloneCommand?.let { copy("Clone command", it.value) } },
                 { requestTermux("Clone command", cloneCommand) }
             )
 
@@ -427,21 +428,21 @@ fun DeveloperToolsScreen(
                 "Use API key for this session",
                 "Prompts invisibly, exports the variable, and keeps it only in the current shell.",
                 sessionKeyCommand,
-                { copy("Session API-key command", sessionKeyCommand) },
+                { sessionKeyCommand?.let { copy("Session API-key command", it.value) } },
                 { requestTermux("Session API-key setup", sessionKeyCommand) }
             )
             CommandCard(
                 "Save API key with enforced mode 600",
                 "Prompts inside Termux, writes the environment file, forces owner-only permissions and keeps the key out of command history.",
                 persistentKeyCommand,
-                { copy("Persistent API-key command", persistentKeyCommand) },
+                { persistentKeyCommand?.let { copy("Persistent API-key command", it.value) } },
                 { requestTermux("Persistent API-key setup", persistentKeyCommand) }
             )
             CommandCard(
                 "Load saved API key",
                 "Loads the saved provider key into a future Termux shell.",
                 loadKeyCommand,
-                { copy("Load API-key command", loadKeyCommand) },
+                { loadKeyCommand?.let { copy("Load API-key command", it.value) } },
                 { requestTermux("Load API-key command", loadKeyCommand) }
             )
 
@@ -466,7 +467,7 @@ fun DeveloperToolsScreen(
 private fun CommandCard(
     title: String,
     description: String,
-    command: String,
+    command: TermuxCommand?,
     onCopy: () -> Unit,
     onSend: (() -> Unit)?
 ) {
@@ -475,18 +476,18 @@ private fun CommandCard(
             Text(title, fontWeight = FontWeight.Bold)
             Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
-                command.ifBlank { "Complete the fields above" },
+                command?.value ?: "Complete the fields above",
                 fontFamily = FontFamily.Monospace,
-                color = if (command.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
+                color = if (command == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onCopy, enabled = command.isNotBlank()) {
+                OutlinedButton(onClick = onCopy, enabled = command != null) {
                     Icon(Icons.Default.ContentCopy, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Copy")
                 }
                 if (onSend != null) {
-                    FilledTonalButton(onClick = onSend, enabled = command.isNotBlank()) {
+                    FilledTonalButton(onClick = onSend, enabled = command != null) {
                         Icon(Icons.Default.OpenInNew, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Termux")
