@@ -46,7 +46,7 @@ class BuildNotificationManager @Inject constructor(
         val ref = run.headBranch?.takeIf(String::isNotBlank) ?: "unknown ref"
         val content = "$owner/$repo • $ref • run ${run.id}"
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(completion.title)
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
@@ -64,7 +64,7 @@ class BuildNotificationManager @Inject constructor(
         createChannel()
         val content = "Open GitHub Rock to refresh $owner/$repo."
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Build monitoring stopped")
             .setContentText(content)
             .setContentIntent(buildRepositoryIntent(owner, repo))

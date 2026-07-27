@@ -8,6 +8,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
+import com.sayanthrock.githubrock.R
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
@@ -155,7 +156,7 @@ class DownloadWorker @AssistedInject constructor(
             0
         }
         val notification = NotificationCompat.Builder(applicationContext, DOWNLOAD_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Downloading $fileName")
             .setContentText(if (hasKnownTotal) "$percent% complete" else "Preparing download")
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
