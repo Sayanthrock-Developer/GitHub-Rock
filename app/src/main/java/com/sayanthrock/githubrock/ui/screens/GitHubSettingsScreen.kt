@@ -251,7 +251,6 @@ private fun GitHubSettingsSection(
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GitHubInAppSettingsBrowser(
@@ -351,7 +350,7 @@ private fun GitHubInAppSettingsBrowser(
                             CookieManager.getInstance().setAcceptCookie(true)
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                             settings.apply {
-                                javaScriptEnabled = true
+                                javaScriptEnabled = false
                                 domStorageEnabled = true
                                 allowFileAccess = false
                                 allowContentAccess = false
@@ -382,6 +381,7 @@ private fun GitHubInAppSettingsBrowser(
                                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                                     loading = true
                                     errorMessage = null
+                                    view?.settings?.javaScriptEnabled = isTrustedGitHubSettingsUrl(url.orEmpty())
                                 }
 
                                 override fun onPageFinished(view: WebView?, url: String?) {
