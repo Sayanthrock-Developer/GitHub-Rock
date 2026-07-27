@@ -22,12 +22,15 @@ internal data class GitHubSignupLaunchPlan(
  * The signup action must always remain a signup action.
  *
  * Ephemeral Custom Tabs are preferred because they avoid an existing GitHub browser session.
- * When a browser cannot provide an ephemeral tab, the official signup page is still opened
+ * In an ephemeral tab, we can safely use the add-account login page, which provides a direct
+ * Google/Apple signup method instead of typing an email address.
+ *
+ * When a browser cannot provide an ephemeral tab, the official signup page is opened
  * instead of silently changing the action to GitHub's add-account login page.
  */
 internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan =
     GitHubSignupLaunchPlan(
-        primaryUrl = GITHUB_SIGN_UP_URL,
+        primaryUrl = if (ephemeralBrowsingSupported) GITHUB_ADD_ACCOUNT_URL else GITHUB_SIGN_UP_URL,
         fallbackUrl = GITHUB_SIGN_UP_URL,
         useEphemeralTab = ephemeralBrowsingSupported
     )

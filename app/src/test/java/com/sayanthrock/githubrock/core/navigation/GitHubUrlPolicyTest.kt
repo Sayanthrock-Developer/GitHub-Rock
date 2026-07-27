@@ -12,10 +12,10 @@ class GitHubUrlPolicyTest {
         assertFalse(GitHubUrlPolicy.isRepositoryUrl(GITHUB_ADD_ACCOUNT_URL))
     }
 
-    @Test fun signupAlwaysOpensTheOfficialSignupPage() {
+    @Test fun signupLeveragesAddAccountPageWhenEphemeralBrowsingIsSupported() {
         assertEquals(
             GitHubSignupLaunchPlan(
-                primaryUrl = GITHUB_SIGN_UP_URL,
+                primaryUrl = GITHUB_ADD_ACCOUNT_URL,
                 fallbackUrl = GITHUB_SIGN_UP_URL,
                 useEphemeralTab = true
             ),
