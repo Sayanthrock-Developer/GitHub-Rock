@@ -1,10 +1,10 @@
-# GitHub Rock
+# 🎸 GitHub Rock
 
 GitHub Rock is a native Android developer control centre for GitHub. It combines secure GitHub authentication, repository browsing, issues and pull-request visibility, Actions monitoring, Android build workflow generation, managed artifact downloads, and APK inspection in one Kotlin/Compose application.
 
 > Status: **first functional alpha**. The implemented screens and API calls are real. Demo mode is clearly labelled and isolated. Features listed under “Planned next” are intentionally not presented as complete in the app.
 
-## Highlights
+## ✨ Highlights
 
 - Kotlin, Jetpack Compose, Material 3, Gradle Kotlin DSL, and a version catalog
 - One stable `app` module, organized by feature and layer
@@ -29,7 +29,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 - Unit tests for authentication responses, workflow status, Android workflow generation, project detection, release-asset classification, dispatched-run matching, completion notification policy, safe refs, and checksums
 - Compose UI test for login and entry navigation
 
-## Platform availability
+## 📱 Platform availability
 
 | Platform | Release package | Scope |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ GitHub Rock is a native Android developer control centre for GitHub. It combines
 
 The packaged companion embeds the GitHub Pages experience in a native Tauri 2 shell. The site remains installable as a progressive web app and includes a manifest, service worker, offline application shell, live GitHub Release assets, and platform-specific guidance. Packaging makes the companion installable on each operating system; it does not convert Android-only APIs into desktop or iOS feature parity. See [Cross-platform distribution](docs/CROSS_PLATFORM_DISTRIBUTION.md).
 
-## Screenshots
+## 📸 Screenshots
 
 | Screen | What it shows |
 | --- | --- |
@@ -57,7 +57,7 @@ The packaged companion embeds the GitHub Pages experience in a native Tauri 2 sh
 
 PNG screenshots will be added after the first instrumented device capture. No mock screenshot is presented as a running build.
 
-## Architecture
+## 🏗️ Architecture
 
 ```text
 Compose UI + Navigation
@@ -80,7 +80,7 @@ app/src/main/java/com/sayanthrock/githubrock/
 └── ui/         Compose theme, components, navigation, screens, view models
 ```
 
-## OAuth App registration and Device Flow
+## 🔐 OAuth App registration and Device Flow
 
 > Full setup guide: [GitHub authentication and APK signing](docs/GITHUB_AUTH_AND_SIGNING.md).
 
@@ -101,7 +101,7 @@ The Client ID is exposed through `BuildConfig.GITHUB_CLIENT_ID` and is bundled a
 
 New users can tap **Sign up for GitHub** to open GitHub's official signup page in an Ephemeral Custom Tab. The app then opens GitHub's official Device Flow authorization page, displays a copyable verification code, and polls only at GitHub's supplied interval. GitHub Rock never asks for a GitHub password.
 
-## OAuth scopes
+## 🔍 OAuth scopes
 
 GitHub Rock requests the following scopes during Device Flow authorization:
 
@@ -116,7 +116,7 @@ GitHub Rock requests the following scopes during Device Flow authorization:
 
 Users approve these permissions on GitHub's official page. Removing a scope requires signing out and authorizing again with the new scope set.
 
-## Build
+## 🛠️ Build
 
 Use Android Studio with JDK 17 and Android SDK 36. The CI workflow bootstraps Gradle 8.13 and generates the wrapper before verification. To bootstrap locally once:
 
@@ -129,7 +129,7 @@ gradle wrapper --gradle-version 8.13
 
 The debug APK is produced under `app/build/outputs/apk/debug/`.
 
-## Android build workflow setup
+## 🤖 Android build workflow setup
 
 `.github/workflows/android-build.yml` provides a manually dispatched build for:
 
@@ -140,7 +140,7 @@ GitHub Rock's `AndroidProjectDetector` looks for `gradlew`, Gradle settings/buil
 
 When adding a workflow to another repository, GitHub Rock previews the complete YAML, creates a new branch, commits the file, and opens a pull request. After that workflow is reviewed and merged, the Builds tab detects it on the repository, dispatches a selected branch or tag, identifies the new run, and follows job/step state to completion. A network-constrained WorkManager job persists run discovery across process loss and posts an honest terminal-state notification when Android notification permission is available. Published artifacts can then be queued in Downloads. Branch protection is never bypassed.
 
-## Release signing
+## ✍️ Release signing
 
 Create these GitHub Actions repository or environment secrets:
 
@@ -155,7 +155,7 @@ The workflow decodes the keystore into the runner's temporary directory and expo
 
 New releases produced by the current workflow include both the APK file checksum (`.apk.sha256`) and the signing-certificate fingerprint (`.apk.certificate.sha256`). The certificate asset is a convenience copy, not the root of trust; compare it with the independently published trusted project fingerprint.
 
-## Publish and install the app
+## 🚀 Publish and install the app
 
 1. Add the four Android signing secrets listed above and verify that `.github/release-signing-cert.sha256` matches that keystore. Forks using another key must update the reviewed pin. The official public OAuth Client ID is already configured; forks may override it with `PUBLIC_GITHUB_OAUTH_CLIENT_ID`.
 2. Open **Actions → Publish GitHub Rock Release → Run workflow**.
@@ -171,7 +171,7 @@ If Android reports an incompatible signature, the installed copy was signed with
 
 The published `v0.2.0` and `v0.2.1` APKs use different signing certificates. The `v0.2.1` certificate is the reviewed pin for future releases, so a `v0.2.0` installation cannot upgrade in place and must be uninstalled first.
 
-## Security
+## 🛡️ Security
 
 - The APK contains only the public OAuth Client ID; no OAuth Client Secret is embedded or required.
 - OAuth Device Flow requests explicit scopes and uses GitHub's official authorization page.
@@ -189,7 +189,7 @@ The published `v0.2.0` and `v0.2.1` APKs use different signing certificates. The
 
 See [SECURITY.md](SECURITY.md) for reporting guidance.
 
-## Current functional scope
+## 🎯 Current functional scope
 
 - OAuth Device Flow session acquisition/storage/refresh/logout foundation
 - Guest and isolated demo entry
@@ -209,7 +209,7 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 - Signed, versioned GitHub Release workflow with APK signature verification, pinned signing-certificate validation, cross-platform companion installers, complete asset-matrix validation, and per-file checksums
 - Actionable All GitHub hub covering 45 official website destinations, including notifications, account-wide issues and pull requests, Codespaces, Copilot, Models, Gists, Projects, organizations, enterprises, Marketplace, accessibility, security settings, billing, and community discovery
 
-## Planned next
+## 🔮 Planned next
 
 - Richer language grammars
 - Issue templates and richer PR diff/conflict presentation
@@ -221,6 +221,6 @@ See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 These items remain visible here as roadmap work rather than being represented by fake buttons or success states.
 
-## License
+## 📄 License
 
 Copyright 2026 Sayanth Rock. Licensed under the Apache License 2.0. See [LICENSE](LICENSE).
