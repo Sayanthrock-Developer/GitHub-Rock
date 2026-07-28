@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -241,14 +242,14 @@ fun HomeScreen(
                 }
             }
 
-            items(
+            itemsIndexed(
                 items = visibleRepositories.take(30),
-                key = { it.id },
-            ) { repository ->
+                key = { _, item -> item.id },
+            ) { index, repository ->
                 DiscoveryRepositoryCard(
                     repository = repository,
                     rank = if (selectedSort == HomeSort.Popular) {
-                        visibleRepositories.indexOf(repository) + 1
+                        index + 1
                     } else {
                         null
                     },
