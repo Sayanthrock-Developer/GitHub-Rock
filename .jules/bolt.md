@@ -1,3 +1,4 @@
-## 2024-05-24 - LazyColumn indexOf Performance Anti-Pattern
-**Learning:** Found O(N^2) complexity anti-pattern in Compose lists when using `items(list)` and computing indices via `list.indexOf(item)`. This happens on every list item recomposition.
-**Action:** Use `itemsIndexed(list)` for Compose lists whenever an item's index is required within the view logic, saving an O(N) lookup.
+## 2026-07-28 - Optimize O(N^2) span overlap checks
+
+**Learning:** Checking for span overlaps by iterating through an entire list of previously accepted items yields O(N^2) complexity, leading to noticeable performance degradation on larger inputs (e.g., long source files).
+**Action:** When candidates are sorted primarily by their start index, optimize overlaps verification by maintaining a `maxEnd` pointer. A new candidate only needs to verify `candidate.start >= maxEnd` (an O(1) comparison), eliminating the nested loop and guaranteeing that no overlaps exist.

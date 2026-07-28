@@ -126,8 +126,12 @@ object SyntaxHighlighter {
             regex.findAll(source).map { it.range.toSpan(kind) }.toList()
         }.sortedWith(compareBy<SyntaxSpan> { it.start }.thenByDescending { it.end - it.start })
         val accepted = mutableListOf<SyntaxSpan>()
+        var maxEnd = -1
         candidates.forEach { candidate ->
-            if (candidate.start < candidate.end && (accepted.isEmpty() || candidate.start >= accepted.last().end)) accepted += candidate
+            if (candidate.start < candidate.end && candidate.start >= maxEnd) {
+                accepted += candidate
+                maxEnd = candidate.end
+            }
         }
         return accepted.sortedBy { it.start }
     }
