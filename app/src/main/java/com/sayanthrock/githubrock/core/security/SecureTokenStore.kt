@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.core.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.sayanthrock.githubrock.BuildConfig
@@ -22,23 +23,23 @@ interface TokenStore {
 }
 
 @Singleton
-class KeystoreTokenStore @Inject constructor(
-    @ApplicationContext context: Context
-) : TokenStore {
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
-
-    private val preferences = EncryptedSharedPreferences.create(
-        context,
-        "github_rock_secure_tokens",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
-
+class KeystoreTokenStore internal constructor(
+    private val preferences: SharedPreferences,
     private val configuredClientId: String
-        get() = BuildConfig.GITHUB_CLIENT_ID.trim()
+) : TokenStore {
+
+    @Inject constructor(@ApplicationContext context: Context) : this(
+        preferences = EncryptedSharedPreferences.create(
+            context,
+            "github_rock_secure_tokens",
+            MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build(),
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        ),
+        configuredClientId = BuildConfig.GITHUB_CLIENT_ID.trim()
+    )
 
     override fun read(): StoredTokens? {
         val storedClientId = preferences.getString(KEY_CLIENT_ID, null)
