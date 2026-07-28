@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -363,8 +364,7 @@ fun RepositoriesScreen(
             }
         }
 
-        items(visibleRepositories, key = { it.id }) { repository ->
-            val index = visibleRepositories.indexOf(repository)
+        itemsIndexed(visibleRepositories, key = { _, item -> item.id }) { index, repository ->
             val badge = when (selectedMode) {
                 RepositoryChartMode.Trending -> null
                 RepositoryChartMode.Releases -> "New"
