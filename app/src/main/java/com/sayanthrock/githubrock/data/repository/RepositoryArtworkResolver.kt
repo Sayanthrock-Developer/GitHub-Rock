@@ -11,6 +11,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.util.Collections
 import java.util.LinkedHashMap
 import java.util.Locale
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,20 +37,24 @@ class RepositoryArtworkResolver @Inject constructor(
             .distinctBy { it.cacheKey() }
             .filterNot { previewCache.containsKey(it.cacheKey()) }
 
-        unresolved.chunked(GRAPHQL_BATCH_SIZE).forEach { batch ->
-            runCatchingPreservingCancellation {
-                graphQlApi.query(GraphQlRequest(buildQuery(batch))).data
-            }.getOrNull()?.let { data ->
-                batch.forEachIndexed { index, repository ->
-                    val preview = (data["repo$index"] as? JsonObject)
-                        ?.get("openGraphImageUrl")
-                        ?.jsonPrimitive
-                        ?.contentOrNull
-                        ?.takeIf(String::isNotBlank)
-                        .orEmpty()
-                    previewCache[repository.cacheKey()] = preview
+        coroutineScope {
+            unresolved.chunked(GRAPHQL_BATCH_SIZE).map { batch ->
+                async {
+                    runCatchingPreservingCancellation {
+                        graphQlApi.query(GraphQlRequest(buildQuery(batch))).data
+                    }.getOrNull()?.let { data ->
+                        batch.forEachIndexed { index, repository ->
+                            val preview = (data["repo$index"] as? JsonObject)
+                                ?.get("openGraphImageUrl")
+                                ?.jsonPrimitive
+                                ?.contentOrNull
+                                ?.takeIf(String::isNotBlank)
+                                .orEmpty()
+                            previewCache[repository.cacheKey()] = preview
+                        }
+                    }
                 }
-            }
+            }.awaitAll()
         }
 
         return repositories.map { repository ->
