@@ -34,11 +34,11 @@ object AppInformationProvider {
             deviceSdk = Build.VERSION.SDK_INT,
             androidVersion = Build.VERSION.RELEASE.orEmpty(),
             securityPatch = Build.VERSION.SECURITY_PATCH.orEmpty().ifBlank { "Not reported" },
-            device = listOf(Build.MANUFACTURER, Build.MODEL)
+            device = listOfNotNull(Build.MANUFACTURER, Build.MODEL)
                 .filter(String::isNotBlank)
                 .joinToString(" ")
                 .ifBlank { "Unknown Android device" },
-            supportedAbis = Build.SUPPORTED_ABIS.toList(),
+            supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty(),
             firstInstalled = packageInfo.firstInstallTime.asReadableDate(),
             lastUpdated = packageInfo.lastUpdateTime.asReadableDate(),
             requestedPermissions = packageInfo.requestedPermissions?.size ?: 0

@@ -1,0 +1,5 @@
+🧪 [Add test coverage for AppInformationProvider]
+
+🎯 What: Handled null android.os.Build fields to fix crash in test environment and added AppInformationProviderTest.
+📊 Coverage: Added tests to ensure read() parses device and app metadata mapping correctly, handling older and TIRAMISU+ SDKs.
+✨ Result: Reached good test coverage on AppInformationProvider and made it resilient against missing android.os.Build properties.
