@@ -6,6 +6,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
@@ -34,6 +35,26 @@ class RepositoryReadmePolicyTest {
         assertTrue(RepositoryReadmePolicy.isMissing(error))
         assertEquals(
             "No readable README file was found on main.",
+            RepositoryReadmePolicy.errorMessage(null, error, "main")
+        )
+    }
+
+    @Test
+    fun http500IsClassifiedAsTemporaryFailure() {
+        val error = HttpException(Response.error<String>(500, "internal server error".toResponseBody()))
+        assertFalse(RepositoryReadmePolicy.isMissing(error))
+        assertEquals(
+            "README information is temporarily unavailable. Retry when the connection is stable.",
+            RepositoryReadmePolicy.errorMessage(null, error, "main")
+        )
+    }
+
+    @Test
+    fun genericExceptionIsClassifiedAsTemporaryFailure() {
+        val error = Exception("generic error")
+        assertFalse(RepositoryReadmePolicy.isMissing(error))
+        assertEquals(
+            "README information is temporarily unavailable. Retry when the connection is stable.",
             RepositoryReadmePolicy.errorMessage(null, error, "main")
         )
     }
