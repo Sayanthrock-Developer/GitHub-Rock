@@ -1,10 +1,8 @@
-package com.sayanthrock.githubrock
+package com.sayanthrock.githubrock.core.util
 
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.WorkflowStep
-import com.sayanthrock.githubrock.core.util.WorkflowPreviewHealth
-import com.sayanthrock.githubrock.core.util.WorkflowPreviewInspector
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -98,5 +96,92 @@ class WorkflowPreviewInspectorTest {
         assertEquals(WorkflowPreviewHealth.Problem, report.health)
         assertTrue(report.sourceProblems.contains("Jobs section is missing"))
         assertTrue(report.sourceProblems.contains("Tab indentation can break YAML parsing"))
+    }
+
+    @Test
+    fun `sourceError returns problem health and includes error`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest",
+            run = null,
+            jobs = emptyList(),
+            sourceError = "Network error fetching workflow file"
+        )
+
+        assertEquals(WorkflowPreviewHealth.Problem, report.health)
+        assertTrue(report.sourceProblems.contains("Network error fetching workflow file"))
+        assertEquals("Network error fetching workflow file", report.detail)
+    }
+
+    @Test
+    fun `missing name and trigger in YAML reports problem`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = "jobs:\n  test:\n    runs-on: ubuntu-latest",
+            run = null,
+            jobs = emptyList()
+        )
+
+        assertEquals(WorkflowPreviewHealth.Problem, report.health)
+        assertTrue(report.sourceProblems.contains("Workflow name is missing"))
+        assertTrue(report.sourceProblems.contains("Workflow trigger is missing"))
+    }
+
+    @Test
+    fun `active step returns running health`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest",
+            run = null,
+            jobs = listOf(
+                WorkflowJob(
+                    id = 2,
+                    name = "test",
+                    status = "in_progress",
+                    steps = listOf(WorkflowStep("Unit tests", "in_progress"))
+                )
+            )
+        )
+
+        assertEquals(WorkflowPreviewHealth.Running, report.health)
+        assertEquals("Workflow is running", report.title)
+        assertEquals("GitHub is still processing the current run", report.detail)
+    }
+
+    @Test
+    fun `queued run returns running health`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest",
+            run = WorkflowRun(id = 1, status = "queued", conclusion = null, displayTitle = "", event = "", htmlUrl = "", createdAt = ""),
+            jobs = emptyList()
+        )
+
+        assertEquals(WorkflowPreviewHealth.Running, report.health)
+        assertEquals("Workflow is running", report.title)
+        assertEquals("Basic YAML structure checks passed", report.detail)
+    }
+
+    @Test
+    fun `empty source and no run returns unknown with specific detail`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = "",
+            run = null,
+            jobs = emptyList()
+        )
+
+        // This hits the default case for title ("No completed run yet") and detail ("Select a repository with an active workflow")
+        assertEquals(WorkflowPreviewHealth.Unknown, report.health)
+        assertEquals("No completed run yet", report.title)
+        assertEquals("Select a repository with an active workflow", report.detail)
+    }
+
+    @Test
+    fun `null source and no run returns unknown with specific detail`() {
+        val report = WorkflowPreviewInspector.inspect(
+            source = null,
+            run = null,
+            jobs = emptyList()
+        )
+
+        assertEquals(WorkflowPreviewHealth.Unknown, report.health)
+        assertEquals("No completed run yet", report.title)
+        assertEquals("Select a repository with an active workflow", report.detail)
     }
 }
