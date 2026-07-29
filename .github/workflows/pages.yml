@@ -48,6 +48,7 @@ jobs:
             site/assets/apple-touch-icon.png
             site/privacy-policy/index.html
             site/terms/index.html
+            site/CNAME
           )
           for file in "${required_files[@]}"; do
             test -f "$file" || {
