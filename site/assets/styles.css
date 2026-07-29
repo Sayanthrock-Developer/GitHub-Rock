@@ -47,6 +47,7 @@ html[data-theme="light"] {
 }
 
 * { box-sizing: border-box; }
+*:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -264,7 +265,9 @@ html[data-theme="light"] .device-shell { background: linear-gradient(165deg, #ff
   background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
 }
 .preview-search svg { width: 18px; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; }
+.preview-search:focus-within { border-color: var(--primary); outline: 2px solid var(--primary); outline-offset: 2px; }
 .preview-search input { width: 100%; border: 0; outline: 0; color: var(--text); background: transparent; font-size: .82rem; }
+.preview-search input:focus-visible { outline: none !important; }
 .preview-search input::placeholder { color: var(--muted); }
 .preview-tabs { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 5px; border-radius: 15px; background: var(--surface-soft); }
 .preview-tabs button { min-height: 36px; border: 0; border-radius: 11px; color: var(--muted); background: transparent; cursor: pointer; font-size: .72rem; font-weight: 780; }
