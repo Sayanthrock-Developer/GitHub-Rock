@@ -350,7 +350,7 @@ private fun GitHubInAppSettingsBrowser(
                             CookieManager.getInstance().setAcceptCookie(true)
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                             settings.apply {
-                                javaScriptEnabled = false
+                                javaScriptEnabled = isTrustedGitHubSettingsUrl(destination.url)
                                 domStorageEnabled = true
                                 allowFileAccess = false
                                 allowContentAccess = false
