@@ -4,3 +4,7 @@
 ## 2024-07-28 - Emojis in Documentation
 **Learning:** Emojis in markdown headings (e.g. `# 🎸 GitHub Rock`) provide a helpful micro-UX visual improvement by anchoring sections. When making UI/UX visual style improvements to text/markdown files like READMEs, standard Unicode emojis enhance scannability.
 **Action:** Use thematic standard Unicode emojis in markdown documentation headers to match modern design and improve quick visual scanning without impacting the accessibility of the textual content.
+
+## 2026-07-29 - Refine Login Screen Visual Polish
+**Learning:** Overuse of dividers and misaligned button content (e.g. left-aligned text with icons) can make a critical authentication screen feel unpolished and fragmented. Using cohesive button styles (matching secondary actions to surrounding cards) creates a much more unified aesthetic.
+**Action:** When designing vertical button stacks, ensure primary call-to-actions are perfectly centered and secondary actions share visual DNA with other contextual panels rather than relying on generic outlines. Avoid dividers unless separating radically different functional areas.

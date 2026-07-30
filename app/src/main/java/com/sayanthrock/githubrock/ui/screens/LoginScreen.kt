@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +60,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.Color
 import com.sayanthrock.githubrock.R
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,6 +67,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.Role.Companion.Button
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -268,14 +272,14 @@ private fun AccountAccessPanel(
                         .semantics { contentDescription = "Sign in to GitHub" },
                     shape = RoundedCornerShape(22.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = Color(0xFF63E2D8),
+                        contentColor = Color(0xFF161B22)
                     )
                 ) {
                     Surface(
                         modifier = Modifier.size(38.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = .16f)
+                        color = Color(0xFF161B22).copy(alpha = .16f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -288,35 +292,41 @@ private fun AccountAccessPanel(
                     Spacer(Modifier.width(12.dp))
                     Text(
                         if (loading) "Preparing sign-in…" else "Sign in to GitHub",
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Start,
                         fontWeight = FontWeight.Black,
                         letterSpacing = .4.sp
                     )
+                    Spacer(Modifier.width(12.dp))
                     Icon(Icons.Default.ArrowForward, contentDescription = null)
                 }
-                OutlinedButton(
-                    onClick = onShowAccountSetup,
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(76.dp)
+                        .clickable(onClick = onShowAccountSetup, role = Role.Button)
                         .semantics { contentDescription = "Sign up for GitHub" },
-                    shape = RoundedCornerShape(18.dp)
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .56f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .48f))
                 ) {
-                    Icon(Icons.Default.OpenInBrowser, contentDescription = null)
-                    Spacer(Modifier.width(12.dp))
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Private signup · Google, Apple, or email",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Icon(Icons.Default.OpenInBrowser, contentDescription = null)
+                        Spacer(Modifier.width(16.dp))
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Private signup · Google, Apple, or email",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(Icons.Default.ArrowForward, contentDescription = null)
                     }
-                    Icon(Icons.Default.ArrowForward, contentDescription = null)
                 }
             }
 
@@ -335,17 +345,27 @@ private fun AccountAccessPanel(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .72f))
-
-            OutlinedButton(
-                onClick = onGuest,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(18.dp)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clickable(onClick = onGuest, role = Role.Button),
+                shape = RoundedCornerShape(18.dp),
+                color = Color.Transparent,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
-                Text("Continue with public repositories")
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Continue with public repositories",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) {
-                Text("Explore isolated demo mode")
+                Text("Explore isolated demo mode", color = Color(0xFF63E2D8))
             }
         }
     }
@@ -542,14 +562,14 @@ private fun DeviceCodeExperience(
             .height(74.dp),
         shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = Color(0xFF63E2D8),
+                        contentColor = Color(0xFF161B22)
         )
     ) {
         Surface(
             modifier = Modifier.size(44.dp),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = .16f)
+                        color = Color(0xFF161B22).copy(alpha = .16f)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
