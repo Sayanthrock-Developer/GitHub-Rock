@@ -31,6 +31,15 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.LaptopMac
 import androidx.compose.material.icons.filled.Lock
@@ -55,7 +64,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -943,9 +951,19 @@ private fun ReadmeTitle() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text("README.md", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
-            Text("Project documentation", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text("README.md", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+                Text("Project documentation", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Surface(
             shape = RoundedCornerShape(999.dp),
