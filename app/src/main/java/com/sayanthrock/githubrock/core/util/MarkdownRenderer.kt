@@ -19,9 +19,19 @@ object MarkdownRenderer {
         val blocks = mutableListOf<MarkdownBlock>()
         val code = StringBuilder()
         var inCode = false
+        val currentParagraph = StringBuilder()
+
+        fun flushParagraph() {
+            if (currentParagraph.isNotEmpty()) {
+                blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, cleanInline(currentParagraph.toString().trimEnd()))
+                currentParagraph.clear()
+            }
+        }
+
         markdown.lines().forEach { rawLine ->
             val line = rawLine.trimEnd()
             if (line.trimStart().startsWith("```")) {
+                flushParagraph()
                 if (inCode) {
                     blocks += MarkdownBlock(MarkdownBlockKind.Code, code.toString().trimEnd())
                     code.clear()
@@ -33,30 +43,54 @@ object MarkdownRenderer {
                 code.appendLine(line)
                 return@forEach
             }
-            if (line.isBlank()) return@forEach
+            if (line.isBlank()) {
+                flushParagraph()
+                return@forEach
+            }
             val heading = headingPattern.matchEntire(line)
             when {
-                heading != null -> blocks += MarkdownBlock(
-                    MarkdownBlockKind.Heading,
-                    cleanInline(heading.groupValues[2]),
-                    heading.groupValues[1].length
-                )
-                dividerPattern.matches(line) -> blocks += MarkdownBlock(MarkdownBlockKind.Divider, "")
-                bulletPattern.matches(line) -> blocks += MarkdownBlock(
-                    MarkdownBlockKind.Bullet,
-                    cleanInline(bulletPattern.matchEntire(line)!!.groupValues[1])
-                )
-                orderedPattern.matches(line) -> blocks += MarkdownBlock(
-                    MarkdownBlockKind.Bullet,
-                    cleanInline("${line.takeWhile { it.isDigit() }}. ${orderedPattern.matchEntire(line)!!.groupValues[1]}")
-                )
-                quotePattern.matches(line) -> blocks += MarkdownBlock(
-                    MarkdownBlockKind.Quote,
-                    cleanInline(quotePattern.matchEntire(line)!!.groupValues[1])
-                )
-                else -> blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, cleanInline(line))
+                heading != null -> {
+                    flushParagraph()
+                    blocks += MarkdownBlock(
+                        MarkdownBlockKind.Heading,
+                        cleanInline(heading.groupValues[2]),
+                        heading.groupValues[1].length
+                    )
+                }
+                dividerPattern.matches(line) -> {
+                    flushParagraph()
+                    blocks += MarkdownBlock(MarkdownBlockKind.Divider, "")
+                }
+                bulletPattern.matches(line) -> {
+                    flushParagraph()
+                    blocks += MarkdownBlock(
+                        MarkdownBlockKind.Bullet,
+                        cleanInline(bulletPattern.matchEntire(line)!!.groupValues[1])
+                    )
+                }
+                orderedPattern.matches(line) -> {
+                    flushParagraph()
+                    blocks += MarkdownBlock(
+                        MarkdownBlockKind.Bullet,
+                        cleanInline("${line.takeWhile { it.isDigit() }}. ${orderedPattern.matchEntire(line)!!.groupValues[1]}")
+                    )
+                }
+                quotePattern.matches(line) -> {
+                    flushParagraph()
+                    blocks += MarkdownBlock(
+                        MarkdownBlockKind.Quote,
+                        cleanInline(quotePattern.matchEntire(line)!!.groupValues[1])
+                    )
+                }
+                else -> {
+                    if (currentParagraph.isNotEmpty()) {
+                        currentParagraph.append(" ")
+                    }
+                    currentParagraph.append(line.trimStart())
+                }
             }
         }
+        flushParagraph()
         if (inCode && code.isNotEmpty()) blocks += MarkdownBlock(MarkdownBlockKind.Code, code.toString().trimEnd())
         return blocks
     }
