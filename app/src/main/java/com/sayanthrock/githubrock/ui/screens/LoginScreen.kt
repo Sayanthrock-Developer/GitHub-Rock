@@ -289,13 +289,13 @@ private fun AccountAccessPanel(
                             )
                         }
                     }
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.weight(1f))
                     Text(
                         if (loading) "Preparing sign-in…" else "Sign in to GitHub",
                         fontWeight = FontWeight.Black,
                         letterSpacing = .4.sp
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.weight(1f))
                     Icon(Icons.Default.ArrowForward, contentDescription = null)
                 }
                 Surface(
@@ -305,18 +305,16 @@ private fun AccountAccessPanel(
                         .clickable(onClick = onShowAccountSetup, role = Role.Button)
                         .semantics { contentDescription = "Sign up for GitHub" },
                     shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .56f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .48f))
+                    color = MaterialTheme.colorScheme.surfaceContainer
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(Icons.Default.OpenInBrowser, contentDescription = null)
-                        Spacer(Modifier.width(16.dp))
                         Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
                             Text(
@@ -325,7 +323,6 @@ private fun AccountAccessPanel(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Icon(Icons.Default.ArrowForward, contentDescription = null)
                     }
                 }
             }
