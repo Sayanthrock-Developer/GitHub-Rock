@@ -1001,16 +1001,46 @@ private fun RepositoryMarkdownCard(markdown: String) {
 @Composable
 private fun MarkdownBlockView(block: MarkdownBlock) {
     when (block.kind) {
-        MarkdownBlockKind.Heading -> Text(
-            block.text,
-            style = when (block.level) {
+        MarkdownBlockKind.Heading -> {
+            val text = block.text
+            val emojiRegex = remember { Regex("^([\\u2700-\\u27BF]|[\\uE000-\\uF8FF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|[\\u2011-\\u26FF]|\\uD83E[\\uDD10-\\uDDFF])\\s+(.*)") }
+            val match = emojiRegex.find(text)
+            val style = when (block.level) {
                 1 -> MaterialTheme.typography.headlineMedium
                 2 -> MaterialTheme.typography.headlineSmall
                 3 -> MaterialTheme.typography.titleLarge
                 else -> MaterialTheme.typography.titleMedium
-            },
-            fontWeight = FontWeight.Bold
-        )
+            }
+            if (match != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = match.groupValues[1],
+                            modifier = Modifier.padding(10.dp),
+                            style = style,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Text(
+                        text = match.groupValues[2],
+                        style = style,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                Text(
+                    text,
+                    style = style,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
         MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             Text(block.text, modifier = Modifier.weight(1f))

@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -732,16 +733,44 @@ private fun MarkdownPreviewCard(blocks: List<com.sayanthrock.githubrock.core.uti
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f)
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val emojiRegex = remember { Regex("^([\\u2700-\\u27BF]|[\\uE000-\\uF8FF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|[\\u2011-\\u26FF]|\\uD83E[\\uDD10-\\uDDFF])\\s+(.*)") }
             blocks.forEach { block ->
                 when (block.kind) {
-                    MarkdownBlockKind.Heading -> Text(
-                        block.text,
-                        style = when (block.level) {
+                    MarkdownBlockKind.Heading -> {
+                        val text = block.text
+                        val match = emojiRegex.find(text)
+                        val style = when (block.level) {
                             1 -> MaterialTheme.typography.headlineSmall
                             2 -> MaterialTheme.typography.titleLarge
                             else -> MaterialTheme.typography.titleMedium
                         }
-                    )
+                        if (match != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = androidx.compose.foundation.shape.CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = match.groupValues[1],
+                                        modifier = Modifier.padding(10.dp),
+                                        style = style
+                                    )
+                                }
+                                Text(
+                                    text = match.groupValues[2],
+                                    style = style
+                                )
+                            }
+                        } else {
+                            Text(
+                                text,
+                                style = style
+                            )
+                        }
+                    }
                     MarkdownBlockKind.Bullet -> Text("• ${block.text}")
                     MarkdownBlockKind.Quote -> Text("> ${block.text}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     MarkdownBlockKind.Code -> Surface(color = MaterialTheme.colorScheme.background.copy(alpha = .7f)) {
