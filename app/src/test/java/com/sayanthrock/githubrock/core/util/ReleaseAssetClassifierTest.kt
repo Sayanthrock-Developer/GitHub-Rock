@@ -1,4 +1,4 @@
-package com.sayanthrock.githubrock
+package com.sayanthrock.githubrock.core.util
 
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
 import com.sayanthrock.githubrock.core.util.ReleaseAssetClassifier
@@ -158,6 +158,54 @@ class ReleaseAssetClassifierTest {
             ),
             ReleasePlatform.entries
         )
+    }
+
+
+    @Test fun detectsAllArchitectures() {
+        val cases = listOf(
+            Case("github-rock-armv7.apk", ReleasePlatform.Android, "APK", "ARMv7"),
+            Case("github-rock-riscv64.apk", ReleasePlatform.Android, "APK", "RISC-V 64"),
+            Case("github-rock-x86.apk", ReleasePlatform.Android, "APK", "x86"),
+            Case("github-rock-random-unknown.apk", ReleasePlatform.Android, "APK", "Architecture not specified")
+        )
+
+        cases.forEach { case ->
+            val info = ReleaseAssetClassifier.classify(case.name)
+            assertEquals(case.name, case.architecture, info.architecture)
+        }
+    }
+
+    @Test fun detectsAllFormats() {
+        val cases = listOf(
+            Case("github-rock-windows.7z", ReleasePlatform.Windows, "7Z", "Architecture not specified"),
+            Case("github-rock-linux.gz", ReleasePlatform.Linux, "GZIP", "Architecture not specified"),
+            Case("github-rock-linux.snap", ReleasePlatform.Linux, "Snap", "Architecture not specified"),
+            Case("github-rock-linux.flatpak", ReleasePlatform.Linux, "Flatpak", "Architecture not specified"),
+            Case("github-rock-android.aab", ReleasePlatform.Android, "AAB", "Architecture not specified"),
+            Case("github-rock-android.apks", ReleasePlatform.Android, "APKS", "Architecture not specified"),
+            Case("github-rock-windows.appx", ReleasePlatform.Windows, "APPX", "Architecture not specified")
+        )
+
+        cases.forEach { case ->
+            val info = ReleaseAssetClassifier.classify(case.name)
+            assertEquals(case.name, case.format, info.format)
+        }
+    }
+
+    @Test fun filtersAssetsForPlatform() {
+        val assets = listOf(
+            asset(1, "github-rock-android.apk"),
+            asset(2, "github-rock-windows.exe"),
+            asset(3, "github-rock-linux.deb")
+        )
+
+        val androidAssets = ReleaseAssetClassifier.assetsForPlatform(assets, ReleasePlatform.Android)
+        assertEquals(1, androidAssets.size)
+        assertEquals("github-rock-android.apk", androidAssets.first().name)
+
+        val windowsAssets = ReleaseAssetClassifier.assetsForPlatform(assets, ReleasePlatform.Windows)
+        assertEquals(1, windowsAssets.size)
+        assertEquals("github-rock-windows.exe", windowsAssets.first().name)
     }
 
     private fun asset(id: Long, name: String) = ReleaseAsset(
