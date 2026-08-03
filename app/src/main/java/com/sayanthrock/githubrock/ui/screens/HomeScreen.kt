@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -568,14 +569,17 @@ private fun DiscoveryRepositoryCard(
                 RepositoryFooterMetric(
                     icon = Icons.Default.Star,
                     value = compactCount(repository.stars),
+                    contentDescription = "${compactCount(repository.stars)} stars",
                 )
                 RepositoryFooterMetric(
                     icon = Icons.Default.CallSplit,
                     value = compactCount(repository.forks),
+                    contentDescription = "${compactCount(repository.forks)} forks",
                 )
                 RepositoryFooterMetric(
                     icon = Icons.Default.Schedule,
                     value = relativeRepositoryTime(repository.updatedAt),
+                    contentDescription = "Updated ${relativeRepositoryTime(repository.updatedAt)}",
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -618,8 +622,10 @@ private fun RepositoryPlatformChip(
 private fun RepositoryFooterMetric(
     icon: ImageVector,
     value: String,
+    contentDescription: String,
 ) {
     Row(
+        modifier = Modifier.clearAndSetSemantics { this.contentDescription = contentDescription },
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
