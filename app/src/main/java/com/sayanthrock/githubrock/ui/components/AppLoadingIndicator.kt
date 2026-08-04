@@ -83,7 +83,7 @@ fun AppLoadingIndicator(
 
             LoadingStyle.Pulse -> {
                 if (reduceMotion) {
-                    PulseDot(compact = compact, scale = 1f)
+                    PulseDot(compact = compact, scale = 1f, alpha = 1f)
                 } else {
                     val transition = rememberInfiniteTransition(label = "app-loading-pulse")
                     val pulse by transition.animateFloat(
@@ -95,7 +95,16 @@ fun AppLoadingIndicator(
                         ),
                         label = "app-loading-pulse-scale"
                     )
-                    PulseDot(compact = compact, scale = pulse)
+                    val alpha by transition.animateFloat(
+                        initialValue = 0.5f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 700),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "app-loading-pulse-alpha"
+                    )
+                    PulseDot(compact = compact, scale = pulse, alpha = alpha)
                 }
             }
         }
@@ -103,14 +112,14 @@ fun AppLoadingIndicator(
 }
 
 @Composable
-private fun PulseDot(compact: Boolean, scale: Float) {
+private fun PulseDot(compact: Boolean, scale: Float, alpha: Float) {
     Surface(
         modifier = Modifier
             .size(if (compact) 20.dp else 28.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                alpha = scale
+                this.alpha = alpha
             },
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.primary

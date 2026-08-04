@@ -247,6 +247,7 @@ fun HomeScreen(
                 key = { _, item -> item.id },
             ) { index, repository ->
                 DiscoveryRepositoryCard(
+                    modifier = Modifier.animateItem(),
                     repository = repository,
                     rank = if (selectedSort == HomeSort.Popular) {
                         index + 1
@@ -448,6 +449,7 @@ private fun EmptyDiscoveryCard(
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
 private fun DiscoveryRepositoryCard(
+    modifier: Modifier = Modifier,
     repository: GitHubRepositoryModel,
     rank: Int?,
     onClick: () -> Unit,
@@ -456,7 +458,7 @@ private fun DiscoveryRepositoryCard(
     val platforms = remember(repository) { repositoryPlatforms(repository) }
 
     GlassCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         onClick = onClick,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
