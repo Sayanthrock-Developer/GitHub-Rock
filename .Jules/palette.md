@@ -11,3 +11,6 @@
 ## 2026-07-30 - Modern Header Icons
 **Learning:** Using circular background containers for icons next to headers significantly elevates the visual hierarchy and brings designs closer to modern Material 3 standard implementations.
 **Action:** When adding icons to major section headers (like README.md), use a Surface with a primaryContainer color and CircleShape to frame the icon cleanly.
+## 2025-02-17 - Compose accessibility for metric icon-text rows
+**Learning:** In Compose, an icon and text row (like a star icon with '1.2k') is normally read by screen readers as separate, out-of-context items. We can group them by applying `Modifier.clearAndSetSemantics { contentDescription = ... }` on the container.
+**Action:** Use `clearAndSetSemantics` with a descriptive `contentDescription` when building simple icon-and-text metrics so that the screen reader announces the combined meaning clearly.
