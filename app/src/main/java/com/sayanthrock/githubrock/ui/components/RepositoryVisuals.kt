@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -282,7 +283,7 @@ private fun RepositoryMetaPill(
 ) {
     val foreground = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Surface(
-        modifier = Modifier.semantics { contentDescription = "$label: $value" },
+        modifier = Modifier.clearAndSetSemantics { contentDescription = "$label: $value" },
         shape = MaterialTheme.shapes.large,
         color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = .10f)
         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .58f),

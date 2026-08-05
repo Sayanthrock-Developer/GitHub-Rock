@@ -14,3 +14,7 @@
 ## 2025-02-17 - Compose accessibility for metric icon-text rows
 **Learning:** In Compose, an icon and text row (like a star icon with '1.2k') is normally read by screen readers as separate, out-of-context items. We can group them by applying `Modifier.clearAndSetSemantics { contentDescription = ... }` on the container.
 **Action:** Use `clearAndSetSemantics` with a descriptive `contentDescription` when building simple icon-and-text metrics so that the screen reader announces the combined meaning clearly.
+
+## 2026-08-04 - Compose Accessibility for Metric Icons
+**Learning:** For small metric items that pair an icon with a text label/value (like a repository meta pill), using standard `Modifier.semantics` can sometimes still allow screen readers to read the icon and text as separate or disjointed items. Using `Modifier.clearAndSetSemantics` on the parent container ensures the screen reader completely overrides the individual child semantics and announces the metric as a single, clear, combined piece of information.
+**Action:** When building custom icon-and-text metrics or pills in Jetpack Compose, use `Modifier.clearAndSetSemantics` with a single `contentDescription` on the container to combine the meaning into one clear announcement.
