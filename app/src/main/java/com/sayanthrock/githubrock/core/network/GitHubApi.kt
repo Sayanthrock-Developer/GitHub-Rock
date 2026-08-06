@@ -92,6 +92,23 @@ interface GitHubRestApi {
         @Query("page") page: Int = 1
     ): RepositorySearchResponse
 
+    @GET("search/users")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Query("sort") sort: String = "followers",
+        @Query("order") order: String = "desc",
+        @Query("per_page") perPage: Int = 30,
+        @Query("page") page: Int = 1
+    ): com.sayanthrock.githubrock.core.model.UserSearchResponse
+
+    @GET("repos/{owner}/{repo}/contributors")
+    suspend fun contributors(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 30,
+        @Query("page") page: Int = 1
+    ): List<com.sayanthrock.githubrock.core.model.Contributor>
+
     @GET("repos/{owner}/{repo}/contents/{path}")
     suspend fun contents(
         @Path("owner") owner: String,
