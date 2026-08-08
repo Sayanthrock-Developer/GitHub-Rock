@@ -56,7 +56,6 @@ import com.sayanthrock.githubrock.ui.screens.DownloadsHubScreen
 import com.sayanthrock.githubrock.ui.screens.FeaturePreviewScreen
 import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
 import com.sayanthrock.githubrock.ui.screens.HomeScreen
-import com.sayanthrock.githubrock.ui.screens.GitHubJuiceScreen
 import com.sayanthrock.githubrock.ui.screens.NativeProfileScreen
 import com.sayanthrock.githubrock.ui.screens.ProfileScreen
 import com.sayanthrock.githubrock.ui.screens.RepositoriesScreen
@@ -73,7 +72,6 @@ sealed class TopDestination(
     data object Builds : TopDestination("builds", "Builds", Icons.Default.Build)
     data object Downloads : TopDestination("downloads", "Downloads", Icons.Default.Download)
     data object Profile : TopDestination("profile", "Profile", Icons.Default.AccountCircle)
-    data object Juice : TopDestination("juice", "Juice", Icons.Default.Star)
 }
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
@@ -101,7 +99,6 @@ private val topDestinations = listOf(
     TopDestination.Builds,
     TopDestination.Downloads,
     TopDestination.Profile,
-    TopDestination.Juice
 )
 
 internal enum class MainNavigationLayout { BottomBar, NavigationRail }
@@ -192,7 +189,6 @@ fun MainNavigation(
                             BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
                         }
                         composable(TopDestination.Downloads.route) { DownloadsHubScreen() }
-                        composable(TopDestination.Juice.route) { GitHubJuiceScreen() }
                         composable(TopDestination.Profile.route) {
                             ProfileScreen(
                                 mode = mode,
