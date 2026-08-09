@@ -783,7 +783,7 @@ private fun MarkdownPreviewCard(blocks: List<com.sayanthrock.githubrock.core.uti
                         model = block.url,
                         contentDescription = block.text,
                         modifier = Modifier.fillMaxWidth(),
-                        contentScale = ContentScale.Inside
+                        contentScale = ContentScale.FillWidth
                     )
                     MarkdownBlockKind.Paragraph -> Text(block.text)
                 }

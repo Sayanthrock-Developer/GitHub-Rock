@@ -618,7 +618,7 @@ private fun ReadmeBlock(block: MarkdownBlock) {
             model = block.url,
             contentDescription = block.text,
             modifier = Modifier.fillMaxWidth(),
-            contentScale = ContentScale.Inside
+            contentScale = ContentScale.FillWidth
         )
         MarkdownBlockKind.Paragraph -> Text(
             block.text,
