@@ -9,7 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,9 +38,10 @@ class MainActivity : ComponentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
         setContent {
-            val appearance by appPreferences.appearance.collectAsStateWithLifecycle(
+            val appearanceState = appPreferences.appearance.collectAsStateWithLifecycle(
                 initialValue = AppearancePreferences(showImages = false)
             )
+            val appearance = appearanceState.value
             val systemDark = isSystemInDarkTheme()
             val useDarkTheme = when (appearance.themeMode) {
                 ThemeMode.System -> systemDark
