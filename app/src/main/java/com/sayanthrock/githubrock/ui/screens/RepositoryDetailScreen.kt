@@ -22,6 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -777,6 +779,12 @@ private fun MarkdownPreviewCard(blocks: List<com.sayanthrock.githubrock.core.uti
                         Text(block.text, Modifier.fillMaxWidth().padding(10.dp), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
                     }
                     MarkdownBlockKind.Divider -> HorizontalDivider()
+                    MarkdownBlockKind.Image -> AsyncImage(
+                        model = block.url,
+                        contentDescription = block.text,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.FillWidth
+                    )
                     MarkdownBlockKind.Paragraph -> Text(block.text)
                 }
             }

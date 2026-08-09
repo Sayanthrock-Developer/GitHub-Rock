@@ -1062,6 +1062,12 @@ private fun MarkdownBlockView(block: MarkdownBlock) {
             )
         }
         MarkdownBlockKind.Divider -> HorizontalDivider()
+        MarkdownBlockKind.Image -> AsyncImage(
+            model = block.url,
+            contentDescription = block.text,
+            modifier = Modifier.fillMaxWidth(),
+            contentScale = ContentScale.FillWidth
+        )
         MarkdownBlockKind.Paragraph -> Text(block.text, style = MaterialTheme.typography.bodyMedium)
     }
 }
