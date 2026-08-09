@@ -21,3 +21,7 @@
 ## 2024-05-18 - Render markdown images
 **Learning:** The custom markdown parser actively stripped image tags `![alt](url)` and converted them to plain text, severely affecting the UX of documentation pages. Standard Android views for markdown support image tags, so any custom implementation needs to handle parsing properly to keep par with desktop tools.
 **Action:** Created a new `Image` block kind and extracted the url in the markdown parser (`MarkdownRenderer.kt`), ensuring it does not get cleared by subsequent line parsers. Updated Compose screen blocks (`RepositoryShowcaseScreen.kt`, `RepositoryHubContent.kt`, `RepositoryDetailScreen.kt`) to catch the image `MarkdownBlockKind` and load them gracefully with Coil's `AsyncImage` modifier filling the layout width `Modifier.fillMaxWidth()` for an immersive reading experience without horizontal scrollbars cutting off documentation image content.
+
+## 2026-08-09 - Markdown Image ContentScale Issue
+**Learning:** In Jetpack Compose, using `ContentScale.Inside` with `Modifier.fillMaxWidth()` inside infinitely tall scrollable containers (like `LazyColumn` or `verticalScroll`) causes `AsyncImage` layouts to fail when rendering SVGs or images without resolved intrinsic boundaries, leading to blank screens.
+**Action:** Always prefer `ContentScale.FillWidth` (or fixed aspect ratios) for remote markdown images wrapped inside scrollable layouts to ensure rendering consistency and prevent layout collapse.
