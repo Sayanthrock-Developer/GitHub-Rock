@@ -15,8 +15,8 @@ object MarkdownRenderer {
     private val orderedPattern = Regex("^\\s*\\d+[.)]\\s+(.+)$")
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val dividerPattern = Regex("^\\s*([-*_]){3,}\\s*$")
-    private val imagePattern = Regex("^\\s*!\\[(.*?)\\]\\((.*?)\\)\\s*$")
-    private val htmlImagePattern = Regex("^\\s*<img\\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*alt=[\"']([^\"']*)[\"'][^>]*>\\s*$")
+    private val imagePattern = Regex("^\\s*(?:\\[\\s*)?!\\[(.*?)\\]\\((.*?)\\)(?:\\s*\\]\\([^)]*\\))?\\s*$")
+    private val htmlImagePattern = Regex("^\\s*(?:<a\\s+[^>]*>\\s*)?<img\\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*(?:alt=[\"']([^\"']*)[\"'][^>]*)?>\\s*(?:</a>\\s*)?$")
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
@@ -97,9 +97,10 @@ object MarkdownRenderer {
                 htmlImagePattern.matches(line) -> {
                     flushParagraph()
                     val match = htmlImagePattern.matchEntire(line)!!
+                    val altText = if (match.groupValues.size > 2 && match.groupValues[2].isNotBlank()) match.groupValues[2] else "Image"
                     blocks += MarkdownBlock(
                         MarkdownBlockKind.Image,
-                        match.groupValues[2],
+                        altText,
                         url = match.groupValues[1]
                     )
                 }
