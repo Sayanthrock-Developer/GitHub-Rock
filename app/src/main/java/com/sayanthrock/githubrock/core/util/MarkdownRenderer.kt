@@ -1,11 +1,12 @@
 package com.sayanthrock.githubrock.core.util
 
-enum class MarkdownBlockKind { Heading, Paragraph, Bullet, Quote, Code, Divider }
+enum class MarkdownBlockKind { Heading, Paragraph, Bullet, Quote, Code, Divider, Image }
 
 data class MarkdownBlock(
     val kind: MarkdownBlockKind,
     val text: String,
-    val level: Int = 0
+    val level: Int = 0,
+    val url: String? = null
 )
 
 object MarkdownRenderer {
@@ -14,6 +15,8 @@ object MarkdownRenderer {
     private val orderedPattern = Regex("^\\s*\\d+[.)]\\s+(.+)$")
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val dividerPattern = Regex("^\\s*([-*_]){3,}\\s*$")
+    private val imagePattern = Regex("^\\s*!\\[(.*?)\\]\\((.*?)\\)\\s*$")
+    private val htmlImagePattern = Regex("^\\s*<img\\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*alt=[\"']([^\"']*)[\"'][^>]*>\\s*$")
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
@@ -80,6 +83,24 @@ object MarkdownRenderer {
                     blocks += MarkdownBlock(
                         MarkdownBlockKind.Quote,
                         cleanInline(quotePattern.matchEntire(line)!!.groupValues[1])
+                    )
+                }
+                imagePattern.matches(line) -> {
+                    flushParagraph()
+                    val match = imagePattern.matchEntire(line)!!
+                    blocks += MarkdownBlock(
+                        MarkdownBlockKind.Image,
+                        match.groupValues[1],
+                        url = match.groupValues[2]
+                    )
+                }
+                htmlImagePattern.matches(line) -> {
+                    flushParagraph()
+                    val match = htmlImagePattern.matchEntire(line)!!
+                    blocks += MarkdownBlock(
+                        MarkdownBlockKind.Image,
+                        match.groupValues[2],
+                        url = match.groupValues[1]
                     )
                 }
                 else -> {
