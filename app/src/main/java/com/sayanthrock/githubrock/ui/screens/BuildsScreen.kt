@@ -231,7 +231,7 @@ private fun WorkflowPreviewCard(actionState: BuildsActionState, preferences: App
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        com.sayanthrock.githubrock.ui.components.AppLoadingIndicator(compact = true)
                         Text("Loading active workflow code…")
                     }
                 }
@@ -503,7 +503,7 @@ private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences) {
 @Composable
 private fun LoadingRow(text: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+        com.sayanthrock.githubrock.ui.components.AppLoadingIndicator(compact = true)
         Text(text)
     }
 }
