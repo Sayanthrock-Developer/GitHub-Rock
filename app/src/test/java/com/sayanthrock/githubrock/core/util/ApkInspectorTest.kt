@@ -131,6 +131,21 @@ class ApkInspectorTest {
         assertNotNull(result)
         assertEquals(false, result!!.installedSignatureMatches)
     }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `inspect handles exception when getting installed package info`() {
+        val archiveInfo = PackageInfo().apply {
+            packageName = "com.example.app"
+        }
+        mockPackageManager.setArchiveInfo(archiveInfo)
+        mockPackageManager.shouldThrowOnGetPackageInfo = true
+
+        val result = ApkInspector.inspect(dummyApk, mockPackageManager)
+
+        assertNotNull(result)
+        assertNull(result!!.installedSignatureMatches)
+    }
 }
 
 class FakeSignature(private val bytes: ByteArray) : Signature("") {
@@ -138,6 +153,7 @@ class FakeSignature(private val bytes: ByteArray) : Signature("") {
 }
 
 class FakePackageManagerWrapper : PackageManagerWrapper {
+    var shouldThrowOnGetPackageInfo = false
     private var archiveInfo: PackageInfo? = null
     private var installedInfo: MutableMap<String, PackageInfo> = mutableMapOf()
     private var appLabel: String? = null
@@ -159,6 +175,9 @@ class FakePackageManagerWrapper : PackageManagerWrapper {
     }
 
     override fun getPackageInfo(packageName: String, flags: Int): PackageInfo {
+        if (shouldThrowOnGetPackageInfo) {
+            throw Exception("Simulated error getting package info")
+        }
         if (!installedInfo.containsKey(packageName)) {
             throw Exception("Package $packageName not found")
         }
