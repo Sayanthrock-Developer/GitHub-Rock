@@ -1,14 +1,23 @@
 # GitHub Rock
 
-**GitHub Rock** is a native Android app that works as a **developer control centre for GitHub**.
+Everything a website can do. To the way it can be done on the mobile application. In a way that can do everything.
 
-It lets you:
+## GitHub Connect
 
-- Sign in securely with GitHub
-- Browse repositories, issues, and pull requests
-- Monitor GitHub Actions
-- Generate and run Android build workflows
-- Download release artifacts and inspect APKs
+You can now see when a pull request is part of a stack, check its current status, and merge stacked pull requests from wherever you are.
+You can now archive your Copilot agent sessions.
+
+### Triage notifications, review, comment, and merge, right from your mobile device
+
+There's a lot you can do on GitHub that doesn't require a complex development environment like sharing feedback on a design discussion, or reviewing a few lines of code. GitHub Rock lets you move work forward wherever you are. Stay in touch with your team, triage issues, and even merge, right from the app. We're making these tasks easy for you to perform, no matter where you work, with a beautifully native experience.
+
+You can use GitHub Rock to:
+
+- Browse your latest notifications
+- Read, react, and reply to Issues and Pull Requests
+- Review and merge Pull Requests
+- Organize Issues with labels, assignees, projects, and more
+- Browse your files and code
 
 All in one clean Kotlin + Jetpack Compose app.
 
