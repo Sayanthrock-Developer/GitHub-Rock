@@ -17,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
-import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -354,7 +354,7 @@ fun NativeProfileScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 54.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        AppLoadingIndicator()
+                        CircularProgressIndicator()
                     }
                 }
                 errorMessage != null -> item {

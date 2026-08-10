@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
-import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -201,7 +201,11 @@ internal fun ProfileDashboardHeader(
                     modifier = Modifier.fillMaxWidth().height(50.dp)
                 ) {
                     if (!followStateLoaded || followUpdating) {
-                        AppLoadingIndicator(compact = true)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     } else {
                         Icon(
                             if (isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
