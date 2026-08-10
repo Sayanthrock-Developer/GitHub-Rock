@@ -25,3 +25,6 @@
 ## 2026-08-09 - Markdown Image ContentScale Issue
 **Learning:** In Jetpack Compose, using `ContentScale.Inside` with `Modifier.fillMaxWidth()` inside infinitely tall scrollable containers (like `LazyColumn` or `verticalScroll`) causes `AsyncImage` layouts to fail when rendering SVGs or images without resolved intrinsic boundaries, leading to blank screens.
 **Action:** Always prefer `ContentScale.FillWidth` (or fixed aspect ratios) for remote markdown images wrapped inside scrollable layouts to ensure rendering consistency and prevent layout collapse.
+## 2024-11-20 - Replacing explanatory text with actionable buttons
+**Learning:** Text explaining a limitation ("preview shortened") is less helpful than providing a direct action to bypass the limitation ("Read more" button). Users prefer immediate solutions over explanations.
+**Action:** When truncating content for performance or space, prioritize actionable UI elements (like buttons linking to the full source) over static explanatory text blocks.
