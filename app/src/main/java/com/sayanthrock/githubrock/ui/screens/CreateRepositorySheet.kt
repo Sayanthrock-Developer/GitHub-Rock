@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -134,7 +134,7 @@ internal fun CreateRepositoryFormContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                CircularProgressIndicator(modifier = Modifier.width(22.dp))
+                AppLoadingIndicator(compact = true)
                 Text("Loading owner accounts and GitHub templates…")
             }
             state.owners.isEmpty() -> StatusSurface(
@@ -272,10 +272,7 @@ internal fun CreateRepositoryFormContent(
                     enabled = !state.loadingOptions && state.owners.isNotEmpty() && !state.submitting
                 ) {
                     if (state.submitting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.width(18.dp),
-                            strokeWidth = 2.dp
-                        )
+                        AppLoadingIndicator(compact = true)
                         Spacer(Modifier.width(8.dp))
                         Text("Creating…")
                     } else {

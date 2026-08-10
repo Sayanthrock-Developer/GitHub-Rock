@@ -22,7 +22,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -303,7 +303,7 @@ fun ProfileLibraryScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 56.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        AppLoadingIndicator()
                     }
                 }
 

@@ -25,3 +25,6 @@
 ## 2026-08-09 - Markdown Image ContentScale Issue
 **Learning:** In Jetpack Compose, using `ContentScale.Inside` with `Modifier.fillMaxWidth()` inside infinitely tall scrollable containers (like `LazyColumn` or `verticalScroll`) causes `AsyncImage` layouts to fail when rendering SVGs or images without resolved intrinsic boundaries, leading to blank screens.
 **Action:** Always prefer `ContentScale.FillWidth` (or fixed aspect ratios) for remote markdown images wrapped inside scrollable layouts to ensure rendering consistency and prevent layout collapse.
+## 2024-08-09 - Unified Loading Indicators & Navigation Animations
+**Learning:** Using hardcoded progress indicators breaks the dynamic theming and consistency of the UI, and abrupt screen changes degrade the overall user experience.
+**Action:** Always prefer the unified `AppLoadingIndicator` that respects user theme styles and ensure `NavHost` has proper enter/exit transition animations for smoother UX.

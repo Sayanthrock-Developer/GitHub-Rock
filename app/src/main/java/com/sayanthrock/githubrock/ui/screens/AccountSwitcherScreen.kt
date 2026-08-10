@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -218,7 +218,7 @@ fun AccountSwitcherScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 36.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        AppLoadingIndicator()
                     }
                 }
                 state.error != null -> item {

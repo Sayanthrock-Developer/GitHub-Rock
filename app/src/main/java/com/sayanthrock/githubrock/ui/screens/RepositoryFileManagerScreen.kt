@@ -34,7 +34,7 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -426,11 +426,7 @@ private fun FileOperationStatus(loading: Boolean, label: String, hasError: Boole
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    strokeWidth = 2.dp,
-                    color = accent
-                )
+                AppLoadingIndicator(compact = true)
             } else {
                 Icon(
                     if (hasError) Icons.Default.ErrorOutline else Icons.Default.CheckCircle,

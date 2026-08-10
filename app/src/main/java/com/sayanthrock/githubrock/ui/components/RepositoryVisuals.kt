@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -214,7 +214,7 @@ private fun RepositoryPreviewFallback(repository: GitHubRepositoryModel, showPro
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (showProgress) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                AppLoadingIndicator(compact = true)
             } else {
                 Icon(
                     Icons.Default.Code,

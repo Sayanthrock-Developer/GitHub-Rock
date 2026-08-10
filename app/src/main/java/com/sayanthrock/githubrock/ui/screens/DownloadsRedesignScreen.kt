@@ -36,7 +36,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -207,7 +207,7 @@ fun DownloadsRedesignScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     if (inspectionLoading) {
         AlertDialog(
             onDismissRequest = {},
-            icon = { CircularProgressIndicator(modifier = Modifier.size(28.dp)) },
+            icon = { AppLoadingIndicator(compact = true) },
             title = { Text("Inspecting APK") },
             text = { Text("Reading the application identity, SDK, signature, hash, and permissions.") },
             confirmButton = {}

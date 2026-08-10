@@ -162,6 +162,10 @@ fun MainNavigation(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     NavHost(
+                        enterTransition = { androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) },
+                        exitTransition = { androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) },
+                        popEnterTransition = { androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) },
+                        popExitTransition = { androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) },
                         navController = navController,
                         startDestination = TopDestination.Home.route,
                         modifier = Modifier.widthIn(max = 1200.dp).fillMaxSize()
