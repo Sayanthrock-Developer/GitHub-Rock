@@ -188,7 +188,7 @@ fun MainNavigation(
                         composable(TopDestination.Builds.route) {
                             BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)
                         }
-                        composable(TopDestination.Downloads.route) { DownloadsHubScreen() }
+                        composable(TopDestination.Downloads.route) { DownloadsHubScreen(onOpenRepository = { owner, repo -> navController.navigate("repo/$owner/$repo?demo=${mode == AppMode.Demo}") }) }
                         composable(TopDestination.Profile.route) {
                             ProfileScreen(
                                 mode = mode,

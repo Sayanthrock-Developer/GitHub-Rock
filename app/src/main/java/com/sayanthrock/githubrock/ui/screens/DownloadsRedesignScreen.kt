@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
@@ -102,7 +104,7 @@ internal fun preferredApplicationName(fileName: String, extractedLabel: String?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DownloadsRedesignScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
+fun DownloadsRedesignScreen(viewModel: DownloadsViewModel = hiltViewModel(), onOpenRepository: (String, String) -> Unit = { _, _ -> }) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -125,6 +127,11 @@ fun DownloadsRedesignScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         downloads = downloads,
         selectedFilter = selectedFilter,
         onSelectFilter = { selectedFilterName = it.name },
+        onPrimaryActionLabelClick = { item ->
+            if (item.fileName.startsWith("chamoQR", ignoreCase = true)) {
+                onOpenRepository("sayanthrock", "ChamoQR")
+            }
+        },
         onPrimaryAction = { item ->
             when (item.status) {
                 "downloading", "queued", "retrying" -> viewModel.pause(item)
@@ -274,6 +281,7 @@ internal fun DownloadsRedesignContent(
     downloads: List<DownloadEntity>,
     selectedFilter: DownloadListFilter,
     onSelectFilter: (DownloadListFilter) -> Unit,
+    onPrimaryActionLabelClick: (DownloadEntity) -> Unit = {},
     onPrimaryAction: (DownloadEntity) -> Unit,
     onOpenActions: (DownloadEntity) -> Unit
 ) {
@@ -319,6 +327,7 @@ internal fun DownloadsRedesignContent(
         items(visibleDownloads, key = { it.id }) { item ->
             DownloadListCard(
                 item = item,
+                onPrimaryActionLabelClick = { onPrimaryActionLabelClick(item) },
                 onPrimaryAction = { onPrimaryAction(item) },
                 onOpenActions = { onOpenActions(item) }
             )
@@ -392,6 +401,7 @@ private fun EmptyDownloadsCard(filter: DownloadListFilter) {
 @Composable
 private fun DownloadListCard(
     item: DownloadEntity,
+    onPrimaryActionLabelClick: () -> Unit = {},
     onPrimaryAction: () -> Unit,
     onOpenActions: () -> Unit
 ) {
@@ -420,7 +430,13 @@ private fun DownloadListCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            if (item.isApkDownload()) Icons.Default.Android else Icons.Default.InsertDriveFile,
+                            if (item.fileName.startsWith("chamoQR", ignoreCase = true)) {
+                                Icons.Default.QrCode
+                            } else if (item.isApkDownload()) {
+                                Icons.Default.Android
+                            } else {
+                                Icons.Default.InsertDriveFile
+                            },
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -430,6 +446,7 @@ private fun DownloadListCard(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         item.fileName,
+                        modifier = Modifier.clickable(onClick = onPrimaryActionLabelClick),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
