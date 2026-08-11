@@ -213,7 +213,10 @@ fun RepositoryShowcaseContent(
                     }
                 }
             }
-            readme != null -> item { RepositoryReadmeCard(readme) }
+                        readme != null -> item {
+                val currentUriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                RepositoryReadmeCard(readme, onReadMoreClick = { repository?.let { currentUriHandler.openUri(it.htmlUrl) } })
+            }
             readmeError != null -> item {
                 GlassCard {
                     Row(
@@ -523,18 +526,19 @@ private fun ReadmeHeader() {
 }
 
 @Composable
-private fun RepositoryReadmeCard(markdown: String) {
+private fun RepositoryReadmeCard(markdown: String, onReadMoreClick: () -> Unit) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             blocks.take(MAX_README_BLOCKS).forEach { block -> ReadmeBlock(block) }
             if (blocks.size > MAX_README_BLOCKS) {
                 HorizontalDivider()
-                Text(
-                    "README preview shortened for smooth performance. Open the repository on GitHub to read the complete document.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                OutlinedButton(
+                    onClick = onReadMoreClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Read more")
+                }
             }
         }
     }
