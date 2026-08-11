@@ -161,7 +161,7 @@ fun RepositoryHubContent(
                     }
                 }
             }
-            readme != null -> item(key = "readme_content") { RepositoryMarkdownCard(readme, onReadMoreClick = { repository?.let { onOpenUrl(it.htmlUrl) } }) }
+            readme != null -> item(key = "readme_content") { RepositoryMarkdownCard(readme) }
             readmeError != null -> item(key = "readme_error") {
                 GlassCard {
                     Row(
@@ -975,19 +975,18 @@ private fun ReadmeTitle() {
 }
 
 @Composable
-private fun RepositoryMarkdownCard(markdown: String, onReadMoreClick: () -> Unit) {
+private fun RepositoryMarkdownCard(markdown: String) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             blocks.take(MAX_README_BLOCKS).forEach { MarkdownBlockView(it) }
             if (blocks.size > MAX_README_BLOCKS) {
                 HorizontalDivider()
-                OutlinedButton(
-                    onClick = onReadMoreClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Read more")
-                }
+                Text(
+                    "README preview shortened for performance. Use the Code tool to open the complete repository documentation.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
