@@ -81,12 +81,12 @@ private const val APP_INFORMATION_ROUTE = "app-information"
 private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
-private val MobileDockHeight = 88.dp
-private val MobileDockContentClearance = 106.dp
-private val MobileDockGlassTop = Color(0xD9060706)
-private val MobileDockGlassBottom = Color(0xB3000000)
+private val MobileDockHeight = 94.dp
+private val MobileDockContentClearance = 112.dp
+private val MobileDockGlassTop = Color(0xE6131414)
+private val MobileDockGlassBottom = Color(0xC9050606)
 private val MobileDockBackdrop = Color(0x99000000)
-private val MobileDockBorder = Color(0xFF2A2D2A)
+private val MobileDockBorder = Color(0xFF343735)
 private val MobileDockMuted = Color(0xFFB8BBB3)
 private val MobileDockSelectedTop = Color(0xFF4BA642)
 private val MobileDockSelectedBottom = Color(0xFF235F2B)
@@ -376,49 +376,49 @@ internal fun AppNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = 560.dp)
+                .widthIn(max = 620.dp)
                 .height(MobileDockHeight)
         ) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                    .blur(22.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                    .padding(horizontal = 7.dp, vertical = 5.dp)
+                    .blur(24.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                     .clip(dockShape)
-                    .background(MobileDockBackdrop.copy(alpha = .48f))
+                    .background(MobileDockBackdrop.copy(alpha = .55f))
             )
 
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .shadow(elevation = 18.dp, shape = dockShape, clip = false)
+                    .shadow(22.dp, dockShape, clip = false)
                     .clip(dockShape)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(
+                            listOf(
                                 MobileDockGlassTop,
                                 MobileDockGlassBottom
                             )
                         )
                     )
-                    .border(1.dp, MobileDockBorder.copy(alpha = .82f), dockShape)
+                    .border(1.dp, MobileDockBorder.copy(alpha = .9f), dockShape)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .padding(horizontal = 32.dp)
+                        .padding(horizontal = 30.dp)
                         .background(
                             Brush.horizontalGradient(
-                                colors = listOf(
+                                listOf(
                                     Color.Transparent,
-                                    Color.White.copy(alpha = .18f),
+                                    Color.White.copy(alpha = .20f),
                                     Color.Transparent
                                 )
                             )
@@ -428,7 +428,7 @@ internal fun AppNavigationBar(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 6.dp, vertical = 6.dp)
+                        .padding(horizontal = 7.dp, vertical = 7.dp)
                         .selectableGroup(),
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -453,26 +453,32 @@ private fun RowScope.NavigationDockItem(
     onClick: () -> Unit
 ) {
     val itemHeight by animateDpAsState(
-        targetValue = if (selected) 76.dp else 64.dp,
-        animationSpec = tween(durationMillis = 220),
+        targetValue = if (selected) 80.dp else 62.dp,
+        animationSpec = tween(durationMillis = 280),
         label = "navigation item height"
     )
     val iconSize by animateDpAsState(
-        targetValue = if (selected) 29.dp else 25.dp,
-        animationSpec = tween(durationMillis = 180),
+        targetValue = if (selected) 31.dp else 25.dp,
+        animationSpec = tween(durationMillis = 240),
         label = "navigation icon size"
     )
+    val horizontalInset by animateDpAsState(
+        targetValue = if (selected) 2.dp else 10.dp,
+        animationSpec = tween(durationMillis = 260),
+        label = "navigation item inset"
+    )
     val elevation by animateDpAsState(
-        targetValue = if (selected) 10.dp else 0.dp,
-        animationSpec = tween(durationMillis = 220),
+        targetValue = if (selected) 13.dp else 0.dp,
+        animationSpec = tween(durationMillis = 280),
         label = "navigation item elevation"
     )
-    val shape = RoundedCornerShape(32.dp)
+    val shape = RoundedCornerShape(if (selected) 36.dp else 28.dp)
 
     Box(
         modifier = Modifier
             .weight(1f)
             .height(itemHeight)
+            .padding(horizontal = horizontalInset, vertical = 2.dp)
             .shadow(elevation = elevation, shape = shape, clip = false)
             .clip(shape)
             .then(
@@ -486,7 +492,13 @@ private fun RowScope.NavigationDockItem(
                                 )
                             )
                         )
-                        .border(1.dp, MobileDockSelectedBorder.copy(alpha = .72f), shape)
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                MobileDockSelectedBorder.copy(alpha = .82f)
+                            ),
+                            shape
+                        )
                 } else {
                     Modifier
                 }
@@ -508,7 +520,7 @@ private fun RowScope.NavigationDockItem(
                 modifier = Modifier.size(iconSize),
                 tint = if (selected) MobileDockSelectedContent else MobileDockMuted
             )
-            Spacer(Modifier.height(5.dp))
+            Spacer(Modifier.height(if (selected) 5.dp else 4.dp))
             Text(
                 text = destination.label,
                 color = if (selected) MobileDockSelectedContent else MobileDockMuted,
