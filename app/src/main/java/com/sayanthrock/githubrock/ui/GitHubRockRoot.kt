@@ -27,6 +27,7 @@ import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.MainNavigation
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
+import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -36,6 +37,23 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val setupPreferences = remember(context) {
+        context.getSharedPreferences("github_rock_setup", android.content.Context.MODE_PRIVATE)
+    }
+    var setupComplete by rememberSaveable {
+        mutableStateOf(setupPreferences.getBoolean("setup_complete", false))
+    }
+
+    if (!setupComplete) {
+        SetupGuardScreen(
+            onSetupComplete = {
+                setupPreferences.edit().putBoolean("setup_complete", true).apply()
+                setupComplete = true
+            }
+        )
+        return
+    }
+
     val verificationUri = state.auth.code?.verificationUri
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
