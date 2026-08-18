@@ -29,9 +29,46 @@ This file separates working alpha functionality from roadmap scope so the applic
 - Deep-link routes and Android-system installer permission model
 - Unit, Compose UI, lint, CI, debug APK, and manually dispatched release workflow configuration
 
+## GitHub Android parity program
+
+The latest parity request is tracked in [issue #235](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/235).
+
+The target is to provide native Android paths for supported GitHub operations instead of forcing the user to open the website. This includes notifications, issues, pull requests, reviews, repository browsing, workflow/check visibility, releases, and supported merge operations.
+
+The program also adds two specific parity targets:
+
+- **Stacked pull requests:** detect and display stack relationships when GitHub exposes enough information, show stack position/status, navigate parent/child PRs, and expose merge actions only when repository protections and GitHub permissions allow them.
+- **Archived agent sessions:** create/resume/restart/rename/search/archive/delete sessions and restore archived sessions when the connected provider supports that operation. Provider-dependent capabilities must never be presented as native GitHub functionality without entitlement/API evidence.
+
+### Platform contract
+
+- **Native Android** — fully implemented inside GitHub Rock on Android 10+.
+- **Connected GitHub** — requires the minimum user-approved GitHub authorization and repository permissions.
+- **Backend-dependent** — requires a secure service for secrets, schedules, cloud agents, model providers, or long-running jobs.
+- **Companion-only** — local git worktrees, unrestricted terminal/shell execution, local LSP/plugin processes, IDE integration, and OS-specific developer tooling.
+- **Roadmap** — unfinished functionality must remain visibly disabled or labelled planned.
+
+### Required parity areas
+
+1. Notifications: latest notifications, filtering, read-state where supported, and deep links.
+2. Issues: read/create/edit/comment/react/assign/label/milestone/lock/unlock/close/reopen and supported project navigation.
+3. Pull requests: browse, review, comments, reactions, reviewers, draft/ready state, review-thread resolution, permitted workflow actions, auto-merge, and merge.
+4. Stacked PRs: stack relationship/status/parent-child navigation and protection-aware merge workflow.
+5. Agent sessions: lifecycle management plus archive/restore where the provider supports it.
+6. Repository browsing: files, directories, branches, commits, releases, tags, workflows, runs, artifacts, and search hand-off.
+7. Profile/account: repositories, followers/following, organizations, contributions, and supported profile fields.
+8. Releases: platform/architecture asset classification, checksum validation, resumable downloads, and Android package installation through system APIs.
+9. Accessibility and reliability: TalkBack, large text, focus/keyboard, reduced motion, contrast, offline, rate-limit, permission-denied, conflict, and recovery states.
+
+### Definition of done
+
+A capability may be marked supported only after its real API integration, minimum permissions, loading/empty/error/offline/recovery states, accessibility validation, unit/UI tests, security checks, and CI evidence are complete.
+
+Do not claim that every website capability is available on Android when GitHub does not expose the required API or when the operation belongs to a desktop/backend execution boundary.
+
 ## Copilot workspace parity program
 
-The v1.0.22–v1.0.26 session, MCP, pull-request review, automation, accessibility, files, extensions, and desktop-integration requests are tracked in [issue #163](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/163).
+The earlier v1.0.22–v1.0.26 session, MCP, pull-request review, automation, accessibility, files, extensions, and desktop-integration requests are tracked in [issue #163](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/163).
 
 These capabilities are not treated as complete merely because they appear in another product's changelog. Each item must have the correct platform implementation, permission checks, loading/error/empty states, accessibility, tests, and CI evidence before it is marked supported.
 
@@ -43,44 +80,10 @@ Status rules:
 - **Companion-only** — operating-system integration that belongs in the Tauri desktop companion rather than the Android app.
 - **Roadmap** — visible as planned work, never presented as functioning until release evidence exists.
 
-The active parity phases are:
-
-1. Issue/PR handoff, commit navigation, review progress, incremental diffs, stale-data recovery, and permission-aware controls.
-2. Trusted project MCP settings with OAuth, refresh, enable/disable, and secure credential handling.
-3. Local and cloud automations with quarter-hour scheduling, live run states, filters, and accessible timestamps.
-4. Session recovery and tool-approval commands, including `/allow-all-tools` and `/yolo` state controls.
-5. Files and extensions panels, trusted URL installation, workspace persistence, and storage warnings.
-6. Complete TalkBack, keyboard, large-text, contrast, focus, and announcement coverage.
-7. Windows, macOS, and Linux companion integration for clipboard, browser, tray, PATH, WSL, VS Code, and terminal attachment behavior.
-
 ## Copilot CLI, Copilot app, and gh-ost integration program
 
 The broader reference-feature request is tracked in [issue #172](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/172) and documented in [Reference feature integration](docs/REFERENCE_FEATURE_INTEGRATION.md).
 
-This program is currently **Roadmap**. Creating the issue and feature matrix does not mark the runtime capabilities as implemented.
-
-The program separates features by their real execution boundary:
-
-- **Native Android / Connected GitHub** — My Work, GitHub references, review state, workflow/check visibility, permission-aware actions, agent-session client UI, automation monitoring, and approved remote-job controls.
-- **Backend-dependent** — cloud agents, model-provider access, schedules, remote MCP, installation credentials, audit services, and long-running operations.
-- **Companion-only** — local worktrees, terminal/shell execution, sandbox processes, IDE focus, LSP servers, local plugins, and local `gh-ost` execution.
-- **Remote operations** — MySQL topology access and migration execution remain on an approved server or companion. Android may use only a typed, authenticated, allow-listed control API.
-
-No GitHub Copilot entitlement, model access, unrestricted tool execution, desktop worktree, or MySQL migration capability may be advertised as working merely because a UI entry or documentation checklist exists.
-
-## Next implementation milestones
-
-1. Build issue #172 Phase A: native My Work foundation, GitHub reference hand-off, cached-first detail, and permission-aware actions.
-2. Add the agent-session client contract with honest provider/backend availability and reversible tool-approval state.
-3. Implement desktop worktrees, terminal, sandbox, IDE hand-off, and local MCP/LSP/plugin processes in the companion rather than Android.
-4. Add extensibility canvases, automation run history, and Agent Merge readiness without bypassing repository protections.
-5. Design the typed `gh-ost` backend contract and validate it only against disposable MySQL test environments before exposing migration controls.
-6. Richer language grammars plus PR diff and conflict presentation.
-7. Dynamic `workflow_dispatch` input forms and workflow failure annotations.
-8. Storage Access Framework download locations, mirror selection, and trusted checksum-file matching.
-9. Biometric lock controls, foldable list-detail panes, and Paging-backed large lists.
-10. Complete TalkBack, large-font, keyboard, contrast, and physical-device screenshot validation.
-11. Extract portable domain and network layers before moving Android-only control-centre features into the packaged desktop and iOS companion.
-12. Continue moving high-value web-hub destinations into native screens when GitHub permissions and APIs support them safely.
+This program is a historical roadmap reference. Its checklists must not be interpreted as proof that every capability is currently shipped in the Android runtime. The current implementation status above and issue #235 are authoritative for the new GitHub Android parity work.
 
 Every milestone must update this file and the in-app feature status only after the implementation, tests, permission checks, accessibility validation, and CI evidence are merged.
