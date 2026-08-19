@@ -62,6 +62,8 @@ object AppModule {
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(45, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .build()
     }
 
@@ -71,6 +73,8 @@ object AppModule {
     fun authClient(): OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .build()
 
     @Provides
