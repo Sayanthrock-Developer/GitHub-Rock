@@ -1,5 +1,0 @@
-1. Update marketing copy in README.md
-2. Update marketing copy in site/index.html
-3. Run local tests and linting
-4. Commit changes
-5. Submit changes
