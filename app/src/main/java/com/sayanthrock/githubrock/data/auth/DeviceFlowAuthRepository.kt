@@ -3,9 +3,10 @@ package com.sayanthrock.githubrock.data.auth
 import com.sayanthrock.githubrock.BuildConfig
 import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
 import com.sayanthrock.githubrock.core.model.DeviceTokenResponse
-import com.sayanthrock.githubrock.core.network.GitHubAuthApi
+import com.sayanthrock.githubrock.core.security.StoredAccount
 import com.sayanthrock.githubrock.core.security.StoredTokens
 import com.sayanthrock.githubrock.core.security.TokenStore
+import com.sayanthrock.githubrock.core.network.GitHubAuthApi
 import com.sayanthrock.githubrock.data.backend.BackendGateway
 import java.time.Instant
 import javax.inject.Inject
@@ -31,6 +32,9 @@ class DeviceFlowAuthRepository @Inject constructor(
     val isConfigured: Boolean
         get() = backendGateway.isConfigured || BuildConfig.GITHUB_CLIENT_ID.isNotBlank()
     val hasSession: Boolean get() = tokenStore.read() != null
+    val accounts: List<StoredAccount> get() = tokenStore.accounts()
+    val activeAccountId: String? get() = tokenStore.activeAccountId()
+    val activeOrganization: String? get() = tokenStore.activeOrganization()
 
     private val pollMutex = Mutex()
     private var lastTokenRequestAtMillis = 0L
@@ -44,9 +48,7 @@ class DeviceFlowAuthRepository @Inject constructor(
 
         val device = if (backendGateway.isConfigured) {
             try {
-                backendGateway.startDeviceFlow().also {
-                    activeTransport = DeviceFlowTransport.Backend
-                }
+                backendGateway.startDeviceFlow().also { activeTransport = DeviceFlowTransport.Backend }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (backendFailure: Exception) {
@@ -55,14 +57,10 @@ class DeviceFlowAuthRepository @Inject constructor(
                         "GitHub Rock Backend could not start login: ${backendFailure.message ?: "connection failed"}"
                     )
                 }
-                requestDirectDeviceCode().also {
-                    activeTransport = DeviceFlowTransport.DirectGitHub
-                }
+                requestDirectDeviceCode().also { activeTransport = DeviceFlowTransport.DirectGitHub }
             }
         } else {
-            requestDirectDeviceCode().also {
-                activeTransport = DeviceFlowTransport.DirectGitHub
-            }
+            requestDirectDeviceCode().also { activeTransport = DeviceFlowTransport.DirectGitHub }
         }
 
         return device.also {
@@ -73,12 +71,18 @@ class DeviceFlowAuthRepository @Inject constructor(
         }
     }
 
-    suspend fun poll(device: DeviceCodeResponse, onStatus: (String) -> Unit = {}): StoredTokens {
+    suspend fun poll(
+        device: DeviceCodeResponse,
+        onStatus: (String) -> Unit = {},
+        save: Boolean = true
+    ): StoredTokens {
         val deadline = Instant.now().epochSecond + device.expiresIn
         while (Instant.now().epochSecond < deadline) {
             val response = requestTokenAtAllowedInterval(device)
             response.accessToken?.let { token ->
-                return response.toStoredTokens(token).also(tokenStore::save)
+                return response.toStoredTokens(token).also { tokens ->
+                    if (save) tokenStore.save(tokens)
+                }
             }
             when (response.error) {
                 "authorization_pending" -> onStatus("Waiting for approval on GitHub…")
@@ -91,20 +95,30 @@ class DeviceFlowAuthRepository @Inject constructor(
                 "incorrect_client_credentials" -> throw DeviceFlowException(
                     "This build or backend has an invalid GitHub OAuth client configuration."
                 )
-                else -> throw DeviceFlowException(
-                    response.errorDescription ?: "GitHub authentication failed."
-                )
+                else -> throw DeviceFlowException(response.errorDescription ?: "GitHub authentication failed.")
             }
         }
         throw DeviceFlowException("The device code expired. Start login again.")
     }
 
+    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String =
+        tokenStore.addAccount(tokens, login, name, avatarUrl)
+
+    fun updateActiveAccount(login: String, name: String?, avatarUrl: String?) =
+        tokenStore.updateActiveAccount(login, name, avatarUrl)
+
+    fun switchAccount(accountId: String): Boolean = tokenStore.switchAccount(accountId)
+
+    fun removeAccount(accountId: String): Boolean = tokenStore.removeAccount(accountId)
+
+    fun setOrganization(login: String?) = tokenStore.setActiveOrganization(login)
+
     suspend fun refreshIfNeeded(): Boolean {
         val stored = tokenStore.read() ?: return false
         val now = Instant.now().epochSecond
-        val expiresAt = stored.accessExpiresAtEpochSeconds ?: return true
-        if (expiresAt > now + SESSION_EXPIRY_SKEW_SECONDS) return true
-        if (!isRefreshTokenUsable(stored.refreshToken, stored.refreshExpiresAtEpochSeconds, now)) return false
+        val expiresAt = stored.accessExpiresAtEpochSeconds
+        if (expiresAt != null && expiresAt > now + SESSION_EXPIRY_SKEW_SECONDS) return true
+        if (!isRefreshTokenUsable(stored.refreshToken, stored.refreshExpiresAtEpochSeconds, now)) return true
 
         val refreshToken = requireNotNull(stored.refreshToken)
         val response = refreshThroughBackendOrGitHub(refreshToken)
@@ -119,10 +133,7 @@ class DeviceFlowAuthRepository @Inject constructor(
         check(BuildConfig.GITHUB_CLIENT_ID.isNotBlank()) {
             "Add GITHUB_CLIENT_ID to local.properties before using direct GitHub login."
         }
-        return api.requestDeviceCode(
-            clientId = BuildConfig.GITHUB_CLIENT_ID,
-            scope = GITHUB_OAUTH_SCOPES,
-        )
+        return api.requestDeviceCode(clientId = BuildConfig.GITHUB_CLIENT_ID, scope = GITHUB_OAUTH_SCOPES)
     }
 
     private suspend fun refreshThroughBackendOrGitHub(refreshToken: String): DeviceTokenResponse {
@@ -133,14 +144,11 @@ class DeviceFlowAuthRepository @Inject constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                // A configured backend is preferred, but direct GitHub remains the availability fallback.
+                // Direct GitHub remains the availability fallback.
             }
         }
         if (BuildConfig.GITHUB_CLIENT_ID.isBlank()) return DeviceTokenResponse(error = "refresh_unavailable")
-        return api.refreshToken(
-            clientId = BuildConfig.GITHUB_CLIENT_ID,
-            refreshToken = refreshToken,
-        )
+        return api.refreshToken(clientId = BuildConfig.GITHUB_CLIENT_ID, refreshToken = refreshToken)
     }
 
     private suspend fun requestTokenAtAllowedInterval(device: DeviceCodeResponse): DeviceTokenResponse =
@@ -155,10 +163,7 @@ class DeviceFlowAuthRepository @Inject constructor(
             lastTokenRequestAtMillis = elapsedRealtimeMillis()
             val response = when (activeTransport) {
                 DeviceFlowTransport.Backend -> backendGateway.pollDeviceFlow(device.deviceCode)
-                DeviceFlowTransport.DirectGitHub -> api.requestToken(
-                    BuildConfig.GITHUB_CLIENT_ID,
-                    device.deviceCode,
-                )
+                DeviceFlowTransport.DirectGitHub -> api.requestToken(BuildConfig.GITHUB_CLIENT_ID, device.deviceCode)
             }
             requiredIntervalSeconds = nextPollIntervalSeconds(
                 currentIntervalSeconds = requiredIntervalSeconds,
@@ -201,11 +206,7 @@ internal fun nextPollIntervalSeconds(
     currentIntervalSeconds: Int,
     error: String?,
     slowDownIncrementSeconds: Int = 5,
-): Int = if (error == "slow_down") {
-    currentIntervalSeconds + slowDownIncrementSeconds
-} else {
-    currentIntervalSeconds
-}
+): Int = if (error == "slow_down") currentIntervalSeconds + slowDownIncrementSeconds else currentIntervalSeconds
 
 internal fun isRefreshTokenUsable(
     refreshToken: String?,
