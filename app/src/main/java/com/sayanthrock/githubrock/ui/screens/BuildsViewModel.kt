@@ -353,7 +353,8 @@ class BuildsViewModel @Inject constructor(
         } else emptyList()
         val (message, error) = when (run.displayState()) {
             WorkflowDisplayState.Success -> if (artifacts.isNotEmpty()) {
-                "Build succeeded with ${artifacts.size} downloadable artifact${if (artifacts.size == 1) "" else "s"}" to null
+                "Build succeeded with ${artifacts.size} downloadable artifact${if (artifacts.size == 1) "" else "s"}"
+                    .trim() to null
             } else {
                 null to "Build succeeded, but GitHub did not publish an artifact"
             }
