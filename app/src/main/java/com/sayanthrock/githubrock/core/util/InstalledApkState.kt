@@ -1,10 +1,10 @@
 package com.sayanthrock.githubrock.core.util
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import java.io.File
 
@@ -86,7 +86,11 @@ object InstalledApkStateResolver {
     fun launchInstalledApp(context: Context, state: InstalledApkState): Boolean {
         val intent = state.launchIntent ?: return false
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-        return true
+        return runCatching {
+            context.startActivity(intent)
+            true
+        }.getOrElse { error ->
+            error !is ActivityNotFoundException && error !is SecurityException
+        }
     }
 }
