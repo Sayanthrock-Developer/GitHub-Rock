@@ -14,6 +14,10 @@ desktop/src-tauri/target/
 desktop/src-tauri/gen/
 dist/
 
+# Generated Kotlin/compiler state
+.kotlin/
+**/.kotlin/
+
 # Local and backend secrets
 .env
 .env.*
