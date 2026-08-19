@@ -4,13 +4,10 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.sayanthrock.githubrock.ui.AccountContextRefreshBus
 import com.sayanthrock.githubrock.ui.AppMode
 
-/**
- * Compatibility overload for the existing navigation graph.
- * The new screen owns account/session management; existing navigation can keep
- * its current callback contract while the user can manually refresh after a context change.
- */
+/** Compatibility overload for the existing navigation graph. */
 @Composable
 fun AccountSwitcherScreen(
     mode: AppMode,
@@ -25,7 +22,7 @@ fun AccountSwitcherScreen(
         connectedProfile = connectedProfile,
         onBack = onBack,
         onOpenProfile = onOpenProfile,
-        onContextChanged = {},
+        onContextChanged = AccountContextRefreshBus::requestRefresh,
         onLogout = onReplaceConnectedAccount,
         onOpenGitHubUrl = { url ->
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
