@@ -17,7 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
@@ -59,10 +59,9 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     LaunchedEffect(state.auth.code == null) {
-        if (state.auth.code == null) {
-            awaitingVerificationBrowserReturn = false
-        }
+        if (state.auth.code == null) awaitingVerificationBrowserReturn = false
     }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (AuthReturnPolicy.shouldCheckAuthorization(
                 awaitingVerificationBrowserReturn = awaitingVerificationBrowserReturn,
@@ -74,12 +73,16 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
         }
     }
 
+    LaunchedEffect(Unit) {
+        AccountContextRefreshBus.events.collect {
+            if (state.mode == AppMode.Connected) viewModel.refresh()
+        }
+    }
+
     val openGitHubUrl = remember(context, snackbar, scope, verificationUri) {
         { url: String ->
             val opened = GitHubExternalLinkLauncher.open(context, url)
-            if (opened && url == verificationUri) {
-                awaitingVerificationBrowserReturn = true
-            }
+            if (opened && url == verificationUri) awaitingVerificationBrowserReturn = true
             if (!opened) {
                 scope.launch {
                     val result = snackbar.showSnackbar(
@@ -88,21 +91,17 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                     )
                     if (result == SnackbarResult.ActionPerformed) {
                         val reopened = GitHubExternalLinkLauncher.open(context, url)
-                        if (reopened && url == verificationUri) {
-                            awaitingVerificationBrowserReturn = true
-                        } else if (!reopened) {
-                            snackbar.showSnackbar("GitHub still could not be opened. Check your browser settings.")
-                        }
+                        if (reopened && url == verificationUri) awaitingVerificationBrowserReturn = true
+                        else if (!reopened) snackbar.showSnackbar("GitHub still could not be opened. Check your browser settings.")
                     }
                 }
             }
         }
     }
+
     val openNativeProfile = remember(navController) {
         { login: String ->
-            navController.navigate(
-                NativeProfileDestination(login, NativeProfileSection.Repositories).route
-            ) {
+            navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) {
                 launchSingleTop = true
             }
         }
@@ -115,9 +114,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
         }
     }
 
-    BoxWithConstraints(
-        Modifier.fillMaxSize().rockBackground()
-    ) {
+    BoxWithConstraints(Modifier.fillMaxSize().rockBackground()) {
         val navigationChromePadding = when {
             state.mode == null -> 20.dp
             maxWidth < 600.dp -> 80.dp
@@ -152,11 +149,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
             hostState = snackbar,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = navigationBarPadding + navigationChromePadding
-                )
+                .padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding)
         )
     }
 }
