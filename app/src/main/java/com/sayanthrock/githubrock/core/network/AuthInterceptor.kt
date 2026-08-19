@@ -11,7 +11,21 @@ class AuthInterceptor @Inject constructor(
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
+        val organization = tokenStore.activeOrganization()
+            ?.trim()
+            ?.removePrefix("@")
+            ?.takeIf { it.matches(Regex("^[A-Za-z0-9_.-]+$")) }
+
+        val scopedUrl = if (organization != null && original.url.encodedPath == "/user/repos") {
+            original.url.newBuilder()
+                .encodedPath("/orgs/$organization/repos")
+                .build()
+        } else {
+            original.url
+        }
+
         val request = original.newBuilder()
+            .url(scopedUrl)
             .header("Accept", "application/vnd.github+json")
             .header("X-GitHub-Api-Version", BuildConfig.GITHUB_API_VERSION)
             .apply {
@@ -23,4 +37,3 @@ class AuthInterceptor @Inject constructor(
         return chain.proceed(request)
     }
 }
-
