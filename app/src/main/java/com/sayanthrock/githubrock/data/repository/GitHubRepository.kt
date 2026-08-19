@@ -351,6 +351,26 @@ class GitHubRepository @Inject constructor(
     ): MergeResponse {
         val normalizedMethod = method.trim().lowercase(Locale.ROOT)
         check(normalizedMethod in MERGE_METHODS) { "Use merge, squash, or rebase" }
+
+        // GitHub is the final authority on branch protection and mergeability, but do
+        // not issue a merge request while the PR is known to be blocked or conflicting.
+        // `mergeable` can temporarily be null while GitHub computes the result, so
+        // fail safely and ask the user to retry rather than assuming it is mergeable.
+        val detail = api.pullRequest(owner, repo, pullNumber)
+        check(detail.state == "open") { "Pull request #$pullNumber is not open" }
+        check(!detail.draft) { "Draft pull requests cannot be merged" }
+        check(!detail.merged) { "Pull request #$pullNumber is already merged" }
+        check(detail.mergeable == true) {
+            when (detail.mergeableState) {
+                "behind" -> "Pull request #$pullNumber is behind its base branch. Update the branch before merging."
+                "dirty" -> "Pull request #$pullNumber has merge conflicts. Resolve them before merging."
+                "blocked" -> "Pull request #$pullNumber is blocked by repository rules, checks, or required reviews."
+                "unstable" -> "Pull request #$pullNumber has failing or pending required checks."
+                "unknown", null -> "GitHub has not finished calculating mergeability for #$pullNumber. Refresh and try again."
+                else -> "Pull request #$pullNumber is not currently mergeable (${detail.mergeableState})."
+            }
+        }
+
         return api.mergePullRequest(owner, repo, pullNumber, mapOf("merge_method" to normalizedMethod))
     }
 
@@ -389,44 +409,30 @@ class GitHubRepository @Inject constructor(
 
     private suspend fun cleanupReviewBranch(owner: String, repo: String, featureBranch: String) {
         withContext(NonCancellable) {
-            try {
-                check(api.deleteBranch(owner, repo, featureBranch).isSuccessful) {
-                    "Unable to clean up the failed review branch"
-                }
-            } catch (_: Exception) {
-                // Preserve the original operation failure; cleanup is best effort.
+            runCatchingPreservingCancellation {
+                api.deleteBranch(owner, repo, featureBranch)
             }
         }
     }
 
-    private fun validateFileOperationPaths(sourcePath: String, destinationPath: String) {
-        check(isSafeRepositoryPath(sourcePath) && isSafeRepositoryPath(destinationPath)) {
-            "Use valid relative file paths"
-        }
+    private fun validateReviewBranches(base: String, head: String) {
+        check(BuildRunTracker.isSafeRef(base)) { "Use a valid base branch" }
+        check(BuildRunTracker.isSafeRef(head)) { "Use a valid source branch" }
+        check(base != head) { "Source and base branches must be different" }
     }
 
-    private fun validateReviewBranches(baseBranch: String, featureBranch: String) {
-        check(BuildRunTracker.isSafeRef(baseBranch)) { "Unsafe base branch name" }
-        check(BuildRunTracker.isSafeRef(featureBranch)) { "Unsafe review branch name" }
-        check(baseBranch != featureBranch) { "The review branch must differ from the base branch" }
+    private fun validateFileOperationPaths(source: String, destination: String) {
+        check(isSafeFilePath(source)) { "Use a valid relative source path" }
+        check(isSafeFilePath(destination)) { "Use a valid relative destination path" }
     }
 
-    private fun isSafeRepositoryPath(path: String): Boolean =
-        path.matches(Regex("^[A-Za-z0-9._/-]+$")) &&
-            !path.startsWith('/') &&
-            !path.endsWith('/') &&
-            !path.contains("..") &&
-            !path.contains("//")
+    private fun isSafeFilePath(path: String): Boolean =
+        path.isNotBlank() && !path.startsWith("/") && !path.contains("..") && !path.contains("\\")
 
     private companion object {
+        const val MAX_EDITABLE_FILE_BYTES = 512 * 1024L
         val ISSUE_STATES = setOf("open", "closed")
         val REVIEW_EVENTS = setOf("APPROVE", "REQUEST_CHANGES", "COMMENT")
         val MERGE_METHODS = setOf("merge", "squash", "rebase")
     }
 }
-
-data class DashboardPayload(
-    val profile: GitHubUser,
-    val rateLimit: RateLimit?,
-    val repositories: List<GitHubRepositoryModel>
-)
