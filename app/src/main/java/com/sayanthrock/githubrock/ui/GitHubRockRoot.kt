@@ -74,9 +74,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     }
 
     LaunchedEffect(Unit) {
-        AccountContextRefreshBus.events.collect {
-            if (state.mode == AppMode.Connected) viewModel.refresh()
-        }
+        AccountContextRefreshBus.events.collect { viewModel.refresh() }
     }
 
     val openGitHubUrl = remember(context, snackbar, scope, verificationUri) {
