@@ -271,7 +271,7 @@ class MainViewModel @Inject constructor(
     fun dismissMessage() = _state.update { it.copy(message = null) }
 
     private suspend fun completeLogin(code: DeviceCodeResponse) {
-        authRepository.poll(code) { status ->
+        authRepository.poll(code) { status: String? ->
             _state.update { current ->
                 current.copy(
                     isLoading = false,
