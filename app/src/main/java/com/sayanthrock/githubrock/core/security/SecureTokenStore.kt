@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.core.security
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.sayanthrock.githubrock.BuildConfig
@@ -16,10 +17,28 @@ data class StoredTokens(
     val refreshExpiresAtEpochSeconds: Long?
 )
 
+data class StoredAccount(
+    val id: String,
+    val login: String?,
+    val name: String?,
+    val avatarUrl: String?,
+    val tokens: StoredTokens
+)
+
 interface TokenStore {
     fun read(): StoredTokens?
     fun save(tokens: StoredTokens)
     fun clear()
+
+    fun accounts(): List<StoredAccount> = emptyList()
+    fun activeAccountId(): String? = accounts().firstOrNull()?.id
+    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String =
+        error("Multi-account storage is not supported")
+    fun updateActiveAccount(login: String, name: String?, avatarUrl: String?) {}
+    fun switchAccount(accountId: String): Boolean = false
+    fun removeAccount(accountId: String): Boolean = false
+    fun setActiveOrganization(login: String?) {}
+    fun activeOrganization(): String? = null
 }
 
 @Singleton
@@ -41,44 +60,191 @@ class KeystoreTokenStore internal constructor(
         configuredClientId = BuildConfig.GITHUB_CLIENT_ID.trim()
     )
 
-    override fun read(): StoredTokens? {
-        val storedClientId = preferences.getString(KEY_CLIENT_ID, null)
-        if (!isStoredClientIdCompatible(storedClientId, configuredClientId)) {
-            clear()
-            return null
-        }
-
-        val access = preferences.getString(KEY_ACCESS, null) ?: return null
-        return StoredTokens(
-            accessToken = access,
-            refreshToken = preferences.getString(KEY_REFRESH, null),
-            accessExpiresAtEpochSeconds = if (preferences.contains(KEY_ACCESS_EXPIRY)) preferences.getLong(KEY_ACCESS_EXPIRY, 0L) else null,
-            refreshExpiresAtEpochSeconds = if (preferences.contains(KEY_REFRESH_EXPIRY)) preferences.getLong(KEY_REFRESH_EXPIRY, 0L) else null
-        )
-    }
+    override fun read(): StoredTokens? = activeAccount()?.tokens
 
     override fun save(tokens: StoredTokens) {
+        val active = activeAccount()
+        if (active == null) {
+            addAccount(tokens)
+        } else {
+            writeAccount(active.copy(tokens = tokens))
+        }
+    }
+
+    override fun clear() {
+        preferences.edit().clear().apply()
+    }
+
+    override fun accounts(): List<StoredAccount> {
+        migrateLegacyIfNeeded()
+        val count = preferences.getInt(KEY_COUNT, 0)
+        return (0 until count).mapNotNull { index -> readAccount(idAt(index)) }
+    }
+
+    override fun activeAccountId(): String? {
+        migrateLegacyIfNeeded()
+        return preferences.getString(KEY_ACTIVE_ID, null)?.takeIf { id ->
+            accounts().any { it.id == id }
+        } ?: accounts().firstOrNull()?.id
+    }
+
+    override fun addAccount(tokens: StoredTokens, login: String?, name: String?, avatarUrl: String?): String {
+        migrateLegacyIfNeeded()
+        val normalizedLogin = login?.trim()?.removePrefix("@").takeIf { !it.isNullOrBlank() }
+        val id = normalizedLogin?.lowercase() ?: "account-${System.currentTimeMillis()}"
+        val existingIndex = accounts().indexOfFirst { it.id == id }
+        val account = StoredAccount(id, normalizedLogin, name, avatarUrl, tokens)
+        if (existingIndex >= 0) {
+            writeAccount(account)
+        } else {
+            val count = preferences.getInt(KEY_COUNT, 0)
+            preferences.edit()
+                .putInt(KEY_COUNT, count + 1)
+                .putString(KEY_ID_PREFIX + count, id)
+                .apply()
+            writeAccount(account)
+        }
+        preferences.edit().putString(KEY_ACTIVE_ID, id).remove(KEY_ACTIVE_ORG).apply()
+        return id
+    }
+
+    override fun updateActiveAccount(login: String, name: String?, avatarUrl: String?) {
+        val active = activeAccount() ?: return
+        val normalized = login.trim().removePrefix("@").ifBlank { active.login ?: active.id }
+        writeAccount(active.copy(login = normalized, name = name, avatarUrl = avatarUrl))
+    }
+
+    override fun switchAccount(accountId: String): Boolean {
+        if (accounts().none { it.id == accountId }) return false
+        preferences.edit().putString(KEY_ACTIVE_ID, accountId).remove(KEY_ACTIVE_ORG).apply()
+        return true
+    }
+
+    override fun removeAccount(accountId: String): Boolean {
+        val current = accounts()
+        val index = current.indexOfFirst { it.id == accountId }
+        if (index < 0) return false
+        val remaining = current.filterNot { it.id == accountId }
         preferences.edit().apply {
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_LOGIN)
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_NAME)
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_AVATAR)
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_ACCESS)
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_REFRESH)
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_ACCESS_EXPIRY)
+            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_REFRESH_EXPIRY)
+            putInt(KEY_COUNT, remaining.size)
+            for (i in 0 until current.size) remove(KEY_ID_PREFIX + i)
+            remaining.forEachIndexed { newIndex, account -> putString(KEY_ID_PREFIX + newIndex, account.id) }
+            val activeId = preferences.getString(KEY_ACTIVE_ID, null)
+            if (activeId == accountId) {
+                if (remaining.isEmpty()) remove(KEY_ACTIVE_ID) else putString(KEY_ACTIVE_ID, remaining.first().id)
+                remove(KEY_ACTIVE_ORG)
+            }
+        }.apply()
+        return true
+    }
+
+    override fun setActiveOrganization(login: String?) {
+        preferences.edit().putString(KEY_ACTIVE_ORG, login?.trim()?.removePrefix("@")?.takeIf { it.isNotBlank() }).apply()
+    }
+
+    override fun activeOrganization(): String? = preferences.getString(KEY_ACTIVE_ORG, null)
+
+    private fun activeAccount(): StoredAccount? = accounts().firstOrNull { it.id == activeAccountId() }
+
+    private fun writeAccount(account: StoredAccount) {
+        val key = KEY_ACCOUNT_PREFIX + encoded(account.id)
+        preferences.edit().apply {
+            putString(key + SUFFIX_LOGIN, account.login)
+            putString(key + SUFFIX_NAME, account.name)
+            putString(key + SUFFIX_AVATAR, account.avatarUrl)
+            putString(key + SUFFIX_ACCESS, account.tokens.accessToken)
+            putString(key + SUFFIX_REFRESH, account.tokens.refreshToken)
+            putLongOrRemove(key + SUFFIX_ACCESS_EXPIRY, account.tokens.accessExpiresAtEpochSeconds)
+            putLongOrRemove(key + SUFFIX_REFRESH_EXPIRY, account.tokens.refreshExpiresAtEpochSeconds)
             putString(KEY_CLIENT_ID, configuredClientId)
-            putString(KEY_ACCESS, tokens.accessToken)
-            putString(KEY_REFRESH, tokens.refreshToken)
-            putLongOrRemove(KEY_ACCESS_EXPIRY, tokens.accessExpiresAtEpochSeconds)
-            putLongOrRemove(KEY_REFRESH_EXPIRY, tokens.refreshExpiresAtEpochSeconds)
         }.apply()
     }
 
-    override fun clear() = preferences.edit().clear().apply()
+    private fun readAccount(id: String?): StoredAccount? {
+        if (id.isNullOrBlank()) return null
+        val key = KEY_ACCOUNT_PREFIX + encoded(id)
+        val access = preferences.getString(key + SUFFIX_ACCESS, null) ?: return null
+        val storedClientId = preferences.getString(KEY_CLIENT_ID, null)
+        if (!isStoredClientIdCompatible(storedClientId, configuredClientId)) return null
+        return StoredAccount(
+            id = id,
+            login = preferences.getString(key + SUFFIX_LOGIN, null),
+            name = preferences.getString(key + SUFFIX_NAME, null),
+            avatarUrl = preferences.getString(key + SUFFIX_AVATAR, null),
+            tokens = StoredTokens(
+                accessToken = access,
+                refreshToken = preferences.getString(key + SUFFIX_REFRESH, null),
+                accessExpiresAtEpochSeconds = preferences.longOrNull(key + SUFFIX_ACCESS_EXPIRY),
+                refreshExpiresAtEpochSeconds = preferences.longOrNull(key + SUFFIX_REFRESH_EXPIRY)
+            )
+        )
+    }
 
-    private fun android.content.SharedPreferences.Editor.putLongOrRemove(key: String, value: Long?) {
+    private fun idAt(index: Int): String? = preferences.getString(KEY_ID_PREFIX + index, null)
+
+    private fun migrateLegacyIfNeeded() {
+        if (preferences.getInt(KEY_COUNT, 0) > 0) return
+        val legacyAccess = preferences.getString(LEGACY_ACCESS, null) ?: return
+        val storedClientId = preferences.getString(LEGACY_CLIENT_ID, null)
+        if (!isStoredClientIdCompatible(storedClientId, configuredClientId)) {
+            preferences.edit().clear().apply()
+            return
+        }
+        val tokens = StoredTokens(
+            accessToken = legacyAccess,
+            refreshToken = preferences.getString(LEGACY_REFRESH, null),
+            accessExpiresAtEpochSeconds = preferences.longOrNull(LEGACY_ACCESS_EXPIRY),
+            refreshExpiresAtEpochSeconds = preferences.longOrNull(LEGACY_REFRESH_EXPIRY)
+        )
+        val account = "legacy-account"
+        preferences.edit()
+            .putInt(KEY_COUNT, 1)
+            .putString(KEY_ID_PREFIX + 0, account)
+            .putString(KEY_ACTIVE_ID, account)
+            .remove(LEGACY_ACCESS)
+            .remove(LEGACY_REFRESH)
+            .remove(LEGACY_ACCESS_EXPIRY)
+            .remove(LEGACY_REFRESH_EXPIRY)
+            .remove(LEGACY_CLIENT_ID)
+            .apply()
+        writeAccount(StoredAccount(account, null, null, null, tokens))
+    }
+
+    private fun encoded(value: String): String = Base64.encodeToString(value.toByteArray(Charsets.UTF_8), Base64.NO_WRAP or Base64.URL_SAFE)
+
+    private fun SharedPreferences.longOrNull(key: String): Long? =
+        if (contains(key)) getLong(key, 0L) else null
+
+    private fun SharedPreferences.Editor.putLongOrRemove(key: String, value: Long?) {
         if (value == null) remove(key) else putLong(key, value)
     }
 
     private companion object {
         const val KEY_CLIENT_ID = "oauth_client_id"
-        const val KEY_ACCESS = "access_token"
-        const val KEY_REFRESH = "refresh_token"
-        const val KEY_ACCESS_EXPIRY = "access_expiry"
-        const val KEY_REFRESH_EXPIRY = "refresh_expiry"
+        const val KEY_COUNT = "account_count"
+        const val KEY_ACTIVE_ID = "active_account_id"
+        const val KEY_ACTIVE_ORG = "active_organization"
+        const val KEY_ID_PREFIX = "account_id_"
+        const val KEY_ACCOUNT_PREFIX = "account_"
+        const val SUFFIX_LOGIN = "_login"
+        const val SUFFIX_NAME = "_name"
+        const val SUFFIX_AVATAR = "_avatar"
+        const val SUFFIX_ACCESS = "_access"
+        const val SUFFIX_REFRESH = "_refresh"
+        const val SUFFIX_ACCESS_EXPIRY = "_access_expiry"
+        const val SUFFIX_REFRESH_EXPIRY = "_refresh_expiry"
+        const val LEGACY_ACCESS = "access_token"
+        const val LEGACY_REFRESH = "refresh_token"
+        const val LEGACY_ACCESS_EXPIRY = "access_expiry"
+        const val LEGACY_REFRESH_EXPIRY = "refresh_expiry"
+        const val LEGACY_CLIENT_ID = "oauth_client_id"
     }
 }
 
