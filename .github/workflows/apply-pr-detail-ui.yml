@@ -1,0 +1,149 @@
+name: Apply PR detail UI patch
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-pr-detail-ui.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply PR detail UI
+        shell: python
+        run: |
+          from pathlib import Path
+          screen = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryDetailScreen.kt')
+          s = screen.read_text()
+          old = '    var selectedPull by remember { mutableStateOf<PullRequestSummary?>(null) }\n    var reviewDraft by remember { mutableStateOf("") }'
+          new = '    var selectedPull by remember { mutableStateOf<PullRequestSummary?>(null) }\n    var showPullDetail by remember { mutableStateOf(false) }\n    var reviewDraft by remember { mutableStateOf("") }'
+          if 'var showPullDetail by remember' not in s:
+              if old not in s: raise SystemExit('selectedPull state anchor not found')
+              s = s.replace(old, new, 1)
+          old = '                        TextButton(onClick = { selectedPull = pull; reviewDraft = ""; viewModel.loadPullReviews(pull.number) }) { Text("Open reviews") }'
+          new = '                        TextButton(onClick = { selectedPull = pull; showPullDetail = true }) { Text("Open pull request") }'
+          if 'Text("Open pull request")' not in s:
+              if old not in s: raise SystemExit('PR list action anchor not found')
+              s = s.replace(old, new, 1)
+          marker = '    mergePull?.let { pull ->'
+          if 'PullRequestDetailSheet(' not in s:
+              if marker not in s: raise SystemExit('merge dialog anchor not found')
+              insert = '''    if (showPullDetail && selectedPull != null) {
+        PullRequestDetailSheet(
+            pull = requireNotNull(selectedPull),
+            onDismiss = { showPullDetail = false; selectedPull = null },
+            onOpenReviews = {
+                val pull = requireNotNull(selectedPull)
+                showPullDetail = false
+                reviewDraft = ""
+                viewModel.loadPullReviews(pull.number)
+            },
+            onMerge = {
+                val pull = requireNotNull(selectedPull)
+                showPullDetail = false
+                mergePull = pull
+            }
+        )
+    }
+'''
+              s = s.replace(marker, insert + marker, 1)
+          screen.write_text(s)
+
+          sheet = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/PullRequestDetailSheet.kt')
+          sheet.write_text('''package com.sayanthrock.githubrock.ui.screens
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.sayanthrock.githubrock.core.model.PullRequestSummary
+import com.sayanthrock.githubrock.ui.components.GlassCard
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PullRequestDetailSheet(
+    pull: PullRequestSummary,
+    onDismiss: () -> Unit,
+    onOpenReviews: () -> Unit,
+    onMerge: () -> Unit
+) {
+    val context = LocalContext.current
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text("#${pull.number}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(pull.title, style = MaterialTheme.typography.headlineSmall)
+            Text(
+                when {
+                    pull.merged == true -> "Merged • ${pull.user.login}"
+                    pull.draft -> "Draft • ${pull.user.login}"
+                    else -> "${pull.state.replaceFirstChar { it.uppercase() }} • ${pull.user.login}"
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            GlassCard {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Pull request", style = MaterialTheme.typography.titleMedium)
+                    Text("Number: #${pull.number}")
+                    Text("State: ${pull.state}")
+                    Text("Draft: ${if (pull.draft) "Yes" else "No"}")
+                    Text("Author: ${pull.user.login}")
+                    Text("Updated: ${pull.updatedAt.ifBlank { "Unknown" }}")
+                    pull.merged?.let { Text("Merged: ${if (it) "Yes" else "No"}") }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        if (pull.user.login.isNotBlank()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${pull.user.login}")))
+                    },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Author") }
+                if (pull.state == "open" && !pull.draft && pull.merged != true) {
+                    Button(onClick = onMerge, modifier = Modifier.weight(1f)) { Text("Merge") }
+                }
+            }
+            Button(onClick = onOpenReviews, modifier = Modifier.fillMaxWidth()) { Text("Reviews & conversation") }
+            OutlinedButton(
+                onClick = {
+                    if (pull.user.login.isNotBlank()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${pull.user.login}")))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Open author profile") }
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Close") }
+        }
+    }
+}
+''')
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryDetailScreen.kt app/src/main/java/com/sayanthrock/githubrock/ui/screens/PullRequestDetailSheet.kt
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat(pr): add pull request detail sheet'
+          git push
+      - name: Remove one-time workflow
+        if: always()
+        run: |
+          git rm .github/workflows/apply-pr-detail-ui.yml || true
+          git commit -m 'chore: remove one-time PR UI patch workflow' || true
+          git push || true
