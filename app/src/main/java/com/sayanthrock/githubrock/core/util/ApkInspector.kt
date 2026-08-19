@@ -29,34 +29,29 @@ interface PackageManagerWrapper {
 }
 
 object ApkInspector {
-    @Suppress("DEPRECATION")
     fun inspect(context: Context, file: File): ApkInspection? {
         return inspect(file, object : PackageManagerWrapper {
-            override fun getPackageArchiveInfo(archiveFilePath: String, flags: Int): PackageInfo? {
-                return context.packageManager.getPackageArchiveInfo(archiveFilePath, flags)
-            }
-            override fun getPackageInfo(packageName: String, flags: Int): PackageInfo {
-                return context.packageManager.getPackageInfo(packageName, flags)
-            }
-            override fun loadLabel(applicationInfo: ApplicationInfo): String? {
-                return applicationInfo.loadLabel(context.packageManager)?.toString()
-            }
+            override fun getPackageArchiveInfo(archiveFilePath: String, flags: Int): PackageInfo? =
+                context.packageManager.getPackageArchiveInfo(archiveFilePath, flags)
+
+            override fun getPackageInfo(packageName: String, flags: Int): PackageInfo =
+                context.packageManager.getPackageInfo(packageName, flags)
+
+            override fun loadLabel(applicationInfo: ApplicationInfo): String? =
+                applicationInfo.loadLabel(context.packageManager)?.toString()
         })
     }
 
-    @Suppress("DEPRECATION", "ObsoleteSdkInt")
     internal fun inspect(file: File, pm: PackageManagerWrapper): ApkInspection? {
-        // Use GET_SIGNATURES instead of GET_SIGNING_CERTIFICATES because GET_SIGNING_CERTIFICATES
-        // is from API 28 and returns SigningInfo, whereas GET_SIGNATURES returns an array of Signatures
-        // directly on PackageInfo. Both GET_SIGNING_CERTIFICATES and GET_SIGNATURES are constants
-        // with different values, but in older versions GET_SIGNATURES is 64
-        val flags = PackageManager.GET_PERMISSIONS or 64 // PackageManager.GET_SIGNATURES
+        val flags = PackageManager.GET_PERMISSIONS or signatureFlags()
         val archive = pm.getPackageArchiveInfo(file.absolutePath, flags) ?: return null
         archive.applicationInfo?.sourceDir = file.absolutePath
         archive.applicationInfo?.publicSourceDir = file.absolutePath
+
         val packageName = archive.packageName
         val downloadedFingerprint = archive.signingFingerprint()
         val installed = runCatching { pm.getPackageInfo(packageName, flags) }.getOrNull()
+
         return ApkInspection(
             appName = archive.applicationInfo?.let { pm.loadLabel(it) } ?: packageName,
             packageName = packageName,
@@ -72,12 +67,24 @@ object ApkInspector {
         )
     }
 
-    @Suppress("DEPRECATION")
+    private fun signatureFlags(): Int =
+        if (Build.VERSION.SDK_INT >= 28) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            @Suppress("DEPRECATION")
+            PackageManager.GET_SIGNATURES
+        }
+
     private fun PackageInfo.signingFingerprint(): String? {
-        // Use signatures array directly for broader compatibility including mocking
-        val signature = signatures?.firstOrNull() ?: return null
+        val signatureBytes = if (Build.VERSION.SDK_INT >= 28) {
+            signingInfo?.apkContentsSigners?.firstOrNull()?.toByteArray()
+        } else {
+            @Suppress("DEPRECATION")
+            signatures?.firstOrNull()?.toByteArray()
+        } ?: return null
+
         return MessageDigest.getInstance("SHA-256")
-            .digest(signature.toByteArray())
+            .digest(signatureBytes)
             .joinToString(":") { "%02X".format(it) }
     }
 }
