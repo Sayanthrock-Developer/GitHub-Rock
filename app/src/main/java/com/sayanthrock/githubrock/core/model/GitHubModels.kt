@@ -35,6 +35,11 @@ data class GitHubProfileDetails(
     val socialAccounts: List<GitHubSocialAccount> = emptyList(), val highlights: List<String> = emptyList()
 ) { val orcid: GitHubSocialAccount? get() = socialAccounts.firstOrNull { it.url.contains("orcid.org/", ignoreCase = true) } }
 data class GitHubProfileSnapshot(val profile: GitHubUser, val details: GitHubProfileDetails? = null)
+data class DashboardPayload(
+    val profile: GitHubUser,
+    val rateLimit: RateLimit?,
+    val repositories: List<GitHubRepositoryModel>
+)
 @Serializable data class Owner(val login: String, @SerialName("avatar_url") val avatarUrl: String = "")
 @Serializable data class GitHubRepositoryModel(
     val id: Long, val name: String, @SerialName("full_name") val fullName: String, val owner: Owner,
