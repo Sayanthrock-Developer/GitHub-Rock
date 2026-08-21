@@ -90,7 +90,13 @@ object InstalledApkStateResolver {
             context.startActivity(intent)
             true
         }.getOrElse { error ->
-            error !is ActivityNotFoundException && error !is SecurityException
+            // Any failure means the launch did not happen. Keep this API's
+            // boolean contract truthful instead of reporting success for
+            // unexpected RuntimeExceptions.
+            when (error) {
+                is ActivityNotFoundException, is SecurityException -> false
+                else -> false
+            }
         }
     }
 }
