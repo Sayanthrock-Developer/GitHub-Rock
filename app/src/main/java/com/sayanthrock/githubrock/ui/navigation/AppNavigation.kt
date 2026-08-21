@@ -212,6 +212,7 @@ fun MainNavigation(
                                         onOpenGitHubUrl(url)
                                     }
                                 },
+                                onOpenRepository = openRepo,
                                 onLogout = onLogout
                             )
                         }
