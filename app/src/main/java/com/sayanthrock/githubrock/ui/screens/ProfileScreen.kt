@@ -94,6 +94,7 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit,
     onOpenAppInfo: () -> Unit = {},
     onOpenGitHubUrl: (String) -> Unit,
+    onOpenRepository: (GitHubRepositoryModel) -> Unit = {},
     onLogout: () -> Unit,
     dashboardStateOverride: ConnectedProfileDashboardUiState? = null
 ) {
@@ -104,9 +105,7 @@ fun ProfileScreen(
         ProfileLibraryScreen(
             section = ProfileLibrarySection.fromRoute(route),
             onBack = { activeLibraryRoute = null },
-            onOpenRepository = { repository ->
-                onOpenGitHubUrl(repository.htmlUrl.ifBlank { "https://github.com/${repository.fullName}" })
-            }
+            onOpenRepository = onOpenRepository
         )
         return
     }
