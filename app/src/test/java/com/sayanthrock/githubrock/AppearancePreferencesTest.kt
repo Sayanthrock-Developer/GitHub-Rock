@@ -59,6 +59,7 @@ class AppearancePreferencesTest {
         assertEquals(LoadingStyle.Spinner, preferences.loadingStyle)
         assertEquals(CodeColorStyle.Classic, preferences.codeColorStyle)
         assertEquals(LogDisplayStyle.Terminal, preferences.logDisplayStyle)
+        assertTrue(preferences.dynamicColor)
         assertTrue(preferences.showImages)
         assertTrue(preferences.workflowPreview)
         assertTrue(preferences.workflowStepDetails)
