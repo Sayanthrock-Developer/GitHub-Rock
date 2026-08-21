@@ -5,7 +5,8 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class NativeProfileDestinationTest {
-    @Test fun profileCounterLinksStayInsideTheApp() {
+    @Test
+    fun profileCounterLinksStayInsideTheApp() {
         assertEquals(
             NativeProfileDestination("SayanthRock", NativeProfileSection.Repositories),
             nativeProfileDestination("https://github.com/SayanthRock?tab=repositories")
@@ -20,9 +21,35 @@ class NativeProfileDestinationTest {
         )
     }
 
-    @Test fun unrelatedGitHubLinksRemainExplicitlyExternal() {
+    @Test
+    fun followerAndFollowingDestinationsUseNativeRoutes() {
+        assertEquals(
+            "native-profile/SayanthRock/followers",
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Followers).route
+        )
+        assertEquals(
+            "native-profile/SayanthRock/following",
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Following).route
+        )
+    }
+
+    @Test
+    fun profileCounterLinksAcceptQueryParametersWithoutChangingSection() {
+        assertEquals(
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Followers),
+            nativeProfileDestination("https://github.com/SayanthRock?tab=followers&sort=asc")
+        )
+        assertEquals(
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Following),
+            nativeProfileDestination("https://github.com/SayanthRock?sort=asc&tab=following")
+        )
+    }
+
+    @Test
+    fun unrelatedGitHubLinksRemainExplicitlyExternal() {
         assertNull(nativeProfileDestination("https://github.com/settings/security"))
         assertNull(nativeProfileDestination("https://github.com/SayanthRock"))
         assertNull(nativeProfileDestination("https://example.com/SayanthRock?tab=followers"))
+        assertNull(nativeProfileDestination("https://github.com/SayanthRock?tab=issues"))
     }
 }
