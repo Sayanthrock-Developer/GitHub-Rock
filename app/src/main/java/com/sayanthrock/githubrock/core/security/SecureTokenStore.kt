@@ -2,11 +2,11 @@ package com.sayanthrock.githubrock.core.security
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.sayanthrock.githubrock.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,11 +29,9 @@ interface TokenStore {
     fun read(): StoredTokens?
     fun save(tokens: StoredTokens)
     fun clear()
-
     fun accounts(): List<StoredAccount> = emptyList()
     fun activeAccountId(): String? = accounts().firstOrNull()?.id
-    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String =
-        error("Multi-account storage is not supported")
+    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String = error("Multi-account storage is not supported")
     fun updateActiveAccount(login: String, name: String?, avatarUrl: String?) {}
     fun switchAccount(accountId: String): Boolean = false
     fun removeAccount(accountId: String): Boolean = false
@@ -46,14 +44,11 @@ class KeystoreTokenStore internal constructor(
     private val preferences: SharedPreferences,
     private val configuredClientId: String
 ) : TokenStore {
-
     @Inject constructor(@ApplicationContext context: Context) : this(
         preferences = EncryptedSharedPreferences.create(
             context,
             "github_rock_secure_tokens",
-            MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build(),
+            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         ),
@@ -61,19 +56,11 @@ class KeystoreTokenStore internal constructor(
     )
 
     override fun read(): StoredTokens? = activeAccount()?.tokens
-
     override fun save(tokens: StoredTokens) {
         val active = activeAccount()
-        if (active == null) {
-            addAccount(tokens)
-        } else {
-            writeAccount(active.copy(tokens = tokens))
-        }
+        if (active == null) addAccount(tokens) else writeAccount(active.copy(tokens = tokens))
     }
-
-    override fun clear() {
-        preferences.edit().clear().apply()
-    }
+    override fun clear() { preferences.edit().clear().apply() }
 
     override fun accounts(): List<StoredAccount> {
         migrateLegacyIfNeeded()
@@ -83,9 +70,7 @@ class KeystoreTokenStore internal constructor(
 
     override fun activeAccountId(): String? {
         migrateLegacyIfNeeded()
-        return preferences.getString(KEY_ACTIVE_ID, null)?.takeIf { id ->
-            accounts().any { it.id == id }
-        } ?: accounts().firstOrNull()?.id
+        return preferences.getString(KEY_ACTIVE_ID, null)?.takeIf { id -> accounts().any { it.id == id } } ?: accounts().firstOrNull()?.id
     }
 
     override fun addAccount(tokens: StoredTokens, login: String?, name: String?, avatarUrl: String?): String {
@@ -94,14 +79,9 @@ class KeystoreTokenStore internal constructor(
         val id = normalizedLogin?.lowercase() ?: "account-${System.currentTimeMillis()}"
         val existingIndex = accounts().indexOfFirst { it.id == id }
         val account = StoredAccount(id, normalizedLogin, name, avatarUrl, tokens)
-        if (existingIndex >= 0) {
-            writeAccount(account)
-        } else {
+        if (existingIndex >= 0) writeAccount(account) else {
             val count = preferences.getInt(KEY_COUNT, 0)
-            preferences.edit()
-                .putInt(KEY_COUNT, count + 1)
-                .putString(KEY_ID_PREFIX + count, id)
-                .apply()
+            preferences.edit().putInt(KEY_COUNT, count + 1).putString(KEY_ID_PREFIX + count, id).apply()
             writeAccount(account)
         }
         preferences.edit().putString(KEY_ACTIVE_ID, id).remove(KEY_ACTIVE_ORG).apply()
@@ -122,8 +102,7 @@ class KeystoreTokenStore internal constructor(
 
     override fun removeAccount(accountId: String): Boolean {
         val current = accounts()
-        val index = current.indexOfFirst { it.id == accountId }
-        if (index < 0) return false
+        if (current.none { it.id == accountId }) return false
         val remaining = current.filterNot { it.id == accountId }
         preferences.edit().apply {
             remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_LOGIN)
@@ -148,7 +127,6 @@ class KeystoreTokenStore internal constructor(
     override fun setActiveOrganization(login: String?) {
         preferences.edit().putString(KEY_ACTIVE_ORG, login?.trim()?.removePrefix("@")?.takeIf { it.isNotBlank() }).apply()
     }
-
     override fun activeOrganization(): String? = preferences.getString(KEY_ACTIVE_ORG, null)
 
     private fun activeAccount(): StoredAccount? = accounts().firstOrNull { it.id == activeAccountId() }
@@ -204,27 +182,14 @@ class KeystoreTokenStore internal constructor(
             refreshExpiresAtEpochSeconds = preferences.longOrNull(LEGACY_REFRESH_EXPIRY)
         )
         val account = "legacy-account"
-        preferences.edit()
-            .putInt(KEY_COUNT, 1)
-            .putString(KEY_ID_PREFIX + 0, account)
-            .putString(KEY_ACTIVE_ID, account)
-            .remove(LEGACY_ACCESS)
-            .remove(LEGACY_REFRESH)
-            .remove(LEGACY_ACCESS_EXPIRY)
-            .remove(LEGACY_REFRESH_EXPIRY)
-            .remove(LEGACY_CLIENT_ID)
-            .apply()
+        preferences.edit().putInt(KEY_COUNT, 1).putString(KEY_ID_PREFIX + 0, account).putString(KEY_ACTIVE_ID, account)
+            .remove(LEGACY_ACCESS).remove(LEGACY_REFRESH).remove(LEGACY_ACCESS_EXPIRY).remove(LEGACY_REFRESH_EXPIRY).remove(LEGACY_CLIENT_ID).apply()
         writeAccount(StoredAccount(account, null, null, null, tokens))
     }
 
-    private fun encoded(value: String): String = Base64.encodeToString(value.toByteArray(Charsets.UTF_8), Base64.NO_WRAP or Base64.URL_SAFE)
-
-    private fun SharedPreferences.longOrNull(key: String): Long? =
-        if (contains(key)) getLong(key, 0L) else null
-
-    private fun SharedPreferences.Editor.putLongOrRemove(key: String, value: Long?) {
-        if (value == null) remove(key) else putLong(key, value)
-    }
+    private fun encoded(value: String): String = Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray(Charsets.UTF_8))
+    private fun SharedPreferences.longOrNull(key: String): Long? = if (contains(key)) getLong(key, 0L) else null
+    private fun SharedPreferences.Editor.putLongOrRemove(key: String, value: Long?) { if (value == null) remove(key) else putLong(key, value) }
 
     private companion object {
         const val KEY_CLIENT_ID = "oauth_client_id"
