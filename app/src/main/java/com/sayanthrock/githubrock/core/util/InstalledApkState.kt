@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock.core.util
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -89,14 +88,6 @@ object InstalledApkStateResolver {
         return runCatching {
             context.startActivity(intent)
             true
-        }.getOrElse { error ->
-            // Any failure means the launch did not happen. Keep this API's
-            // boolean contract truthful instead of reporting success for
-            // unexpected RuntimeExceptions.
-            when (error) {
-                is ActivityNotFoundException, is SecurityException -> false
-                else -> false
-            }
-        }
+        }.getOrDefault(false)
     }
 }
