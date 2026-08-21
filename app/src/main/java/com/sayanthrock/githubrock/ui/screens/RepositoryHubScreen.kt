@@ -53,6 +53,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var workspacePage by rememberSaveable { mutableStateOf("overview") }
+    var nativeSection by rememberSaveable { mutableStateOf<RepoSection?>(null) }
     var confirmUninstall by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(repository?.id) { viewModel.start(repository) }
     val displayedRepository = state.repository ?: repository
@@ -60,8 +61,12 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
 
     when (workspacePage) {
         "manager" -> {
-            BackHandler { workspacePage = "overview" }
-            RepositoryDetailScreen(repository = displayedRepository, onBack = { workspacePage = "overview" })
+            BackHandler { workspacePage = "overview"; nativeSection = null }
+            RepositoryDetailSectionScreen(
+                repository = displayedRepository,
+                section = nativeSection ?: RepoSection.Overview,
+                onBack = { workspacePage = "overview"; nativeSection = null }
+            )
             return
         }
         "files" -> {
@@ -71,14 +76,19 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
         }
     }
 
-    // Normal GitHub URLs are converted into native repository navigation.
+    // Normal repository URLs are translated to native GitHub Rock sections.
+    // Only the explicit Open on GitHub action uses the external browser.
     val openUrl: (String) -> Unit = { url ->
         if (url.isNotBlank()) {
-            workspacePage = when {
-                url.contains("/issues", ignoreCase = true) || url.contains("/pulls", ignoreCase = true) || url.contains("/actions", ignoreCase = true) || url.contains("/releases", ignoreCase = true) -> "manager"
-                url.contains("/tree/", ignoreCase = true) || url.contains("/blob/", ignoreCase = true) -> "files"
-                else -> "manager"
+            nativeSection = when {
+                url.contains("/issues", ignoreCase = true) -> RepoSection.Issues
+                url.contains("/pulls", ignoreCase = true) -> RepoSection.Pulls
+                url.contains("/actions", ignoreCase = true) -> RepoSection.Actions
+                url.contains("/releases", ignoreCase = true) -> RepoSection.Releases
+                url.contains("/tree/", ignoreCase = true) || url.contains("/blob/", ignoreCase = true) -> null
+                else -> RepoSection.Code
             }
+            workspacePage = if (url.contains("/tree/", ignoreCase = true) || url.contains("/blob/", ignoreCase = true)) "files" else "manager"
         }
     }
 
@@ -104,7 +114,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                 repositoryLoading = state.loading,
                 repositoryHasError = state.error != null,
                 onBack = onBack,
-                onOpenManager = { workspacePage = "manager" },
+                onOpenManager = { nativeSection = RepoSection.Overview; workspacePage = "manager" },
                 onOpenFiles = { workspacePage = "files" },
                 onOpenGitHub = openGitHub,
                 applicationStatus = appState?.statusLabel
