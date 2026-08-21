@@ -63,7 +63,7 @@ class DeviceFlowAuthRepository @Inject constructor(
         }
     }
 
-    suspend fun poll(device: DeviceCodeResponse, onStatus: (String) -> Unit = {}, save: Boolean = true): StoredTokens {
+    suspend fun poll(device: DeviceCodeResponse, save: Boolean = true, onStatus: (String) -> Unit = {}): StoredTokens {
         val deadline = Instant.now().epochSecond + device.expiresIn
         while (Instant.now().epochSecond < deadline) {
             val response = requestTokenAtAllowedInterval(device)
