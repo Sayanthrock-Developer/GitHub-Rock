@@ -92,7 +92,7 @@ fun BuildsScreen(
             }
         }
     }
-    val counts = remember(runs) {
+    val counts = remember(runs, actionState.artifacts) {
         BuildCounts(
             running = runs.count { it.displayState() !in setOf(WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled) },
             failed = runs.count { it.displayState() == WorkflowDisplayState.Failed },
@@ -112,22 +112,13 @@ fun BuildsScreen(
                 subtitle = "Understand workflow runs, code, jobs, steps and artifacts in one native view"
             )
         }
-
         item { BuildSummary(counts, preferences) }
-
-        item {
-            BuildFilterRow(filter, onFilter = { filter = it })
-        }
-
-        item { RepositoryPicker(repositories, selectedRepository, preferences) { selectedRepository = it } }
+        item { BuildFilterRow(filter, onFilter = { filter = it }) }
+        item { RepositoryPicker(repositories, selectedRepository) { selectedRepository = it } }
 
         selectedRepository?.let { repo ->
             item {
-                OutlinedButton(
-                    onClick = { onSelectRepository(repo) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = preferences.repositoryManager
-                ) {
+                OutlinedButton(onClick = { onSelectRepository(repo) }, modifier = Modifier.fillMaxWidth(), enabled = preferences.repositoryManager) {
                     Icon(Icons.Default.Code, null)
                     Spacer(Modifier.width(8.dp))
                     Text(if (preferences.repositoryManager) "Open repository manager" else "Repository manager disabled")
@@ -137,11 +128,7 @@ fun BuildsScreen(
 
         actionState.message?.let { item { StatusMessageCard(it, false, preferences) } }
         actionState.error?.let { item { StatusMessageCard(it, true, preferences) } }
-
-        item {
-            WorkflowCodePanel(actionState, preferences)
-        }
-
+        item { WorkflowCodePanel(actionState, preferences) }
         item {
             BuildExecutionPanel(
                 mode = mode,
@@ -152,30 +139,20 @@ fun BuildsScreen(
                 onDispatch = { ref -> selectedRepository?.let { viewModel.dispatchAndroidBuild(it, ref) } },
                 onDownload = { artifact ->
                     selectedRepository?.let { repo ->
-                        downloadsViewModel.enqueue(
-                            artifact.archiveDownloadUrl,
-                            "${repo.name}-${artifact.name}-${artifact.id}.zip"
-                        )
+                        downloadsViewModel.enqueue(artifact.archiveDownloadUrl, "${repo.name}-${artifact.name}-${artifact.id}.zip")
                     }
                 }
             )
         }
-
-        item {
-            Text("Recent runs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
+        item { Text("Recent runs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (visibleRuns.isEmpty()) {
             item { GlassCard { Text("No runs match this filter.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         } else {
-            items(visibleRuns, key = { it.id }) { run ->
-                RecentRunCard(run, preferences) { selectedRun = run }
-            }
+            items(visibleRuns, key = { it.id }) { run -> RecentRunCard(run, preferences) { selectedRun = run } }
         }
     }
 
-    selectedRun?.let { run ->
-        RunDetailsDialog(run = run, preferences = preferences, onDismiss = { selectedRun = null })
-    }
+    selectedRun?.let { run -> RunDetailsDialog(run, selectedRepository?.fullName, preferences) { selectedRun = null } }
 }
 
 private enum class BuildFilter(val label: String) { All("All"), Running("Running"), Failed("Failed"), Success("Success") }
@@ -210,23 +187,13 @@ private fun SummaryMetric(label: String, value: String, accent: Color, modifier:
 
 @Composable
 private fun BuildFilterRow(selected: BuildFilter, onFilter: (BuildFilter) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        BuildFilter.values().forEach { filter ->
-            FilterChip(selected = selected == filter, onClick = { onFilter(filter) }, label = { Text(filter.label) })
-        }
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        BuildFilter.values().forEach { filter -> FilterChip(selected = selected == filter, onClick = { onFilter(filter) }, label = { Text(filter.label) }) }
     }
 }
 
 @Composable
-private fun RepositoryPicker(
-    repositories: List<GitHubRepositoryModel>,
-    selected: GitHubRepositoryModel?,
-    preferences: AppearancePreferences,
-    onSelect: (GitHubRepositoryModel) -> Unit
-) {
+private fun RepositoryPicker(repositories: List<GitHubRepositoryModel>, selected: GitHubRepositoryModel?, onSelect: (GitHubRepositoryModel) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Repository", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         if (repositories.isEmpty()) {
@@ -264,7 +231,6 @@ private fun WorkflowCodePanel(actionState: BuildsActionState, preferences: Appea
     val report = remember(source, actionState.run, actionState.jobs, actionState.workflowSourceError) {
         WorkflowPreviewInspector.inspect(source, actionState.run, actionState.jobs, actionState.workflowSourceError)
     }
-
     GlassCard(contentPadding = PaddingValues(0.dp)) {
         Column {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -274,13 +240,7 @@ private fun WorkflowCodePanel(actionState: BuildsActionState, preferences: Appea
                     }
                     Column(Modifier.weight(1f)) {
                         Text("Workflow code", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text(
-                            actionState.workflowSourcePath ?: "No active workflow path",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(actionState.workflowSourcePath ?: "No active workflow path", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 WorkflowHealthFrame(report.health, report.title, report.detail, preferences)
@@ -297,11 +257,7 @@ private fun WorkflowCodePanel(actionState: BuildsActionState, preferences: Appea
                 source.isBlank() -> Text(actionState.workflowSourceError ?: "No active workflow code is available.", Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else -> WorkflowCodeViewer(source, preferences.compactCards)
             }
-            OutlinedButton(
-                onClick = { clipboard.setText(AnnotatedString(source)) },
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                enabled = source.isNotBlank()
-            ) {
+            OutlinedButton(onClick = { clipboard.setText(AnnotatedString(source)) }, modifier = Modifier.fillMaxWidth().padding(16.dp), enabled = source.isNotBlank()) {
                 Icon(Icons.Default.ContentCopy, null)
                 Spacer(Modifier.width(8.dp))
                 Text("Copy workflow code")
@@ -318,23 +274,9 @@ private fun WorkflowHealthFrame(health: WorkflowPreviewHealth, title: String, de
         WorkflowPreviewHealth.Running -> MaterialTheme.colorScheme.primary
         WorkflowPreviewHealth.Unknown -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Surface(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = accent.copy(alpha = .12f),
-        border = BorderStroke(1.dp, accent.copy(alpha = .45f))
-    ) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = accent.copy(alpha = .12f), border = BorderStroke(1.dp, accent.copy(alpha = .45f))) {
         Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                when (health) {
-                    WorkflowPreviewHealth.Healthy -> Icons.Default.CheckCircle
-                    WorkflowPreviewHealth.Problem -> Icons.Default.ErrorOutline
-                    WorkflowPreviewHealth.Running -> Icons.Default.Sync
-                    WorkflowPreviewHealth.Unknown -> Icons.Default.HelpOutline
-                },
-                contentDescription = title,
-                tint = accent
-            )
+            Icon(when (health) { WorkflowPreviewHealth.Healthy -> Icons.Default.CheckCircle; WorkflowPreviewHealth.Problem -> Icons.Default.ErrorOutline; WorkflowPreviewHealth.Running -> Icons.Default.Sync; WorkflowPreviewHealth.Unknown -> Icons.Default.HelpOutline }, contentDescription = title, tint = accent)
             Column(Modifier.weight(1f)) {
                 Text(title, color = accent, fontWeight = FontWeight.Bold)
                 Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
@@ -367,18 +309,12 @@ private fun CompactProblemRow(problem: String, preferences: AppearancePreference
 
 @Composable
 private fun WorkflowCodeViewer(source: String, compact: Boolean) {
-    val numbered = remember(source) {
-        source.lineSequence().mapIndexed { index, line -> "${(index + 1).toString().padStart(3, ' ')}  $line" }.joinToString("\n")
-    }
+    val numbered = remember(source) { source.lineSequence().mapIndexed { index, line -> "${(index + 1).toString().padStart(3, ' ')}  $line" }.joinToString("\n") }
     val verticalState = rememberScrollState()
     val horizontalState = rememberScrollState()
     Surface(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background.copy(alpha = .88f)) {
-        Box(
-            Modifier.fillMaxWidth().heightIn(max = if (compact) 360.dp else 520.dp).verticalScroll(verticalState).horizontalScroll(horizontalState)
-        ) {
-            SelectionContainer {
-                Text(numbered, Modifier.padding(if (compact) 12.dp else 16.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, softWrap = false)
-            }
+        Box(Modifier.fillMaxWidth().heightIn(max = if (compact) 360.dp else 520.dp).verticalScroll(verticalState).horizontalScroll(horizontalState)) {
+            SelectionContainer { Text(numbered, Modifier.padding(if (compact) 12.dp else 16.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, softWrap = false) }
         }
     }
 }
@@ -444,52 +380,37 @@ private fun BuildExecutionPanel(
             }
             if (actionState.tracking && !preferences.reduceMotion) LinearProgressIndicator(Modifier.fillMaxWidth())
             else if (actionState.tracking) Text("Workflow is running", color = MaterialTheme.colorScheme.primary)
-
             actionState.run?.let { RunFrame(it, preferences) }
-
-            if (actionState.jobs.isEmpty() && actionState.run != null) {
-                Text("No job details returned yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            if (actionState.jobs.isEmpty() && actionState.run != null) Text("No job details returned yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             actionState.jobs.forEachIndexed { index, job ->
                 val failed = job.conclusion in failureConclusions
                 val passed = job.conclusion == "success"
                 val accent = statusColor(failed, passed, preferences)
                 val expanded = job.id in expandedJobs
-                Surface(
-                    Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
-                    border = BorderStroke(1.dp, accent.copy(alpha = .35f))
-                ) {
+                Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f), border = BorderStroke(1.dp, accent.copy(alpha = .35f))) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("${index + 1}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             StatusRow(job.name, job.conclusion ?: job.status, failed, passed, accent)
                         }
                         if (preferences.workflowStepDetails && job.steps.isNotEmpty()) {
-                            TextButton(
-                                onClick = { expandedJobs = if (expanded) expandedJobs - job.id else expandedJobs + job.id },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            TextButton(onClick = { expandedJobs = if (expanded) expandedJobs - job.id else expandedJobs + job.id }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
                                 Spacer(Modifier.width(6.dp))
                                 Text(if (expanded) "Hide ${job.steps.size} steps" else "Show ${job.steps.size} steps")
                             }
-                            if (expanded) {
-                                job.steps.forEachIndexed { stepIndex, step ->
-                                    val stepFailed = step.conclusion in failureConclusions
-                                    val stepPassed = step.conclusion == "success"
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text("${stepIndex + 1}", Modifier.width(28.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        StatusRow(step.name, step.conclusion ?: step.status, stepFailed, stepPassed, statusColor(stepFailed, stepPassed, preferences), small = true)
-                                    }
+                            if (expanded) job.steps.forEachIndexed { stepIndex, step ->
+                                val stepFailed = step.conclusion in failureConclusions
+                                val stepPassed = step.conclusion == "success"
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("${stepIndex + 1}", Modifier.width(28.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    StatusRow(step.name, step.conclusion ?: step.status, stepFailed, stepPassed, statusColor(stepFailed, stepPassed, preferences), small = true)
                                 }
                             }
                         }
                     }
                 }
             }
-
             if (preferences.actionsControls && actionState.artifacts.isNotEmpty()) {
                 Text("Artifacts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 actionState.artifacts.forEach { artifact ->
@@ -508,12 +429,7 @@ private fun BuildExecutionPanel(
 private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences) {
     val state = run.displayState()
     val accent = runColor(state, preferences)
-    Surface(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = accent.copy(alpha = .10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = .38f))
-    ) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = accent.copy(alpha = .10f), border = BorderStroke(1.dp, accent.copy(alpha = .38f))) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatusIcon(state, accent)
@@ -552,12 +468,7 @@ private fun LoadingRow(text: String) {
 @Composable
 private fun StatusRow(title: String, status: String, failed: Boolean, passed: Boolean, accent: Color, small: Boolean = false) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            if (failed) Icons.Default.ErrorOutline else if (passed) Icons.Default.CheckCircle else Icons.Default.Sync,
-            contentDescription = status,
-            Modifier.size(if (small) 17.dp else 20.dp),
-            tint = accent
-        )
+        Icon(if (failed) Icons.Default.ErrorOutline else if (passed) Icons.Default.CheckCircle else Icons.Default.Sync, contentDescription = status, Modifier.size(if (small) 17.dp else 20.dp), tint = accent)
         Text(title, Modifier.weight(1f), style = if (small) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium)
         Text(status, color = accent, style = MaterialTheme.typography.labelSmall)
     }
@@ -567,13 +478,8 @@ private fun StatusRow(title: String, status: String, failed: Boolean, passed: Bo
 private fun RecentRunCard(run: WorkflowRun, preferences: AppearancePreferences, onClick: () -> Unit) {
     val state = run.displayState()
     val accent = runColor(state, preferences)
-    OutlinedCard(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(Modifier.padding(14.dp), Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    OutlinedCard(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Row(Modifier.padding(14.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusIcon(state, accent)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -586,16 +492,12 @@ private fun RecentRunCard(run: WorkflowRun, preferences: AppearancePreferences, 
 }
 
 @Composable
-private fun RunDetailsDialog(run: WorkflowRun, preferences: AppearancePreferences, onDismiss: () -> Unit) {
+private fun RunDetailsDialog(run: WorkflowRun, repositoryFullName: String?, preferences: AppearancePreferences, onDismiss: () -> Unit) {
     val state = run.displayState()
     val accent = runColor(state, preferences)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            Surface(
-                Modifier.fillMaxWidth().fillMaxHeight(.72f),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                tonalElevation = 8.dp
-            ) {
+            Surface(Modifier.fillMaxWidth().fillMaxHeight(.72f), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), tonalElevation = 8.dp) {
                 Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -613,7 +515,7 @@ private fun RunDetailsDialog(run: WorkflowRun, preferences: AppearancePreference
                             }
                         }
                     }
-                    DetailRow("Repository", run.repositoryFullName)
+                    DetailRow("Repository", repositoryFullName.orEmpty())
                     DetailRow("Branch", run.headBranch.orEmpty())
                     DetailRow("Event", run.event)
                     DetailRow("Run", "#${run.id}")
@@ -621,7 +523,7 @@ private fun RunDetailsDialog(run: WorkflowRun, preferences: AppearancePreference
                     Text(
                         when (state) {
                             WorkflowDisplayState.Success -> "GitHub reports this workflow run completed successfully."
-                            WorkflowDisplayState.Failed -> "GitHub reports a failure. Open the native job/step details in Builds to identify the failing step."
+                            WorkflowDisplayState.Failed -> "GitHub reports a failure. Use the job and step timeline in Builds to identify the failing step."
                             WorkflowDisplayState.Cancelled -> "This workflow run was cancelled."
                             else -> "This workflow run is still active. Its status can update while you stay in Builds."
                         },
