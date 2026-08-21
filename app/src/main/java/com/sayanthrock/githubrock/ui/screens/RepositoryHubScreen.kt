@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,7 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import kotlinx.coroutines.launch
 
-/** Native repository workspace with overview, code, issues, pull requests, Actions and releases. */
+/** Native repository workspace. GitHub browsing stays inside GitHub Rock; only the explicit external action opens GitHub. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositoryHubScreen(
@@ -76,7 +77,6 @@ fun RepositoryHubScreen(
             )
             return
         }
-
         "files" -> {
             BackHandler { workspacePage = "overview" }
             RepositoryFileManagerScreen(
@@ -87,14 +87,30 @@ fun RepositoryHubScreen(
         }
     }
 
+    // Normal GitHub URLs are converted into native repository navigation.
+    // The website is reached only through the explicit "Open on GitHub" action.
     val openUrl: (String) -> Unit = { url ->
         if (url.isNotBlank()) {
+            workspacePage = when {
+                url.contains("/issues", ignoreCase = true) ||
+                    url.contains("/pulls", ignoreCase = true) ||
+                    url.contains("/actions", ignoreCase = true) ||
+                    url.contains("/releases", ignoreCase = true) -> "manager"
+                url.contains("/tree/", ignoreCase = true) ||
+                    url.contains("/blob/", ignoreCase = true) -> "files"
+                else -> "manager"
+            }
+        }
+    }
+
+    val openGitHub: () -> Unit = {
+        displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
             try {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
             } catch (_: ActivityNotFoundException) {
-                scope.launch { snackbar.showSnackbar("Unable to open this link") }
+                scope.launch { snackbar.showSnackbar("Unable to open GitHub") }
             } catch (_: IllegalArgumentException) {
-                scope.launch { snackbar.showSnackbar("This link is not valid") }
+                scope.launch { snackbar.showSnackbar("This GitHub link is not valid") }
             }
         }
     }
@@ -112,6 +128,7 @@ fun RepositoryHubScreen(
                 onBack = onBack,
                 onOpenManager = { workspacePage = "manager" },
                 onOpenFiles = { workspacePage = "files" },
+                onOpenGitHub = openGitHub,
                 applicationStatus = appState?.statusLabel
             )
         }
@@ -150,21 +167,12 @@ fun RepositoryHubScreen(
                     state = installedApp,
                     onInstall = {
                         installRepositoryApk(context, installedApp).onFailure { problem ->
-                            scope.launch {
-                                snackbar.showSnackbar(
-                                    problem.message
-                                        ?: "Android could not open the package installer."
-                                )
-                            }
+                            scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open the package installer.") }
                         }
                     },
                     onOpen = {
                         openRepositoryApp(context, installedApp).onFailure { problem ->
-                            scope.launch {
-                                snackbar.showSnackbar(
-                                    problem.message ?: "Android could not open this application."
-                                )
-                            }
+                            scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open this application.") }
                         }
                     },
                     onUninstall = { confirmUninstall = true }
@@ -178,33 +186,16 @@ fun RepositoryHubScreen(
         AlertDialog(
             onDismissRequest = { confirmUninstall = false },
             title = { Text("Uninstall ${uninstallTarget.appName}?") },
-            text = {
-                Text(
-                    "Android will open its uninstall confirmation for ${uninstallTarget.packageName}. " +
-                        "GitHub Rock cannot remove an app silently."
-                )
-            },
+            text = { Text("Android will open its uninstall confirmation for ${uninstallTarget.packageName}. GitHub Rock cannot remove an app silently.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmUninstall = false
-                        requestRepositoryAppUninstall(context, uninstallTarget).onFailure { problem ->
-                            scope.launch {
-                                snackbar.showSnackbar(
-                                    problem.message ?: "Android could not open the uninstall screen."
-                                )
-                            }
-                        }
+                TextButton(onClick = {
+                    confirmUninstall = false
+                    requestRepositoryAppUninstall(context, uninstallTarget).onFailure { problem ->
+                        scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open the uninstall screen.") }
                     }
-                ) {
-                    Text("Continue")
-                }
+                }) { Text("Continue") }
             },
-            dismissButton = {
-                TextButton(onClick = { confirmUninstall = false }) {
-                    Text("Cancel")
-                }
-            }
+            dismissButton = { TextButton(onClick = { confirmUninstall = false }) { Text("Cancel") } }
         )
     }
 }
@@ -219,25 +210,16 @@ internal fun RepositoryWorkspaceTopBar(
     onBack: () -> Unit,
     onOpenManager: () -> Unit,
     onOpenFiles: () -> Unit,
+    onOpenGitHub: () -> Unit,
     applicationStatus: String? = null
 ) {
     TopAppBar(
         title = {
             Column {
-                Text(
-                    text = repository?.fullName ?: "Repository",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(repository?.fullName ?: "Repository", maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
                 Text(
                     text = repository?.let {
-                        val visibility = if (it.private) "Private" else "Public"
-                        listOfNotNull(
-                            visibility,
-                            it.defaultBranch,
-                            applicationStatus
-                        ).joinToString(" · ")
+                        listOfNotNull(if (it.private) "Private" else "Public", it.defaultBranch, applicationStatus).joinToString(" · ")
                     } ?: when {
                         repositoryHasError -> "Repository unavailable"
                         repositoryLoading -> "Loading repository"
@@ -252,33 +234,16 @@ internal fun RepositoryWorkspaceTopBar(
             }
         },
         navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
         },
         actions = {
             repository?.let {
-                Icon(
-                    imageVector = if (it.private) Icons.Default.Lock else Icons.Default.Public,
-                    contentDescription = if (it.private) "Private repository" else "Public repository",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                IconButton(
-                    onClick = onOpenManager,
-                    enabled = repositoryReady
-                ) {
-                    Icon(Icons.Default.Code, contentDescription = "Manage repository")
-                }
-                IconButton(
-                    onClick = onOpenFiles,
-                    enabled = repositoryReady
-                ) {
-                    Icon(Icons.Default.FolderOpen, contentDescription = "Browse repository files")
-                }
+                Icon(if (it.private) Icons.Default.Lock else Icons.Default.Public, contentDescription = if (it.private) "Private repository" else "Public repository", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                IconButton(onClick = onOpenManager, enabled = repositoryReady) { Icon(Icons.Default.Code, contentDescription = "Manage repository") }
+                IconButton(onClick = onOpenFiles, enabled = repositoryReady) { Icon(Icons.Default.FolderOpen, contentDescription = "Browse repository files") }
+                IconButton(onClick = onOpenGitHub, enabled = repositoryReady) { Icon(Icons.Default.OpenInNew, contentDescription = "Open on GitHub") }
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
-        )
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
     )
 }
