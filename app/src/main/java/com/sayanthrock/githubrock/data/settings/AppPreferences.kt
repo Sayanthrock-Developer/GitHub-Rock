@@ -16,113 +16,16 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "github_rock_preferences")
 
-enum class ThemeMode {
-    System,
-    Light,
-    Dark;
-
-    companion object {
-        fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System
-    }
-}
-
-enum class ThemeStyle {
-    Clean,
-    LiquidGlass,
-    Studio,
-    Midnight,
-    Aurora,
-    HighContrast;
-
-    companion object {
-        fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean
-    }
-}
-
-enum class AccentColor {
-    Cyan,
-    Blue,
-    Violet,
-    Emerald,
-    Rose,
-    Coral,
-    Amber,
-    Orange;
-
-    companion object {
-        fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan
-    }
-}
-
-enum class DisplaySize {
-    Small,
-    Standard,
-    Large;
-
-    companion object {
-        fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard
-    }
-}
-
-enum class FontSize {
-    Small,
-    Default,
-    Large;
-
-    companion object {
-        fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default
-    }
-}
-
-enum class FontWeightStyle {
-    Light,
-    Default,
-    Bold;
-
-    companion object {
-        fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default
-    }
-}
-
-enum class AppFontFamily {
-    SystemSans,
-    Serif,
-    Monospace;
-
-    companion object {
-        fun fromStored(value: String?): AppFontFamily = entries.firstOrNull { it.name == value } ?: SystemSans
-    }
-}
-
-enum class LoadingStyle {
-    Spinner,
-    Linear,
-    Pulse;
-
-    companion object {
-        fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: Spinner
-    }
-}
-
-enum class CodeColorStyle {
-    Classic,
-    Ocean,
-    Sunset,
-    Monochrome;
-
-    companion object {
-        fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic
-    }
-}
-
-enum class LogDisplayStyle {
-    Dialog,
-    Terminal;
-
-    companion object {
-        fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal
-    }
-}
+enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
+enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
+enum class AccentColor { Cyan, Blue, Violet, Emerald, Rose, Coral, Amber, Orange; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan } }
+enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
+enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }
+enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
+enum class AppFontFamily { SystemSans, Serif, Monospace; companion object { fun fromStored(value: String?): AppFontFamily = entries.firstOrNull { it.name == value } ?: SystemSans } }
+enum class LoadingStyle { Spinner, Linear, Pulse; companion object { fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: Spinner } }
+enum class CodeColorStyle { Classic, Ocean, Sunset, Monochrome; companion object { fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic } }
+enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal } }
 
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
@@ -135,7 +38,7 @@ data class AppearancePreferences(
     val loadingStyle: LoadingStyle = LoadingStyle.Spinner,
     val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
     val logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
-    val dynamicColor: Boolean = false,
+    val dynamicColor: Boolean = true,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
     val workflowPreview: Boolean = true,
@@ -149,9 +52,7 @@ data class AppearancePreferences(
 )
 
 @Singleton
-class AppPreferences @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class AppPreferences @Inject constructor(@ApplicationContext private val context: Context) {
     val appearance: Flow<AppearancePreferences> = context.dataStore.data.map { preferences ->
         AppearancePreferences(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
@@ -164,24 +65,15 @@ class AppPreferences @Inject constructor(
             loadingStyle = LoadingStyle.fromStored(preferences[LOADING_STYLE]),
             codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
             logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
-            dynamicColor = preferences[DYNAMIC_COLOR] ?: false,
+            dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true
         )
     }
-
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
-    val favoriteRepositories: Flow<Set<String>> = context.dataStore.data.map { preferences ->
-        preferences[FAVORITE_REPOSITORIES].orEmpty()
-    }
-    val repositorySearchHistory: Flow<List<String>> = context.dataStore.data.map { preferences ->
-        preferences[REPOSITORY_SEARCH_HISTORY]
-            ?.split(HISTORY_SEPARATOR)
-            ?.map(String::trim)
-            ?.filter(String::isNotBlank)
-            .orEmpty()
-    }
+    val favoriteRepositories: Flow<Set<String>> = context.dataStore.data.map { it[FAVORITE_REPOSITORIES].orEmpty() }
+    val repositorySearchHistory: Flow<List<String>> = context.dataStore.data.map { preferences -> preferences[REPOSITORY_SEARCH_HISTORY]?.split(HISTORY_SEPARATOR)?.map(String::trim)?.filter(String::isNotBlank).orEmpty() }
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
@@ -201,38 +93,17 @@ class AppPreferences @Inject constructor(
     suspend fun addRepositorySearch(query: String) {
         val normalized = query.trim().replace(HISTORY_SEPARATOR, " ").takeIf(String::isNotBlank) ?: return
         context.dataStore.edit { preferences ->
-            val current = preferences[REPOSITORY_SEARCH_HISTORY]
-                ?.split(HISTORY_SEPARATOR)
-                ?.filter(String::isNotBlank)
-                .orEmpty()
-            val updated = buildList {
-                add(normalized)
-                current.filterNot { it.equals(normalized, ignoreCase = true) }.forEach(::add)
-            }.take(MAX_SEARCH_HISTORY)
+            val current = preferences[REPOSITORY_SEARCH_HISTORY]?.split(HISTORY_SEPARATOR)?.filter(String::isNotBlank).orEmpty()
+            val updated = buildList { add(normalized); current.filterNot { it.equals(normalized, ignoreCase = true) }.forEach(::add) }.take(MAX_SEARCH_HISTORY)
             preferences[REPOSITORY_SEARCH_HISTORY] = updated.joinToString(HISTORY_SEPARATOR)
         }
     }
-
-    suspend fun clearRepositorySearchHistory() = context.dataStore.edit {
-        it.remove(REPOSITORY_SEARCH_HISTORY)
-    }
-
+    suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE)
-        preferences.remove(THEME_STYLE)
-        preferences.remove(ACCENT_COLOR)
-        preferences.remove(DISPLAY_SIZE)
-        preferences.remove(FONT_SIZE)
-        preferences.remove(FONT_WEIGHT)
-        preferences.remove(FONT_FAMILY)
-        preferences.remove(LOADING_STYLE)
-        preferences.remove(CODE_COLOR_STYLE)
-        preferences.remove(LOG_DISPLAY_STYLE)
-        preferences.remove(DYNAMIC_COLOR)
-        preferences.remove(TRUE_BLACK)
-        preferences.remove(SHOW_IMAGES)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
+        preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE)
+        preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
     }
-
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
         context.dataStore.edit { preferences ->
@@ -242,22 +113,13 @@ class AppPreferences @Inject constructor(
             preferences[FAVORITE_REPOSITORIES] = current
         }
     }
-
-    suspend fun monitoredWorkflowRun(monitorKey: String): Long? =
-        context.dataStore.data.first()[longPreferencesKey("workflow_monitor_$monitorKey")]
-
-    suspend fun setMonitoredWorkflowRun(monitorKey: String, runId: Long) {
-        context.dataStore.edit { it[longPreferencesKey("workflow_monitor_$monitorKey")] = runId }
-    }
-
-    suspend fun clearMonitoredWorkflowRun(monitorKey: String) {
-        context.dataStore.edit { it.remove(longPreferencesKey("workflow_monitor_$monitorKey")) }
-    }
+    suspend fun monitoredWorkflowRun(monitorKey: String): Long? = context.dataStore.data.first()[longPreferencesKey("workflow_monitor_$monitorKey")]
+    suspend fun setMonitoredWorkflowRun(monitorKey: String, runId: Long) { context.dataStore.edit { it[longPreferencesKey("workflow_monitor_$monitorKey")] = runId } }
+    suspend fun clearMonitoredWorkflowRun(monitorKey: String) { context.dataStore.edit { it.remove(longPreferencesKey("workflow_monitor_$monitorKey")) } }
 
     private companion object {
         const val HISTORY_SEPARATOR = "\u001F"
         const val MAX_SEARCH_HISTORY = 8
-
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val THEME_STYLE = stringPreferencesKey("theme_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
