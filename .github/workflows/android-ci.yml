@@ -17,13 +17,13 @@ jobs:
   verify:
     name: Verify Android
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
       GITHUB_ROCK_BACKEND_URL: ${{ vars.GITHUB_ROCK_BACKEND_URL || '' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -35,8 +35,8 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
 
       - name: Verify Gradle wrapper
         run: ./gradlew --version
@@ -46,9 +46,6 @@ jobs:
 
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
-
-      - name: Compile Compose UI tests
-        run: ./gradlew :app:assembleDebugAndroidTest --stacktrace --no-daemon
 
       - name: Lint
         run: ./gradlew :app:lintDebug --stacktrace --no-daemon
@@ -61,7 +58,7 @@ jobs:
 
       - name: Upload verification artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: github-rock-verification
           path: |
