@@ -6,7 +6,9 @@ import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.ui.screens.RepositoryAppPackageState
 import com.sayanthrock.githubrock.ui.screens.findRepositoryDownloadedApk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RepositoryAppPackageStateTest {
@@ -30,63 +32,19 @@ class RepositoryAppPackageStateTest {
     )
 
     @Test fun newestCompletedMatchingApkIsSelected() {
-        val older = DownloadEntity(
-            id = 1,
-            fileName = "echo-music-universal.apk",
-            sourceUrl = "https://example.com/old.apk",
-            localPath = "/tmp/old.apk",
-            status = "completed",
-            createdAt = 100
-        )
-        val newer = DownloadEntity(
-            id = 2,
-            fileName = "Echo-Music-Universal.APK",
-            sourceUrl = "https://example.com/new.apk",
-            localPath = "/tmp/new.apk",
-            status = "completed",
-            createdAt = 200
-        )
-        val failed = DownloadEntity(
-            id = 3,
-            fileName = "echo-music-universal.apk",
-            sourceUrl = "https://example.com/failed.apk",
-            localPath = "/tmp/failed.apk",
-            status = "failed",
-            createdAt = 300
-        )
-        val unrelated = DownloadEntity(
-            id = 4,
-            fileName = "another-app.apk",
-            sourceUrl = "https://example.com/another.apk",
-            localPath = "/tmp/another.apk",
-            status = "completed",
-            createdAt = 400
-        )
+        val older = DownloadEntity(id = 1, fileName = "echo-music-universal.apk", sourceUrl = "https://example.com/old.apk", localPath = "/tmp/old.apk", status = "completed", createdAt = 100)
+        val newer = DownloadEntity(id = 2, fileName = "Echo-Music-Universal.APK", sourceUrl = "https://example.com/new.apk", localPath = "/tmp/new.apk", status = "completed", createdAt = 200)
+        val failed = DownloadEntity(id = 3, fileName = "echo-music-universal.apk", sourceUrl = "https://example.com/failed.apk", localPath = "/tmp/failed.apk", status = "failed", createdAt = 300)
+        val unrelated = DownloadEntity(id = 4, fileName = "another-app.apk", sourceUrl = "https://example.com/another.apk", localPath = "/tmp/another.apk", status = "completed", createdAt = 400)
 
-        assertEquals(
-            newer,
-            findRepositoryDownloadedApk(
-                downloads = listOf(older, newer, failed, unrelated),
-                releases = listOf(release)
-            )
-        )
+        assertEquals(newer, findRepositoryDownloadedApk(listOf(older, newer, failed, unrelated), listOf(release)))
     }
 
     @Test fun noStateIsCreatedWithoutAMatchingCompletedApk() {
-        assertNull(
-            findRepositoryDownloadedApk(
-                downloads = listOf(
-                    DownloadEntity(
-                        id = 1,
-                        fileName = "echo-music-universal.apk",
-                        sourceUrl = "https://example.com/partial.apk",
-                        localPath = "/tmp/partial.apk",
-                        status = "downloading"
-                    )
-                ),
-                releases = listOf(release)
-            )
-        )
+        assertNull(findRepositoryDownloadedApk(
+            listOf(DownloadEntity(id = 1, fileName = "echo-music-universal.apk", sourceUrl = "https://example.com/partial.apk", localPath = "/tmp/partial.apk", status = "downloading")),
+            listOf(release)
+        ))
     }
 
     @Test fun packageStatusLabelsReflectAndroidState() {
@@ -96,11 +54,17 @@ class RepositoryAppPackageStateTest {
             versionName = "2.0.0",
             apkPath = "/tmp/echo.apk",
             installed = true,
-            openable = true
+            openable = true,
+            installedVersionName = "1.0.0",
+            updateAvailable = true,
+            canRequestInstall = true
         )
-        val downloaded = installed.copy(installed = false, openable = false)
+        val downloaded = installed.copy(installed = false, openable = false, updateAvailable = false)
 
-        assertEquals("Installed", installed.statusLabel)
+        assertEquals("Update available", installed.statusLabel)
+        assertEquals("Install update", installed.actionLabel)
         assertEquals("Ready to install", downloaded.statusLabel)
+        assertTrue(installed.updateAvailable)
+        assertFalse(downloaded.updateAvailable)
     }
 }

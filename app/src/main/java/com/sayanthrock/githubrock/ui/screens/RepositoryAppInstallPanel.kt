@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,14 +49,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.Release
-import com.sayanthrock.githubrock.core.util.ApkInspector
+import com.sayanthrock.githubrock.core.util.InstalledApkStateResolver
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** APK and installed-package state associated with one repository release. */
 internal data class RepositoryAppPackageState(
     val appName: String,
     val packageName: String,
@@ -63,30 +63,35 @@ internal data class RepositoryAppPackageState(
     val apkPath: String,
     val installed: Boolean,
     val openable: Boolean,
-    val icon: Drawable? = null
+    val icon: Drawable? = null,
+    val installedVersionName: String? = null,
+    val updateAvailable: Boolean = false,
+    val canRequestInstall: Boolean = true
 ) {
     val statusLabel: String
-        get() = if (installed) "Installed" else "Ready to install"
+        get() = when {
+            updateAvailable -> "Update available"
+            installed -> "Installed"
+            else -> "Ready to install"
+        }
+
+    val actionLabel: String
+        get() = when {
+            updateAvailable -> "Install update"
+            installed -> "Reinstall APK"
+            else -> "Install downloaded APK"
+        }
 }
 
-/**
- * Finds the newest completed APK whose filename is present in this repository's releases.
- * Filename matching remains reliable even when a configured mirror rewrites the download URL.
- */
-internal fun findRepositoryDownloadedApk(
-    downloads: List<DownloadEntity>,
-    releases: List<Release>
-): DownloadEntity? {
-    val apkNames = releases
-        .asSequence()
+internal fun findRepositoryDownloadedApk(downloads: List<DownloadEntity>, releases: List<Release>): DownloadEntity? {
+    val apkNames = releases.asSequence()
         .flatMap { it.assets.asSequence() }
         .map { it.name.trim().lowercase(Locale.ROOT) }
         .filter { it.endsWith(".apk") }
         .toSet()
     if (apkNames.isEmpty()) return null
 
-    return downloads
-        .asSequence()
+    return downloads.asSequence()
         .filter { it.status == "completed" }
         .filter { it.localPath?.endsWith(".apk", ignoreCase = true) == true }
         .filter { it.fileName.trim().lowercase(Locale.ROOT) in apkNames }
@@ -94,10 +99,7 @@ internal fun findRepositoryDownloadedApk(
 }
 
 @Composable
-internal fun rememberRepositoryAppPackageState(
-    downloads: List<DownloadEntity>,
-    releases: List<Release>
-): RepositoryAppPackageState? {
+internal fun rememberRepositoryAppPackageState(downloads: List<DownloadEntity>, releases: List<Release>): RepositoryAppPackageState? {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var resumeTick by remember { mutableIntStateOf(0) }
@@ -110,12 +112,7 @@ internal fun rememberRepositoryAppPackageState(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val state by produceState<RepositoryAppPackageState?>(
-        initialValue = null,
-        key1 = downloads,
-        key2 = releases,
-        key3 = resumeTick
-    ) {
+    val state by produceState<RepositoryAppPackageState?>(initialValue = null, key1 = downloads, key2 = releases, key3 = resumeTick) {
         value = withContext(Dispatchers.IO) {
             resolveRepositoryAppPackageState(context.applicationContext, downloads, releases)
         }
@@ -123,45 +120,23 @@ internal fun rememberRepositoryAppPackageState(
     return state
 }
 
-@Suppress("DEPRECATION")
-private fun resolveRepositoryAppPackageState(
-    context: Context,
-    downloads: List<DownloadEntity>,
-    releases: List<Release>
-): RepositoryAppPackageState? {
+private fun resolveRepositoryAppPackageState(context: Context, downloads: List<DownloadEntity>, releases: List<Release>): RepositoryAppPackageState? {
     val download = findRepositoryDownloadedApk(downloads, releases) ?: return null
     val apk = download.localPath?.let(::File)?.takeIf(File::isFile) ?: return null
-    val inspection = ApkInspector.inspect(context, apk) ?: return null
-    val packageManager = context.packageManager
-    val installedPackage = runCatching {
-        packageManager.getPackageInfo(inspection.packageName, 0)
-    }.getOrNull()
-    val launchIntent = packageManager.getLaunchIntentForPackage(inspection.packageName)
-    val installed = installedPackage != null || launchIntent != null
-
-    val archiveIcon = runCatching {
-        packageManager.getPackageArchiveInfo(apk.absolutePath, 0)
-            ?.applicationInfo
-            ?.also {
-                it.sourceDir = apk.absolutePath
-                it.publicSourceDir = apk.absolutePath
-            }
-            ?.loadIcon(packageManager)
-    }.getOrNull()
-    val installedIcon = if (installed) {
-        runCatching { packageManager.getApplicationIcon(inspection.packageName) }.getOrNull()
-    } else {
-        null
-    }
+    val inspection = InstalledApkStateResolver.resolve(context, apk) ?: return null
+    val canRequestInstall = Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()
 
     return RepositoryAppPackageState(
-        appName = inspection.appName,
+        appName = inspection.label ?: inspection.packageName,
         packageName = inspection.packageName,
-        versionName = inspection.versionName,
+        versionName = inspection.downloadedVersionName.orEmpty(),
+        installedVersionName = inspection.installedVersionName,
         apkPath = apk.absolutePath,
-        installed = installed,
-        openable = launchIntent != null,
-        icon = installedIcon ?: archiveIcon
+        installed = inspection.installed,
+        updateAvailable = inspection.isUpdateAvailable,
+        openable = inspection.launchIntent != null,
+        canRequestInstall = canRequestInstall,
+        icon = inspection.icon
     )
 }
 
@@ -171,6 +146,7 @@ internal fun RepositoryAppInstallPanel(
     onInstall: () -> Unit,
     onOpen: () -> Unit,
     onUninstall: () -> Unit,
+    onEnableInstallPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -180,15 +156,8 @@ internal fun RepositoryAppInstallPanel(
         shadowElevation = 10.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(52.dp),
                     shape = MaterialTheme.shapes.large,
@@ -197,12 +166,7 @@ internal fun RepositoryAppInstallPanel(
                 ) {
                     when (val artwork = state.icon) {
                         null -> Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Android,
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                            Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                         else -> AsyncImage(
                             model = artwork,
@@ -212,54 +176,29 @@ internal fun RepositoryAppInstallPanel(
                         )
                     }
                 }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        state.appName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(state.appName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         listOfNotNull(
                             state.versionName.takeIf(String::isNotBlank)?.let { "Version $it" },
+                            state.installedVersionName?.takeIf(String::isNotBlank)?.let { "Installed $it" },
                             state.packageName
                         ).joinToString(" · "),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
                 Surface(
                     shape = MaterialTheme.shapes.large,
-                    color = if (state.installed) {
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = .12f)
-                    } else {
-                        MaterialTheme.colorScheme.primary.copy(alpha = .12f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (state.installed) {
-                            MaterialTheme.colorScheme.tertiary.copy(alpha = .36f)
-                        } else {
-                            MaterialTheme.colorScheme.primary.copy(alpha = .34f)
-                        }
-                    )
+                    color = if (state.updateAvailable || !state.installed) MaterialTheme.colorScheme.primary.copy(alpha = .12f) else MaterialTheme.colorScheme.tertiary.copy(alpha = .12f),
+                    border = BorderStroke(1.dp, if (state.updateAvailable || !state.installed) MaterialTheme.colorScheme.primary.copy(alpha = .34f) else MaterialTheme.colorScheme.tertiary.copy(alpha = .36f))
                 ) {
                     Text(
                         state.statusLabel,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        color = if (state.installed) {
-                            MaterialTheme.colorScheme.tertiary
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
+                        color = if (state.updateAvailable || !state.installed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -267,82 +206,69 @@ internal fun RepositoryAppInstallPanel(
             }
 
             if (state.installed) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onUninstall,
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = onUninstall, modifier = Modifier.weight(1f).height(56.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                         Icon(Icons.Default.DeleteOutline, contentDescription = null)
                         Spacer(Modifier.width(7.dp))
                         Text("Uninstall", fontWeight = FontWeight.Bold)
                     }
-                    Button(
-                        onClick = onOpen,
-                        enabled = state.openable,
-                        modifier = Modifier.weight(1f).height(56.dp)
-                    ) {
+                    Button(onClick = onOpen, enabled = state.openable, modifier = Modifier.weight(1f).height(56.dp)) {
                         Icon(Icons.Default.Launch, contentDescription = null)
                         Spacer(Modifier.width(7.dp))
                         Text("Open", fontWeight = FontWeight.Bold)
                     }
                 }
-            } else {
-                Button(
-                    onClick = onInstall,
-                    modifier = Modifier.fillMaxWidth().height(56.dp)
-                ) {
+            }
+
+            if (!state.canRequestInstall) {
+                OutlinedButton(onClick = onEnableInstallPermission, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                     Icon(Icons.Default.InstallMobile, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Install downloaded APK", fontWeight = FontWeight.Bold)
+                    Text("Allow APK installation", fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    "Android is blocking installs from GitHub Rock. Allow this app to install unknown apps, then return here and tap Install.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                Button(onClick = onInstall, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                    Icon(Icons.Default.InstallMobile, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(state.actionLabel, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
 
-internal fun installRepositoryApk(
-    context: Context,
-    state: RepositoryAppPackageState
-): Result<Unit> = runCatching {
+internal fun installRepositoryApk(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
     val file = File(state.apkPath)
-    require(file.isFile) { "The downloaded APK is no longer available." }
-    val uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.files",
-        file
-    )
-    context.startActivity(
-        Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-    )
+    require(file.isFile) { "The downloaded APK is no longer available. Download it again." }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+        error("APK installation permission is disabled for GitHub Rock.")
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/vnd.android.package-archive")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    require(intent.resolveActivity(context.packageManager) != null) { "No Android package installer is available on this device." }
+    context.startActivity(intent)
 }
 
-internal fun openRepositoryApp(
-    context: Context,
-    state: RepositoryAppPackageState
-): Result<Unit> = runCatching {
-    val launchIntent = requireNotNull(
-        context.packageManager.getLaunchIntentForPackage(state.packageName)
-    ) { "This application does not expose a launcher activity." }
+internal fun openRepositoryInstallPermissionSettings(context: Context): Result<Unit> = runCatching {
+    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+internal fun openRepositoryApp(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
+    val launchIntent = requireNotNull(context.packageManager.getLaunchIntentForPackage(state.packageName)) { "This application does not expose a launcher activity." }
     context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
-internal fun requestRepositoryAppUninstall(
-    context: Context,
-    state: RepositoryAppPackageState
-): Result<Unit> = runCatching {
-    context.startActivity(
-        Intent(Intent.ACTION_DELETE, Uri.parse("package:${state.packageName}")).apply {
-            putExtra(Intent.EXTRA_RETURN_RESULT, false)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-    )
+internal fun requestRepositoryAppUninstall(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
+    context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${state.packageName}")).apply {
+        putExtra(Intent.EXTRA_RETURN_RESULT, false)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    })
 }
