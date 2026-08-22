@@ -1,0 +1,42 @@
+name: Apply native build details patch
+on:
+  push:
+    paths:
+      - .github/workflows/native-build-details-patch.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch navigation and Builds screen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/BuildsScreen.kt')
+          s=p.read_text()
+          s=s.replace('    onSelectRepository: (GitHubRepositoryModel) -> Unit,\n', '    onSelectRepository: (GitHubRepositoryModel) -> Unit,\n    onOpenRun: (GitHubRepositoryModel, WorkflowRun) -> Unit = { _, _ -> },\n', 1)
+          s=s.replace('    var selectedRun by remember { mutableStateOf<WorkflowRun?>(null) }\n', '', 1)
+          s=s.replace('RecentRunCard(run, preferences) { selectedRun = run }', 'RecentRunCard(run, preferences) { selectedRepository?.let { repo -> onOpenRun(repo, run) } }', 1)
+          s=s.replace('\n    selectedRun?.let { run -> RunDetailsDialog(run, selectedRepository?.fullName, preferences) { selectedRun = null } }\n', '\n', 1)
+          p.write_text(s)
+
+          p=Path('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt')
+          s=p.read_text()
+          s=s.replace('import com.sayanthrock.githubrock.ui.screens.BuildsScreen\n', 'import com.sayanthrock.githubrock.ui.screens.BuildDetailsScreen\nimport com.sayanthrock.githubrock.ui.screens.BuildsScreen\n', 1)
+          s=s.replace('private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"\n', 'private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"\nprivate const val BUILD_DETAILS_ROUTE = "build-details/{owner}/{repo}/{runId}"\n', 1)
+          old='''                        composable(TopDestination.Builds.route) {\n                            BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo)\n                        }\n'''
+          new='''                        composable(TopDestination.Builds.route) {\n                            BuildsScreen(\n                                mode = mode,\n                                repositories = state.repositories,\n                                runs = state.workflowRuns,\n                                onSelectRepository = openRepo,\n                                onOpenRun = { repo, run ->\n                                    navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}")\n                                }\n                            )\n                        }\n                        composable(\n                            route = BUILD_DETAILS_ROUTE,\n                            arguments = listOf(\n                                navArgument("owner") { type = NavType.StringType },\n                                navArgument("repo") { type = NavType.StringType },\n                                navArgument("runId") { type = NavType.LongType }\n                            )\n                        ) { entry ->\n                            val owner = entry.arguments?.getString("owner").orEmpty()\n                            val repoName = entry.arguments?.getString("repo").orEmpty()\n                            val runId = entry.arguments?.getLong("runId") ?: 0L\n                            val repository = state.repositories.firstOrNull {\n                                it.owner.login.equals(owner, ignoreCase = true) && it.name == repoName\n                            }\n                            if (repository != null && runId > 0L) {\n                                BuildDetailsScreen(\n                                    mode = mode,\n                                    repository = repository,\n                                    runId = runId,\n                                    onBack = navController::navigateUp\n                                )\n                            } else {\n                                Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {\n                                    Text("Build unavailable", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)\n                                    Text("The repository or workflow run is no longer available.")\n                                    Button(onClick = navController::navigateUp) { Text("Back to Builds") }\n                                }\n                            }\n                        }\n'''
+          if old not in s: raise SystemExit('Builds route not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/native-build-details-patch.yml
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/BuildsScreen.kt app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt
+          git commit -m 'Add native workflow build details navigation'
+          git push
