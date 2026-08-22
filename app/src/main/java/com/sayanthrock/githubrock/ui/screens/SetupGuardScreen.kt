@@ -15,18 +15,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,86 +76,154 @@ fun SetupGuardScreen(
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        notificationGranted = granted
-    }
+    ) { granted -> notificationGranted = granted }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Security,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Set up GitHub Rock",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "A quick setup helps GitHub Rock work correctly with notifications and downloaded apps. You can change these permissions later in Android Settings.",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Spacer(Modifier.height(24.dp))
+    val ready = notificationGranted && canInstallPackages
 
-        SetupPermissionCard(
-            icon = Icons.Outlined.Notifications,
-            title = "Notifications",
-            description = "Receive build, download and important activity notifications.",
-            granted = notificationGranted,
-            actionLabel = "Allow",
-            onAction = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Security,
+                        contentDescription = null,
+                        modifier = Modifier.padding(12.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
-            }
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        SetupPermissionCard(
-            icon = Icons.Outlined.Download,
-            title = "Install downloaded apps",
-            description = "Allow GitHub Rock to hand downloaded APKs to Android for installation.",
-            granted = canInstallPackages,
-            actionLabel = "Open settings",
-            onAction = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                            Uri.parse("package:${context.packageName}")
-                        )
+                Spacer(Modifier.padding(horizontal = 8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Setup",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Get GitHub Rock ready",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
-        )
 
-        Spacer(Modifier.height(28.dp))
-        Button(
-            onClick = onSetupComplete,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Finish setup")
+            Text(
+                text = "Complete these quick permissions so downloads, installs, and notifications work as expected.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                )
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp)) {
+                    SetupPermissionRow(
+                        icon = Icons.Outlined.Notifications,
+                        title = "Notifications",
+                        description = "Builds, downloads and important activity.",
+                        granted = notificationGranted,
+                        actionLabel = "Allow",
+                        onAction = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                    )
+                    HorizontalDivider()
+                    SetupPermissionRow(
+                        icon = Icons.Outlined.Download,
+                        title = "Install downloaded apps",
+                        description = "Let Android install APKs downloaded by GitHub Rock.",
+                        granted = canInstallPackages,
+                        actionLabel = "Open settings",
+                        onAction = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                context.startActivity(
+                                    Intent(
+                                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                        Uri.parse("package:${context.packageName}")
+                                    )
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (ready) Icons.Outlined.CheckCircle else Icons.Outlined.Settings,
+                        contentDescription = null,
+                        tint = if (ready) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.padding(horizontal = 6.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (ready) "Everything is ready" else "Finish the remaining steps",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = if (ready) "GitHub Rock is ready to use." else "You can also change these permissions later in Android Settings.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(2.dp))
+
+            Button(
+                onClick = onSetupComplete,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Continue")
+            }
+
+            Text(
+                text = "Permissions are requested only when needed. GitHub Rock does not access private data through this setup.",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(Modifier.height(12.dp))
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Permissions are requested only when needed. GitHub Rock does not request access to your private data during setup.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
 @Composable
-private fun SetupPermissionCard(
+private fun SetupPermissionRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     description: String,
@@ -155,35 +231,49 @@ private fun SetupPermissionCard(
     actionLabel: String,
     onAction: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.secondaryContainer
         ) {
-            Icon(icon, contentDescription = null)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 14.dp)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.padding(10.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+        Spacer(Modifier.padding(horizontal = 6.dp))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 6.dp)
+        ) {
+            Text(title, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(3.dp))
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (granted) {
+            Icon(
+                imageVector = Icons.Outlined.CheckCircle,
+                contentDescription = "Ready",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        } else {
+            OutlinedButton(
+                onClick = onAction,
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Text(title, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (granted) {
-                Text(
-                    "Ready",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-            } else {
-                OutlinedButton(onClick = onAction) {
-                    Text(actionLabel)
-                }
+                Text(actionLabel)
             }
         }
     }
