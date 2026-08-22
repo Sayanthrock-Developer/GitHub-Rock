@@ -64,26 +64,21 @@ fun BuildDetailsScreen(
                 }
             }
         }
-
         state.error?.let { error -> item { StatusCard(error, true, preferences) } }
         state.message?.let { message -> item { StatusCard(message, false, preferences) } }
-
         state.run?.let { run ->
             item { BuildRunHeader(run, state.workflow?.name, preferences) }
             item { BuildMetadata(run) }
         } ?: item {
             GlassCard { Text(if (state.loading) "Loading build details…" else "Build run details are unavailable.") }
         }
-
         if (state.tracking) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-
         item { Text("Jobs & steps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.jobs.isEmpty()) {
             item { GlassCard { Text("No job details returned yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         } else {
             items(state.jobs, key = { it.id }) { job -> JobDetailsCard(job, preferences) }
         }
-
         item { Text("Artifacts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.artifacts.isEmpty()) {
             item { GlassCard { Text("No downloadable artifacts were published for this run.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
@@ -150,7 +145,6 @@ private fun JobDetailsCard(job: WorkflowJob, preferences: AppearancePreferences)
     val failed = job.conclusion in setOf("failure", "timed_out", "action_required", "startup_failure")
     val passed = job.conclusion == "success"
     val accent = if (failed) MaterialTheme.colorScheme.error else if (passed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -159,7 +153,7 @@ private fun JobDetailsCard(job: WorkflowJob, preferences: AppearancePreferences)
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                BuildStatusIcon(if (failed) WorkflowDisplayState.Failed else if (passed) WorkflowDisplayState.Success else WorkflowDisplayState.Running, accent)
+                BuildStatusIcon(if (failed) WorkflowDisplayState.Failed else if (passed) WorkflowDisplayState.Success else null, accent)
                 Column(Modifier.weight(1f)) {
                     Text(job.name, fontWeight = FontWeight.SemiBold)
                     Text(job.conclusion ?: job.status, color = accent, style = MaterialTheme.typography.labelMedium)
@@ -198,14 +192,14 @@ private fun StatusCard(message: String, error: Boolean, preferences: AppearanceP
 }
 
 @Composable
-private fun BuildStatusIcon(state: WorkflowDisplayState, accent: Color) {
+private fun BuildStatusIcon(state: WorkflowDisplayState?, accent: Color) {
     Icon(
         when (state) {
             WorkflowDisplayState.Success -> Icons.Default.CheckCircle
             WorkflowDisplayState.Failed -> Icons.Default.ErrorOutline
             else -> Icons.Default.Sync
         },
-        contentDescription = state.name,
+        contentDescription = state?.name ?: "Running",
         tint = accent
     )
 }
