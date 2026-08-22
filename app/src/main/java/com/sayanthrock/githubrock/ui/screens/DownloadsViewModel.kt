@@ -21,6 +21,8 @@ import com.sayanthrock.githubrock.update.AutomaticUpdateWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +59,6 @@ class DownloadsViewModel @Inject constructor(
         preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
     }
 
-    /** Adds a normal GitHub download and schedules it for background execution. */
     fun enqueue(
         url: String,
         fileName: String,
@@ -78,12 +79,15 @@ class DownloadsViewModel @Inject constructor(
         schedule(queued.copy(id = id))
     }
 
-    /** Registers an installed APK for periodic GitHub release checks. */
     fun manageUpdates(download: DownloadEntity, onResult: (Result<Unit>) -> Unit) = viewModelScope.launch {
         val result = withContext(Dispatchers.IO) {
             runCatching {
-                val owner = requireNotNull(download.repositoryOwner) { "This download is not linked to a GitHub repository." }
-                val repo = requireNotNull(download.repositoryName) { "This download is not linked to a GitHub repository." }
+                val metadata = download.repositoryOwner?.let { owner ->
+                    download.repositoryName?.let { repo -> owner to repo }
+                } ?: parseGitHubRelease(download.sourceUrl)?.let { it.owner to it.repo }
+                    ?: error("This APK download is not linked to a GitHub release.")
+                val owner = metadata.first
+                val repo = metadata.second
                 val file = download.localPath?.let(::File)?.takeIf(File::isFile)
                     ?: error("The downloaded APK is no longer available.")
                 val inspection = ApkInspector.inspect(applicationContext, file)
@@ -103,7 +107,7 @@ class DownloadsViewModel @Inject constructor(
                         repositoryName = repo,
                         installedVersionCode = versionCode,
                         installedVersionName = packageInfo.versionName,
-                        trackedReleaseTag = download.releaseTag,
+                        trackedReleaseTag = download.releaseTag ?: parseGitHubRelease(download.sourceUrl)?.tag,
                         autoUpdate = true
                     )
                 )
@@ -203,6 +207,21 @@ class DownloadsViewModel @Inject constructor(
             request
         )
     }
+
+    private fun parseGitHubRelease(url: String): GitHubReleaseSource? = runCatching {
+        val uri = java.net.URI(url)
+        val host = uri.host?.lowercase() ?: return null
+        if (host != "github.com" && host != "www.github.com") return null
+        val parts = uri.path.trim('/').split('/')
+        if (parts.size < 5 || parts[2] != "releases" || parts[3] != "download") return null
+        GitHubReleaseSource(
+            owner = parts[0],
+            repo = parts[1],
+            tag = URLDecoder.decode(parts[4], StandardCharsets.UTF_8.name())
+        )
+    }.getOrNull()
+
+    private data class GitHubReleaseSource(val owner: String, val repo: String, val tag: String)
 
     companion object {
         private const val PREFERENCES_NAME = "github_rock_downloads"
