@@ -4,14 +4,15 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
-import com.sayanthrock.githubrock.R
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.util.ChecksumVerifier
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import dagger.assisted.Assisted
@@ -84,6 +85,9 @@ class DownloadWorker @AssistedInject constructor(
             }
 
             currentCoroutineContext().ensureActive()
+            if (name.endsWith(".apk", ignoreCase = true)) {
+                validateApk(partial)
+            }
             val sha = ChecksumVerifier.sha256(partial)
             if (expectedSha != null && !ChecksumVerifier.matches(sha, expectedSha)) {
                 partial.delete()
@@ -95,6 +99,10 @@ class DownloadWorker @AssistedInject constructor(
             Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
+        } catch (error: InvalidApkException) {
+            partial.delete()
+            dao.updateProgress(id, "failed", 0, knownTotal, null, null)
+            Result.failure()
         } catch (error: Exception) {
             val downloaded = partial.takeIf(File::exists)?.length() ?: 0L
             val willRetry = runAttemptCount < MAX_AUTOMATIC_RETRIES
@@ -107,6 +115,16 @@ class DownloadWorker @AssistedInject constructor(
                 null
             )
             if (willRetry) Result.retry() else Result.failure()
+        }
+    }
+
+    private fun validateApk(file: File) {
+        val packageInfo = applicationContext.packageManager.getPackageArchiveInfo(
+            file.absolutePath,
+            PackageManager.GET_META_DATA
+        )
+        if (packageInfo?.packageName.isNullOrBlank()) {
+            throw InvalidApkException()
         }
     }
 
@@ -196,6 +214,8 @@ class DownloadWorker @AssistedInject constructor(
         ((downloadId xor (downloadId ushr 32)).toInt() and Int.MAX_VALUE).coerceAtLeast(1)
 
     private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_")
+
+    private class InvalidApkException : Exception()
 
     companion object {
         const val KEY_ID = "download_id"
