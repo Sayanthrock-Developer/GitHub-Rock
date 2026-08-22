@@ -19,13 +19,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
 import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.components.rockBackground
+import com.sayanthrock.githubrock.ui.navigation.AdaptiveNavigationOverlay
 import com.sayanthrock.githubrock.ui.navigation.MainNavigation
+import com.sayanthrock.githubrock.ui.navigation.TopDestination
+import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import kotlinx.coroutines.launch
@@ -33,8 +37,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val appearanceViewModel: AppearanceViewModel = hiltViewModel()
+    val appearance by appearanceViewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val navController = rememberNavController()
+    val currentEntry by navController.currentBackStackEntryAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val setupPreferences = remember(context) {
@@ -118,6 +125,10 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
             maxWidth < 600.dp -> 80.dp
             else -> 20.dp
         }
+        val showAdaptiveNavigation = state.mode != null &&
+            maxWidth < 600.dp &&
+            TopDestination.values().any { it.route == currentEntry?.destination?.route }
+
         if (state.mode == null) {
             LoginScreen(
                 configured = viewModel.loginConfigured,
@@ -143,6 +154,22 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 )
             }
         }
+
+        if (showAdaptiveNavigation) {
+            AdaptiveNavigationOverlay(
+                selectedRoute = currentEntry?.destination?.route,
+                style = appearance.navigationStyle,
+                onDestinationSelected = { destination ->
+                    navController.navigate(destination.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+
         SnackbarHost(
             hostState = snackbar,
             modifier = Modifier
