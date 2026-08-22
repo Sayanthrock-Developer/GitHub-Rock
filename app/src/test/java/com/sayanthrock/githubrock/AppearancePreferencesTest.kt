@@ -9,6 +9,7 @@ import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
+import com.sayanthrock.githubrock.data.settings.NavigationStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import org.junit.Assert.assertEquals
@@ -28,6 +29,14 @@ class AppearancePreferencesTest {
         assertEquals(ThemeStyle.Midnight, ThemeStyle.fromStored("Midnight"))
         assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored("unknown"))
         assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored(null))
+    }
+
+    @Test fun storedNavigationValuesFallBackToFloating() {
+        assertEquals(NavigationStyle.Classic, NavigationStyle.fromStored("Classic"))
+        assertEquals(NavigationStyle.Pill, NavigationStyle.fromStored("Pill"))
+        assertEquals(NavigationStyle.Minimal, NavigationStyle.fromStored("Minimal"))
+        assertEquals(NavigationStyle.Floating, NavigationStyle.fromStored("unknown"))
+        assertEquals(NavigationStyle.Floating, NavigationStyle.fromStored(null))
     }
 
     @Test fun storedAccentValuesFallBackToCleanCyan() {
@@ -52,6 +61,7 @@ class AppearancePreferencesTest {
         val preferences = AppearancePreferences()
 
         assertEquals(ThemeStyle.Clean, preferences.themeStyle)
+        assertEquals(NavigationStyle.Floating, preferences.navigationStyle)
         assertEquals(DisplaySize.Standard, preferences.displaySize)
         assertEquals(FontSize.Default, preferences.fontSize)
         assertEquals(FontWeightStyle.Default, preferences.fontWeight)
