@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Data
@@ -13,7 +14,10 @@ import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.ApkInspector
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
+import com.sayanthrock.githubrock.data.local.ManagedAppDao
+import com.sayanthrock.githubrock.data.local.ManagedAppEntity
 import com.sayanthrock.githubrock.download.DownloadWorker
+import com.sayanthrock.githubrock.update.AutomaticUpdateWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -31,6 +35,7 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
     private val dao: DownloadDao,
+    private val managedAppDao: ManagedAppDao,
     @ApplicationContext context: Context
 ) : ViewModel() {
     private val applicationContext = context.applicationContext
@@ -44,19 +49,83 @@ class DownloadsViewModel @Inject constructor(
     val selectedMirror: StateFlow<DownloadMirror> = _selectedMirror.asStateFlow()
     val downloads: StateFlow<List<DownloadEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val managedApps = managedAppDao.observeAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Saves the endpoint used for future downloads. Existing queue items are not rewritten. */
     fun selectMirror(mirror: DownloadMirror) {
         _selectedMirror.value = mirror
         preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
     }
 
-    /** Adds a trusted GitHub download and schedules it for background execution. */
-    fun enqueue(url: String, fileName: String) = viewModelScope.launch {
+    /** Adds a normal GitHub download and schedules it for background execution. */
+    fun enqueue(
+        url: String,
+        fileName: String,
+        repositoryOwner: String? = null,
+        repositoryName: String? = null,
+        releaseTag: String? = null
+    ) = viewModelScope.launch {
         val resolvedUrl = runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
-        val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued")
+        val queued = DownloadEntity(
+            fileName = fileName,
+            sourceUrl = resolvedUrl,
+            status = "queued",
+            repositoryOwner = repositoryOwner,
+            repositoryName = repositoryName,
+            releaseTag = releaseTag
+        )
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
+    }
+
+    /** Registers an installed APK for periodic GitHub release checks. */
+    fun manageUpdates(download: DownloadEntity, onResult: (Result<Unit>) -> Unit) = viewModelScope.launch {
+        val result = withContext(Dispatchers.IO) {
+            runCatching {
+                val owner = requireNotNull(download.repositoryOwner) { "This download is not linked to a GitHub repository." }
+                val repo = requireNotNull(download.repositoryName) { "This download is not linked to a GitHub repository." }
+                val file = download.localPath?.let(::File)?.takeIf(File::isFile)
+                    ?: error("The downloaded APK is no longer available.")
+                val inspection = ApkInspector.inspect(applicationContext, file)
+                    ?: error("Android could not inspect this APK.")
+                val packageInfo = packageInfo(inspection.packageName)
+                    ?: error("Install ${inspection.appName} before enabling automatic updates.")
+                val versionCode = if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    packageInfo.longVersionCode
+                } else {
+                    packageInfo.versionCode.toLong()
+                }
+                managedAppDao.upsert(
+                    ManagedAppEntity(
+                        packageName = inspection.packageName,
+                        appName = inspection.appName,
+                        repositoryOwner = owner,
+                        repositoryName = repo,
+                        installedVersionCode = versionCode,
+                        installedVersionName = packageInfo.versionName,
+                        trackedReleaseTag = download.releaseTag,
+                        autoUpdate = true
+                    )
+                )
+            }
+        }
+        onResult(result)
+    }
+
+    fun setAutoUpdate(packageName: String, enabled: Boolean) = viewModelScope.launch {
+        managedAppDao.setAutoUpdate(packageName, enabled)
+    }
+
+    fun stopManaging(packageName: String) = viewModelScope.launch {
+        managedAppDao.delete(packageName)
+    }
+
+    fun checkUpdatesNow() {
+        workManager.enqueueUniqueWork(
+            UPDATE_WORK_NAME,
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<AutomaticUpdateWorker>().build()
+        )
     }
 
     fun pause(download: DownloadEntity) = viewModelScope.launch {
@@ -86,7 +155,6 @@ class DownloadsViewModel @Inject constructor(
 
     fun retry(download: DownloadEntity) = resume(download)
 
-    /** Parses APK metadata, signing certificates, and hashes on a worker dispatcher. */
     fun inspectApk(file: File, onResult: (Result<ApkInspection>) -> Unit) = viewModelScope.launch {
         val result = withContext(Dispatchers.IO) {
             try {
@@ -102,6 +170,18 @@ class DownloadsViewModel @Inject constructor(
         }
         onResult(result)
     }
+
+    private fun packageInfo(packageName: String) = runCatching {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            applicationContext.packageManager.getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(0)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            applicationContext.packageManager.getPackageInfo(packageName, 0)
+        }
+    }.getOrNull()
 
     private fun schedule(download: DownloadEntity) {
         val input = Data.Builder()
@@ -127,6 +207,7 @@ class DownloadsViewModel @Inject constructor(
     companion object {
         private const val PREFERENCES_NAME = "github_rock_downloads"
         private const val KEY_DOWNLOAD_MIRROR = "download_mirror"
+        private const val UPDATE_WORK_NAME = "github-rock-manual-app-update-check"
         private val ACTIVE_STATUSES = setOf("queued", "downloading", "retrying")
     }
 }
