@@ -5,7 +5,7 @@
 
   **A premium, native GitHub companion for Android.**
 
-  Browse repositories, profiles, issues, pull requests, Actions, releases, builds, downloads, and APKs from one focused mobile experience.
+  Browse, discover, manage, build, download, and install developer applications from GitHub through one focused mobile experience.
 
   <p>
     <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases"><img src="https://img.shields.io/github/v/release/Sayanthrock-Developer/GitHub-Rock?style=for-the-badge&label=Release" alt="Latest release" /></a>
@@ -18,86 +18,261 @@
 
 ## ✦ Overview
 
-**GitHub Rock** is a native, mobile-first GitHub client built for Android developers who want to manage GitHub work without constantly switching to a browser.
+**GitHub Rock** is a native, mobile-first GitHub client for Android developers. It brings GitHub discovery, repositories, profiles, Issues, Pull Requests, Actions, releases, builds, downloads, and application installation into one coherent workflow.
 
-The app brings repositories, profiles, Issues, Pull Requests, Actions, Android builds, releases, downloads, and APK inspection into one clean workflow.
+The project is designed around one principle:
 
-> **Status:** Functional alpha. Core workflows are implemented and actively refined. Check Releases, Issues, and Pull Requests for the current project state.
+> **Unlock the complete developer workflow without forcing users to leave the app for normal GitHub tasks.**
 
-## ✦ Highlights
+## ✦ All Features
 
-- Native Android experience built with Jetpack Compose
-- GitHub authentication with Device Flow
-- Guest browsing for public repositories
-- Native repository and profile navigation
-- Issues and Pull Requests with management actions
-- GitHub Actions workflow and build monitoring
-- Android workflow generation and APK artifacts
-- Release downloads and APK inspection
-- Background download progress
-- Light, dark, and true-black themes
+### 🔐 Account & Authentication
+
+- GitHub Device Flow authentication
 - Secure token storage with Android Keystore
+- Sign in and sign out
+- Account/profile information
+- Guest browsing for public content
+- Isolated demo mode
+- Account switching support
+- Session and authentication-state handling
 
-## ✦ Features
+### 🏠 Home & Dashboard
 
-### GitHub
+- Account overview
+- Repository activity
+- Quick actions
+- Developer metrics
+- Recent repositories
+- Recent Issues and Pull Requests
+- Build and download status
+- Release/update notifications
 
-- Sign in with GitHub using Device Flow
-- Browse public repositories without signing in
-- Search repositories
-- View repository files and metadata
-- Browse profiles and account information
-- Manage Issues, labels, and assignees
-- Review, comment on, react to, and merge Pull Requests
-- Monitor GitHub Actions workflows, jobs, and logs
-- Browse releases and release assets
+### 🔎 Search & Discovery
 
-### Android Development
+- Fast unified search
+- Search repositories by name, description, owner, language, stars, forks, and topics
+- Search GitHub users/owners
+- Search topics
+- Search Issues
+- Search Pull Requests
+- Filter results by type
+- Recent searches
+- Search suggestions
+- Pagination and incremental loading
 
-- Detect Android projects in repositories
-- Generate Android GitHub Actions workflows
+### 📦 Repository Browser
+
+- Repository list and discovery
+- Native Repository Details screen
+- Owner and repository metadata
+- README rendering
+- File and folder browsing
+- Branch selection
+- Releases
+- Issues
+- Pull Requests
+- Commits
+- Actions/workflows
+- Stars and forks
+- Topics and languages
+- Last-updated information
+- Repository search and filtering
+- Explicit **Open on GitHub** action when external browsing is required
+
+### ⭐ Stars
+
+- View starred repositories inside GitHub Rock
+- Repository owner, name, description, language, stars, forks, and update time
+- Native Repository Details navigation
+- No unnecessary external redirects
+
+### 👤 Profiles
+
+- User profile
+- Avatar and bio
+- Followers and following
+- Repositories
+- Contributions/activity
+- Organizations
+- Achievements
+- Pronouns when available
+- Local time when available
+- ORCID information when available
+- Follow/unfollow actions where supported
+
+### 🐛 Issues
+
+- Browse Issues
+- Issue details
+- Issue comments
+- Labels
+- Assignees
+- Open/closed state
+- Create and manage Issues where permissions allow
+- Native navigation from repositories
+
+### 🔀 Pull Requests
+
+- Browse Pull Requests
+- Pull Request details
+- Changed files and diffs
+- Review comments
+- Review threads
+- Approve or request changes where permitted
+- Comment and reply
+- Reactions
+- Resolve review threads
+- Request/remove reviewers
+- Draft/ready state
+- Merge Pull Requests where permissions and repository rules allow
+
+### ⚙️ GitHub Actions
+
+- Workflow monitoring
+- Workflow runs
+- Job status
+- Step status
+- Build logs
+- Failed-job reruns where permitted
+- Workflow artifacts
+- Build history
+- Clear success/failure states
+
+### 🏗️ Android Builds
+
+- Detect Android projects
+- Generate Android CI workflows
+- Configure build workflows
 - Create Pull Requests for generated workflows
-- Trigger and monitor builds
-- Inspect workflow status and logs
-- Download generated APK artifacts
-- Inspect APK permissions, signing information, and hashes
+- Monitor build execution
+- Inspect failed jobs and logs
+- Download build artifacts
+- Verify generated APKs
 
-### Downloads & Releases
+### 📥 Downloads
 
-- Download APKs and desktop installers from releases
+- Release asset downloads
+- APK artifact downloads
+- Desktop installer downloads when available
 - Background download handling
-- Live download progress
-- APK inspection
-- Release-based application distribution workflows
+- Live progress
+- Download state persistence
+- Retry failed downloads
+- Completed-download management
+- Correct application icon handling
 
-### Personalization
+### 📱 APK & Application Installation
 
-- Authenticated, guest, and isolated demo modes
-- Light, dark, and true-black themes
-- Adaptive Android UI
-- Focused developer-oriented navigation
+- Detect APK files from releases and artifacts
+- Extract the APK's own application icon
+- Cache extracted icons safely
+- Fall back to a generic icon only when extraction fails
+- Inspect APK metadata
+- Inspect permissions
+- Inspect signing information
+- Calculate hashes
+- Launch Android installation flow
+- Detect installed application versions
+- Compare installed version with newer releases
+- Update notifications
+- Open the update/download screen from notifications
+
+### 🔄 Releases & Updates
+
+- Browse repository releases
+- Release details
+- Release assets
+- APK detection
+- Version information
+- Download assets
+- New-release detection
+- Installed-version comparison
+- Update prompts and notifications
+
+### 🔔 Notifications
+
+- New release/update notifications
+- Download completion notifications
+- Build status notifications where supported
+- Notification actions that open the relevant native screen
+
+### 🎨 UI & Personalization
+
+- Jetpack Compose UI
+- Mobile-first layouts
+- Adaptive navigation
+- Light theme
+- Dark theme
+- True-black theme
+- Developer-focused visual hierarchy
+- Responsive loading states
+- Clear error states
+- Native dialogs and bottom sheets
+- Accessibility-conscious controls
+
+### ⚡ Reliability & UX
+
+- Loading states for every asynchronous operation
+- Empty states
+- Retry actions
+- Error handling
+- Offline-safe cached information where available
+- Pagination
+- Background work
+- State restoration
+- No fake/mock functionality in production workflows
+- Preserve existing working functionality while adding new features
 
 ## ✦ App Areas
 
 | Area | Purpose |
 |:---|:---|
-| **Home** | Account status, activity, metrics, and quick actions |
-| **Repositories** | Search, browse, and open repositories |
-| **Repository** | Code, Issues, Pull Requests, Actions, Releases, and metadata |
-| **Profile** | Profile, activity, and account settings |
-| **Issues** | Read, organize, label, and manage issues |
-| **Pull Requests** | Review, comment, react, and merge |
-| **Actions** | Monitor workflows, jobs, logs, and builds |
-| **Builds** | Generate and run Android build workflows |
+| **Home** | Account status, activity, metrics, updates, and quick actions |
+| **Explore** | Discover installable applications and repositories |
+| **Top Charts** | Trending, just-released, and popular applications |
+| **Search** | Repositories, users, topics, Issues, and Pull Requests |
+| **Repositories** | Browse and manage repositories |
+| **Stars** | View starred repositories natively |
+| **Repository** | README, files, branches, releases, Issues, PRs, commits, and Actions |
+| **Profile** | Profile, activity, followers, organizations, and account settings |
+| **Issues** | Read, create, organize, label, and manage Issues |
+| **Pull Requests** | Review, comment, react, resolve, and merge |
+| **Actions** | Monitor workflows, jobs, steps, logs, and artifacts |
+| **Builds** | Generate, run, monitor, and download Android builds |
+| **Releases** | Browse releases and release assets |
 | **Downloads** | Track downloads and inspect APKs |
+| **Settings** | Account, appearance, notifications, downloads, and application preferences |
+
+## ✦ Explore & App Store Experience
+
+GitHub Rock can act as a developer-focused open-source application discovery layer on top of public GitHub releases.
+
+### Explore
+
+- Fresh daily feed of installable applications
+- Repository/release-based application discovery
+- Infinite scrolling and incremental loading
+- Application icons, names, versions, descriptions, and release information
+- Direct install/download actions when a compatible release asset is available
+
+### Top Charts
+
+- Trending applications
+- Just released
+- Most popular
+- Ranked store-wide discovery
+- Popularity based on available repository/release signals
+
+GitHub Rock does not invent packages or releases. Installable entries must be backed by real release or artifact data.
 
 ## ✦ Native-First Experience
 
 GitHub Rock is a **real GitHub client**, not a collection of website links.
 
-Normal repository and profile browsing stays inside the app wherever native functionality is available. External GitHub pages are reserved for actions that explicitly require opening GitHub.
+Normal repository, profile, Issue, Pull Request, Actions, release, and download workflows stay inside the app wherever native functionality is available. External GitHub pages are reserved for actions that explicitly require opening GitHub.
 
-**Discover → Open → Understand → Act → Verify**
+**Discover → Open → Understand → Act → Build → Download → Install → Update**
 
 ## ✦ Architecture
 
@@ -112,6 +287,8 @@ GitHub Rock uses a layered Android architecture centered around Jetpack Compose.
 │          Repositories           │
 ├─────────────────────────────────┤
 │ API · Database · Preferences    │
+├─────────────────────────────────┤
+│ Auth · Actions · Downloads      │
 └─────────────────────────────────┘
 ```
 
@@ -122,7 +299,7 @@ app/
 ├── core/       Shared utilities and infrastructure
 ├── data/       GitHub API, authentication, database, data sources
 ├── ui/         Compose screens, navigation, components, theme
-└── download/   Background downloads and artifact handling
+└── download/   Background downloads, APK handling, and artifacts
 ```
 
 ## ✦ Technology
@@ -188,27 +365,9 @@ Security reports and responsible disclosure: [SECURITY.md](SECURITY.md)
 
 ## ✦ Project Status
 
-### Working
+GitHub Rock is under active development. The README documents the complete product feature set; individual capabilities may depend on GitHub permissions, API availability, Android version, or the current application build.
 
-- GitHub authentication
-- Guest and demo modes
-- Repository browsing and search
-- Issues and Pull Requests
-- GitHub Actions monitoring
-- Android build workflow generation
-- Background downloads
-- APK inspection
-- Theme system
-
-### In Development
-
-- More complete code browsing and editing
-- Richer Pull Request diff experience
-- Additional accessibility improvements
-- Broader GitHub API coverage
-- Further pagination improvements
-
-Features may evolve during the alpha stage. See [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases), [Issues](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues), and [Pull Requests](https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls) for the latest state.
+For the latest implementation state, see [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases), [Issues](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues), and [Pull Requests](https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls).
 
 ## ✦ Contributing
 
