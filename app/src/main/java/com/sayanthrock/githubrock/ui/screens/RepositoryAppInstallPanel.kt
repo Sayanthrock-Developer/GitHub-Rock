@@ -83,20 +83,15 @@ internal data class RepositoryAppPackageState(
         }
 }
 
-internal fun findRepositoryDownloadedApk(
-    downloads: List<DownloadEntity>,
-    releases: List<Release>
-): DownloadEntity? {
-    val apkNames = releases
-        .asSequence()
+internal fun findRepositoryDownloadedApk(downloads: List<DownloadEntity>, releases: List<Release>): DownloadEntity? {
+    val apkNames = releases.asSequence()
         .flatMap { it.assets.asSequence() }
         .map { it.name.trim().lowercase(Locale.ROOT) }
         .filter { it.endsWith(".apk") }
         .toSet()
     if (apkNames.isEmpty()) return null
 
-    return downloads
-        .asSequence()
+    return downloads.asSequence()
         .filter { it.status == "completed" }
         .filter { it.localPath?.endsWith(".apk", ignoreCase = true) == true }
         .filter { it.fileName.trim().lowercase(Locale.ROOT) in apkNames }
@@ -104,10 +99,7 @@ internal fun findRepositoryDownloadedApk(
 }
 
 @Composable
-internal fun rememberRepositoryAppPackageState(
-    downloads: List<DownloadEntity>,
-    releases: List<Release>
-): RepositoryAppPackageState? {
+internal fun rememberRepositoryAppPackageState(downloads: List<DownloadEntity>, releases: List<Release>): RepositoryAppPackageState? {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var resumeTick by remember { mutableIntStateOf(0) }
@@ -120,12 +112,7 @@ internal fun rememberRepositoryAppPackageState(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val state by produceState<RepositoryAppPackageState?>(
-        initialValue = null,
-        key1 = downloads,
-        key2 = releases,
-        key3 = resumeTick
-    ) {
+    val state by produceState<RepositoryAppPackageState?>(initialValue = null, key1 = downloads, key2 = releases, key3 = resumeTick) {
         value = withContext(Dispatchers.IO) {
             resolveRepositoryAppPackageState(context.applicationContext, downloads, releases)
         }
@@ -133,11 +120,7 @@ internal fun rememberRepositoryAppPackageState(
     return state
 }
 
-private fun resolveRepositoryAppPackageState(
-    context: Context,
-    downloads: List<DownloadEntity>,
-    releases: List<Release>
-): RepositoryAppPackageState? {
+private fun resolveRepositoryAppPackageState(context: Context, downloads: List<DownloadEntity>, releases: List<Release>): RepositoryAppPackageState? {
     val download = findRepositoryDownloadedApk(downloads, releases) ?: return null
     val apk = download.localPath?.let(::File)?.takeIf(File::isFile) ?: return null
     val inspection = InstalledApkStateResolver.resolve(context, apk) ?: return null
@@ -163,7 +146,7 @@ internal fun RepositoryAppInstallPanel(
     onInstall: () -> Unit,
     onOpen: () -> Unit,
     onUninstall: () -> Unit,
-    onEnableInstallPermission: () -> Unit,
+    onEnableInstallPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -173,15 +156,8 @@ internal fun RepositoryAppInstallPanel(
         shadowElevation = 10.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(52.dp),
                     shape = MaterialTheme.shapes.large,
@@ -282,7 +258,7 @@ internal fun installRepositoryApk(context: Context, state: RepositoryAppPackageS
 }
 
 internal fun openRepositoryInstallPermissionSettings(context: Context): Result<Unit> = runCatching {
-    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}" )).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 internal fun openRepositoryApp(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
