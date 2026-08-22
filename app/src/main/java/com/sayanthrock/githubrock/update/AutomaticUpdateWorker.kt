@@ -3,7 +3,6 @@ package com.sayanthrock.githubrock.update
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
@@ -16,6 +15,7 @@ import androidx.work.WorkerParameters
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.util.ReleaseAssetClassifier
+import com.sayanthrock.githubrock.core.util.ReleasePlatform
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.data.local.ManagedAppDao
@@ -111,7 +111,7 @@ class AutomaticUpdateWorker @AssistedInject constructor(
         .filter { it.name.lowercase(Locale.ROOT).endsWith(".apk") }
         .filter { ReleaseAssetClassifier.classify(it.name).isInstallablePackage }
         .toList()
-        .let { ReleaseAssetClassifier.preferredAsset(it, com.sayanthrock.githubrock.core.util.ReleasePlatform.Android) }
+        .let { ReleaseAssetClassifier.preferredAsset(it, ReleasePlatform.Android) }
 
     private fun isEligibleRelease(release: Release): Boolean =
         !release.draft && !release.prerelease && release.tagName.isNotBlank()
@@ -131,9 +131,9 @@ class AutomaticUpdateWorker @AssistedInject constructor(
             notificationId(appName),
             NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("Update downloaded")
-                .setContentText("$appName ${release.tagName} is ready in Downloads")
-                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setContentTitle("Update available")
+                .setContentText("$appName ${release.tagName} is being downloaded")
+                .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setAutoCancel(true)
                 .build()
         )
