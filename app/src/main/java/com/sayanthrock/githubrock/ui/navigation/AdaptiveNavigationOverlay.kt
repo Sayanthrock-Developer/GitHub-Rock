@@ -6,9 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,18 +30,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sayanthrock.githubrock.data.settings.NavigationStyle
 
-private data class OverlayDestination(
-    val route: String,
-    val label: String,
-    val icon: ImageVector
-)
+private data class OverlayDestination(val route: String, val label: String, val icon: ImageVector)
 
 private val destinations = listOf(
     OverlayDestination("home", "Home", Icons.Default.Home),
@@ -60,10 +54,7 @@ fun AdaptiveNavigationOverlay(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+        modifier = modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 7.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         when (style) {
@@ -76,15 +67,8 @@ fun AdaptiveNavigationOverlay(
 }
 
 @Composable
-private fun ClassicNavigation(
-    selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit
-) {
-    NavigationBar(
-        modifier = Modifier.widthIn(max = 620.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 4.dp
-    ) {
+private fun ClassicNavigation(selectedRoute: String?, onDestinationSelected: (TopDestination) -> Unit) {
+    NavigationBar(modifier = Modifier.widthIn(max = 620.dp), containerColor = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 4.dp) {
         destinations.forEach { destination ->
             val selected = selectedRoute == destination.route
             NavigationBarItem(
@@ -105,10 +89,7 @@ private fun ClassicNavigation(
 }
 
 @Composable
-private fun FloatingNavigation(
-    selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit
-) {
+private fun FloatingNavigation(selectedRoute: String?, onDestinationSelected: (TopDestination) -> Unit) {
     val shape = RoundedCornerShape(30.dp)
     Surface(
         modifier = Modifier.widthIn(max = 620.dp),
@@ -118,35 +99,17 @@ private fun FloatingNavigation(
         shadowElevation = 16.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Row(
-            modifier = Modifier.padding(7.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(Modifier.padding(7.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             destinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
                 Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(if (selected) 24.dp else 18.dp))
-                        .clickable { onDestinationSelected(destination.toTopDestination()) },
+                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(if (selected) 24.dp else 18.dp)).clickable { onDestinationSelected(destination.toTopDestination()) },
                     shape = RoundedCornerShape(if (selected) 24.dp else 18.dp),
                     color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface.copy(alpha = .35f)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(Modifier.padding(horizontal = 7.dp, vertical = 10.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(destination.icon, null, Modifier.size(if (selected) 24.dp else 22.dp), tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            destination.label,
-                            modifier = Modifier.padding(start = 5.dp),
-                            maxLines = 1,
-                            fontSize = 11.sp,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text(destination.label, Modifier.padding(start = 5.dp), maxLines = 1, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -155,31 +118,14 @@ private fun FloatingNavigation(
 }
 
 @Composable
-private fun PillNavigation(
-    selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit
-) {
+private fun PillNavigation(selectedRoute: String?, onDestinationSelected: (TopDestination) -> Unit) {
     val shape = RoundedCornerShape(24.dp)
-    Surface(
-        modifier = Modifier.widthIn(max = 520.dp),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .97f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier.padding(5.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    Surface(modifier = Modifier.widthIn(max = 520.dp), shape = shape, color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .97f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Row(Modifier.padding(5.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
             destinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(19.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = .2f))
-                        .clickable { onDestinationSelected(destination.toTopDestination()) }
-                        .padding(horizontal = 8.dp, vertical = 9.dp),
+                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(19.dp)).background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = .2f)).clickable { onDestinationSelected(destination.toTopDestination()) }.padding(horizontal = 8.dp, vertical = 9.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -193,40 +139,19 @@ private fun PillNavigation(
 }
 
 @Composable
-private fun MinimalNavigation(
-    selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .widthIn(max = 560.dp)
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background.copy(alpha = .96f))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+private fun MinimalNavigation(selectedRoute: String?, onDestinationSelected: (TopDestination) -> Unit) {
+    Row(Modifier.widthIn(max = 560.dp).fillMaxWidth().background(MaterialTheme.colorScheme.background.copy(alpha = .96f)).border(1.dp, MaterialTheme.colorScheme.outlineVariant), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
         destinations.forEach { destination ->
             val selected = selectedRoute == destination.route
-            ColumnNavigationItem(destination, selected) {
-                onDestinationSelected(destination.toTopDestination())
-            }
+            ColumnNavigationItem(destination, selected) { onDestinationSelected(destination.toTopDestination()) }
         }
     }
 }
 
 @Composable
-private fun ColumnNavigationItem(
-    destination: OverlayDestination,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
+private fun RowScope.ColumnNavigationItem(destination: OverlayDestination, selected: Boolean, onClick: () -> Unit) {
     androidx.compose.foundation.layout.Column(
-        modifier = Modifier
-            .weight(1f)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
+        modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
