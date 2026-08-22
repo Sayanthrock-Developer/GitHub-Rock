@@ -63,15 +63,6 @@ GitHub Rock brings several GitHub workflows into one native Android experience, 
 
 The goal is simple: **keep your GitHub work moving, even when you are away from your computer.**
 
-## Platforms
-
-| Platform | Status | Scope |
-|---|---|---|
-| **Android** | Primary platform | Full native application |
-| **Windows** | Companion | Releases, documentation, and project resources |
-| **macOS** | Companion | Releases, documentation, and project resources |
-| **Linux** | Companion | Releases, documentation, and project resources |
-| **iOS / iPadOS** | Companion / future availability | Depends on signed releases and platform support |
 
 The **Android application is the primary full-featured client**. Companion builds should not be assumed to have feature parity with Android.
 
