@@ -124,126 +124,29 @@ private fun lightColors(accentColor: AccentColor) = accentColor.palette().let { 
 }
 
 private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
-    ThemeStyle.Clean -> Shapes(
-        extraSmall = RoundedCornerShape(6.dp),
-        small = RoundedCornerShape(9.dp),
-        medium = RoundedCornerShape(12.dp),
-        large = RoundedCornerShape(16.dp),
-        extraLarge = RoundedCornerShape(24.dp)
-    )
-    ThemeStyle.LiquidGlass -> Shapes(
-        extraSmall = RoundedCornerShape(12.dp),
-        small = RoundedCornerShape(16.dp),
-        medium = RoundedCornerShape(20.dp),
-        large = RoundedCornerShape(26.dp),
-        extraLarge = RoundedCornerShape(34.dp)
-    )
-    ThemeStyle.Studio -> Shapes(
-        extraSmall = RoundedCornerShape(4.dp),
-        small = RoundedCornerShape(7.dp),
-        medium = RoundedCornerShape(10.dp),
-        large = RoundedCornerShape(13.dp),
-        extraLarge = RoundedCornerShape(18.dp)
-    )
-    ThemeStyle.Midnight -> Shapes(
-        extraSmall = RoundedCornerShape(8.dp),
-        small = RoundedCornerShape(12.dp),
-        medium = RoundedCornerShape(16.dp),
-        large = RoundedCornerShape(20.dp),
-        extraLarge = RoundedCornerShape(28.dp)
-    )
-    ThemeStyle.Aurora -> Shapes(
-        extraSmall = RoundedCornerShape(10.dp),
-        small = RoundedCornerShape(14.dp),
-        medium = RoundedCornerShape(18.dp),
-        large = RoundedCornerShape(24.dp),
-        extraLarge = RoundedCornerShape(32.dp)
-    )
-    ThemeStyle.HighContrast -> Shapes(
-        extraSmall = RoundedCornerShape(2.dp),
-        small = RoundedCornerShape(4.dp),
-        medium = RoundedCornerShape(6.dp),
-        large = RoundedCornerShape(8.dp),
-        extraLarge = RoundedCornerShape(12.dp)
-    )
+    ThemeStyle.Clean -> Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(9.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(24.dp))
+    ThemeStyle.LiquidGlass -> Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(16.dp), medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(26.dp), extraLarge = RoundedCornerShape(34.dp))
+    ThemeStyle.Studio -> Shapes(extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(7.dp), medium = RoundedCornerShape(10.dp), large = RoundedCornerShape(13.dp), extraLarge = RoundedCornerShape(18.dp))
+    ThemeStyle.Midnight -> Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
+    ThemeStyle.Aurora -> Shapes(extraSmall = RoundedCornerShape(10.dp), small = RoundedCornerShape(14.dp), medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(32.dp))
+    ThemeStyle.HighContrast -> Shapes(extraSmall = RoundedCornerShape(2.dp), small = RoundedCornerShape(4.dp), medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp), extraLarge = RoundedCornerShape(12.dp))
 }
 
 private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): ColorScheme = when (style) {
     ThemeStyle.Clean -> this
-    ThemeStyle.LiquidGlass -> copy(
-        surface = surface.copy(alpha = .94f),
-        surfaceContainer = surfaceContainer.copy(alpha = .90f),
-        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f),
-        surfaceVariant = surfaceVariant.copy(alpha = .88f),
-        outlineVariant = primary.copy(alpha = .20f)
-    )
-    ThemeStyle.Studio -> copy(
-        background = if (darkTheme) Color(0xFF0B0E12) else Color(0xFFF6F7F9),
-        surface = if (darkTheme) Color(0xFF11161D) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF151B23) else Color(0xFFF0F2F5),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF1B222C) else Color(0xFFE7EBF0),
-        outlineVariant = if (darkTheme) Color(0xFF313A46) else Color(0xFFD4D9E0)
-    )
-    ThemeStyle.Midnight -> copy(
-        background = if (darkTheme) Color(0xFF070B14) else Color(0xFFF4F7FC),
-        surface = if (darkTheme) Color(0xFF0D1422) else Color(0xFFFFFFFF),
-        surfaceContainer = if (darkTheme) Color(0xFF121C2D) else Color(0xFFEAF0FA),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF19263A) else Color(0xFFDDE7F5),
-        outlineVariant = primary.copy(alpha = .28f)
-    )
-    ThemeStyle.Aurora -> copy(
-        background = if (darkTheme) Color(0xFF07110F) else Color(0xFFF4FBF8),
-        surface = if (darkTheme) Color(0xFF0D1A17) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF13231F) else Color(0xFFE8F6F0),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF1A2E29) else Color(0xFFD9EEE6),
-        outlineVariant = tertiary.copy(alpha = .30f)
-    )
-    ThemeStyle.HighContrast -> copy(
-        background = if (darkTheme) Color.Black else Color.White,
-        surface = if (darkTheme) Color(0xFF050505) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF0D0D0D) else Color(0xFFF4F4F4),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF161616) else Color(0xFFEAEAEA),
-        outline = if (darkTheme) Color.White else Color.Black,
-        outlineVariant = if (darkTheme) Color(0xFFBDBDBD) else Color(0xFF2B2B2B),
-        onBackground = if (darkTheme) Color.White else Color.Black,
-        onSurface = if (darkTheme) Color.White else Color.Black,
-        onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222)
-    )
+    ThemeStyle.LiquidGlass -> copy(surface = surface.copy(alpha = .94f), surfaceContainer = surfaceContainer.copy(alpha = .90f), surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f), surfaceVariant = surfaceVariant.copy(alpha = .88f), outlineVariant = primary.copy(alpha = .20f))
+    ThemeStyle.Studio -> copy(background = if (darkTheme) Color(0xFF0B0E12) else Color(0xFFF6F7F9), surface = if (darkTheme) Color(0xFF11161D) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF151B23) else Color(0xFFF0F2F5), surfaceContainerHigh = if (darkTheme) Color(0xFF1B222C) else Color(0xFFE7EBF0), outlineVariant = if (darkTheme) Color(0xFF313A46) else Color(0xFFD4D9E0))
+    ThemeStyle.Midnight -> copy(background = if (darkTheme) Color(0xFF070B14) else Color(0xFFF4F7FC), surface = if (darkTheme) Color(0xFF0D1422) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF121C2D) else Color(0xFFEAF0FA), surfaceContainerHigh = if (darkTheme) Color(0xFF19263A) else Color(0xFFDDE7F5), outlineVariant = primary.copy(alpha = .28f))
+    ThemeStyle.Aurora -> copy(background = if (darkTheme) Color(0xFF07110F) else Color(0xFFF4FBF8), surface = if (darkTheme) Color(0xFF0D1A17) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF13231F) else Color(0xFFE8F6F0), surfaceContainerHigh = if (darkTheme) Color(0xFF1A2E29) else Color(0xFFD9EEE6), outlineVariant = tertiary.copy(alpha = .30f))
+    ThemeStyle.HighContrast -> copy(background = if (darkTheme) Color.Black else Color.White, surface = if (darkTheme) Color(0xFF050505) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF0D0D0D) else Color(0xFFF4F4F4), surfaceContainerHigh = if (darkTheme) Color(0xFF161616) else Color(0xFFEAEAEA), outline = if (darkTheme) Color.White else Color.Black, outlineVariant = if (darkTheme) Color(0xFFBDBDBD) else Color(0xFF2B2B2B), onBackground = if (darkTheme) Color.White else Color.Black, onSurface = if (darkTheme) Color.White else Color.Black, onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222))
 }
 
 private fun codeColors(style: CodeColorStyle, darkTheme: Boolean): CodeColors = when (style) {
-    CodeColorStyle.Classic -> CodeColors(
-        keyword = if (darkTheme) Color(0xFF79B8FF) else Color(0xFF0550AE),
-        string = if (darkTheme) Color(0xFF85E89D) else Color(0xFF116329),
-        comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A),
-        number = if (darkTheme) Color(0xFFFFAB70) else Color(0xFF953800),
-        type = if (darkTheme) Color(0xFFBC8CFF) else Color(0xFF8250DF),
-        property = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E)
-    )
-    CodeColorStyle.Ocean -> CodeColors(
-        keyword = if (darkTheme) Color(0xFF58A6FF) else Color(0xFF0550AE),
-        string = if (darkTheme) Color(0xFF7EE787) else Color(0xFF116329),
-        comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A),
-        number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0A4A7A),
-        type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA),
-        property = if (darkTheme) Color(0xFF39C5CF) else Color(0xFF006D75)
-    )
-    CodeColorStyle.Sunset -> CodeColors(
-        keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFA40E26),
-        string = if (darkTheme) Color(0xFFF2CC60) else Color(0xFF6F5500),
-        comment = if (darkTheme) Color(0xFF9DA7B3) else Color(0xFF57606A),
-        number = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800),
-        type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA),
-        property = if (darkTheme) Color(0xFFFF8FB3) else Color(0xFF9E1B59)
-    )
-    CodeColorStyle.Monochrome -> CodeColors(
-        keyword = if (darkTheme) Color.White else Color.Black,
-        string = if (darkTheme) Color(0xFFD0D7DE) else Color(0xFF24292F),
-        comment = if (darkTheme) Color(0xFF8C959F) else Color(0xFF57606A),
-        number = if (darkTheme) Color(0xFFE6EDF3) else Color(0xFF24292F),
-        type = if (darkTheme) Color.White else Color.Black,
-        property = if (darkTheme) Color(0xFFC9D1D9) else Color(0xFF24292F)
-    )
+    CodeColorStyle.Classic -> CodeColors(keyword = if (darkTheme) Color(0xFF79B8FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF85E89D) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFFFAB70) else Color(0xFF953800), type = if (darkTheme) Color(0xFFBC8CFF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E))
+    CodeColorStyle.Ocean -> CodeColors(keyword = if (darkTheme) Color(0xFF58A6FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF7EE787) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0A4A7A), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFF39C5CF) else Color(0xFF006D75))
+    CodeColorStyle.Sunset -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFA40E26), string = if (darkTheme) Color(0xFFF2CC60) else Color(0xFF6F5500), comment = if (darkTheme) Color(0xFF9DA7B3) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFFFF8FB3) else Color(0xFF9E1B59))
+    CodeColorStyle.Monochrome -> CodeColors(keyword = if (darkTheme) Color.White else Color.Black, string = if (darkTheme) Color(0xFFD0D7DE) else Color(0xFF24292F), comment = if (darkTheme) Color(0xFF8C959F) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFE6EDF3) else Color(0xFF24292F), type = if (darkTheme) Color.White else Color.Black, property = if (darkTheme) Color(0xFFC9D1D9) else Color(0xFF24292F))
+    CodeColorStyle.GitHub -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E), string = if (darkTheme) Color(0xFFA5D6FF) else Color(0xFF0A3069), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF6E7781), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0550AE), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800))
 }
 
 private fun DisplaySize.scale(): Float = when (this) {
@@ -281,30 +184,17 @@ fun GitHubRockTheme(
     val baseDensity = LocalDensity.current
     val codeColors = codeColors(codeColorStyle, darkTheme)
     val colors = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme ->
-            dynamicDarkColorScheme(context)
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-            dynamicLightColorScheme(context)
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme -> dynamicDarkColorScheme(context)
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
         darkTheme -> darkColors(accentColor)
         else -> lightColors(accentColor)
     }.applyStyle(themeStyle, darkTheme).let { scheme ->
         if (darkTheme && trueBlack) {
-            scheme.copy(
-                background = Color.Black,
-                surface = Color(0xFF080A0D),
-                surfaceContainerLowest = Color.Black,
-                surfaceContainerLow = Color(0xFF06080A),
-                surfaceContainer = Color(0xFF0A0D10)
-            )
-        } else {
-            scheme
-        }
+            scheme.copy(background = Color.Black, surface = Color(0xFF080A0D), surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF06080A), surfaceContainer = Color(0xFF0A0D10))
+        } else scheme
     }
 
-    val scaledDensity = Density(
-        density = baseDensity.density * displaySize.scale(),
-        fontScale = baseDensity.fontScale * fontSize.scale()
-    )
+    val scaledDensity = Density(density = baseDensity.density * displaySize.scale(), fontScale = baseDensity.fontScale * fontSize.scale())
 
     CompositionLocalProvider(
         LocalRemoteImagesEnabled provides showImages,
@@ -315,11 +205,6 @@ fun GitHubRockTheme(
         LocalCodeColors provides codeColors,
         LocalDensity provides scaledDensity
     ) {
-        MaterialTheme(
-            colorScheme = colors,
-            typography = rockTypography(fontFamily, fontWeight),
-            shapes = shapesFor(themeStyle),
-            content = content
-        )
+        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)
     }
 }
