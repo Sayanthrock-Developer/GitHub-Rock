@@ -39,7 +39,8 @@ fun BuildDetailsScreen(
     runId: Long,
     onBack: () -> Unit,
     viewModel: BuildsViewModel = hiltViewModel(),
-    appearanceViewModel: AppearanceViewModel = hiltViewModel()
+    appearanceViewModel: AppearanceViewModel = hiltViewModel(),
+    downloadsViewModel: DownloadsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val preferences by appearanceViewModel.state.collectAsStateWithLifecycle()
@@ -74,30 +75,33 @@ fun BuildDetailsScreen(
             GlassCard { Text(if (state.loading) "Loading build details…" else "Build run details are unavailable.") }
         }
 
-        if (state.tracking) {
-            item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        }
+        if (state.tracking) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
 
-        item {
-            Text("Jobs & steps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
+        item { Text("Jobs & steps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.jobs.isEmpty()) {
             item { GlassCard { Text("No job details returned yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         } else {
             items(state.jobs, key = { it.id }) { job -> JobDetailsCard(job, preferences) }
         }
 
-        item {
-            Text("Artifacts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
+        item { Text("Artifacts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.artifacts.isEmpty()) {
             item { GlassCard { Text("No downloadable artifacts were published for this run.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         } else {
             items(state.artifacts, key = { it.id }) { artifact ->
-                OutlinedButton(onClick = { /* Downloads are handled by the Builds screen action flow. */ }, modifier = Modifier.fillMaxWidth(), enabled = !artifact.expired) {
+                OutlinedButton(
+                    onClick = {
+                        downloadsViewModel.enqueue(
+                            artifact.archiveDownloadUrl,
+                            "${repository.name}-${artifact.name}-${artifact.id}.zip"
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !artifact.expired
+                ) {
                     Icon(Icons.Default.Archive, null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (artifact.expired) "${artifact.name} expired" else artifact.name)
+                    Text(if (artifact.expired) "${artifact.name} expired" else "Download ${artifact.name}")
                 }
             }
         }
