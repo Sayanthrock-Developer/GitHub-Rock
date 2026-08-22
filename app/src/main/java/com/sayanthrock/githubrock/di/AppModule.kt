@@ -13,6 +13,7 @@ import com.sayanthrock.githubrock.core.security.KeystoreTokenStore
 import com.sayanthrock.githubrock.core.security.TokenStore
 import com.sayanthrock.githubrock.data.local.AppDatabase
 import com.sayanthrock.githubrock.data.local.DownloadDao
+import com.sayanthrock.githubrock.data.local.ManagedAppDao
 import com.sayanthrock.githubrock.data.local.RepositoryDao
 import dagger.Binds
 import dagger.Module
@@ -119,8 +120,9 @@ object AppModule {
         context,
         AppDatabase::class.java,
         "github-rock.db"
-    ).fallbackToDestructiveMigration().build()
+    ).addMigrations(AppDatabase.MIGRATION_1_2).build()
 
     @Provides fun repositoryDao(database: AppDatabase): RepositoryDao = database.repositoryDao()
     @Provides fun downloadDao(database: AppDatabase): DownloadDao = database.downloadDao()
+    @Provides fun managedAppDao(database: AppDatabase): ManagedAppDao = database.managedAppDao()
 }
