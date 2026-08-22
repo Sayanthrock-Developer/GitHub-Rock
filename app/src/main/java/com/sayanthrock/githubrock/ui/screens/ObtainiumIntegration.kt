@@ -72,7 +72,6 @@ internal fun isObtainiumInstalled(context: Context): Boolean = runCatching {
 
 @Composable
 internal fun ObtainiumUpdateCard(
-    repositoryUrl: String,
     obtainiumInstalled: Boolean,
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
