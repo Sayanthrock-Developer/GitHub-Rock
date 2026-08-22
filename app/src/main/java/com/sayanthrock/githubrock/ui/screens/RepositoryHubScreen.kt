@@ -76,8 +76,6 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
         }
     }
 
-    // Normal repository URLs are translated to native GitHub Rock sections.
-    // Only the explicit Open on GitHub action uses the external browser.
     val openUrl: (String) -> Unit = { url ->
         if (url.isNotBlank()) {
             nativeSection = when {
@@ -144,7 +142,14 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
             appState?.let { installedApp ->
                 RepositoryAppInstallPanel(
                     state = installedApp,
-                    onInstall = { installRepositoryApk(context, installedApp).onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open the package installer.") } } },
+                    onInstall = {
+                        installRepositoryApk(context, installedApp)
+                            .onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open the package installer.") } }
+                    },
+                    onEnableInstallPermission = {
+                        openRepositoryInstallPermissionSettings(context)
+                            .onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open installation settings.") } }
+                    },
                     onOpen = { openRepositoryApp(context, installedApp).onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open this application.") } } },
                     onUninstall = { confirmUninstall = true }
                 )
