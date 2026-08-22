@@ -1,224 +1,246 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Sayanthrock-Developer/GitHub-Rock/main/site/assets/icon-512.png" alt="GitHub Rock icon" width="128" height="128" />
+  <img src="https://raw.githubusercontent.com/Sayanthrock-Developer/GitHub-Rock/main/site/assets/icon-512.png" alt="GitHub Rock" width="120" height="120" />
 
   # GitHub Rock
 
-  **A native GitHub companion for Android — built with Kotlin and Jetpack Compose.**
+  **A premium, native GitHub companion for Android.**
 
-  Browse repositories, review issues and pull requests, monitor Actions, build Android projects, and manage GitHub work from your phone.
+  Browse, review, build, download, and manage your GitHub workflow — directly from your phone.
 
   <p>
-    <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases"><img src="https://img.shields.io/github/v/release/Sayanthrock-Developer/GitHub-Rock?style=flat-square&label=release" alt="Latest release" /></a>
-    <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/actions"><img src="https://img.shields.io/github/actions/workflow/status/Sayanthrock-Developer/GitHub-Rock/cross-platform-build.yml?style=flat-square&label=build" alt="Build status" /></a>
-    <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Sayanthrock-Developer/GitHub-Rock?style=flat-square" alt="License" /></a>
+    <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases"><img src="https://img.shields.io/github/v/release/Sayanthrock-Developer/GitHub-Rock?style=for-the-badge&label=Release" alt="Latest release" /></a>
+    <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/actions"><img src="https://img.shields.io/github/actions/workflow/status/Sayanthrock-Developer/GitHub-Rock/cross-platform-build.yml?style=for-the-badge&label=Build" alt="Build status" /></a>
+    <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Sayanthrock-Developer/GitHub-Rock?style=for-the-badge&label=License" alt="License" /></a>
   </p>
 </div>
 
 ---
 
-## Overview
+## ✦ Overview
 
-GitHub Rock is a mobile-first GitHub client designed to make common development and repository-management tasks fast and understandable on Android.
+**GitHub Rock** is a mobile-first GitHub client built to make serious repository and development workflows feel natural on Android.
 
-Instead of trying to reproduce every part of GitHub.com, the app focuses on the workflows that are useful when you are away from a desktop development environment.
+It brings repositories, profiles, Issues, Pull Requests, Actions, Android builds, releases, downloads, and APK inspection into one focused native experience.
 
-> **Current stage:** Functional alpha. Core features are implemented, while some areas are still being refined. Demo-only and planned functionality is clearly separated from working functionality.
+> **Project status:** Functional alpha. Core workflows are implemented and actively refined. The README clearly separates current functionality from areas still in development.
 
-## What you can do
+## ✦ Why GitHub Rock?
 
-### GitHub workflow
+GitHub is powerful, but mobile workflows can feel fragmented. GitHub Rock is designed around one principle:
 
-- Sign in to GitHub with **Device Flow** — no GitHub password is entered into the app.
-- Browse your repositories and search public repositories.
-- View repository files and code.
-- Read, react to, and reply to Issues and Pull Requests.
-- Review Pull Requests and merge them when permitted.
-- View GitHub Actions workflows and build progress.
-- Organize Issues with labels and assignees.
-- Download release assets such as APKs and desktop installers.
+**GitHub work should stay understandable, fast, and close at hand.**
 
-### Android development
+- Native Android experience
+- Clean, mobile-first navigation
+- Focused developer workflows
+- GitHub-powered data and actions
+- Built for real repository management
+- Designed for productive work away from a desktop
 
-GitHub Rock includes tools specifically for Android projects:
+## ✦ Core Features
 
-- Detect Android projects in repositories.
-- Generate GitHub Actions workflows for Android builds.
-- Create a Pull Request containing a generated workflow.
-- Trigger and monitor builds.
-- View workflow logs and build status.
-- Download generated APK artifacts directly to the device.
-- Inspect APK information such as permissions, signing information, and hashes.
+### GitHub
 
-### Modes and personalization
+- Sign in with GitHub **Device Flow**
+- Guest browsing for public repositories
+- Search and browse repositories
+- View repository files and code
+- Native repository details
+- Profiles and account information
+- Issues with labels and assignees
+- Pull Requests with review, comments, reactions, and merge support
+- GitHub Actions workflow monitoring
+- Releases and release assets
 
-- **Authenticated mode** — work with your GitHub account.
-- **Guest mode** — browse public repositories without signing in.
-- **Demo mode** — explore the interface using isolated sample data.
-- Light, dark, and true-black themes.
-- Quick access to commonly used official GitHub pages.
+### Android Development
 
-## GitHub Connect
+- Detect Android projects in repositories
+- Generate Android GitHub Actions workflows
+- Create Pull Requests containing generated workflows
+- Trigger and monitor builds
+- Inspect workflow status and logs
+- Download generated APK artifacts
+- Inspect APK permissions, signing information, and hashes
 
-GitHub Rock brings several GitHub workflows into one native Android experience, including modern pull-request workflows such as stacked pull requests when the relevant GitHub data and permissions are available.
+### Downloads & Releases
 
-The goal is simple: **keep your GitHub work moving, even when you are away from your computer.**
+- Download APKs and desktop installers from releases
+- Background download handling
+- Download progress tracking
+- APK inspection
+- Release-based application distribution workflows
 
+### Personalization
 
-The **Android application is the primary full-featured client**. Companion builds should not be assumed to have feature parity with Android.
+- Authenticated mode
+- Guest mode
+- Isolated demo mode
+- Light, dark, and true-black themes
+- Clean, adaptive Android UI
 
-## Screens and main areas
+## ✦ Main Areas
 
 | Area | Purpose |
-|---|---|
+|:---|:---|
 | **Home** | Account status, activity, metrics, and quick actions |
-| **Repositories** | Search and browse repositories |
-| **Repository** | Code, Issues, Pull Requests, Actions, and Releases |
-| **Pull Requests** | Review, comment, react, and merge |
+| **Repositories** | Search, browse, and open repositories |
+| **Repository** | Code, Issues, Pull Requests, Actions, Releases, and metadata |
+| **Profile** | GitHub profile, activity, and account settings |
 | **Issues** | Read, organize, label, and manage issues |
+| **Pull Requests** | Review, comment, react, and merge |
 | **Actions** | Monitor workflows, jobs, logs, and builds |
 | **Builds** | Generate and run Android build workflows |
 | **Downloads** | Track downloads and inspect APKs |
-| **Profile** | GitHub profile, activity, and settings |
 
-## Screenshots
+## ✦ Native-first Experience
 
-Screenshots will be added as stable UI captures become available. The README will use real application screenshots rather than placeholder mockups.
+GitHub Rock is designed as a **real GitHub client**, not a collection of website links.
 
-## Architecture
+Normal repository and profile workflows are intended to remain inside the application wherever the native experience supports them. External GitHub pages are reserved for actions that explicitly require opening GitHub.
 
-GitHub Rock uses a layered Android architecture built around Jetpack Compose:
+**Discover → Open → Understand → Act → Verify**
+
+## ✦ Architecture
+
+GitHub Rock uses a layered Android architecture centered around Jetpack Compose.
 
 ```text
-┌──────────────────────────────┐
-│        Compose UI            │
-├──────────────────────────────┤
-│         ViewModels           │
-├──────────────────────────────┤
-│        Repositories          │
-├──────────────────────────────┤
-│ API / Database / Preferences │
-└──────────────────────────────┘
+┌─────────────────────────────────┐
+│            Compose UI           │
+├─────────────────────────────────┤
+│           ViewModels            │
+├─────────────────────────────────┤
+│          Repositories           │
+├─────────────────────────────────┤
+│ API · Database · Preferences    │
+└─────────────────────────────────┘
 ```
 
-Main project areas:
+### Project structure
 
 ```text
 app/
 ├── core/       Shared utilities and infrastructure
-├── data/       GitHub API, authentication, database, and data sources
-├── ui/         Compose screens, navigation, components, and theme
-└── download/   Background download and artifact handling
+├── data/       GitHub API, authentication, database, data sources
+├── ui/         Compose screens, navigation, components, theme
+└── download/   Background downloads and artifact handling
 ```
 
-## Technology
+## ✦ Technology
 
 - **Kotlin**
 - **Jetpack Compose**
 - **Android SDK 36**
 - **JDK 17**
-- **Retrofit** for networking
-- **Room** for local data
-- **Android Keystore** for protected token storage
-- **GitHub REST APIs** for GitHub data and actions
-- **GitHub Actions** for build automation
+- **Retrofit**
+- **Room**
+- **Android Keystore**
+- **GitHub REST APIs**
+- **GitHub Actions**
 
-## Build locally
+## ✦ Build Locally
 
 ### Requirements
 
 - Android Studio
 - JDK 17
 - Android SDK 36
-- A configured Android SDK path in `local.properties`
+- Android SDK path configured in `local.properties`
 
-### Build the debug APK
+### Debug APK
 
 ```bash
-gradle wrapper --gradle-version 8.13
 ./gradlew assembleDebug
 ```
 
-The generated APK is located at:
+The APK is generated at:
 
 ```text
 app/build/outputs/apk/debug/
 ```
 
-### Run unit tests
+### Unit tests
 
 ```bash
 ./gradlew testDebugUnitTest
 ```
 
-## GitHub authentication
+## ✦ Authentication
 
-GitHub Rock uses the **OAuth Device Flow** so the application does not need to collect a GitHub password.
+GitHub Rock uses **OAuth Device Flow**, so the application does not collect a GitHub password.
 
 For local development:
 
 1. Open **GitHub → Settings → Developer settings → OAuth Apps**.
 2. Create or select an OAuth application for development.
-3. Configure the application according to the authentication implementation in this repository.
+3. Configure it according to the authentication implementation in this repository.
 4. Copy `local.properties.example` to `local.properties`.
 5. Add your local Android SDK configuration.
 
-> **Security:** Never add a GitHub Client Secret, personal access token, or other private credential to the Android source code or commit it to Git.
+> **Security:** Never commit GitHub Client Secrets, personal access tokens, private credentials, or local configuration.
 
-## Security
+## ✦ Security
 
-GitHub Rock is designed with several security protections:
+- GitHub passwords are never requested by the app.
+- OAuth tokens use Android Keystore-backed protected storage.
+- Client Secrets are not embedded in the Android application.
+- Demo data remains isolated from authenticated account data.
+- APK verification can use configured signing certificate information.
 
-- No GitHub passwords are requested by the app.
-- OAuth tokens are protected using Android Keystore-backed storage.
-- The application does not require a Client Secret to be embedded in the APK.
-- Demo data is isolated from authenticated account data.
-- Release APK verification can use the project's configured signing certificate information.
+Security reports and responsible disclosure: [SECURITY.md](SECURITY.md)
 
-For security reports and responsible disclosure, see [SECURITY.md](SECURITY.md).
-
-## Project status
+## ✦ Project Status
 
 ### Working
 
-- GitHub authentication and guest/demo modes
+- GitHub authentication
+- Guest and demo modes
 - Repository browsing and search
 - Issues and Pull Requests
-- GitHub Actions workflow viewing and monitoring
+- GitHub Actions monitoring
 - Android build workflow generation
 - Background downloads
 - APK inspection
 - Theme system
 
-### In development
+### In Development
 
-- More complete code browsing and editing capabilities
+- More complete code browsing and editing
 - Richer Pull Request diff experience
 - Additional accessibility improvements
-- More GitHub API coverage and pagination improvements
+- Broader GitHub API coverage
+- Further pagination improvements
 
-Features may change during the alpha stage. Check the repository, Releases, and project documentation for the current implementation status.
+Features may evolve during the alpha stage. See [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases), Issues, and Pull Requests for the latest project state.
 
-## Contributing
+## ✦ Contributing
 
-Contributions, bug reports, feature ideas, and UI/UX feedback are welcome.
+Contributions, bug reports, feature requests, and UI/UX feedback are welcome.
 
 Before opening a Pull Request:
 
 1. Check existing Issues and Pull Requests.
-2. Keep changes focused and easy to review.
+2. Keep the change focused and reviewable.
 3. Run the relevant tests locally.
 4. Explain what changed and why.
-5. Avoid committing secrets, credentials, generated local configuration, or private data.
+5. Never commit secrets, credentials, generated local configuration, or private data.
 
-## License
+## ✦ License
 
-Copyright © 2026 Sayanth Rock.
+Copyright © 2026 **Sayanth Rock**.
 
 GitHub Rock is licensed under the **Apache License 2.0**. See [LICENSE](LICENSE) for the complete license text.
 
 ---
 
 <div align="center">
-  <strong>GitHub Rock</strong><br />
-  Built for developers who want GitHub with them everywhere.
+  <strong>GitHub Rock</strong>
+  <br />
+  <sub>GitHub, refined for mobile developers.</sub>
+  <br /><br />
+  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a>
+  ·
+  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">Issues</a>
+  ·
+  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls">Pull Requests</a>
 </div>
