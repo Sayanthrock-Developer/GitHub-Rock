@@ -12,6 +12,7 @@ import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
+import com.sayanthrock.githubrock.data.settings.NavigationStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +34,7 @@ class AppearanceViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
+    fun setNavigationStyle(style: NavigationStyle) = viewModelScope.launch { preferences.setNavigationStyle(style) }
     fun setAccentColor(color: AccentColor) = viewModelScope.launch { preferences.setAccentColor(color) }
     fun setDisplaySize(size: DisplaySize) = viewModelScope.launch { preferences.setDisplaySize(size) }
     fun setFontSize(size: FontSize) = viewModelScope.launch { preferences.setFontSize(size) }
