@@ -64,7 +64,7 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
-/** Premium repository preview without a separate workspace entry. */
+/** Premium repository preview with a complete, vertically scrollable README. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositoryShowcaseScreen(
@@ -461,7 +461,7 @@ private fun RepositoryTopics(topics: List<String>) {
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            topics.take(12).forEach { topic ->
+            topics.forEach { topic ->
                 Surface(
                     shape = RoundedCornerShape(999.dp),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = .11f)
@@ -485,15 +485,20 @@ private fun ReadmeHeader() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(48.dp)
             ) {
-                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                Icon(
+                    Icons.AutoMirrored.Filled.MenuBook,
+                    contentDescription = null,
+                    modifier = Modifier.padding(12.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
-            androidx.compose.foundation.layout.Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(16.dp))
             Column {
                 Text(
                     "README.md",
@@ -512,7 +517,7 @@ private fun ReadmeHeader() {
             color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
         ) {
             Text(
-                "Rendered",
+                "Complete",
                 modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelMedium,
@@ -527,15 +532,10 @@ private fun RepositoryReadmeCard(markdown: String) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            blocks.take(MAX_README_BLOCKS).forEach { block -> ReadmeBlock(block) }
-            if (blocks.size > MAX_README_BLOCKS) {
-                HorizontalDivider()
-                Text(
-                    "README preview shortened for smooth performance. Open the repository on GitHub to read the complete document.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            // Render every parsed README block. The parent LazyColumn provides the
+            // single vertical scroll surface, so long project documentation remains
+            // fully reachable instead of being silently truncated to a preview.
+            blocks.forEach { block -> ReadmeBlock(block) }
         }
     }
 }
@@ -641,5 +641,3 @@ private fun compactCount(value: Int): String = when {
     }
     else -> value.toString()
 }
-
-private const val MAX_README_BLOCKS = 20
