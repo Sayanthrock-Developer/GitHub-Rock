@@ -58,6 +58,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
     LaunchedEffect(repository?.id) { viewModel.start(repository) }
     val displayedRepository = state.repository ?: repository
     val appState = rememberRepositoryAppPackageState(downloads, state.releases)
+    val obtainiumInstalled = isObtainiumInstalled(context)
 
     when (workspacePage) {
         "manager" -> {
@@ -148,6 +149,24 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                     onOpen = { openRepositoryApp(context, installedApp).onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open this application.") } } },
                     onUninstall = { confirmUninstall = true }
                 )
+            }
+            if (repositoryReady) {
+                displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { repositoryUrl ->
+                    ObtainiumUpdateCard(
+                        obtainiumInstalled = obtainiumInstalled,
+                        onOpen = {
+                            openInObtainium(context, repositoryUrl)
+                                .onSuccess { openedInObtainium ->
+                                    if (!openedInObtainium) {
+                                        scope.launch { snackbar.showSnackbar("Obtainium is not installed; opened GitHub Store instead") }
+                                    }
+                                }
+                                .onFailure { problem ->
+                                    scope.launch { snackbar.showSnackbar(problem.message ?: "Unable to open Obtainium") }
+                                }
+                        }
+                    )
+                }
             }
         }
     }
