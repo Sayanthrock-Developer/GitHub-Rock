@@ -583,6 +583,7 @@ private val CodeColorStyle.displayName: String
         CodeColorStyle.Ocean -> "Ocean"
         CodeColorStyle.Sunset -> "Sunset"
         CodeColorStyle.Monochrome -> "Mono"
+        CodeColorStyle.GitHub -> "GitHub"
     }
 
 private val AccentColor.previewColor: Color
