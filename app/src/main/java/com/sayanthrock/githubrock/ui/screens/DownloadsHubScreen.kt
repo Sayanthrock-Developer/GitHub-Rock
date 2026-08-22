@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,10 +40,9 @@ fun DownloadsHubScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         when (selectedTab) {
             "updates" -> ManagedUpdatesScreen(
                 viewModel = viewModel,
-                onOpenDownloads = { selectedTab = "downloads" },
-                modifier = Modifier.weight(1f)
+                onOpenDownloads = { selectedTab = "downloads" }
             )
-            else -> DownloadsRedesignScreen(viewModel = viewModel, modifier = Modifier.weight(1f))
+            else -> DownloadsRedesignScreen(viewModel = viewModel)
         }
     }
 }
