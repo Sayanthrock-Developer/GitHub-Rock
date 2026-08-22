@@ -7,4 +7,4 @@ import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 internal fun <T> StateFlow<T>.collectAsStateWithLifecycle(): State<T> =
-    lifecycleCollectAsStateWithLifecycle()
+    this.lifecycleCollectAsStateWithLifecycle()
