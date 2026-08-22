@@ -45,19 +45,24 @@ class AutomaticUpdateWorker @AssistedInject constructor(
                 val releases = repository.releases(app.repositoryOwner, app.repositoryName)
                 val latest = releases.firstOrNull(::isEligibleRelease)
                 if (latest == null) {
-                    managedAppDao.recordCheck(app.packageName, null, now, null)
+                    managedAppDao.recordCheck(app.packageName, app.trackedReleaseTag, now, null)
                     return@forEach
                 }
 
-                val updateAvailable = app.trackedReleaseTag != null &&
-                    app.trackedReleaseTag != latest.tagName
+                // A null tracked tag establishes the current release as the baseline.
+                if (app.trackedReleaseTag == null) {
+                    managedAppDao.recordCheck(app.packageName, latest.tagName, now, null)
+                    return@forEach
+                }
+
+                val updateAvailable = app.trackedReleaseTag != latest.tagName
                 if (!updateAvailable) {
                     managedAppDao.recordCheck(app.packageName, latest.tagName, now, null)
                     return@forEach
                 }
 
                 val asset = selectApk(latest) ?: run {
-                    managedAppDao.recordCheck(app.packageName, latest.tagName, now, null)
+                    managedAppDao.recordCheck(app.packageName, app.trackedReleaseTag, now, null)
                     return@forEach
                 }
 
@@ -68,7 +73,20 @@ class AutomaticUpdateWorker @AssistedInject constructor(
                         download.releaseTag == latest.tagName
                 }
                 if (existing != null) {
-                    managedAppDao.recordCheck(app.packageName, latest.tagName, now, now)
+                    // Keep the installed release as the tracked baseline until the user
+                    // actually installs the downloaded APK.
+                    managedAppDao.recordCheck(app.packageName, app.trackedReleaseTag, now, now)
+                    return@forEach
+                }
+
+                val completed = downloadDao.observeAllOnce().firstOrNull { download ->
+                    download.status == "completed" &&
+                        download.repositoryOwner == app.repositoryOwner &&
+                        download.repositoryName == app.repositoryName &&
+                        download.releaseTag == latest.tagName
+                }
+                if (completed != null) {
+                    managedAppDao.recordCheck(app.packageName, app.trackedReleaseTag, now, now)
                     return@forEach
                 }
 
@@ -83,7 +101,7 @@ class AutomaticUpdateWorker @AssistedInject constructor(
                 )
                 val id = downloadDao.upsert(download)
                 enqueueDownload(download.copy(id = id))
-                managedAppDao.recordCheck(app.packageName, latest.tagName, now, now)
+                managedAppDao.recordCheck(app.packageName, app.trackedReleaseTag, now, now)
                 notifyUpdateQueued(app.appName, latest)
             } catch (_: Exception) {
                 hadTransientFailure = true
