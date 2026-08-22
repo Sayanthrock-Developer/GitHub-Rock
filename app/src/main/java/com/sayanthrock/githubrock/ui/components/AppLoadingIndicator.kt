@@ -5,10 +5,15 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -107,6 +112,56 @@ fun AppLoadingIndicator(
                     PulseDot(compact = compact, scale = pulse, alpha = alpha)
                 }
             }
+
+            LoadingStyle.Skeleton -> {
+                SkeletonLoader(compact = compact, reduceMotion = reduceMotion)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkeletonLoader(compact: Boolean, reduceMotion: Boolean) {
+    if (reduceMotion) {
+        SkeletonBars(shimmerOffset = 0f, compact = compact)
+        return
+    }
+
+    val transition = rememberInfiniteTransition(label = "app-loading-skeleton")
+    val offset by transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1100),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "app-loading-skeleton-offset"
+    )
+    SkeletonBars(shimmerOffset = offset, compact = compact)
+}
+
+@Composable
+private fun SkeletonBars(shimmerOffset: Float, compact: Boolean) {
+    val base = MaterialTheme.colorScheme.surfaceVariant
+    val highlight = MaterialTheme.colorScheme.surfaceContainerHighest
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = if (compact) 12.dp else 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(3) { index ->
+            val phase = ((shimmerOffset + index * .42f).coerceIn(0f, 1f))
+            val alpha = .72f + (.28f * phase)
+            Box(
+                modifier = Modifier
+                    .weight(if (index == 0) 1.3f else 1f)
+                    .height(if (compact) 8.dp else 10.dp)
+                    .graphicsLayer { this.alpha = alpha }
+                    .background(
+                        color = if (phase > .35f && phase < .8f) highlight else base,
+                        shape = RoundedCornerShape(50)
+                    )
+            )
         }
     }
 }
