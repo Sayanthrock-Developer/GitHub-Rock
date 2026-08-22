@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
 import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
@@ -28,7 +29,6 @@ import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.AdaptiveNavigationOverlay
 import com.sayanthrock.githubrock.ui.navigation.MainNavigation
-import com.sayanthrock.githubrock.ui.navigation.TopDestination
 import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
@@ -125,9 +125,10 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
             maxWidth < 600.dp -> 80.dp
             else -> 20.dp
         }
-        val showAdaptiveNavigation = state.mode != null &&
-            maxWidth < 600.dp &&
-            TopDestination.values().any { it.route == currentEntry?.destination?.route }
+        val currentRoute = currentEntry?.destination?.route
+        val showAdaptiveNavigation = state.mode != null && maxWidth < 600.dp && currentRoute in setOf(
+            "home", "repositories", "builds", "downloads", "profile"
+        )
 
         if (state.mode == null) {
             LoginScreen(
@@ -157,7 +158,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
 
         if (showAdaptiveNavigation) {
             AdaptiveNavigationOverlay(
-                selectedRoute = currentEntry?.destination?.route,
+                selectedRoute = currentRoute,
                 style = appearance.navigationStyle,
                 onDestinationSelected = { destination ->
                     navController.navigate(destination.route) {
