@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.sayanthrock.githubrock.build.BuildNotificationManager
+import com.sayanthrock.githubrock.update.AutomaticUpdateScheduler
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -15,6 +16,7 @@ class GitHubRockApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         buildNotifications.createChannel()
+        AutomaticUpdateScheduler.schedule(this)
     }
 
     override val workManagerConfiguration: Configuration
