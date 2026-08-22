@@ -63,14 +63,9 @@ import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
-import com.sayanthrock.githubrock.ui.components.StandardSettingsGroup
-import com.sayanthrock.githubrock.ui.components.StandardSettingsRow
 
 @Composable
-fun AppearanceScreen(
-    onBack: () -> Unit,
-    viewModel: AppearanceViewModel = hiltViewModel()
-) {
+fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     AppearanceContent(
         state = state,
@@ -121,9 +116,7 @@ fun AppearanceContent(
         topBar = {
             TopAppBar(
                 title = { Text("Appearance") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
-                },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
@@ -135,29 +128,13 @@ fun AppearanceContent(
         ) {
             item { StandardScreenHeader("Make GitHub Rock yours", "Theme, color, navigation, typography and motion all follow one visual system.") }
             item { StandardSectionHeader("Theme") }
-            item {
-                ChoiceCard("Theme mode", "System follows Android automatically; Light and Dark stay fixed.", Icons.Default.DarkMode,
-                    ThemeMode.entries.map { it to label(it.name) }, state.themeMode, onThemeMode)
-            }
-            item {
-                ChoiceCard("Design style", "Controls surfaces, shapes and the overall visual personality.", Icons.Default.Palette,
-                    ThemeStyle.entries.map { it to label(it.name) }, state.themeStyle, onThemeStyle)
-            }
-            item {
-                ChoiceCard("Navigation style", "Four clean styles for the five main destinations.", Icons.Default.SettingsSuggest,
-                    NavigationStyle.entries.map { it to label(it.name) }, state.navigationStyle, onNavigationStyle)
-            }
-            item {
-                ChoiceCard("Accent color", if (state.dynamicColor) "System dynamic color is active." else "Used consistently across navigation, controls and highlights.", Icons.Default.Palette,
-                    AccentColor.entries.map { it to label(it.name) }, state.accentColor, onAccentColor, enabled = !state.dynamicColor)
-            }
-            item {
-                StandardSettingsGroup {
-                    StandardSettingsRow("Dynamic / system color", "Use Android's wallpaper-derived color palette.", state.dynamicColor, onDynamicColor)
-                    StandardSettingsRow("True black", "Use OLED-friendly black surfaces in dark mode.", state.trueBlack, onTrueBlack)
-                    StandardSettingsRow("Show remote images", "Allow profile and repository artwork to load.", state.showImages, onShowImages)
-                }
-            }
+            item { ChoiceCard("Theme mode", "System follows Android automatically; Light and Dark stay fixed.", Icons.Default.DarkMode, ThemeMode.entries.map { it to label(it.name) }, state.themeMode, onThemeMode) }
+            item { ChoiceCard("Design style", "Controls surfaces, shapes and the overall visual personality.", Icons.Default.Palette, ThemeStyle.entries.map { it to label(it.name) }, state.themeStyle, onThemeStyle) }
+            item { ChoiceCard("Navigation style", "Four clean styles for the five main destinations.", Icons.Default.SettingsSuggest, NavigationStyle.entries.map { it to label(it.name) }, state.navigationStyle, onNavigationStyle) }
+            item { ChoiceCard("Accent color", if (state.dynamicColor) "System dynamic color is active." else "Used consistently across navigation, controls and highlights.", Icons.Default.Palette, AccentColor.entries.map { it to label(it.name) }, state.accentColor, onAccentColor, enabled = !state.dynamicColor) }
+            item { ChoiceCard("Dynamic / system color", "Use Android's wallpaper-derived color palette.", Icons.Default.Palette, listOf(false to "Off", true to "On"), state.dynamicColor, onDynamicColor) }
+            item { ChoiceCard("True black", "Use OLED-friendly black surfaces in dark mode.", Icons.Default.DarkMode, listOf(false to "Off", true to "On"), state.trueBlack, onTrueBlack) }
+            item { ChoiceCard("Remote images", "Allow profile and repository artwork to load.", Icons.Default.Palette, listOf(false to "Off", true to "On"), state.showImages, onShowImages) }
             item { StandardSectionHeader("Display & typography") }
             item { ChoiceCard("Display size", "Adjust interface density and spacing.", Icons.Default.FormatSize, DisplaySize.entries.map { it to label(it.name) }, state.displaySize, onDisplaySize) }
             item { ChoiceCard("Font family", "Choose the reading personality of the interface.", Icons.Default.FormatSize, AppFontFamily.entries.map { it to label(it.name) }, state.fontFamily, onFontFamily) }
