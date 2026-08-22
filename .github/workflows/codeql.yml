@@ -37,8 +37,19 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
 
       - name: Make Gradle executable
         run: chmod +x ./gradlew
@@ -50,7 +61,7 @@ jobs:
           build-mode: manual
 
       - name: Build Android project for CodeQL
-        run: ./gradlew :app:compileDebugKotlin :app:compileDebugJavaWithJavac --stacktrace --no-daemon
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
