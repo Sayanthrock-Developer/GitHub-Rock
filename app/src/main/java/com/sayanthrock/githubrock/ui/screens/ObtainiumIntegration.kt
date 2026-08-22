@@ -21,17 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 private const val OBTAINIUM_SCHEME = "obtainium"
 private const val OBTAINIUM_ADD_PATH = "add"
 
-/**
- * Public GitHub Store fallback page supplied by GitHub Rock for repositories managed with Obtainium.
- */
+/** Public GitHub Store fallback page supplied by GitHub Rock for Obtainium-managed repositories. */
 internal fun obtainiumStoreUrl(repositoryUrl: String): String =
-    "https://github-store.org/app?repo=${URLEncoder.encode(repositoryUrl.removePrefix("https://github.com/"), StandardCharsets.UTF_8.toString())}"
+    "https://github-store.org/app?repo=${repositoryUrl.removePrefix("https://github.com/")}"
 
 internal fun openInObtainium(
     context: Context,
