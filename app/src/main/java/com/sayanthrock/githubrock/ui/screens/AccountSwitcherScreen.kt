@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,7 +42,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +57,6 @@ import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
 import com.sayanthrock.githubrock.core.model.GitHubOrganizationAccount
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.security.StoredAccount
-import com.sayanthrock.githubrock.core.security.StoredTokens
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.auth.DeviceFlowAuthRepository
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
@@ -111,23 +107,23 @@ class AccountSwitcherViewModel @Inject constructor(
         job?.cancel()
         job = viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
-            runCatchingPreservingCancellation {
-                nativeProfileRepository.organizations()
-            }.onSuccess { organizations ->
-                _state.value = AccountSwitcherUiState(
-                    accounts = authRepository.accounts,
-                    organizations = organizations,
-                    activeAccountId = authRepository.activeAccountId,
-                    activeOrganization = authRepository.activeOrganization
-                )
-            }.onFailure { error ->
-                _state.value = AccountSwitcherUiState(
-                    accounts = authRepository.accounts,
-                    activeAccountId = authRepository.activeAccountId,
-                    activeOrganization = authRepository.activeOrganization,
-                    error = error.accountMessage()
-                )
-            }
+            runCatchingPreservingCancellation { nativeProfileRepository.organizations() }
+                .onSuccess { organizations ->
+                    _state.value = AccountSwitcherUiState(
+                        accounts = authRepository.accounts,
+                        organizations = organizations,
+                        activeAccountId = authRepository.activeAccountId,
+                        activeOrganization = authRepository.activeOrganization
+                    )
+                }
+                .onFailure { error ->
+                    _state.value = AccountSwitcherUiState(
+                        accounts = authRepository.accounts,
+                        activeAccountId = authRepository.activeAccountId,
+                        activeOrganization = authRepository.activeOrganization,
+                        error = error.accountMessage()
+                    )
+                }
         }
     }
 
@@ -136,13 +132,7 @@ class AccountSwitcherViewModel @Inject constructor(
             _state.update { it.copy(error = "Unable to switch to that account.") }
             return
         }
-        _state.update {
-            it.copy(
-                activeAccountId = accountId,
-                activeOrganization = null,
-                accounts = authRepository.accounts
-            )
-        }
+        _state.update { it.copy(activeAccountId = accountId, activeOrganization = null, accounts = authRepository.accounts) }
         onChanged()
     }
 
@@ -235,7 +225,6 @@ fun AccountSwitcherScreen(
     viewModel: AccountSwitcherViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var otherLogin by rememberSaveable { mutableStateOf("") }
     var accountToRemove by remember { mutableStateOf<StoredAccount?>(null) }
     val connected = mode == AppMode.Connected
 
@@ -249,7 +238,7 @@ fun AccountSwitcherScreen(
                     Column {
                         Text("Accounts & organizations", fontWeight = FontWeight.Bold)
                         Text(
-                            "Switch users, accounts and organization context",
+                            "Manage signed-in accounts and organization context",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -362,7 +351,12 @@ fun AccountSwitcherScreen(
                     }
                 }
                 state.organizations.isEmpty() -> item {
-                    GlassCard { Text("No organization memberships were returned for this account.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    GlassCard {
+                        Text(
+                            "No organization memberships were returned for this account.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 else -> items(state.organizations, key = { it.id }) { organization ->
                     OrganizationRow(
@@ -380,34 +374,6 @@ fun AccountSwitcherScreen(
                         Icon(Icons.Default.Login, null)
                         Spacer(Modifier.width(8.dp))
                         Text("Log out of all accounts")
-                    }
-                }
-            }
-
-            item {
-                GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.PersonSearch, null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.width(10.dp))
-                            Text("Open another public account", fontWeight = FontWeight.Bold)
-                        }
-                        OutlinedTextField(
-                            value = otherLogin,
-                            onValueChange = { otherLogin = it.removePrefix("@").trimStart() },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            label = { Text("GitHub username or organization") }
-                        )
-                        Button(
-                            onClick = { onOpenProfile(otherLogin.removePrefix("@").trim()) },
-                            enabled = otherLogin.isNotBlank(),
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
-                        ) {
-                            Icon(Icons.Default.PersonSearch, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Open public profile")
-                        }
                     }
                 }
             }
@@ -471,11 +437,8 @@ private fun AccountRow(account: StoredAccount, active: Boolean, onSwitch: () -> 
                 Text(account.name ?: account.login ?: "GitHub account", fontWeight = FontWeight.Bold)
                 Text("@${account.login ?: "unknown"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (active) {
-                Icon(Icons.Default.CheckCircle, "Active", tint = MaterialTheme.colorScheme.primary)
-            } else {
-                TextButton(onClick = onSwitch) { Text("Switch") }
-            }
+            if (active) Icon(Icons.Default.CheckCircle, "Active", tint = MaterialTheme.colorScheme.primary)
+            else TextButton(onClick = onSwitch) { Text("Switch") }
             IconButton(onClick = onRemove) { Icon(Icons.Default.DeleteOutline, "Remove account") }
         }
     }
