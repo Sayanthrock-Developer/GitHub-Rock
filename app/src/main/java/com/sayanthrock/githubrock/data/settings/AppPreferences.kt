@@ -18,6 +18,7 @@ private val Context.dataStore by preferencesDataStore(name = "github_rock_prefer
 
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
+enum class NavigationStyle { Classic, Floating, Pill, Minimal; companion object { fun fromStored(value: String?): NavigationStyle = entries.firstOrNull { it.name == value } ?: Floating } }
 enum class AccentColor { Cyan, Blue, Violet, Emerald, Rose, Coral, Amber, Orange; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan } }
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
 enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }
@@ -30,6 +31,7 @@ enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
+    val navigationStyle: NavigationStyle = NavigationStyle.Floating,
     val accentColor: AccentColor = AccentColor.Cyan,
     val displaySize: DisplaySize = DisplaySize.Standard,
     val fontSize: FontSize = FontSize.Default,
@@ -57,6 +59,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         AppearancePreferences(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
             themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
+            navigationStyle = NavigationStyle.fromStored(preferences[NAVIGATION_STYLE]),
             accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
             displaySize = DisplaySize.fromStored(preferences[DISPLAY_SIZE]),
             fontSize = FontSize.fromStored(preferences[FONT_SIZE]),
@@ -77,6 +80,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
+    suspend fun setNavigationStyle(style: NavigationStyle) = context.dataStore.edit { it[NAVIGATION_STYLE] = style.name }
     suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name }
     suspend fun setDisplaySize(size: DisplaySize) = context.dataStore.edit { it[DISPLAY_SIZE] = size.name }
     suspend fun setFontSize(size: FontSize) = context.dataStore.edit { it[FONT_SIZE] = size.name }
@@ -100,7 +104,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     }
     suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(NAVIGATION_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
         preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE)
         preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
     }
@@ -122,6 +126,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         const val MAX_SEARCH_HISTORY = 8
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val THEME_STYLE = stringPreferencesKey("theme_style")
+        val NAVIGATION_STYLE = stringPreferencesKey("navigation_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val DISPLAY_SIZE = stringPreferencesKey("display_size")
         val FONT_SIZE = stringPreferencesKey("font_size")
