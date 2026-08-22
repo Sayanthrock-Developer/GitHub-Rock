@@ -24,6 +24,14 @@ The project is designed around one principle:
 
 > **Unlock the complete developer workflow without forcing users to leave the app for normal GitHub tasks.**
 
+## ✦ Complete Documentation
+
+This README is the central project guide. It documents the product areas, supported workflows, architecture, build requirements, security expectations, troubleshooting path, and project status.
+
+The goal is simple: **everything that is part of GitHub Rock should be discoverable, understandable, and actionable from the project documentation.**
+
+When a feature is unavailable because of GitHub permissions, API limits, Android restrictions, repository rules, or an unfinished implementation, it should be reported honestly rather than hidden behind a fake or placeholder flow.
+
 ## ✦ All Features
 
 ### 🔐 Account & Authentication
@@ -341,6 +349,64 @@ app/build/outputs/apk/debug/
 ./gradlew testDebugUnitTest
 ```
 
+## ✦ Troubleshooting & Problem Solving
+
+Use this section as the first diagnostic path when something does not work. Do not bypass a failure by hiding the error or replacing a real workflow with mock data.
+
+### Build or Gradle failure
+
+1. Confirm JDK 17 is being used.
+2. Confirm Android SDK 36 is installed.
+3. Confirm `local.properties` points to a valid Android SDK.
+4. Run `./gradlew testDebugUnitTest`.
+5. Run `./gradlew assembleDebug`.
+6. Fix the first actionable compiler or dependency error before addressing downstream failures.
+
+### GitHub Actions failure
+
+1. Open the failed workflow run from **Actions**.
+2. Identify the first failed job.
+3. Inspect the failed step and its logs.
+4. Fix the underlying repository code or workflow configuration.
+5. Re-run only after the cause has been corrected.
+6. Verify the complete workflow, not only the previously failed step.
+
+### Authentication failure
+
+- Check the OAuth configuration used by the build.
+- Confirm the device can reach GitHub.
+- Verify that the requested GitHub permissions are available.
+- Sign out and retry if the stored session is invalid.
+- Never expose or commit tokens or secrets while debugging.
+
+### Download or APK installation failure
+
+- Confirm a real release asset or workflow artifact exists.
+- Verify that the selected asset is compatible with Android.
+- Retry a failed download before starting another one.
+- Check the downloaded file and APK metadata before installation.
+- If installation is blocked, verify Android's package-installation permissions and the device's security restrictions.
+
+### Missing feature or broken navigation
+
+- Confirm the route exists and has a real destination screen.
+- Verify loading, success, empty, and error states.
+- Check that the action uses live GitHub data where required.
+- Avoid external redirects for normal native workflows.
+- If GitHub permissions prevent an action, show a clear explanation instead of pretending it succeeded.
+
+### API or permission errors
+
+GitHub may reject requests because of authentication state, missing permissions, rate limits, repository visibility, repository rules, or API availability. The app should surface the real reason and provide a useful recovery action whenever possible.
+
+## ✦ Verification Standard
+
+A change is not considered complete merely because the code compiles. The expected verification flow is:
+
+**Audit → Fix → Build/Test → Verify → Commit → CI → Next issue**
+
+For user-facing workflows, verification should cover the complete path from navigation to data loading, action execution, result handling, and error recovery.
+
 ## ✦ Authentication & Security
 
 GitHub Rock uses **OAuth Device Flow** and does not request a GitHub password.
@@ -365,7 +431,9 @@ Security reports and responsible disclosure: [SECURITY.md](SECURITY.md)
 
 ## ✦ Project Status
 
-GitHub Rock is under active development. The README documents the complete product feature set; individual capabilities may depend on GitHub permissions, API availability, Android version, or the current application build.
+GitHub Rock is under active development. This README documents the intended complete product feature set and the expected behavior of supported workflows; individual capabilities may depend on GitHub permissions, API availability, Android version, or the current application build.
+
+The project should expose problems clearly rather than masking them. A missing, blocked, broken, or incomplete workflow should be treated as an issue to diagnose and fix, not as a reason to add fake behavior.
 
 For the latest implementation state, see [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases), [Issues](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues), and [Pull Requests](https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls).
 
