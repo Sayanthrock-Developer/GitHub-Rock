@@ -56,6 +56,7 @@ fun BuildsScreen(
     repositories: List<GitHubRepositoryModel>,
     runs: List<WorkflowRun>,
     onSelectRepository: (GitHubRepositoryModel) -> Unit,
+    onOpenRun: (GitHubRepositoryModel, WorkflowRun) -> Unit = { _, _ -> },
     initialRepository: GitHubRepositoryModel? = null,
     initialRunId: Long? = null,
     viewModel: BuildsViewModel = hiltViewModel(),
@@ -71,7 +72,6 @@ fun BuildsScreen(
         )
     }
     var filter by remember { mutableStateOf(BuildFilter.All) }
-    var selectedRun by remember { mutableStateOf<WorkflowRun?>(null) }
     val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
 
     LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
@@ -148,11 +148,10 @@ fun BuildsScreen(
         if (visibleRuns.isEmpty()) {
             item { GlassCard { Text("No runs match this filter.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         } else {
-            items(visibleRuns, key = { it.id }) { run -> RecentRunCard(run, preferences) { selectedRun = run } }
+            items(visibleRuns, key = { it.id }) { run -> RecentRunCard(run, preferences) { selectedRepository?.let { repo -> onOpenRun(repo, run) } } }
         }
     }
 
-    selectedRun?.let { run -> RunDetailsDialog(run, selectedRepository?.fullName, preferences) { selectedRun = null } }
 }
 
 private enum class BuildFilter(val label: String) { All("All"), Running("Running"), Failed("Failed"), Success("Success") }
