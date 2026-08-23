@@ -60,8 +60,11 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: manual
 
+      # CodeQL must use the project's real Android/Gradle build. Do not use
+      # CodeQL Autobuild for this Android project: Android resource generation,
+      # KAPT and Compose compilation need the project's Gradle configuration.
       - name: Build Android project for CodeQL
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+        run: ./gradlew clean :app:assembleDebug --stacktrace --no-daemon --console=plain
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
