@@ -8,6 +8,7 @@ import com.sayanthrock.githubrock.core.network.AuthInterceptor
 import com.sayanthrock.githubrock.core.network.GitHubAuthApi
 import com.sayanthrock.githubrock.core.network.GitHubGraphQlApi
 import com.sayanthrock.githubrock.core.network.GitHubRestApi
+import com.sayanthrock.githubrock.core.network.NetworkRetryInterceptor
 import com.sayanthrock.githubrock.core.network.RepositoryCreationApi
 import com.sayanthrock.githubrock.core.security.KeystoreTokenStore
 import com.sayanthrock.githubrock.core.security.TokenStore
@@ -58,12 +59,15 @@ object AppModule {
         }
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
+            .addInterceptor(NetworkRetryInterceptor())
             .addInterceptor(logger)
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(45, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(90, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
-            .followRedirects(false)
-            .followSslRedirects(false)
+            .followRedirects(true)
+            .followSslRedirects(true)
             .build()
     }
 
@@ -71,10 +75,13 @@ object AppModule {
     @Singleton
     @Named("authClient")
     fun authClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .followRedirects(false)
-        .followSslRedirects(false)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .followRedirects(true)
+        .followSslRedirects(true)
         .build()
 
     @Provides
