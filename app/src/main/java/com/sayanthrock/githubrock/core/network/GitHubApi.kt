@@ -7,6 +7,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Headers
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -23,7 +24,7 @@ interface GitHubAuthApi {
 }
 
 interface GitHubRestApi {
-    @GET("user") suspend fun me(): GitHubUser
+    @GET("user") suspend fun me(@Header("Authorization") authorization: String? = null): GitHubUser
     @GET("users/{username}") suspend fun user(@Path("username") username: String): GitHubUser
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
     @GET("repos/{owner}/{repo}") suspend fun repository(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositoryModel
@@ -69,5 +70,5 @@ interface GitHubRestApi {
     @POST("repos/{owner}/{repo}/actions/runs/{runId}/rerun") suspend fun rerunWorkflow(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Response<Unit>
     @GET("repos/{owner}/{repo}/releases") suspend fun releases(@Path("owner") owner: String, @Path("repo") repo: String, @Query("per_page") perPage: Int = 30): List<Release>
     @PATCH("repos/{owner}/{repo}/releases/{releaseId}") suspend fun updateRelease(@Path("owner") owner: String, @Path("repo") repo: String, @Path("releaseId") releaseId: Long, @Body request: UpdateReleaseRequest): Release
-    @DELETE("repos/{owner}/{repo}/releases/{releaseId}") suspend fun deleteRelease(@Path("owner") owner: String, @Path("repo") repo: String, @Path("releaseId") releaseId: Long): Response<Unit>
+    @DELETE("repos/{owner}/{repo}/releases/{releaseId") suspend fun deleteRelease(@Path("owner") owner: String, @Path("repo") repo: String, @Path("releaseId") releaseId: Long): Response<Unit>
 }
