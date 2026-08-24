@@ -58,16 +58,16 @@ jobs:
         run: bash tools/release/test-extract-apksigner-cert-sha256.sh
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon --console=plain --max-workers=2
+        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon --console=plain --max-workers=1
 
       - name: Lint
-        run: ./gradlew :app:lintDebug --stacktrace --no-daemon --console=plain --max-workers=2
+        run: ./gradlew :app:lintDebug --stacktrace --no-daemon --console=plain --max-workers=1
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon --console=plain --max-workers=2
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon --console=plain --max-workers=1
 
       - name: Verify release build
-        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon --console=plain --max-workers=2
+        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon --console=plain --max-workers=1
 
       - name: Upload verification artifacts
         if: always()
