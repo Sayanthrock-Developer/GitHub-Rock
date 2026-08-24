@@ -6,7 +6,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Keep a push-triggered verification run available for the latest production changes.
 permissions:
   contents: read
 
@@ -57,17 +56,17 @@ jobs:
       - name: Verify release tooling
         run: bash tools/release/test-extract-apksigner-cert-sha256.sh
 
-      - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon --console=plain --max-workers=1
-
-      - name: Lint
-        run: ./gradlew :app:lintDebug --stacktrace --no-daemon --console=plain --max-workers=1
-
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon --console=plain --max-workers=1
-
-      - name: Verify release build
-        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon --console=plain --max-workers=1
+      - name: Run complete Android verification
+        run: >-
+          ./gradlew
+          :app:testDebugUnitTest
+          :app:lintDebug
+          :app:assembleDebug
+          :app:assembleRelease
+          --stacktrace
+          --no-daemon
+          --console=plain
+          --max-workers=1
 
       - name: Upload verification artifacts
         if: always()
