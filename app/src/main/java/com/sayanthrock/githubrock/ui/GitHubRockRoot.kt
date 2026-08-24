@@ -26,6 +26,7 @@ import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.MainNavigation
+import com.sayanthrock.githubrock.ui.navigation.ModernNavigationChrome
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import kotlinx.coroutines.launch
@@ -115,7 +116,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     BoxWithConstraints(Modifier.fillMaxSize().rockBackground()) {
         val navigationChromePadding = when {
             state.mode == null -> 20.dp
-            maxWidth < 600.dp -> 80.dp
+            maxWidth < 600.dp -> 92.dp
             else -> 20.dp
         }
         if (state.mode == null) {
@@ -131,16 +132,22 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
             )
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
-                MainNavigation(
-                    navController = navController,
-                    state = state,
-                    onSearch = viewModel::searchRepositories,
-                    onInspectProfile = viewModel::inspectProfile,
-                    onRememberRepository = viewModel::rememberRepository,
-                    onOpenGitHubUrl = openGitHubUrl,
-                    onRefresh = viewModel::refresh,
-                    onLogout = viewModel::logout
-                )
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                    MainNavigation(
+                        navController = navController,
+                        state = state,
+                        onSearch = viewModel::searchRepositories,
+                        onInspectProfile = viewModel::inspectProfile,
+                        onRememberRepository = viewModel::rememberRepository,
+                        onOpenGitHubUrl = openGitHubUrl,
+                        onRefresh = viewModel::refresh,
+                        onLogout = viewModel::logout
+                    )
+                    ModernNavigationChrome(
+                        navController = navController,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
         SnackbarHost(
