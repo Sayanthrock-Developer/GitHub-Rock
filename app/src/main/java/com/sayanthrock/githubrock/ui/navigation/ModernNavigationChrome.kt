@@ -1,12 +1,12 @@
 package com.sayanthrock.githubrock.ui.navigation
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -55,7 +54,7 @@ fun ModernNavigationChrome(
     if (!showNavigation) return
 
     Box(modifier.fillMaxSize()) {
-        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
             if (maxWidth.value >= 600f) {
                 ModernNavigationRail(
                     selectedRoute = selectedRoute,
@@ -82,7 +81,7 @@ private fun navigate(navController: NavHostController, destination: TopDestinati
 }
 
 @Composable
-private fun ModernNavigationBottomBar(
+internal fun ModernNavigationBottomBar(
     selectedRoute: String?,
     onDestinationSelected: (TopDestination) -> Unit,
     modifier: Modifier = Modifier
@@ -122,21 +121,15 @@ private fun RowScope.ModernBottomItem(
     onClick: () -> Unit
 ) {
     val containerColor by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.secondaryContainer
-        else Color.Transparent,
+        if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
         tween(220),
         label = "navigation indicator color"
-    )
-    val width by animateDpAsState(
-        if (selected) 112.dp else 52.dp,
-        tween(240),
-        label = "navigation indicator width"
     )
 
     Box(
         modifier = Modifier
             .weight(1f)
-            .size(width = width, height = 56.dp)
+            .size(height = 56.dp, width = 52.dp)
             .background(containerColor, RoundedCornerShape(18.dp))
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
@@ -147,8 +140,8 @@ private fun RowScope.ModernBottomItem(
         contentAlignment = Alignment.Center
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
