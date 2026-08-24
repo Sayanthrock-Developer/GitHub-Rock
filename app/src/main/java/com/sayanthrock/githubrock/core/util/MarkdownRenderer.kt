@@ -1,20 +1,15 @@
 package com.sayanthrock.githubrock.core.util
 
-enum class MarkdownBlockKind { Heading, Paragraph, Bullet, Ordered, Quote, Code, Divider, Image, Link, Table }
+enum class MarkdownBlockKind { Heading, Paragraph, Bullet, Quote, Code, Divider, Image }
 
 data class MarkdownBlock(
     val kind: MarkdownBlockKind,
     val text: String,
     val level: Int = 0,
-    val url: String? = null,
-    val rows: List<List<String>> = emptyList()
+    val url: String? = null
 )
 
-/**
- * Lightweight GitHub-flavoured Markdown parser used by the native README screen.
- * It deliberately keeps content instead of truncating it so long READMEs are rendered
- * completely. Unsupported HTML is kept as readable text rather than silently discarded.
- */
+/** GitHub-flavoured Markdown parser used by the native README/release renderer. */
 object MarkdownRenderer {
     private val headingPattern = Regex("^(#{1,6})\\s+(.+?)\\s*#*\\s*$")
     private val bulletPattern = Regex("^\\s*[-*+]\\s+(.+)$")
@@ -23,9 +18,8 @@ object MarkdownRenderer {
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
     private val imagePattern = Regex("^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\\\".*?\\\")?\\)\\s*$")
     private val htmlImagePattern = Regex("^\\s*(?:<a\\s+[^>]*>\\s*)?<img\\s+[^>]*src=[\\\"']([^\\\"']+)[\\\"'][^>]*(?:alt=[\\\"']([^\\\"']*)[\\\"'][^>]*)?>\\s*(?:</a>\\s*)?$")
-    private val linkOnlyPattern = Regex("^\\s*\\[([^]]+)]\\(([^)]+)\\)\\s*$")
     private val tableSeparator = Regex("^\\s*\\|?\\s*:?-+:?\\s*(?:\\|\\s*:?-+:?\\s*)+\\|?\\s*$")
-    private val tableCellSplitter = Regex("\\s*\\|\\s*")
+    private val tableSplitter = Regex("\\s*\\|\\s*")
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
@@ -33,33 +27,31 @@ object MarkdownRenderer {
         val paragraph = StringBuilder()
         val code = StringBuilder()
         var inCode = false
-        var tableHeader: List<String>? = null
-        val tableRows = mutableListOf<List<String>>()
+        var inTable = false
+        var tableText = StringBuilder()
 
         fun flushParagraph() {
             if (paragraph.isNotBlank()) {
-                blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, paragraph.toString().trim())
+                blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, cleanInline(paragraph.toString().trim()))
                 paragraph.clear()
             }
         }
 
         fun flushTable() {
-            val header = tableHeader
-            if (header != null) {
-                blocks += MarkdownBlock(
-                    kind = MarkdownBlockKind.Table,
-                    text = "",
-                    rows = listOf(header) + tableRows.toList()
-                )
+            if (inTable && tableText.isNotBlank()) {
+                // Preserve the complete table as a monospaced, readable block. This keeps
+                // every row/column visible without dropping content from long READMEs.
+                blocks += MarkdownBlock(MarkdownBlockKind.Code, tableText.toString().trimEnd())
             }
-            tableHeader = null
-            tableRows.clear()
+            inTable = false
+            tableText.clear()
         }
 
-        fun cells(line: String): List<String> {
-            val value = line.trim().removePrefix("|").removeSuffix("|")
-            return value.split(tableCellSplitter).map { cleanInline(it.trim()) }
-        }
+        fun tableCells(line: String): String = line.trim()
+            .removePrefix("|")
+            .removeSuffix("|")
+            .split(tableSplitter)
+            .joinToString("  |  ") { cleanInline(it.trim()) }
 
         lines.forEachIndexed { index, rawLine ->
             val line = rawLine.trimEnd()
@@ -88,17 +80,18 @@ object MarkdownRenderer {
                 return@forEachIndexed
             }
 
-            // GitHub pipe tables: header, separator, then data rows.
-            if (tableHeader == null && index + 1 < lines.size && line.contains('|') && tableSeparator.matches(lines[index + 1])) {
+            // GitHub pipe tables are kept intact and rendered as readable monospaced tables.
+            if (!inTable && line.contains('|') && index + 1 < lines.size && tableSeparator.matches(lines[index + 1])) {
                 flushParagraph()
-                tableHeader = cells(line)
+                inTable = true
+                tableText = StringBuilder(tableCells(line)).appendLine()
                 return@forEachIndexed
             }
-            if (tableHeader != null && line.contains('|') && !headingPattern.matches(line)) {
-                tableRows += cells(line)
+            if (inTable && line.contains('|')) {
+                tableText.appendLine(tableCells(line))
                 return@forEachIndexed
             }
-            if (tableHeader != null) flushTable()
+            if (inTable) flushTable()
 
             val heading = headingPattern.matchEntire(line)
             val bullet = bulletPattern.matchEntire(line)
@@ -106,7 +99,6 @@ object MarkdownRenderer {
             val quote = quotePattern.matchEntire(line)
             val image = imagePattern.matchEntire(line)
             val htmlImage = htmlImagePattern.matchEntire(line)
-            val link = linkOnlyPattern.matchEntire(line)
 
             when {
                 heading != null -> {
@@ -123,7 +115,7 @@ object MarkdownRenderer {
                 }
                 ordered != null -> {
                     flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Ordered, cleanInline(ordered.groupValues[2]), ordered.groupValues[1].toIntOrNull() ?: 1)
+                    blocks += MarkdownBlock(MarkdownBlockKind.Bullet, cleanInline("${ordered.groupValues[1]}. ${ordered.groupValues[2]}"))
                 }
                 quote != null -> {
                     flushParagraph()
@@ -136,10 +128,6 @@ object MarkdownRenderer {
                 htmlImage != null -> {
                     flushParagraph()
                     blocks += MarkdownBlock(MarkdownBlockKind.Image, htmlImage.groupValues.getOrElse(2) { "Image" }.ifBlank { "Image" }, url = htmlImage.groupValues[1])
-                }
-                link != null -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Link, cleanInline(link.groupValues[1]), url = link.groupValues[2])
                 }
                 else -> {
                     if (paragraph.isNotEmpty()) paragraph.append(' ')
@@ -154,7 +142,7 @@ object MarkdownRenderer {
         return blocks
     }
 
-    /** Removes Markdown syntax while preserving the actual link destination. */
+    /** Preserve link destinations in rendered text instead of silently deleting them. */
     fun cleanInline(text: String): String = text
         .replace(Regex("!\\[([^]]*)]\\(([^)]+)\\)"), "$1")
         .replace(Regex("\\[([^]]+)]\\(([^)]+)\\)"), "$1 ($2)")
