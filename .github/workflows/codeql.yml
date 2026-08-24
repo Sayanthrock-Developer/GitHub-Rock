@@ -18,6 +18,9 @@ concurrency:
   group: codeql-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
+
 jobs:
   analyze:
     name: Analyze (java-kotlin)
@@ -59,10 +62,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: manual
-
-      - name: Build Android project for CodeQL
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon --console=plain --max-workers=2
+          build-mode: autobuild
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
