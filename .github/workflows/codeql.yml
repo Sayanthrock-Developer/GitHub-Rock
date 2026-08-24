@@ -36,6 +36,9 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
@@ -47,17 +50,11 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0"
 
-      - name: Make Gradle executable
-        run: chmod +x ./gradlew
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java-kotlin
-          build-mode: manual
-
-      - name: Build Kotlin/Java sources for CodeQL
-        run: ./gradlew :app:compileDebugKotlin --stacktrace --no-daemon --console=plain --max-workers=1
+          build-mode: autobuild
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
