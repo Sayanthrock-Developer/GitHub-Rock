@@ -20,9 +20,9 @@ class MarkdownRendererTest {
     }
 
     @Test
-    fun `does not render html tags or link destinations`() {
+    fun `preserves markdown link destinations while stripping html tags`() {
         val blocks = MarkdownRenderer.render("[Open](https://example.com) <script>alert(1)</script>")
 
-        assertEquals("Open alert(1)", blocks.single().text)
+        assertEquals("Open (https://example.com) alert(1)", blocks.single().text)
     }
 }
