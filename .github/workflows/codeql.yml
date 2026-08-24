@@ -50,11 +50,24 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0"
 
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java-kotlin
-          build-mode: autobuild
+          build-mode: manual
+
+      - name: Build Kotlin/Java sources for CodeQL
+        run: >-
+          ./gradlew
+          :app:compileDebugKotlin
+          :app:compileDebugJavaWithJavac
+          --stacktrace
+          --no-daemon
+          --console=plain
+          --max-workers=1
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
