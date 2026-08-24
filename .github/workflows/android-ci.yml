@@ -6,6 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Keep a push-triggered verification run available for the latest production changes.
 permissions:
   contents: read
 
