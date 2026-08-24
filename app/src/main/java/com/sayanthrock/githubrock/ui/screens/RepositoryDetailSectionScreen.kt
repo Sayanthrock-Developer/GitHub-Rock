@@ -7,8 +7,8 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 
 /**
  * Opens the native repository detail workspace on a specific section.
- * The detail screen remains the single implementation for Code, Issues,
- * Pull Requests, Actions, and Releases.
+ * Issues use the dedicated native Open/Closed workspace so issue browsing
+ * and issue details remain inside GitHub Rock.
  */
 @Composable
 fun RepositoryDetailSectionScreen(
@@ -16,6 +16,11 @@ fun RepositoryDetailSectionScreen(
     section: RepoSection,
     onBack: () -> Unit
 ) {
+    if (section == RepoSection.Issues) {
+        IssuesScreen(onBack = onBack)
+        return
+    }
+
     val viewModel: RepositoryDetailViewModel = hiltViewModel()
 
     LaunchedEffect(section) {
