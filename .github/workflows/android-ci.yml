@@ -22,6 +22,7 @@ jobs:
     env:
       GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
       GITHUB_ROCK_BACKEND_URL: ${{ vars.GITHUB_ROCK_BACKEND_URL || '' }}
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -57,16 +58,16 @@ jobs:
         run: bash tools/release/test-extract-apksigner-cert-sha256.sh
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon --console=plain --max-workers=2
 
       - name: Lint
-        run: ./gradlew :app:lintDebug --stacktrace --no-daemon
+        run: ./gradlew :app:lintDebug --stacktrace --no-daemon --console=plain --max-workers=2
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon --console=plain --max-workers=2
 
       - name: Verify release build
-        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon
+        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon --console=plain --max-workers=2
 
       - name: Upload verification artifacts
         if: always()
