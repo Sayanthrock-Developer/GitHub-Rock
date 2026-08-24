@@ -37,16 +37,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.ApkInspector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.math.log10
+import kotlin.math.pow
 
 @Composable
 fun ApkInspectorScreen() {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var inspection by remember { mutableStateOf<ApkInspection?>(null) }
     var selectedFileName by remember { mutableStateOf<String?>(null) }
@@ -64,13 +67,15 @@ fun ApkInspectorScreen() {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     val file = File.createTempFile("github-rock-apk-", ".apk", context.cacheDir)
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        file.outputStream().use { output -> input.copyTo(output) }
-                    } ?: error("Could not read the selected APK.")
-                    val inspected = ApkInspector.inspect(context, file)
-                        ?: error("The selected file is not a readable Android APK.")
-                    file.deleteOnExit()
-                    inspected
+                    try {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            file.outputStream().use { output -> input.copyTo(output) }
+                        } ?: error("Could not read the selected APK.")
+                        ApkInspector.inspect(context, file)
+                            ?: error("The selected file is not a readable Android APK.")
+                    } finally {
+                        file.delete()
+                    }
                 }
             }
             inspecting = false
@@ -112,8 +117,11 @@ fun ApkInspectorScreen() {
                         Text(selectedFileName ?: "No APK selected", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("Choose any local .apk file", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Button(onClick = { picker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream")) }, enabled = !inspecting) {
-                        Icon(Icons.Default.FolderOpen, contentDescription = null)
+                    Button(
+                        onClick = { picker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream")) },
+                        enabled = !inspecting
+                    ) {
+                        Icon(Icons.Default.FolderOpen, contentDescription = "Choose APK")
                     }
                 }
             }
@@ -130,9 +138,7 @@ fun ApkInspectorScreen() {
             if (apk.permissions.isEmpty()) {
                 item { Text("No requested permissions", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             } else {
-                items(apk.permissions, key = { it }) { permission ->
-                    PermissionRow(permission)
-                }
+                items(apk.permissions, key = { it }) { permission -> PermissionRow(permission) }
             }
         }
 
@@ -166,7 +172,7 @@ private fun InspectionSummaryCard(apk: ApkInspection) {
             Text(apk.appName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             InspectionRow("Package", apk.packageName)
             InspectionRow("Version", "${apk.versionName.ifBlank { "Unknown" }} (${apk.versionCode})")
-            InspectionRow("File size", formatDownloadBytes(apk.fileSize))
+            InspectionRow("File size", formatApkBytes(apk.fileSize))
             InspectionRow("Min SDK", apk.minSdk.toString())
             InspectionRow("Target SDK", apk.targetSdk.toString())
         }
@@ -208,7 +214,11 @@ private fun InspectionSecurityCard(apk: ApkInspection) {
 @Composable
 private fun PermissionRow(permission: String) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 11.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(20.dp))
             Text(permission, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
@@ -221,4 +231,12 @@ private fun InspectionRow(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
+}
+
+private fun formatApkBytes(bytes: Long): String {
+    if (bytes <= 0L) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB")
+    val exponent = minOf((log10(bytes.toDouble()) / log10(1024.0)).toInt(), units.lastIndex)
+    val value = bytes / 1024.0.pow(exponent.toDouble())
+    return if (exponent == 0) "${bytes} ${units[exponent]}" else "%.2f %s".format(value, units[exponent])
 }
