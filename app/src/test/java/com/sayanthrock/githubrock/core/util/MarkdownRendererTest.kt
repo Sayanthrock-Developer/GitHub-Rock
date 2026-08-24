@@ -128,9 +128,9 @@ class MarkdownRendererTest {
         val result = MarkdownRenderer.render(markdown)
 
         assertEquals(4, result.size)
-        assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Link", 1), result[0])
+        assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Link (https://example.com)", 1), result[0])
         assertEquals(MarkdownBlock(MarkdownBlockKind.Paragraph, "Paragraph with  HTML."), result[1])
-        assertEquals(MarkdownBlock(MarkdownBlockKind.Bullet, "List with Link text"), result[2])
+        assertEquals(MarkdownBlock(MarkdownBlockKind.Bullet, "List with Link text (https://example.com)"), result[2])
         assertEquals(MarkdownBlock(MarkdownBlockKind.Quote, "Quote with bold text."), result[3])
     }
 
