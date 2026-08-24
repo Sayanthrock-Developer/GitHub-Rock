@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
@@ -46,16 +47,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
-        buildConfigField(
-            "String",
-            "GITHUB_CLIENT_ID",
-            quotedBuildConfig(githubClientId)
-        )
-        buildConfigField(
-            "String",
-            "BACKEND_BASE_URL",
-            quotedBuildConfig(backendBaseUrl)
-        )
+        buildConfigField("String", "GITHUB_CLIENT_ID", quotedBuildConfig(githubClientId))
+        buildConfigField("String", "BACKEND_BASE_URL", quotedBuildConfig(backendBaseUrl))
         buildConfigField("String", "GITHUB_API_VERSION", "\"2022-11-28\"")
     }
 
@@ -90,7 +83,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions { jvmTarget = "17" }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
 
     buildFeatures {
         compose = true
@@ -115,7 +112,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-
     implementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     implementation(libs.compose.ui)
@@ -125,21 +121,18 @@ dependencies {
     implementation(libs.compose.material.icons)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
-
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation)
     implementation(libs.androidx.hilt.work)
     kapt(libs.androidx.hilt.compiler)
-
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.serialization)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
-
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.paging)
@@ -151,7 +144,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.security)
     implementation(libs.androidx.browser)
-
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.test.junit)
