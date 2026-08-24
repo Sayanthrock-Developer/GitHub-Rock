@@ -31,7 +31,7 @@ interface TokenStore {
     fun clear()
     fun accounts(): List<StoredAccount> = emptyList()
     fun activeAccountId(): String? = accounts().firstOrNull()?.id
-    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String = error("Multi-account storage is not supported")
+    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null, activate: Boolean = true): String = error("Multi-account storage is not supported")
     fun updateActiveAccount(login: String, name: String?, avatarUrl: String?) {}
     fun switchAccount(accountId: String): Boolean = false
     fun removeAccount(accountId: String): Boolean = false
@@ -73,7 +73,7 @@ class KeystoreTokenStore internal constructor(
         return preferences.getString(KEY_ACTIVE_ID, null)?.takeIf { id -> accounts().any { it.id == id } } ?: accounts().firstOrNull()?.id
     }
 
-    override fun addAccount(tokens: StoredTokens, login: String?, name: String?, avatarUrl: String?): String {
+    override fun addAccount(tokens: StoredTokens, login: String?, name: String?, avatarUrl: String?, activate: Boolean): String {
         migrateLegacyIfNeeded()
         val normalizedLogin = login?.trim()?.removePrefix("@").takeIf { !it.isNullOrBlank() }
         val id = normalizedLogin?.lowercase() ?: "account-${System.currentTimeMillis()}"
@@ -84,7 +84,7 @@ class KeystoreTokenStore internal constructor(
             preferences.edit().putInt(KEY_COUNT, count + 1).putString(KEY_ID_PREFIX + count, id).apply()
             writeAccount(account)
         }
-        preferences.edit().putString(KEY_ACTIVE_ID, id).remove(KEY_ACTIVE_ORG).apply()
+        if (activate) preferences.edit().putString(KEY_ACTIVE_ID, id).remove(KEY_ACTIVE_ORG).apply()
         return id
     }
 
