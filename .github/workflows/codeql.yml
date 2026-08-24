@@ -59,11 +59,10 @@ jobs:
           languages: java-kotlin
           build-mode: manual
 
-      - name: Build Kotlin/Java sources for CodeQL
+      - name: Build Android project for CodeQL
         run: >-
           ./gradlew
-          :app:compileDebugKotlin
-          :app:compileDebugJavaWithJavac
+          :app:assembleDebug
           --stacktrace
           --no-daemon
           --console=plain
