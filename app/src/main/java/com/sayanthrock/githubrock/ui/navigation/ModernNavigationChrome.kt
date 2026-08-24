@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -56,12 +57,26 @@ fun ModernNavigationChrome(
     Box(modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             if (maxWidth.value >= 600f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(108.dp)
+                        .background(MaterialTheme.colorScheme.background)
+                        .align(Alignment.CenterStart)
+                )
                 ModernNavigationRail(
                     selectedRoute = selectedRoute,
                     onDestinationSelected = { navigate(navController, it) },
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(118.dp)
+                        .background(MaterialTheme.colorScheme.background)
+                        .align(Alignment.BottomCenter)
+                )
                 ModernNavigationBottomBar(
                     selectedRoute = selectedRoute,
                     onDestinationSelected = { navigate(navController, it) },
@@ -129,7 +144,7 @@ private fun RowScope.ModernBottomItem(
     Box(
         modifier = Modifier
             .weight(1f)
-            .size(height = 56.dp, width = 52.dp)
+            .height(56.dp)
             .background(containerColor, RoundedCornerShape(18.dp))
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
@@ -226,7 +241,7 @@ private fun ModernRailItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .size(height = 64.dp, width = 72.dp)
+            .height(64.dp)
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
                 contentDescription = destination.accessibilityLabel
