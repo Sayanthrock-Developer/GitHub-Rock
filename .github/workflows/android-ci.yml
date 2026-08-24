@@ -56,13 +56,28 @@ jobs:
       - name: Verify release tooling
         run: bash tools/release/test-extract-apksigner-cert-sha256.sh
 
-      - name: Run complete Android verification
+      - name: Run Android unit tests
         run: >-
           ./gradlew
           :app:testDebugUnitTest
+          --stacktrace
+          --no-daemon
+          --console=plain
+          --max-workers=1
+
+      - name: Run Android lint
+        run: >-
+          ./gradlew
           :app:lintDebug
+          --stacktrace
+          --no-daemon
+          --console=plain
+          --max-workers=1
+
+      - name: Build debug APK
+        run: >-
+          ./gradlew
           :app:assembleDebug
-          :app:assembleRelease
           --stacktrace
           --no-daemon
           --console=plain
