@@ -8,7 +8,6 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +26,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -82,10 +82,7 @@ private fun navigate(navController: NavHostController, destination: TopDestinati
     }
 }
 
-/**
- * The one and only mobile navigation chrome. It intentionally replaces the old
- * full-width glass dock with a compact, floating iPhone-style capsule.
- */
+/** The single mobile navigation component; the previous glass dock is not retained. */
 @Composable
 internal fun ModernNavigationBottomBar(
     selectedRoute: String?,
@@ -94,6 +91,7 @@ internal fun ModernNavigationBottomBar(
 ) {
     Surface(
         modifier = modifier
+            .fillMaxWidth()
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 10.dp),
         shape = IphoneFloatingDockShape,
@@ -103,6 +101,7 @@ internal fun ModernNavigationBottomBar(
     ) {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .height(64.dp)
                 .padding(horizontal = 8.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -187,8 +186,25 @@ private fun RowScope.ModernBottomItem(
     }
 }
 
-/** A softly raised capsule with smooth, lifted ends instead of the old glass dock. */
-private val IphoneFloatingDockShape: Shape = RoundedCornerShape(32.dp)
+/**
+ * Floating capsule whose left and right ends lift smoothly toward the center,
+ * producing the requested iPhone-style raised/curved silhouette.
+ */
+private val IphoneFloatingDockShape: Shape = GenericShape { size, _ ->
+    val w = size.width
+    val h = size.height
+    val lift = (h * 0.30f).coerceAtLeast(10f)
+    val curve = (w * 0.035f).coerceIn(14f, 28f)
+
+    moveTo(0f, h / 2f)
+    cubicTo(0f, lift, curve, 0f, curve * 2.2f, 0f)
+    lineTo(w - curve * 2.2f, 0f)
+    cubicTo(w - curve, 0f, w, lift, w, h / 2f)
+    cubicTo(w, h - lift, w - curve, h, w - curve * 2.2f, h)
+    lineTo(curve * 2.2f, h)
+    cubicTo(curve, h, 0f, h - lift, 0f, h / 2f)
+    close()
+}
 
 @Composable
 private fun ModernNavigationRail(
