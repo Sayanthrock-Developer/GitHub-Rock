@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Remove demo mode from source
+      - name: Remove all legacy demo-mode code
         shell: python
         run: |
           from pathlib import Path
@@ -23,64 +23,74 @@ jobs:
 
           root = Path('.')
 
+          # Demo data is no longer part of the application.
           demo_data = root / 'app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt'
           if demo_data.exists():
               demo_data.unlink()
 
+          # Remove legacy demo branches from the main view model.
           main = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/MainViewModel.kt'
           text = main.read_text()
-          text = text.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
-          text = text.replace('enum class AppMode { Connected, Guest, Demo }', 'enum class AppMode { Connected, Guest }')
-          text = re.sub(r'\n    fun enterDemo\(\) \{.*?\n    \}\n\n    fun searchRepositories', '\n    fun searchRepositories', text, flags=re.S)
-          text = re.sub(r'\n                AppMode\.Demo -> Result\.success\(.*?\n                AppMode\.Guest, AppMode\.Connected ->', '\n                AppMode.Guest, AppMode.Connected ->', text, flags=re.S)
-          text = re.sub(r'\n                AppMode\.Demo -> _state\.update \{.*?\n                \}', '', text, flags=re.S)
-          text = text.replace('        if (_state.value.mode == AppMode.Demo) return\n', '')
-          text = re.sub(r'\n                AppMode\.Demo -> if \(normalized\.equals\(DemoData\.profile\.login, ignoreCase = true\)\) \{.*?\n                AppMode\.Guest, AppMode\.Connected ->', '\n                AppMode.Guest, AppMode.Connected ->', text, flags=re.S)
+          text = re.sub(r'(?m)^.*DemoData.*\n', '', text)
+          text = re.sub(r'(?m)^.*enum class AppMode.*$', 'enum class AppMode { Connected, Guest }', text)
+          text = re.sub(r'(?s)\n    fun enterDemo\(\)\s*\{.*?\n    \}\n\n    fun searchRepositories', '\n\n    fun searchRepositories', text)
+          text = re.sub(r'(?s)\n\s*AppMode\.Demo\s*->\s*Result\.success\(.*?\n\s*AppMode\.Guest, AppMode\.Connected\s*->', '\n                AppMode.Guest, AppMode.Connected ->', text)
+          text = re.sub(r'(?s)\n\s*AppMode\.Demo\s*->\s*_state\.update\s*\{.*?\n\s*\}', '', text)
+          text = re.sub(r'(?m)^\s*if \(_state\.value\.mode == AppMode\.Demo\) return\s*\n', '', text)
+          text = re.sub(r'(?s)\n\s*AppMode\.Demo\s*->\s*if \(normalized\.equals\(DemoData\.profile\.login, ignoreCase = true\)\)\s*\{.*?\n\s*AppMode\.Guest, AppMode\.Connected\s*->', '\n                AppMode.Guest, AppMode.Connected ->', text)
           main.write_text(text)
 
+          # Remove the demo callback from the root.
           root_file = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt'
-          text = root_file.read_text().replace('                onDemo = viewModel::enterDemo\n', '')
-          root_file.write_text(text)
+          lines = root_file.read_text().splitlines(True)
+          root_file.write_text(''.join(line for line in lines if 'onDemo = viewModel::enterDemo' not in line))
 
+          # Remove the demo callback/button from the login UI.
           login = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/screens/LoginScreen.kt'
-          text = login.read_text()
-          text = text.replace('    onDemo: () -> Unit\n', '')
-          text = re.sub(r'\n            TextButton\(onClick = onDemo, modifier = Modifier\.fillMaxWidth\(\)\) \{\n                Text\("Explore isolated demo mode", color = Color\(0xFF63E2D8\)\)\n            \}\n', '\n', text)
-          login.write_text(text)
+          lines = login.read_text().splitlines(True)
+          out = []
+          skip = 0
+          for line in lines:
+              if skip:
+                  skip -= 1
+                  continue
+              if 'onDemo: () -> Unit' in line or 'onDemo = onDemo' in line or 'onDemo = viewModel::enterDemo' in line:
+                  continue
+              if 'TextButton(onClick = onDemo' in line:
+                  skip = 2
+                  continue
+              if 'Explore isolated demo mode' in line:
+                  continue
+              if 'Guest and demo modes still work.' in line:
+                  line = line.replace('Guest and demo modes still work.', 'Guest access is still available.')
+              out.append(line)
+          login.write_text(''.join(out))
 
+          # Remove legacy demo navigation arguments and query parameters.
           nav = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt'
           text = nav.read_text()
           text = text.replace('navController.navigate("repo/${repo.owner.login}/${repo.name}?demo=${mode == AppMode.Demo}")', 'navController.navigate("repo/${repo.owner.login}/${repo.name}")')
-          text = re.sub(r'route = "repo/\{owner\}/\{repo\}\?demo=\{demo\}"', 'route = "repo/{owner}/{repo}"', text)
-          text = re.sub(r',\n\s*navArgument\("demo"\) \{\n\s*type = NavType\.BoolType\n\s*defaultValue = false\n\s*\}', '', text)
-          text = re.sub(r'route = "release/\{owner\}/\{repo\}/\{tag\}\?demo=\{demo\}"', 'route = "release/{owner}/{repo}/{tag}"', text)
+          text = re.sub(r'\?demo=\{demo\}', '', text)
+          text = re.sub(r'(?s),\s*navArgument\("demo"\)\s*\{.*?\}', '', text)
           nav.write_text(text)
-
-          for path in root.glob('app/src/main/java/**/*.kt'):
-              source = path.read_text()
-              if re.search(r'(?i)demo', source):
-                  source = re.sub(r'(?i)\n.*demo.*\n', '\n', source)
-                  path.write_text(source)
 
       - name: Verify no demo mode remains
         shell: bash
         run: |
-          if grep -Rni --exclude-dir=.git --exclude='remove-demo-mode.yml' -E 'DemoData|AppMode\.Demo|enterDemo|Explore isolated demo mode|\?demo=|data/demo' app; then
+          set -euo pipefail
+          test ! -e app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt
+          if grep -Rni --exclude-dir=.git --exclude='remove-demo-mode.yml' -E 'DemoData|AppMode\.Demo|enterDemo|Explore isolated demo mode|\?demo=|data/demo|onDemo' app; then
             echo 'Demo mode references remain.'
             exit 1
           fi
-          test ! -e app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt
+          echo 'Demo mode verification passed.'
 
-      - name: Commit and remove cleanup workflow
+      - name: Commit cleanup and remove this one-time workflow
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           rm -f .github/workflows/remove-demo-mode.yml
           git add -A
-          if git diff --cached --quiet; then
-            echo 'No changes required.'
-            exit 0
-          fi
           git commit -m 'Remove isolated demo mode completely'
           git push
