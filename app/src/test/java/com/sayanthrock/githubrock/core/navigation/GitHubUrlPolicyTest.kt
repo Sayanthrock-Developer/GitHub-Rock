@@ -13,22 +13,8 @@ class GitHubUrlPolicyTest {
     }
 
     @Test fun signupLeveragesAddAccountPageWhenEphemeralBrowsingIsSupported() {
-        assertEquals(
-            GitHubSignupLaunchPlan(
-                primaryUrl = GITHUB_ADD_ACCOUNT_URL,
-                fallbackUrl = GITHUB_SIGN_UP_URL,
-                useEphemeralTab = true
-            ),
-            githubSignupLaunchPlan(ephemeralBrowsingSupported = true)
-        )
-        assertEquals(
-            GitHubSignupLaunchPlan(
-                primaryUrl = GITHUB_SIGN_UP_URL,
-                fallbackUrl = GITHUB_SIGN_UP_URL,
-                useEphemeralTab = false
-            ),
-            githubSignupLaunchPlan(ephemeralBrowsingSupported = false)
-        )
+        assertEquals(GitHubSignupLaunchPlan(GITHUB_ADD_ACCOUNT_URL, GITHUB_SIGN_UP_URL, true), githubSignupLaunchPlan(true))
+        assertEquals(GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, false), githubSignupLaunchPlan(false))
     }
 
     @Test fun standardGitHubRepositoryUrlsAreAccepted() {
@@ -45,6 +31,14 @@ class GitHubUrlPolicyTest {
     @Test fun nonGitHubAndLookalikeHostsAreRejected() {
         assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("http://github.com/signup"))
         assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("https://github.com.example.com/signup"))
+    }
+
+    @Test fun backendOAuthUrlRequiresFixedPathAndHttps() {
+        assertTrue(GitHubUrlPolicy.isBackendOAuthStartUrl("https://auth.githubrock.app/v1/auth/github/start?state=abc&code_challenge=xyz&code_challenge_method=S256"))
+        assertFalse(GitHubUrlPolicy.isBackendOAuthStartUrl("http://auth.githubrock.app/v1/auth/github/start?state=abc"))
+        assertFalse(GitHubUrlPolicy.isBackendOAuthStartUrl("https://auth.githubrock.app/evil?state=abc"))
+        assertFalse(GitHubUrlPolicy.isBackendOAuthStartUrl("https://auth.githubrock.app/v1/auth/github/start#fragment?state=abc"))
+        assertFalse(GitHubUrlPolicy.isBackendOAuthStartUrl("https://auth.githubrock.app@evil.example/v1/auth/github/start?state=abc"))
     }
 
     @Test fun customTabsMustUseAnExternalBrowserPackage() {

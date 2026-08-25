@@ -1,14 +1,7 @@
 package com.sayanthrock.githubrock.ui
 
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -38,122 +31,37 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val setupPreferences = remember(context) {
-        context.getSharedPreferences("github_rock_setup", android.content.Context.MODE_PRIVATE)
-    }
-    var setupComplete by rememberSaveable {
-        mutableStateOf(setupPreferences.getBoolean("setup_complete", false))
-    }
-
-    if (!setupComplete) {
-        SetupGuardScreen(
-            onSetupComplete = {
-                setupPreferences.edit().putBoolean("setup_complete", true).apply()
-                setupComplete = true
-            }
-        )
-        return
-    }
-
+    val setupPreferences = remember(context) { context.getSharedPreferences("github_rock_setup", android.content.Context.MODE_PRIVATE) }
+    var setupComplete by rememberSaveable { mutableStateOf(setupPreferences.getBoolean("setup_complete", false)) }
+    if (!setupComplete) { SetupGuardScreen(onSetupComplete = { setupPreferences.edit().putBoolean("setup_complete", true).apply(); setupComplete = true }); return }
     val verificationUri = state.auth.code?.verificationUri
+    val authorizationUrl = state.auth.authorizationUrl
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
+    var authorizationUrlConsumed by rememberSaveable { mutableStateOf<String?>(null) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-    LaunchedEffect(state.auth.code == null) {
-        if (state.auth.code == null) awaitingVerificationBrowserReturn = false
+    LaunchedEffect(authorizationUrl) {
+        val url = authorizationUrl ?: return@LaunchedEffect
+        if (authorizationUrlConsumed == url) return@LaunchedEffect
+        authorizationUrlConsumed = url
+        val opened = GitHubExternalLinkLauncher.openOAuthUrl(context, url)
+        if (!opened) snackbar.showSnackbar("Unable to open GitHub sign-in in your browser. Check your browser and try again.")
     }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { if (AuthReturnPolicy.shouldCheckAuthorization(awaitingVerificationBrowserReturn, state.auth.code != null)) { awaitingVerificationBrowserReturn = false; viewModel.checkLoginStatus() } }
+    LaunchedEffect(Unit) { AccountContextRefreshBus.events.collect { viewModel.refresh() } }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (AuthReturnPolicy.shouldCheckAuthorization(
-                awaitingVerificationBrowserReturn = awaitingVerificationBrowserReturn,
-                hasPendingDeviceCode = state.auth.code != null
-            )
-        ) {
-            awaitingVerificationBrowserReturn = false
-            viewModel.checkLoginStatus()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        AccountContextRefreshBus.events.collect { viewModel.refresh() }
-    }
-
-    val openGitHubUrl = remember(context, snackbar, scope, verificationUri) {
-        { url: String ->
-            val opened = GitHubExternalLinkLauncher.open(context, url)
-            if (opened && url == verificationUri) awaitingVerificationBrowserReturn = true
-            if (!opened) {
-                scope.launch {
-                    val result = snackbar.showSnackbar(
-                        message = "No browser could open GitHub. Install or enable a browser and try again.",
-                        actionLabel = "Retry"
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        val reopened = GitHubExternalLinkLauncher.open(context, url)
-                        if (reopened && url == verificationUri) awaitingVerificationBrowserReturn = true
-                        else if (!reopened) snackbar.showSnackbar("GitHub still could not be opened. Check your browser settings.")
-                    }
-                }
-            }
-        }
-    }
-
-    val openNativeProfile = remember(navController) {
-        { login: String ->
-            navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) {
-                launchSingleTop = true
-            }
-        }
-    }
-
-    LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbar.showSnackbar(it)
-            viewModel.dismissMessage()
-        }
-    }
+    val openGitHubUrl = remember(context, snackbar, scope, verificationUri) { { url: String ->
+        val opened = GitHubExternalLinkLauncher.open(context, url)
+        if (opened && url == verificationUri) awaitingVerificationBrowserReturn = true
+        if (!opened) scope.launch { val result = snackbar.showSnackbar("Unable to open GitHub.", actionLabel = "Retry"); if (result == SnackbarResult.ActionPerformed) GitHubExternalLinkLauncher.open(context, url) }
+    } }
+    val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
+    LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
     BoxWithConstraints(Modifier.fillMaxSize().rockBackground()) {
-        val navigationChromePadding = when {
-            state.mode == null -> 20.dp
-            maxWidth < 600.dp -> 92.dp
-            else -> 20.dp
-        }
-        if (state.mode == null) {
-            LoginScreen(
-                configured = viewModel.loginConfigured,
-                loading = state.isLoading,
-                auth = state.auth,
-                onLogin = viewModel::startLogin,
-                onOpenGitHubUrl = openGitHubUrl,
-                onCheckAuthorization = viewModel::checkLoginStatus,
-                onGuest = viewModel::continueAsGuest,
-            )
-        } else {
-            CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
-                    MainNavigation(
-                        navController = navController,
-                        state = state,
-                        onSearch = viewModel::searchRepositories,
-                        onInspectProfile = viewModel::inspectProfile,
-                        onRememberRepository = viewModel::rememberRepository,
-                        onOpenGitHubUrl = openGitHubUrl,
-                        onRefresh = viewModel::refresh,
-                        onLogout = viewModel::logout
-                    )
-                    ModernNavigationChrome(
-                        navController = navController,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-        }
-        SnackbarHost(
-            hostState = snackbar,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding)
-        )
+        val navigationChromePadding = if (state.mode == null) 20.dp else if (maxWidth < 600.dp) 92.dp else 20.dp
+        if (state.mode == null) LoginScreen(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
+        else CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) { Box(Modifier.fillMaxSize()) { MainNavigation(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout); ModernNavigationChrome(navController, Modifier.fillMaxSize()) } }
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding))
     }
 }
