@@ -3,6 +3,8 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -10,8 +12,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun DownloadsHubScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     Column(
-        modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(androidx.compose.ui.unit.dp(8))
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         DownloadsApplicationsScreen(viewModel = viewModel)
     }
