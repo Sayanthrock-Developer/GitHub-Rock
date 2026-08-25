@@ -22,13 +22,13 @@ object MarkdownRenderer {
     private val orderedPattern = Regex("^\\s*(\\d+)[.)]\\s+(.+)$")
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
-    private val imagePattern = Regex("""^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\".*?\")?\\)\\s*$""")
-    private val htmlImagePattern = Regex("""^\\s*(?:<a\\s+[^>]*>\\s*)?<img\\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*(?:alt=[\"']([^\"']*)[\"'][^>]*)?>\\s*(?:</a>\\s*)?$""")
+    private val imagePattern = Regex("""^\s*!\[(.*?)\]\((\S+?)(?:\s+\".*?\")?\)\s*$""")
+    private val htmlImagePattern = Regex("""^\s*(?:<a\s+[^>]*>\s*)?<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*(?:alt=[\"']([^\"']*)[\"'][^>]*)?>\s*(?:</a>\s*)?$""")
     private val tableSeparator = Regex("^\\s*\\|?\\s*:?-+:?\\s*(?:\\|\\s*:?-+:?\\s*)+\\|?\\s*$")
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
-        val lines = markdown.replace("\\r\\n", "\\n").replace('\\r', '\\n').lines()
+        val lines = markdown.replace("\r\n", "\n").replace('\r', '\n').lines()
         val paragraph = StringBuilder()
         val tableLines = mutableListOf<String>()
         var inCode = false
@@ -156,14 +156,14 @@ object MarkdownRenderer {
 
     /** Compatibility helper for callers that need plain text, without changing render(). */
     fun cleanInline(text: String): String = text
-        .replace(Regex("""!\\[([^]]*)\\]\\(([^)]+)\\)"""), "$1")
-        .replace(Regex("""\\[([^]]+)\\]\\(([^)]+)\\)"""), "$1")
+        .replace(Regex("""!\[([^]]*)\]\(([^)]+)\)"""), "$1")
+        .replace(Regex("""\[([^]]+)\]\(([^)]+)\)"""), "$1")
         .replace(Regex("""<https?://[^>]+>""")) { it.value.removePrefix("<").removeSuffix(">") }
         .replace(Regex("""`([^`]+)`"""), "$1")
-        .replace(Regex("""\\*\\*([^*]+)\\*\\*"""), "$1")
+        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
         .replace(Regex("""__([^_]+)__"""), "$1")
         .replace(Regex("""~~([^~]+)~~"""), "$1")
-        .replace(Regex("""(?<!\\*)\\*([^*]+)\\*(?!\\*)"""), "$1")
+        .replace(Regex("""(?<!\*)\*([^*]+)\*(?!\*)"""), "$1")
         .replace(Regex("""(?<!_)_([^_]+)_(?!_)"""), "$1")
         .replace(Regex("""<[^>]+>"""), "")
 }
