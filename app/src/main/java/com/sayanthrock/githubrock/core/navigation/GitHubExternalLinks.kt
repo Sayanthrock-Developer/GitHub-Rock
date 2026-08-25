@@ -8,32 +8,7 @@ import androidx.browser.customtabs.CustomTabsClient
 import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
-const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
-const val GITHUB_ADD_ACCOUNT_URL = "https://github.com/login?add_account=1"
 const val GITHUB_ACCOUNT_SECURITY_URL = "https://github.com/settings/security"
-
-internal data class GitHubSignupLaunchPlan(
-    val primaryUrl: String,
-    val fallbackUrl: String,
-    val useEphemeralTab: Boolean
-)
-
-/**
- * The signup action must always remain a signup action.
- *
- * Ephemeral Custom Tabs are preferred because they avoid an existing GitHub browser session.
- * In an ephemeral tab, we can safely use the add-account login page, which provides a direct
- * Google/Apple signup method instead of typing an email address.
- *
- * When a browser cannot provide an ephemeral tab, the official signup page is opened
- * instead of silently changing the action to GitHub's add-account login page.
- */
-internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan =
-    GitHubSignupLaunchPlan(
-        primaryUrl = if (ephemeralBrowsingSupported) GITHUB_ADD_ACCOUNT_URL else GITHUB_SIGN_UP_URL,
-        fallbackUrl = GITHUB_SIGN_UP_URL,
-        useEphemeralTab = ephemeralBrowsingSupported
-    )
 
 object GitHubUrlPolicy {
     private val repositorySegment = Regex("[A-Za-z0-9_.-]+")
@@ -73,39 +48,7 @@ internal fun isExternalBrowserPackage(
 object GitHubExternalLinkLauncher {
     fun open(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
-        return if (rawUrl == GITHUB_SIGN_UP_URL) {
-            openSignup(context)
-        } else {
-            openStandard(context, rawUrl)
-        }
-    }
-
-    private fun openSignup(context: Context): Boolean {
-        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
-        val supportsEphemeralBrowsing = customTabsPackage
-            ?.takeIf { isExternalBrowserPackage(it, context.packageName) }
-            ?.let { provider ->
-                runCatching {
-                    CustomTabsClient.isEphemeralBrowsingSupported(context, provider)
-                }.getOrDefault(false)
-            }
-            ?: false
-        val plan = githubSignupLaunchPlan(supportsEphemeralBrowsing)
-
-        if (
-            plan.useEphemeralTab &&
-            customTabsPackage != null &&
-            launchCustomTab(
-                context = context,
-                rawUrl = plan.primaryUrl,
-                browserPackage = customTabsPackage,
-                ephemeral = true
-            )
-        ) {
-            return true
-        }
-
-        return openStandard(context, plan.fallbackUrl)
+        return openStandard(context, rawUrl)
     }
 
     private fun openStandard(context: Context, rawUrl: String): Boolean {
@@ -117,8 +60,7 @@ object GitHubExternalLinkLauncher {
             launchCustomTab(
                 context = context,
                 rawUrl = rawUrl,
-                browserPackage = requireNotNull(customTabsPackage),
-                ephemeral = false
+                browserPackage = requireNotNull(customTabsPackage)
             )
         ) {
             return true
@@ -130,15 +72,11 @@ object GitHubExternalLinkLauncher {
     private fun launchCustomTab(
         context: Context,
         rawUrl: String,
-        browserPackage: String,
-        ephemeral: Boolean
+        browserPackage: String
     ): Boolean {
         val customTab = CustomTabsIntent.Builder()
             .setShowTitle(true)
             .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
-            .apply {
-                if (ephemeral) setEphemeralBrowsingEnabled(true)
-            }
             .build()
             .apply {
                 intent.addCategory(Intent.CATEGORY_BROWSABLE)
