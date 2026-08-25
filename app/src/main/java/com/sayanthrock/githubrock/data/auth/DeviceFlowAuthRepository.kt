@@ -63,6 +63,17 @@ class DeviceFlowAuthRepository @Inject constructor(
         }
     }
 
+    suspend fun startWebAuthorization(state: String): String {
+        require(backendGateway.isConfigured) { "Connect GitHub Rock Backend to use browser-based GitHub sign-in." }
+        return backendGateway.startWebOAuth(state)
+    }
+
+    suspend fun exchangeWebAuthorizationCode(code: String, save: Boolean = true): StoredTokens {
+        val response = backendGateway.exchangeWebOAuth(code)
+        val token = response.accessToken ?: throw DeviceFlowException(response.errorDescription ?: "GitHub browser authorization failed.")
+        return response.toStoredTokens(token).also { tokens -> if (save) tokenStore.save(tokens) }
+    }
+
     suspend fun poll(device: DeviceCodeResponse, save: Boolean = true, onStatus: (String?) -> Unit = {}): StoredTokens {
         val deadline = Instant.now().epochSecond + device.expiresIn
         while (Instant.now().epochSecond < deadline) {
