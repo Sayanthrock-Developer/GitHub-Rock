@@ -38,45 +38,36 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val setupPreferences = remember(context) {
-        context.getSharedPreferences("github_rock_setup", android.content.Context.MODE_PRIVATE)
-    }
-    var setupComplete by rememberSaveable {
-        mutableStateOf(setupPreferences.getBoolean("setup_complete", false))
-    }
+    val setupPreferences = remember(context) { context.getSharedPreferences("github_rock_setup", android.content.Context.MODE_PRIVATE) }
+    var setupComplete by rememberSaveable { mutableStateOf(setupPreferences.getBoolean("setup_complete", false)) }
 
     if (!setupComplete) {
-        SetupGuardScreen(
-            onSetupComplete = {
-                setupPreferences.edit().putBoolean("setup_complete", true).apply()
-                setupComplete = true
-            }
-        )
+        SetupGuardScreen(onSetupComplete = { setupPreferences.edit().putBoolean("setup_complete", true).apply(); setupComplete = true })
         return
     }
 
     val verificationUri = state.auth.code?.verificationUri
+    val authorizationUrl = state.auth.authorizationUrl
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-    LaunchedEffect(state.auth.code == null) {
-        if (state.auth.code == null) awaitingVerificationBrowserReturn = false
+    LaunchedEffect(state.auth.code == null) { if (state.auth.code == null) awaitingVerificationBrowserReturn = false }
+
+    LaunchedEffect(authorizationUrl) {
+        authorizationUrl?.let { url ->
+            val opened = GitHubExternalLinkLauncher.open(context, url)
+            if (!opened) snackbar.showSnackbar("No browser could open GitHub. Install or enable a browser and try again.")
+        }
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (AuthReturnPolicy.shouldCheckAuthorization(
-                awaitingVerificationBrowserReturn = awaitingVerificationBrowserReturn,
-                hasPendingDeviceCode = state.auth.code != null
-            )
-        ) {
+        if (AuthReturnPolicy.shouldCheckAuthorization(awaitingVerificationBrowserReturn = awaitingVerificationBrowserReturn, hasPendingDeviceCode = state.auth.code != null)) {
             awaitingVerificationBrowserReturn = false
             viewModel.checkLoginStatus()
         }
     }
 
-    LaunchedEffect(Unit) {
-        AccountContextRefreshBus.events.collect { viewModel.refresh() }
-    }
+    LaunchedEffect(Unit) { AccountContextRefreshBus.events.collect { viewModel.refresh() } }
 
     val openGitHubUrl = remember(context, snackbar, scope, verificationUri) {
         { url: String ->
@@ -84,10 +75,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
             if (opened && url == verificationUri) awaitingVerificationBrowserReturn = true
             if (!opened) {
                 scope.launch {
-                    val result = snackbar.showSnackbar(
-                        message = "No browser could open GitHub. Install or enable a browser and try again.",
-                        actionLabel = "Retry"
-                    )
+                    val result = snackbar.showSnackbar(message = "No browser could open GitHub. Install or enable a browser and try again.", actionLabel = "Retry")
                     if (result == SnackbarResult.ActionPerformed) {
                         val reopened = GitHubExternalLinkLauncher.open(context, url)
                         if (reopened && url == verificationUri) awaitingVerificationBrowserReturn = true
@@ -99,26 +87,13 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     }
 
     val openNativeProfile = remember(navController) {
-        { login: String ->
-            navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) {
-                launchSingleTop = true
-            }
-        }
+        { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } }
     }
 
-    LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbar.showSnackbar(it)
-            viewModel.dismissMessage()
-        }
-    }
+    LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
     BoxWithConstraints(Modifier.fillMaxSize().rockBackground()) {
-        val navigationChromePadding = when {
-            state.mode == null -> 20.dp
-            maxWidth < 600.dp -> 92.dp
-            else -> 20.dp
-        }
+        val navigationChromePadding = when { state.mode == null -> 20.dp; maxWidth < 600.dp -> 92.dp; else -> 20.dp }
         if (state.mode == null) {
             LoginScreen(
                 configured = viewModel.loginConfigured,
@@ -140,20 +115,12 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                         onRememberRepository = viewModel::rememberRepository,
                         onOpenGitHubUrl = openGitHubUrl,
                         onRefresh = viewModel::refresh,
-                        onLogout = viewModel::logout
+                        onLogout = viewModel::logout,
                     )
-                    ModernNavigationChrome(
-                        navController = navController,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    ModernNavigationChrome(navController = navController, modifier = Modifier.fillMaxSize())
                 }
             }
         }
-        SnackbarHost(
-            hostState = snackbar,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding)
-        )
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding))
     }
 }
