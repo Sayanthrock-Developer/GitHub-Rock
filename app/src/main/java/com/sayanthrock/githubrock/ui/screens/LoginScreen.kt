@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
@@ -46,7 +45,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -76,7 +74,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 import kotlinx.coroutines.delay
 
@@ -93,7 +90,6 @@ fun LoginScreen(
     val context = LocalContext.current
     val code = auth.code
     var hasOpenedVerificationUri by rememberSaveable(code?.deviceCode) { mutableStateOf(false) }
-    var showAccountSetup by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(code?.deviceCode, onOpenGitHubUrl) {
         val verificationUri = code?.verificationUri
@@ -116,11 +112,7 @@ fun LoginScreen(
                 AccountAccessPanel(
                     configured = configured,
                     loading = loading,
-                    showAccountSetup = showAccountSetup,
-                    onShowAccountSetup = { showAccountSetup = true; onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
-                    onHideAccountSetup = { showAccountSetup = false },
                     onLogin = onLogin,
-                    onOpenSignup = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
                     onGuest = onGuest,
                 )
             } else {
@@ -161,46 +153,23 @@ private fun AuthBrandHeader() {
 private fun AccountAccessPanel(
     configured: Boolean,
     loading: Boolean,
-    showAccountSetup: Boolean,
-    onShowAccountSetup: () -> Unit,
-    onHideAccountSetup: () -> Unit,
     onLogin: () -> Unit,
-    onOpenSignup: () -> Unit,
     onGuest: () -> Unit,
 ) {
     AuthGlassPanel {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text(if (showAccountSetup) "Finish signup, then connect" else "Connect your GitHub account", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                Text("Connect your GitHub account", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                 Text(
-                    if (showAccountSetup) "GitHub Rock opens signup in an isolated browser session, so an account already signed in cannot redirect you to Dashboard. Choose Google, Apple, or email, then return here."
-                    else "Authorize GitHub Rock in your trusted browser. Your GitHub password is never entered or stored inside this app.",
+                    "Authorize GitHub Rock in your trusted browser. Your GitHub password is never entered or stored inside this app.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             SecuritySummaryCard()
-            if (showAccountSetup) {
-                Button(onClick = onLogin, enabled = configured && !loading, modifier = Modifier.fillMaxWidth().height(64.dp).semantics { contentDescription = "Connect new GitHub account" }, shape = RoundedCornerShape(22.dp)) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = null); Spacer(Modifier.width(10.dp)); Text(if (loading) "Preparing sign-in…" else "Continue with my new account", fontWeight = FontWeight.Bold)
-                }
-                OutlinedButton(onClick = onOpenSignup, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(18.dp)) {
-                    Icon(Icons.Default.OpenInBrowser, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("Open GitHub signup again")
-                }
-                TextButton(onClick = onHideAccountSetup, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("I already have an account") }
-            } else {
-                Button(onClick = onLogin, enabled = configured && !loading, modifier = Modifier.fillMaxWidth().height(68.dp).semantics { contentDescription = "Sign in to GitHub" }, shape = RoundedCornerShape(22.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63E2D8), contentColor = Color(0xFF161B22))) {
-                    Surface(modifier = Modifier.size(38.dp), shape = CircleShape, color = Color(0xFF161B22).copy(alpha = .16f)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp)) } }
-                    Spacer(Modifier.weight(1f)); Text(if (loading) "Preparing sign-in…" else "Sign in to GitHub", fontWeight = FontWeight.Black, letterSpacing = .4.sp); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowForward, contentDescription = null)
-                }
-                Surface(modifier = Modifier.fillMaxWidth().height(76.dp).clickable(onClick = onShowAccountSetup, role = Role.Button).semantics { contentDescription = "Sign up for GitHub" }, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
-                    Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
-                            Text("Private signup · Google, Apple, or email", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
+            Button(onClick = onLogin, enabled = configured && !loading, modifier = Modifier.fillMaxWidth().height(68.dp).semantics { contentDescription = "Sign in to GitHub" }, shape = RoundedCornerShape(22.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63E2D8), contentColor = Color(0xFF161B22))) {
+                Surface(modifier = Modifier.size(38.dp), shape = CircleShape, color = Color(0xFF161B22).copy(alpha = .16f)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp)) } }
+                Spacer(Modifier.weight(1f)); Text(if (loading) "Preparing sign-in…" else "Sign in to GitHub", fontWeight = FontWeight.Black, letterSpacing = .4.sp); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowForward, contentDescription = null)
             }
             if (!configured) {
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.error.copy(alpha = .10f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))) {
