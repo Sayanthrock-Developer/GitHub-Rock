@@ -1,6 +1,19 @@
 package com.sayanthrock.githubrock.core.util
 
-enum class MarkdownBlockKind { Heading, Paragraph, Bullet, Quote, Code, Divider, Image, Table }
+class MarkdownBlockKind private constructor(val name: String) {
+    override fun toString(): String = name
+
+    companion object {
+        val Heading = MarkdownBlockKind("Heading")
+        val Paragraph = MarkdownBlockKind("Paragraph")
+        val Bullet = MarkdownBlockKind("Bullet")
+        val Quote = MarkdownBlockKind("Quote")
+        val Code = MarkdownBlockKind("Code")
+        val Divider = MarkdownBlockKind("Divider")
+        val Image = MarkdownBlockKind("Image")
+        val Table = MarkdownBlockKind("Table")
+    }
+}
 
 data class MarkdownTable(
     val headers: List<String>,
