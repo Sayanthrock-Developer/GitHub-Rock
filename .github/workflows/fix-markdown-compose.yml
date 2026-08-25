@@ -1,45 +1,13 @@
 name: Fix Markdown Compose Annotation
 
 on:
-  pull_request:
-    branches:
-      - main
-    types: [opened, synchronize]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  fix:
-    if: github.event.pull_request.head.ref == 'fix/readme-markdown-fidelity' && github.event.pull_request.head.repo.full_name == github.repository
+  note:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-
-      - name: Normalize InlineMarkdownText annotation
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path("app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt")
-          text = path.read_text()
-          duplicate = "@Composable\n@Composable\nprivate fun InlineMarkdownText"
-          single = "@Composable\nprivate fun InlineMarkdownText"
-          if duplicate in text:
-              path.write_text(text.replace(duplicate, single, 1))
-          elif single in text:
-              print("InlineMarkdownText annotation is already correct")
-              raise SystemExit(0)
-          else:
-              raise SystemExit("InlineMarkdownText declaration not found")
-          PY
-
-      - name: Commit and push fix
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt
-          git commit -m "fix(markdown): normalize inline renderer annotation"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - run: echo "Temporary repair workflow disabled after applying the fix."
