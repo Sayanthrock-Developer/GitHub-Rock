@@ -13,35 +13,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Remove legacy demo-mode implementation
         shell: python
         run: |
           from pathlib import Path
           import re
-
           root = Path('.')
           (root / 'app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt').unlink(missing_ok=True)
-
           def edit(path, transform):
               p = root / path
               p.write_text(transform(p.read_text()))
-
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt', lambda s: '\n'.join(line for line in s.splitlines() if 'onDemo' not in line) + '\n')
-
           def login(s):
-              s = '\n'.join(line for line in s.splitlines() if 'onDemo' not in line) + '\n'
-              s = re.sub(r'\n\s*TextButton\(onClick = onDemo.*?\n\s*\}\n', '\n', s, flags=re.S)
+              s = '\n'.join(line for line in s.splitlines() if 'onDemo' not in line and 'Explore isolated demo mode' not in line) + '\n'
               return s.replace('Guest and demo modes still work.', 'Guest access is still available.')
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/LoginScreen.kt', login)
-
           def nav(s):
               s = re.sub(r'\?demo=\$\{mode == AppMode\.Demo\}', '', s)
               s = s.replace('?demo={demo}', '')
               s = re.sub(r',\s*navArgument\("demo"\)\s*\{.*?\}', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt', nav)
-
           def hub(s):
               s = s.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
@@ -49,7 +41,6 @@ jobs:
               s = re.sub(r'\n\s*val DEMO_RELEASES = listOf\(.*?\n\s*const val DEMO_README = """.*?\n"""', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryHubViewModel.kt', hub)
-
           def showcase(s):
               s = s.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
@@ -57,7 +48,6 @@ jobs:
               s = re.sub(r'\n\s*const val DEMO_README = """.*?\n"""', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseViewModel.kt', showcase)
-
           def file_manager(s):
               s = s.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
@@ -66,7 +56,6 @@ jobs:
               s = re.sub(r'\n\s*if \(demo\) \{.*?return@launch\s*\}', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryFileManagerViewModel.kt', file_manager)
-
           def detail(s):
               s = s.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
@@ -80,19 +69,12 @@ jobs:
               s = re.sub(r'\n\s*private fun loadDemo\(section: RepoSection\) \{.*?\n\s*\}\n\n\s*private fun isSafeFilePath', '\n\n    private fun isSafeFilePath', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryDetailViewModel.kt', detail)
-
           def detail_screen(s):
               s = s.replace('enabled = !demo && changed &&', 'enabled = changed &&')
-              s = re.sub(r'\n\s*if \(demo\) Text\("Demo mode never commits to GitHub\."[^\n]*\)', '', s)
-              return s
+              return re.sub(r'\n\s*if \(demo\) Text\("Demo mode never commits to GitHub\."[^\n]*\)', '', s)
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryDetailScreen.kt', detail_screen)
-
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/FeaturePreviewScreen.kt', lambda s: '\n'.join(line for line in s.splitlines() if 'Isolated demo mode' not in line) + '\n')
-
-          def login_tests(s):
-              return '\n'.join(line for line in s.splitlines() if 'onDemo = {}' not in line and 'Explore isolated demo mode' not in line) + '\n'
-          edit('app/src/androidTest/java/com/sayanthrock/githubrock/LoginScreenTest.kt', login_tests)
-
+          edit('app/src/androidTest/java/com/sayanthrock/githubrock/LoginScreenTest.kt', lambda s: '\n'.join(line for line in s.splitlines() if 'onDemo = {}' not in line and 'Explore isolated demo mode' not in line) + '\n')
       - name: Verify demo mode is completely absent
         shell: bash
         run: |
@@ -103,7 +85,6 @@ jobs:
             exit 1
           fi
           echo 'Legacy demo mode fully removed.'
-
       - name: Remove this one-time cleanup workflow
         shell: bash
         run: |
