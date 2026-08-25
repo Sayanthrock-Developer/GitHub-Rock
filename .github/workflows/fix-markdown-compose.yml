@@ -19,18 +19,21 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Fix InlineMarkdownText composable annotation
+      - name: Normalize InlineMarkdownText annotation
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path("app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt")
           text = path.read_text()
-          old = "\nprivate fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {"
-          new = "\n@Composable\nprivate fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {"
-          if old not in text:
-              print("InlineMarkdownText is already fixed; nothing to do")
+          duplicate = "@Composable\n@Composable\nprivate fun InlineMarkdownText"
+          single = "@Composable\nprivate fun InlineMarkdownText"
+          if duplicate in text:
+              path.write_text(text.replace(duplicate, single, 1))
+          elif single in text:
+              print("InlineMarkdownText annotation is already correct")
               raise SystemExit(0)
-          path.write_text(text.replace(old, new, 1))
+          else:
+              raise SystemExit("InlineMarkdownText declaration not found")
           PY
 
       - name: Commit and push fix
@@ -38,5 +41,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt
-          git commit -m "fix(markdown): mark inline renderer composable"
+          git commit -m "fix(markdown): normalize inline renderer annotation"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
