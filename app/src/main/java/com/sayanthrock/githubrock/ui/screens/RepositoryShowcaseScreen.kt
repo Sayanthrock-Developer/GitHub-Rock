@@ -5,19 +5,7 @@ import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -30,29 +18,17 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,404 +38,151 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
+import com.sayanthrock.githubrock.core.util.MarkdownTable
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
-/** Premium repository preview with a fully reachable, lazy-rendered README. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RepositoryShowcaseScreen(
-    repository: GitHubRepositoryModel?,
-    onBack: () -> Unit,
-    viewModel: RepositoryShowcaseViewModel = hiltViewModel()
-) {
+fun RepositoryShowcaseScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, viewModel: RepositoryShowcaseViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-
-    LaunchedEffect(repository?.id) {
-        viewModel.start(repository)
-    }
-
+    LaunchedEffect(repository?.id) { viewModel.start(repository) }
     val displayedRepository = state.repository ?: repository
     val openGitHub: () -> Unit = {
-        displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        }
+        displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) }
     }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            displayedRepository?.name ?: "Repository",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        displayedRepository?.owner?.login?.let { owner ->
-                            Text(
-                                "@$owner",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (!displayedRepository?.htmlUrl.isNullOrBlank()) {
-                        IconButton(onClick = openGitHub) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = "Open repository on GitHub")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = .94f)
-                )
-            )
-        }
-    ) { padding ->
-        RepositoryShowcaseContent(
-            repository = displayedRepository,
-            readme = state.readme,
-            loading = state.loading,
-            readmeLoading = state.readmeLoading,
-            error = state.error,
-            readmeError = state.readmeError,
-            onRetry = viewModel::retry,
-            onOpenGitHub = openGitHub,
-            modifier = Modifier.padding(padding)
-        )
+    Scaffold(topBar = {
+        TopAppBar(title = { Column {
+            Text(displayedRepository?.name ?: "Repository", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            displayedRepository?.owner?.login?.let { Text("@$it", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }}, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }, actions = {
+            if (!displayedRepository?.htmlUrl.isNullOrBlank()) IconButton(onClick = openGitHub) { Icon(Icons.Default.OpenInNew, "Open repository on GitHub") }
+        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = .94f)))
+    }) { padding ->
+        RepositoryShowcaseContent(displayedRepository, state.readme, state.loading, state.readmeLoading, state.error, state.readmeError, viewModel::retry, openGitHub, Modifier.padding(padding))
     }
 }
 
 @Composable
-fun RepositoryShowcaseContent(
-    repository: GitHubRepositoryModel?,
-    readme: String?,
-    loading: Boolean,
-    readmeLoading: Boolean,
-    error: String?,
-    readmeError: String?,
-    onRetry: () -> Unit,
-    onOpenGitHub: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val readmeBlocks = remember(readme) {
-        readme?.let(MarkdownRenderer::render).orEmpty()
-    }
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        if (loading && repository == null) {
-            item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        }
-
-        error?.let { message ->
-            item {
-                GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Text(message, color = MaterialTheme.colorScheme.error)
-                        OutlinedButton(onClick = onRetry) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Try again")
-                        }
-                    }
-                }
-            }
-        }
-
+fun RepositoryShowcaseContent(repository: GitHubRepositoryModel?, readme: String?, loading: Boolean, readmeLoading: Boolean, error: String?, readmeError: String?, onRetry: () -> Unit, onOpenGitHub: () -> Unit, modifier: Modifier = Modifier) {
+    val readmeBlocks = remember(readme) { readme?.let(MarkdownRenderer::render).orEmpty() }
+    val context = LocalContext.current
+    val openLink: (String) -> Unit = remember(context) { { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 48.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (loading && repository == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        error?.let { message -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Icon(Icons.Default.ErrorOutline, null, tint = MaterialTheme.colorScheme.error); Text(message, color = MaterialTheme.colorScheme.error); OutlinedButton(onClick = onRetry) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Try again") } } } } }
         repository?.let { repo ->
             item { RepositoryIdentityHero(repo) }
             item { RepositoryDescriptionCard(repo) }
-            item {
-                OutlinedButton(
-                    onClick = onOpenGitHub,
-                    enabled = repo.htmlUrl.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Open on GitHub", fontWeight = FontWeight.Bold)
-                }
-            }
+            item { OutlinedButton(onClick = onOpenGitHub, enabled = repo.htmlUrl.isNotBlank(), modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(18.dp)) { Icon(Icons.Default.OpenInNew, null); Spacer(Modifier.width(8.dp)); Text("Open on GitHub", fontWeight = FontWeight.Bold) } }
             item { RepositoryDetailsGrid(repo) }
             if (repo.topics.isNotEmpty()) item { RepositoryTopics(repo.topics) }
         }
-
         item { ReadmeHeader() }
-
         when {
-            readmeLoading -> item {
-                GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Loading README…", fontWeight = FontWeight.SemiBold)
-                        LinearProgressIndicator(Modifier.fillMaxWidth())
-                    }
-                }
-            }
-            readme != null -> {
-                if (readmeBlocks.isEmpty()) {
-                    item {
-                        GlassCard { Text("README.md is empty.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    }
-                } else {
-                    itemsIndexed(
-                        items = readmeBlocks,
-                        key = { index, _ -> "readme-block-$index" }
-                    ) { _, block ->
-                        ReadmeBlockCard(block)
-                    }
-                }
-            }
-            readmeError != null -> item {
-                GlassCard {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
+            readmeLoading -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("Loading README…", fontWeight = FontWeight.SemiBold); LinearProgressIndicator(Modifier.fillMaxWidth()) } } }
+            readme != null && readmeBlocks.isEmpty() -> item { GlassCard { Text("README.md is empty.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+            readme != null -> itemsIndexed(readmeBlocks, key = { index, _ -> "readme-block-$index" }) { _, block -> ReadmeBlockCard(block, openLink) }
+            readmeError != null -> item { GlassCard { Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Folder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant); Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
         }
     }
 }
 
 @Composable
-private fun ReadmeBlockCard(block: MarkdownBlock) {
-    GlassCard {
-        ReadmeBlock(block)
-    }
-}
+private fun ReadmeBlockCard(block: MarkdownBlock, onOpenLink: (String) -> Unit) { GlassCard { ReadmeBlock(block, onOpenLink) } }
 
 @Composable
-private fun RepositoryIdentityHero(repository: GitHubRepositoryModel) {
-    GlassCard(contentPadding = PaddingValues(0.dp)) {
-        Column {
-            Box(Modifier.fillMaxWidth()) {
-                RepositoryArtwork(repository = repository, compact = false)
-                RepositoryProjectIcon(
-                    repository = repository,
-                    modifier = Modifier.align(Alignment.BottomStart).offset(x = 18.dp, y = 34.dp)
-                )
-            }
-            Spacer(Modifier.height(42.dp))
-            Column(
-                modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(repository.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    RepositoryTypeBadge(repository)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (repository.private) MiniBadge("Private")
-                    if (repository.fork) MiniBadge("Fork")
-                    if (repository.isTemplate) MiniBadge("Template")
-                    if (!repository.private && !repository.fork && !repository.isTemplate) MiniBadge("Public")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RepositoryProjectIcon(repository: GitHubRepositoryModel, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.size(76.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.background)
-    ) {
-        when {
-            !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(model = repository.previewImageUrl, contentDescription = "${repository.name} application icon", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            repository.owner.avatarUrl.isNotBlank() -> AsyncImage(model = repository.owner.avatarUrl, contentDescription = "${repository.name} application icon", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            else -> Box(
-                modifier = Modifier.fillMaxSize().background(
-                    Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = .24f), MaterialTheme.colorScheme.secondary.copy(alpha = .2f)))
-                ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Folder, contentDescription = "${repository.name} application icon")
-            }
-        }
-    }
-}
-
-@Composable
-private fun RepositoryTypeBadge(repository: GitHubRepositoryModel) {
-    val applicationTopic = repository.topics.any { topic ->
-        topic.equals("android", ignoreCase = true) ||
-            topic.equals("app", ignoreCase = true) ||
-            topic.equals("application", ignoreCase = true) ||
-            topic.endsWith("-app", ignoreCase = true) ||
-            topic.endsWith("-application", ignoreCase = true)
-    }
-    val label = when {
-        repository.isTemplate -> "Template"
-        applicationTopic -> "Application"
-        else -> "Repository"
-    }
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = .14f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .36f))
-    ) {
-        Text(label, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun MiniBadge(label: String) {
-    Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .62f)) {
-        Text(label, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun RepositoryDescriptionCard(repository: GitHubRepositoryModel) {
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("About this project", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(repository.description ?: "This repository does not have a description yet.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .7f))
-            Text("Default branch · ${repository.defaultBranch}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
-private fun RepositoryDetailsGrid(repository: GitHubRepositoryModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Project details", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            DetailTile("Stars", compactCount(repository.stars), Modifier.weight(1f))
-            DetailTile("Forks", compactCount(repository.forks), Modifier.weight(1f))
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            DetailTile("Open issues", compactCount(repository.openIssues), Modifier.weight(1f))
-            DetailTile("Language", repository.language ?: "Not detected", Modifier.weight(1f))
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            DetailTile("Branch", repository.defaultBranch, Modifier.weight(1f))
-            DetailTile("Updated", repository.updatedAt.take(10).ifBlank { "Unknown" }, Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun DetailTile(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier.height(104.dp), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .46f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .5f))) {
-        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.SpaceBetween) {
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-private fun RepositoryTopics(topics: List<String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Topics", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            topics.forEach { topic ->
-                Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .11f)) {
-                    Text(topic, modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ReadmeHeader() {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text("README.md", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("Project documentation", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)) {
-            Text("Complete", modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun ReadmeBlock(block: MarkdownBlock) {
+private fun ReadmeBlock(block: MarkdownBlock, onOpenLink: (String) -> Unit) {
     when (block.kind) {
-        MarkdownBlockKind.Heading -> {
-            val text = block.text
-            val emojiRegex = remember { Regex("^([\\u2700-\\u27BF]|[\\uE000-\\uF8FF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|[\\u2011-\\u26FF]|\\uD83E[\\uDD10-\\uDDFF])\\s+(.*)") }
-            val match = emojiRegex.find(text)
-            val style = when (block.level) {
-                1 -> MaterialTheme.typography.headlineMedium
-                2 -> MaterialTheme.typography.headlineSmall
-                3 -> MaterialTheme.typography.titleLarge
-                else -> MaterialTheme.typography.titleMedium
-            }
-            if (match != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-                        Text(text = match.groupValues[1], modifier = Modifier.padding(10.dp), style = style, fontWeight = FontWeight.Bold)
-                    }
-                    Text(text = match.groupValues[2], style = style, fontWeight = FontWeight.Bold)
-                }
-            } else {
-                Text(text, style = style, fontWeight = FontWeight.Bold)
-            }
-        }
-        MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(block.text, modifier = Modifier.weight(1f))
-        }
-        MarkdownBlockKind.Quote -> Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .08f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f))) {
-            Text(block.text, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        MarkdownBlockKind.Code -> Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.background.copy(alpha = .72f)) {
-            Text(block.text, modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(12.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, softWrap = false)
-        }
+        MarkdownBlockKind.Heading -> InlineMarkdownText(block.text, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), onOpenLink)
+        MarkdownBlockKind.Paragraph -> InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink)
+        MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold); InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink, Modifier.weight(1f)) }
+        MarkdownBlockKind.Quote -> Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .08f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f))) { InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink, Modifier.padding(12.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
+        MarkdownBlockKind.Code -> Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.background.copy(alpha = .72f)) { Text(block.text, Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(12.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, softWrap = false) }
         MarkdownBlockKind.Divider -> HorizontalDivider()
         MarkdownBlockKind.Image -> AsyncImage(model = block.url, contentDescription = block.text, modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
-        MarkdownBlockKind.Paragraph -> Text(block.text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        MarkdownBlockKind.Table -> ResponsiveMarkdownTable(block.table, onOpenLink)
     }
 }
 
-private fun compactCount(value: Int): String = when {
-    value >= 1_000_000 -> {
-        val whole = value / 1_000_000
-        val decimal = (value % 1_000_000) / 100_000
-        if (decimal == 0) "${whole}M" else "$whole.${decimal}M"
-    }
-    value >= 1_000 -> {
-        val whole = value / 1_000
-        val decimal = (value % 1_000) / 100
-        if (decimal == 0) "${whole}k" else "$whole.${decimal}k"
-    }
-    else -> value.toString()
+@Composable
+private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
+    val annotated = remember(text, style, color) { buildMarkdownAnnotatedString(text, style, color) }
+    Text(annotated, modifier = modifier, style = style, color = color, onTextLayout = {})
+    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+    // Click handling is provided by a transparent overlay using the same text layout below.
+    MarkdownLinkClickLayer(text, style, modifier, onOpenLink)
 }
+
+@Composable
+private fun MarkdownLinkClickLayer(text: String, style: TextStyle, modifier: Modifier, onOpenLink: (String) -> Unit) {
+    val links = remember(text) { extractMarkdownLinks(text) }
+    if (links.isEmpty()) return
+    // Use a compact clickable row for links while preserving the full formatted text above.
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        links.forEach { link ->
+            Text(link.label, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline, style = style, modifier = Modifier.padding(top = 2.dp).then(Modifier.clickable { onOpenLink(link.url) }))
+        }
+    }
+}
+
+data class MarkdownLink(val label: String, val url: String)
+
+private fun extractMarkdownLinks(text: String): List<MarkdownLink> = Regex("\\[([^]]+)]\\((https?://[^)]+)\\)").findAll(text).map { MarkdownLink(it.groupValues[1], it.groupValues[2]) }.toList()
+
+private fun buildMarkdownAnnotatedString(text: String, style: TextStyle, color: androidx.compose.ui.graphics.Color): AnnotatedString = buildAnnotatedString {
+    val pattern = Regex("(\\*\\*|__)(.+?)(\\1)|(`)(.+?)(\\4)|(~~)(.+?)(\\7)|(?<!\\*)\\*([^*]+)\\*(?!\\*)|(?<!_)_([^_]+)_(?!_)|\\[([^]]+)]\\((https?://[^)]+)\\)")
+    var cursor = 0
+    pattern.findAll(text).forEach { match ->
+        append(text.substring(cursor, match.range.first))
+        val groups = match.groupValues
+        when {
+            groups[1].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(groups[2]) }
+            groups[4].isNotEmpty() -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace, background = color.copy(alpha = .08f))) { append(groups[5]) }
+            groups[7].isNotEmpty() -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(groups[8]) }
+            groups[9].isNotEmpty() -> withStyle(SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)) { append(groups[9]) }
+            groups[10].isNotEmpty() -> withStyle(SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)) { append(groups[10]) }
+            groups[11].isNotEmpty() -> { pushStringAnnotation("URL", groups[12]); withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)) { append(groups[11]) }; pop() }
+            else -> append(match.value)
+        }
+        cursor = match.range.last + 1
+    }
+    append(text.substring(cursor))
+}
+
+@Composable
+private fun ResponsiveMarkdownTable(table: MarkdownTable?, onOpenLink: (String) -> Unit) {
+    if (table == null) return
+    val scroll = rememberScrollState()
+    Column(Modifier.fillMaxWidth().horizontalScroll(scroll)) {
+        val widths = List(table.headers.size) { 180.dp }
+        Row {
+            table.headers.forEachIndexed { index, cell -> MarkdownTableCell(cell, widths[index], true, onOpenLink) }
+        }
+        table.rows.forEach { row ->
+            Row { table.headers.indices.forEach { index -> MarkdownTableCell(row.getOrElse(index) { "" }, widths[index], false, onOpenLink) } }
+        }
+    }
+}
+
+@Composable
+private fun MarkdownTableCell(text: String, width: androidx.compose.ui.unit.Dp, header: Boolean, onOpenLink: (String) -> Unit) {
+    Surface(modifier = Modifier.width(width), color = if (header) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        InlineMarkdownText(text, MaterialTheme.typography.bodySmall.copy(fontWeight = if (header) FontWeight.Bold else FontWeight.Normal), onOpenLink, Modifier.padding(10.dp))
+    }
+}
+
+@Composable
+private fun RepositoryIdentityHero(repository: GitHubRepositoryModel) { GlassCard(contentPadding = PaddingValues(0.dp)) { Column { Box(Modifier.fillMaxWidth()) { RepositoryArtwork(repository, compact = false); RepositoryProjectIcon(repository, Modifier.align(Alignment.BottomStart).offset(x = 18.dp, y = 34.dp)) }; Spacer(Modifier.height(42.dp)); Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) { Column(Modifier.weight(1f)) { Text(repository.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis); Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }; RepositoryTypeBadge(repository) }; Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (repository.private) MiniBadge("Private"); if (repository.fork) MiniBadge("Fork"); if (repository.isTemplate) MiniBadge("Template"); if (!repository.private && !repository.fork && !repository.isTemplate) MiniBadge("Public") } } } } }
+
+@Composable private fun RepositoryProjectIcon(repository: GitHubRepositoryModel, modifier: Modifier = Modifier) { Surface(modifier.size(76.dp), RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(2.dp, MaterialTheme.colorScheme.background)) { when { !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(repository.previewImageUrl, "${repository.name} application icon", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()); repository.owner.avatarUrl.isNotBlank() -> AsyncImage(repository.owner.avatarUrl, "${repository.name} application icon", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()); else -> Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha=.24f), MaterialTheme.colorScheme.secondary.copy(alpha=.2f)))), contentAlignment = Alignment.Center) { Icon(Icons.Default.Folder, "${repository.name} application icon") } } } }
+
+@Composable private fun RepositoryTypeBadge(repository: GitHubRepositoryModel) { Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primary.copy(alpha=.14f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha=.36f))) { Text(if (repository.isTemplate) "Template" else if (repository.topics.any { it.equals("android", true) || it.equals("app", true) || it.equals("application", true) || it.endsWith("-app", true) || it.endsWith("-application", true) }) "Application" else "Repository", Modifier.padding(horizontal=11.dp, vertical=7.dp), color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.labelMedium, fontWeight=FontWeight.Bold) } }
+@Composable private fun MiniBadge(label: String) { Surface(shape=RoundedCornerShape(999.dp), color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.62f)) { Text(label, Modifier.padding(horizontal=10.dp, vertical=5.dp), style=MaterialTheme.typography.labelSmall, color=MaterialTheme.colorScheme.onSurfaceVariant) } }
+@Composable private fun RepositoryDescriptionCard(repository: GitHubRepositoryModel) { GlassCard { Column(verticalArrangement=Arrangement.spacedBy(10.dp)) { Text("About this project", style=MaterialTheme.typography.titleLarge, fontWeight=FontWeight.Bold); Text(repository.description ?: "This repository does not have a description yet.", style=MaterialTheme.typography.bodyLarge, color=MaterialTheme.colorScheme.onSurfaceVariant); HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.7f)); Text("Default branch · ${repository.defaultBranch}", style=MaterialTheme.typography.labelLarge, color=MaterialTheme.colorScheme.primary) } } }
+@Composable private fun RepositoryDetailsGrid(repository: GitHubRepositoryModel) { Column(verticalArrangement=Arrangement.spacedBy(10.dp)) { Text("Project details", style=MaterialTheme.typography.headlineSmall, fontWeight=FontWeight.Bold); Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(10.dp)) { DetailTile("Stars", compactCount(repository.stars), Modifier.weight(1f)); DetailTile("Forks", compactCount(repository.forks), Modifier.weight(1f)) }; Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(10.dp)) { DetailTile("Open issues", compactCount(repository.openIssues), Modifier.weight(1f)); DetailTile("Language", repository.language ?: "Not detected", Modifier.weight(1f)) }; Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(10.dp)) { DetailTile("Branch", repository.defaultBranch, Modifier.weight(1f)); DetailTile("Updated", repository.updatedAt.take(10).ifBlank { "Unknown" }, Modifier.weight(1f)) } } }
+@Composable private fun DetailTile(label:String,value:String,modifier:Modifier=Modifier) { Surface(modifier.height(104.dp), RoundedCornerShape(22.dp), color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.46f), border=BorderStroke(1.dp,MaterialTheme.colorScheme.outline.copy(alpha=.5f))) { Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.SpaceBetween) { Text(label,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelLarge); Text(value,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold,maxLines=2,overflow=TextOverflow.Ellipsis) } } }
+@Composable private fun RepositoryTopics(topics:List<String>) { Column(verticalArrangement=Arrangement.spacedBy(10.dp)) { Text("Topics",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold); Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)){topics.forEach{Surface(shape=RoundedCornerShape(999.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.11f)){Text(it,Modifier.padding(horizontal=12.dp,vertical=7.dp),color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.labelMedium)}}}} }
+@Composable private fun ReadmeHeader() { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){Row(verticalAlignment=Alignment.CenterVertically){Surface(CircleShape,color=MaterialTheme.colorScheme.primaryContainer,modifier=Modifier.size(48.dp)){Icon(Icons.AutoMirrored.Filled.MenuBook,null,Modifier.padding(12.dp),tint=MaterialTheme.colorScheme.onPrimaryContainer)};Spacer(Modifier.width(16.dp));Column{Text("README.md",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text("Project documentation",color=MaterialTheme.colorScheme.onSurfaceVariant)}};Surface(shape=RoundedCornerShape(999.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.12f)){Text("Complete",Modifier.padding(horizontal=11.dp,vertical=6.dp),color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.labelMedium,fontWeight=FontWeight.Bold)}} }
+private fun compactCount(value:Int):String=when{value>=1_000_000->{val w=value/1_000_000;val d=(value%1_000_000)/100_000;if(d==0)"${w}M" else "$w.${d}M"};value>=1_000->{val w=value/1_000;val d=(value%1_000)/100;if(d==0)"${w}k" else "$w.${d}k"};else->value.toString()}
