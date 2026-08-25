@@ -61,4 +61,16 @@ class MarkdownRendererTest {
         assertEquals(MarkdownBlockKind.Image, result[0].kind)
         assertEquals("https://example.com/logo.png", result[0].url)
     }
+
+    @Test fun `normalize CRLF and CR line endings`() {
+        val crlf = MarkdownRenderer.render("# Title\r\n\r\nParagraph\r\nNext")
+        val cr = MarkdownRenderer.render("# Title\r\rParagraph\rNext")
+        assertEquals(listOf("Title", "Paragraph Next"), crlf.map { it.text })
+        assertEquals(listOf("Title", "Paragraph Next"), cr.map { it.text })
+    }
+
+    @Test fun `cleanInline removes markdown without corrupting escapes`() {
+        val markdown = "**bold** *italic* ~~strike~~ `code` [Link](https://example.com)"
+        assertEquals("bold italic strike code Link", MarkdownRenderer.cleanInline(markdown))
+    }
 }
