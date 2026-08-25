@@ -64,6 +64,17 @@ fun ModernNavigationChrome(navController: NavHostController, modifier: Modifier 
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             } else {
+                // This opaque bottom layer masks the legacy dock rendered by MainNavigation,
+                // so only this navigation component is visible on mobile.
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(112.dp),
+                    color = MaterialTheme.colorScheme.background,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {}
                 ModernNavigationBottomBar(
                     selectedRoute = selectedRoute,
                     onDestinationSelected = { navigate(navController, it) },
