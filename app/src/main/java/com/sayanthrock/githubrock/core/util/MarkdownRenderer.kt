@@ -23,7 +23,7 @@ object MarkdownRenderer {
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
-        val lines = markdown.replace("\\r\\n", "\\n").replace('\\r', '\\n').lines()
+        val lines = markdown.replace("\r\n", "\n").replace('\r', '\n').lines()
         val paragraph = StringBuilder()
         val code = StringBuilder()
         var inCode = false
