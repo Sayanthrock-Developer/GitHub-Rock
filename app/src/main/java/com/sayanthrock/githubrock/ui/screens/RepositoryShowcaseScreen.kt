@@ -41,25 +41,38 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.MarkdownTable
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
+import java.net.URI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositoryShowcaseScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, viewModel: RepositoryShowcaseViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    LaunchedEffect(repository?.id) { viewModel.start(repository) }
+    LaunchedEffect(repository) { viewModel.start(repository) }
     val displayedRepository = state.repository ?: repository
     val openGitHub = { displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } }
     Scaffold(topBar = {
-        TopAppBar(title = { Column { Text(displayedRepository?.name ?: "Repository", maxLines = 1, overflow = TextOverflow.Ellipsis); displayedRepository?.owner?.login?.let { Text("@$it", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }, actions = { if (!displayedRepository?.htmlUrl.isNullOrBlank()) IconButton(onClick = openGitHub) { Icon(Icons.Default.OpenInNew, "Open repository on GitHub") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = .94f)))
-    }) { padding -> RepositoryShowcaseContent(displayedRepository, state.readme, state.loading, state.readmeLoading, state.error, state.readmeError, viewModel::retry, openGitHub, Modifier.padding(padding)) }
+        TopAppBar(
+            title = { Column { Text(displayedRepository?.name ?: "Repository", maxLines = 1, overflow = TextOverflow.Ellipsis); displayedRepository?.owner?.login?.let { Text("@$it", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } } },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+            actions = { if (!displayedRepository?.htmlUrl.isNullOrBlank()) IconButton(onClick = openGitHub) { Icon(Icons.Default.OpenInNew, "Open repository on GitHub") } },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = .94f))
+        )
+    }) { padding ->
+        RepositoryShowcaseContent(displayedRepository, state.readme, state.loading, state.readmeLoading, state.error, state.readmeError, viewModel::retry, openGitHub, Modifier.padding(padding))
+    }
 }
 
 @Composable
 fun RepositoryShowcaseContent(repository: GitHubRepositoryModel?, readme: String?, loading: Boolean, readmeLoading: Boolean, error: String?, readmeError: String?, onRetry: () -> Unit, onOpenGitHub: () -> Unit, modifier: Modifier = Modifier) {
-    val blocks = remember(readme) { readme?.let(MarkdownRenderer::render).orEmpty() }
+    val blocks = remember(readme, repository?.htmlUrl, repository?.defaultBranch) { readme?.let(MarkdownRenderer::render).orEmpty() }
     val context = LocalContext.current
-    val openLink: (String) -> Unit = remember(context) { { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
+    val openLink: (String) -> Unit = remember(context, repository?.htmlUrl, repository?.defaultBranch) {
+        { url ->
+            val resolved = resolveReadmeUrl(url, repository, image = false)
+            if (!resolved.startsWith("#")) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(resolved)))
+        }
+    }
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 48.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (loading && repository == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         error?.let { message -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Icon(Icons.Default.ErrorOutline, null, tint = MaterialTheme.colorScheme.error); Text(message, color = MaterialTheme.colorScheme.error); OutlinedButton(onClick = onRetry) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Try again") } } } } }
@@ -74,24 +87,27 @@ fun RepositoryShowcaseContent(repository: GitHubRepositoryModel?, readme: String
         when {
             readmeLoading -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("Loading README…", fontWeight = FontWeight.SemiBold); LinearProgressIndicator(Modifier.fillMaxWidth()) } } }
             readme != null && blocks.isEmpty() -> item { GlassCard { Text("README.md is empty.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
-            readme != null -> itemsIndexed(blocks, key = { index, _ -> "readme-block-$index" }) { _, block -> ReadmeBlockCard(block, openLink) }
+            readme != null -> itemsIndexed(blocks, key = { index, _ -> "readme-block-$index" }) { _, block -> ReadmeBlockCard(block, openLink, repository) }
             readmeError != null -> item { GlassCard { Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         }
     }
 }
 
-@Composable private fun ReadmeBlockCard(block: MarkdownBlock, onOpenLink: (String) -> Unit) { GlassCard { ReadmeBlock(block, onOpenLink) } }
+@Composable private fun ReadmeBlockCard(block: MarkdownBlock, onOpenLink: (String) -> Unit, repository: GitHubRepositoryModel?) { GlassCard { ReadmeBlock(block, onOpenLink, repository) } }
 
 @Composable
-private fun ReadmeBlock(block: MarkdownBlock, onOpenLink: (String) -> Unit) {
+private fun ReadmeBlock(block: MarkdownBlock, onOpenLink: (String) -> Unit, repository: GitHubRepositoryModel?) {
     when (block.kind) {
         MarkdownBlockKind.Heading -> InlineMarkdownText(block.text, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), onOpenLink)
         MarkdownBlockKind.Paragraph -> InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink)
-        MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold); InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink, Modifier.weight(1f)) }
+        MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (block.ordered) "${block.level}." else "•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink, Modifier.weight(1f))
+        }
         MarkdownBlockKind.Quote -> Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .08f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f))) { InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, onOpenLink, Modifier.padding(12.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
         MarkdownBlockKind.Code -> Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.background.copy(alpha = .72f)) { Text(block.text, Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(12.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, softWrap = false) }
         MarkdownBlockKind.Divider -> HorizontalDivider()
-        MarkdownBlockKind.Image -> AsyncImage(model = block.url, contentDescription = block.text, modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
+        MarkdownBlockKind.Image -> AsyncImage(model = resolveReadmeUrl(block.url.orEmpty(), repository, image = true), contentDescription = block.text, modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
         MarkdownBlockKind.Table -> ResponsiveMarkdownTable(block.table, onOpenLink)
     }
 }
@@ -104,7 +120,7 @@ private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (Stri
 }
 
 private fun buildMarkdownAnnotatedString(text: String, codeBackground: Color, linkColor: Color): AnnotatedString = buildAnnotatedString {
-    val pattern = Regex("(\\*\\*|__)(.+?)(\\1)|(`)(.+?)(\\4)|(~~)(.+?)(\\7)|(?<!\\*)\\*([^*]+)\\*(?!\\*)|(?<!_)_([^_]+)_(?!_)|\\[([^]]+)]\\((https?://[^)]+)\\)")
+    val pattern = Regex("(\\*\\*|__)(.+?)(\\1)|(`)(.+?)(\\4)|(~~)(.+?)(\\7)|(?<!\\*)\\*([^*]+)\\*(?!\\*)|(?<!_)_([^_]+)_(?!_)|\\[([^]]+)]\\(([^)]+)\\)")
     var cursor = 0
     pattern.findAll(text).forEach { match ->
         append(text.substring(cursor, match.range.first))
@@ -113,9 +129,9 @@ private fun buildMarkdownAnnotatedString(text: String, codeBackground: Color, li
             g[1].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(g[2]) }
             g[4].isNotEmpty() -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace, background = codeBackground.copy(alpha = .10f))) { append(g[5]) }
             g[7].isNotEmpty() -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(g[8]) }
-            g[9].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[9]) }
             g[10].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[10]) }
-            g[11].isNotEmpty() -> { pushStringAnnotation("URL", g[12]); withStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)) { append(g[11]) }; pop() }
+            g[11].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[11]) }
+            g[12].isNotEmpty() -> { pushStringAnnotation("URL", g[13]); withStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)) { append(g[12]) }; pop() }
             else -> append(match.value)
         }
         cursor = match.range.last + 1
@@ -138,6 +154,23 @@ private fun MarkdownTableCell(text: String, width: Dp, header: Boolean, onOpenLi
     Surface(modifier = Modifier.width(width), color = if (header) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         InlineMarkdownText(text, MaterialTheme.typography.bodySmall.copy(fontWeight = if (header) FontWeight.Bold else FontWeight.Normal), onOpenLink, Modifier.padding(10.dp))
     }
+}
+
+private fun resolveReadmeUrl(url: String, repository: GitHubRepositoryModel?, image: Boolean): String {
+    if (url.isBlank() || url.startsWith("#") || url.startsWith("http://") || url.startsWith("https://")) return url
+    if (url.startsWith("//")) return "https:$url"
+    val repo = repository ?: return url
+    return runCatching {
+        val owner = repo.owner.login
+        val name = repo.name
+        val branch = repo.defaultBranch
+        val base = if (image) {
+            URI("https://raw.githubusercontent.com/$owner/$name/$branch/")
+        } else {
+            URI("https://github.com/$owner/$name/blob/$branch/")
+        }
+        base.resolve(url.removePrefix("./")).toString()
+    }.getOrDefault(url)
 }
 
 @Composable private fun RepositoryIdentityHero(repository: GitHubRepositoryModel) { GlassCard(contentPadding = PaddingValues(0.dp)) { Column { Box(Modifier.fillMaxWidth()) { RepositoryArtwork(repository, compact = false); RepositoryProjectIcon(repository, Modifier.align(Alignment.BottomStart).offset(x = 18.dp, y = 34.dp)) }; Spacer(Modifier.height(42.dp)); Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) { Column(Modifier.weight(1f)) { Text(repository.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis); Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }; RepositoryTypeBadge(repository) }; Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (repository.private) MiniBadge("Private"); if (repository.fork) MiniBadge("Fork"); if (repository.isTemplate) MiniBadge("Template"); if (!repository.private && !repository.fork && !repository.isTemplate) MiniBadge("Public") } } } } }
