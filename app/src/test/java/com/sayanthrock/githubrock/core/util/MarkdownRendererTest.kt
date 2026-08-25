@@ -25,8 +25,12 @@ class MarkdownRendererTest {
         assertEquals(5, result.size)
         assertEquals("Item 1", result[0].text)
         assertEquals("Item 2", result[1].text)
-        assertEquals("1. First", result[2].text)
-        assertEquals("2. Second", result[3].text)
+        assertEquals("First", result[2].text)
+        assertTrue(result[2].ordered)
+        assertEquals(1, result[2].level)
+        assertEquals("Second", result[3].text)
+        assertTrue(result[3].ordered)
+        assertEquals(2, result[3].level)
         assertEquals(MarkdownBlockKind.Quote, result[4].kind)
     }
 
@@ -55,11 +59,28 @@ class MarkdownRendererTest {
         assertEquals(listOf(listOf("Rock", "42"), listOf("App", "10")), result[0].table?.rows)
     }
 
+    @Test fun `table does not swallow following prose containing a pipe`() {
+        val markdown = "| Name | Stars |\n| --- | --- |\n| Rock | 42 |\n\nA link with a | pipe"
+        val result = MarkdownRenderer.render(markdown)
+        assertEquals(2, result.size)
+        assertEquals(MarkdownBlockKind.Table, result[0].kind)
+        assertEquals("A link with a | pipe", result[1].text)
+    }
+
     @Test fun `render images without flattening`() {
         val result = MarkdownRenderer.render("![Logo](https://example.com/logo.png)")
         assertEquals(1, result.size)
         assertEquals(MarkdownBlockKind.Image, result[0].kind)
         assertEquals("https://example.com/logo.png", result[0].url)
+        assertEquals("Logo", result[0].text)
+    }
+
+    @Test fun `render html image alt text`() {
+        val result = MarkdownRenderer.render("<img src=\"https://example.com/logo.png\" alt=\"GitHub Rock\">")
+        assertEquals(1, result.size)
+        assertEquals(MarkdownBlockKind.Image, result[0].kind)
+        assertEquals("https://example.com/logo.png", result[0].url)
+        assertEquals("GitHub Rock", result[0].text)
     }
 
     @Test fun `normalize CRLF and CR line endings`() {
