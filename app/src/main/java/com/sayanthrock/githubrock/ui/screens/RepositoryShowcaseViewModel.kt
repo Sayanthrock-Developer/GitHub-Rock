@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** UI state for the visual repository landing page. */
 data class RepositoryShowcaseState(
     val repository: GitHubRepositoryModel? = null,
     val readme: String? = null,
@@ -41,14 +40,14 @@ class RepositoryShowcaseViewModel @Inject constructor(
     private var loadJob: Job? = null
     private var currentRepositoryId: Long? = null
 
-    /** Supplies the repository already selected from Home or Repositories for instant first paint. */
+    /** Supplies the selected repository for instant first paint, then refreshes its metadata and README. */
     fun start(initialRepository: GitHubRepositoryModel?) {
-        if (initialRepository?.id == currentRepositoryId && currentRepositoryId != null) return
         currentRepositoryId = initialRepository?.id
         _state.update {
             it.copy(
                 repository = initialRepository ?: it.repository,
-                loading = initialRepository == null && it.repository == null
+                loading = initialRepository == null && it.repository == null,
+                readme = if (initialRepository != null && initialRepository.id != it.repository?.id) null else it.readme
             )
         }
         loadJob?.cancel()
@@ -61,7 +60,6 @@ class RepositoryShowcaseViewModel @Inject constructor(
     }
 
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
-
         _state.update {
             it.copy(
                 loading = initialRepository == null && it.repository == null,
