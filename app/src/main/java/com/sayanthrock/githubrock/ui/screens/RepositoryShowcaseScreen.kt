@@ -117,6 +117,7 @@ private fun ReadmeBlock(block: MarkdownBlock, onOpenLink: (String) -> Unit, repo
 }
 
 @Composable
+@Composable
 private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {
     val resolvedColor = color ?: MaterialTheme.colorScheme.onSurface
     val linkColor = MaterialTheme.colorScheme.primary
