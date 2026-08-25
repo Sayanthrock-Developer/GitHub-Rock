@@ -29,11 +29,7 @@ data class DeviceAuthState(
     val error: String? = null,
 )
 
-data class ProfileExplorerState(
-    val snapshot: GitHubProfileSnapshot? = null,
-    val loading: Boolean = false,
-    val error: String? = null,
-)
+data class ProfileExplorerState(val snapshot: GitHubProfileSnapshot? = null, val loading: Boolean = false, val error: String? = null)
 
 data class MainUiState(
     val mode: AppMode? = null,
@@ -66,17 +62,14 @@ class MainViewModel @Inject constructor(
     private var profileJob: Job? = null
     private var pendingWebOAuthState: String? = null
 
-    init {
-        if (authRepository.hasSession) connectExistingSession()
-    }
+    init { if (authRepository.hasSession) connectExistingSession() }
 
     fun startLogin() {
-        cancelDataJobs()
-        authJob?.cancel()
+        cancelDataJobs(); authJob?.cancel()
         authJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, isRefreshing = false, message = null, auth = DeviceAuthState(status = "Preparing secure GitHub sign-in…")) }
             try {
-                if (authRepositoryBackendAvailable()) {
+                if (authRepository.isWebOAuthConfigured) {
                     val state = UUID.randomUUID().toString()
                     pendingWebOAuthState = state
                     val authorizationUrl = authRepository.startWebAuthorization(state)
@@ -86,15 +79,8 @@ class MainViewModel @Inject constructor(
                 startDeviceLogin()
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (_: Exception) {
-                try {
-                    pendingWebOAuthState = null
-                    startDeviceLogin()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    reportAuthFailure(error)
-                }
+            } catch (error: Exception) {
+                reportAuthFailure(error)
             }
         }
     }
@@ -132,19 +118,12 @@ class MainViewModel @Inject constructor(
         authJob?.cancel()
         authJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, auth = it.auth.copy(status = "Checking GitHub authorization…", error = null)) }
-            try {
-                completeLogin(code)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                reportAuthFailure(error)
-            }
+            try { completeLogin(code) } catch (cancelled: CancellationException) { throw cancelled } catch (error: Exception) { reportAuthFailure(error) }
         }
     }
 
     fun continueAsGuest() {
-        cancelAllJobs()
-        _state.value = MainUiState(mode = AppMode.Guest, isLoading = true)
+        cancelAllJobs(); _state.value = MainUiState(mode = AppMode.Guest, isLoading = true)
         searchJob = viewModelScope.launch {
             runCatchingPreservingCancellation { githubRepository.publicRepositories("") }
                 .onSuccess { repos -> _state.update { it.copy(isLoading = false, repositories = repos) } }
@@ -179,8 +158,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun rememberRepository(repository: GitHubRepositoryModel) {
-        rememberJob?.cancel()
-        rememberJob = viewModelScope.launch {
+        rememberJob?.cancel(); rememberJob = viewModelScope.launch {
             runCatchingPreservingCancellation { githubRepository.remember(repository) }
                 .onFailure { error -> _state.update { it.copy(message = "Unable to save recent repository: ${error.userMessage()}") } }
         }
@@ -188,13 +166,9 @@ class MainViewModel @Inject constructor(
 
     fun inspectProfile(login: String) {
         val normalized = normalizedGitHubLogin(login)
-        if (normalized == null) {
-            _state.update { it.copy(profileExplorer = it.profileExplorer.copy(loading = false, error = "GitHub profile data is unavailable.")) }
-            return
-        }
+        if (normalized == null) { _state.update { it.copy(profileExplorer = it.profileExplorer.copy(loading = false, error = "GitHub profile data is unavailable.")) }; return }
         val mode = _state.value.mode ?: return
-        profileJob?.cancel()
-        profileJob = viewModelScope.launch {
+        profileJob?.cancel(); profileJob = viewModelScope.launch {
             _state.update { it.copy(profileExplorer = it.profileExplorer.copy(loading = true, error = null)) }
             runCatchingPreservingCancellation { githubRepository.profile(normalized) }
                 .onSuccess { snapshot -> _state.update { it.copy(profileExplorer = ProfileExplorerState(snapshot = snapshot)) } }
@@ -202,19 +176,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun logout() {
-        cancelAllJobs(); monitorScheduler.cancelAll(); authRepository.logout(); pendingWebOAuthState = null; _state.value = MainUiState()
-    }
-
+    fun logout() { cancelAllJobs(); monitorScheduler.cancelAll(); authRepository.logout(); pendingWebOAuthState = null; _state.value = MainUiState() }
     fun dismissMessage() = _state.update { it.copy(message = null) }
-
-    private suspend fun authRepositoryBackendAvailable(): Boolean =
-        runCatching { authRepository.startWebAuthorization(UUID.randomUUID().toString()) }.isSuccess
 
     private suspend fun startDeviceLogin() {
         _state.update { it.copy(isLoading = true, auth = DeviceAuthState(status = "Requesting a device code…")) }
         val code = authRepository.begin()
-        _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code, status = "Waiting for approval on GitHub…")) }
+        _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code = code, status = "Waiting for approval on GitHub…")) }
         completeLogin(code)
     }
 
@@ -227,14 +195,11 @@ class MainViewModel @Inject constructor(
     private fun reportAuthFailure(error: Exception) = _state.update { it.copy(isLoading = false, auth = it.auth.copy(error = error.userMessage())) }
 
     private fun connectExistingSession() {
-        sessionJob?.cancel()
-        sessionJob = viewModelScope.launch {
+        sessionJob?.cancel(); sessionJob = viewModelScope.launch {
             _state.update { it.copy(mode = AppMode.Connected, isLoading = true, message = null) }
             try {
                 if (!authRepository.refreshIfNeeded()) expireSession("Your GitHub session expired. Please sign in again.") else loadConnectedDashboard()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Throwable) {
+            } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) {
                 if (error is retrofit2.HttpException && error.code() == 401) expireSession("Your GitHub session expired. Please sign in again.")
                 else _state.update { it.copy(mode = AppMode.Connected, isLoading = false, isRefreshing = false, message = error.userMessage()) }
             }
@@ -245,14 +210,8 @@ class MainViewModel @Inject constructor(
         runCatchingPreservingCancellation { githubRepository.dashboard() }
             .onSuccess { payload ->
                 _state.update {
-                    it.copy(
-                        mode = AppMode.Connected,
-                        isLoading = false,
-                        profile = payload.profile,
-                        rateLimit = payload.rateLimit,
-                        repositories = payload.repositories,
-                        profileExplorer = if (it.profileExplorer.snapshot == null || it.profileExplorer.snapshot.profile.login.equals(payload.profile.login, ignoreCase = true)) ProfileExplorerState(snapshot = GitHubProfileSnapshot(payload.profile)) else it.profileExplorer,
-                    )
+                    it.copy(mode = AppMode.Connected, isLoading = false, profile = payload.profile, rateLimit = payload.rateLimit, repositories = payload.repositories,
+                        profileExplorer = if (it.profileExplorer.snapshot == null || it.profileExplorer.snapshot.profile.login.equals(payload.profile.login, ignoreCase = true)) ProfileExplorerState(snapshot = GitHubProfileSnapshot(payload.profile)) else it.profileExplorer)
                 }
                 val runsResult = payload.repositories.firstOrNull()?.let { repo -> runCatchingPreservingCancellation { githubRepository.runs(repo.owner.login, repo.name) } } ?: Result.success(emptyList())
                 _state.update { current -> current.copy(workflowRuns = runsResult.getOrDefault(emptyList()), isRefreshing = false, message = runsResult.exceptionOrNull()?.let { "Repository data refreshed, but workflow activity is temporarily unavailable." }) }
@@ -263,15 +222,8 @@ class MainViewModel @Inject constructor(
             }
     }
 
-    private fun expireSession(message: String) {
-        monitorScheduler.cancelAll(); authRepository.logout(); pendingWebOAuthState = null; _state.value = MainUiState(message = message)
-    }
-
-    private fun cancelDataJobs() {
-        searchJob?.cancel(); refreshJob?.cancel(); sessionJob?.cancel(); rememberJob?.cancel(); profileJob?.cancel()
-        searchJob = null; refreshJob = null; sessionJob = null; rememberJob = null; profileJob = null
-    }
-
+    private fun expireSession(message: String) { monitorScheduler.cancelAll(); authRepository.logout(); pendingWebOAuthState = null; _state.value = MainUiState(message = message) }
+    private fun cancelDataJobs() { searchJob?.cancel(); refreshJob?.cancel(); sessionJob?.cancel(); rememberJob?.cancel(); profileJob?.cancel(); searchJob = null; refreshJob = null; sessionJob = null; rememberJob = null; profileJob = null }
     private fun cancelAllJobs() { authJob?.cancel(); authJob = null; cancelDataJobs() }
 }
 
