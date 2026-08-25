@@ -7,13 +7,13 @@ import org.junit.Test
 
 class GitHubUrlPolicyTest {
     @Test fun signupAndDeviceAuthorizationAreNotRepositoryLinks() {
-        assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/signup"))
+        assertFalse(GitHubUrlPolicy.isRepositoryUrl(GITHUB_SIGN_UP_URL))
         assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/login/device"))
-        assertFalse(GitHubUrlPolicy.isRepositoryUrl(GITHUB_ADD_ACCOUNT_URL))
+        assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/login?add_account=1"))
     }
 
-    @Test fun signupLeveragesAddAccountPageWhenEphemeralBrowsingIsSupported() {
-        assertEquals(GitHubSignupLaunchPlan(GITHUB_ADD_ACCOUNT_URL, GITHUB_SIGN_UP_URL, true), githubSignupLaunchPlan(true))
+    @Test fun signupAlwaysUsesTheOfficialSignupPage() {
+        assertEquals(GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, true), githubSignupLaunchPlan(true))
         assertEquals(GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, false), githubSignupLaunchPlan(false))
     }
 
