@@ -41,7 +41,6 @@ When a feature is unavailable because of GitHub permissions, API limits, Android
 - Sign in and sign out
 - Account/profile information
 - Guest browsing for public content
-- Isolated demo mode
 - Account switching support
 - Session and authentication-state handling
 
