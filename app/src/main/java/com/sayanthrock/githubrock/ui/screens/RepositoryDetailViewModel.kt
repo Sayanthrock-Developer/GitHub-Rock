@@ -109,7 +109,7 @@ class RepositoryDetailViewModel @Inject constructor(
             _state.update { it.copy(error = "Use a valid relative text-file path") }
             return@launch
         }
-        val protected = if (demo) false else runCatching {
+        val protected = runCatching {
             repository.branchProtected(owner, repo, baseBranch)
         }.getOrDefault(false)
         _state.update {
