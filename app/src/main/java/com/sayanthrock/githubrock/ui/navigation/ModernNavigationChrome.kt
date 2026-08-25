@@ -1,8 +1,13 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,8 +50,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 /**
- * The single mobile navigation chrome shown above MainNavigation's legacy dock.
- * It intentionally uses a compact, lifted iPhone-style capsule on mobile.
+ * The single modern navigation chrome for GitHub Rock.
+ * The mobile dock is a floating iPhone-style capsule with animated icon/label states.
+ * MainNavigation's legacy dock remains underneath only as a compatibility layer and is
+ * completely covered by the background mask below; users see one navigation bar only.
  */
 @Composable
 fun ModernNavigationChrome(
@@ -66,12 +73,12 @@ fun ModernNavigationChrome(
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             } else {
-                // Mask the legacy dock completely; this is the only mobile navigation chrome.
+                // Fully cover the legacy dock so only the modern dock is visible.
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .height(104.dp),
+                        .height(112.dp),
                     color = MaterialTheme.colorScheme.background,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
@@ -101,14 +108,12 @@ internal fun ModernNavigationBottomBar(
     onDestinationSelected: (TopDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val dockShape = IphoneFloatingDockShape
-
     Surface(
         modifier = modifier
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .widthIn(max = 560.dp),
-        shape = dockShape,
+        shape = IphoneFloatingDockShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 4.dp,
         shadowElevation = 16.dp
@@ -116,7 +121,7 @@ internal fun ModernNavigationBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
+                .height(72.dp)
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -148,7 +153,7 @@ private fun RowScope.ModernBottomItem(
         label = "navigation indicator color"
     )
     val iconSize by animateDpAsState(
-        targetValue = if (selected) 26.dp else 23.dp,
+        targetValue = if (selected) 25.dp else 23.dp,
         animationSpec = tween(180),
         label = "navigation icon size"
     )
@@ -161,23 +166,41 @@ private fun RowScope.ModernBottomItem(
     Surface(
         modifier = Modifier
             .weight(1f)
-            .height(52.dp)
+            .height(58.dp)
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
                 contentDescription = destination.accessibilityLabel
                 role = Role.Tab
                 this.selected = selected
             },
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(29.dp),
         color = indicatorColor
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
                 imageVector = destination.icon,
                 contentDescription = null,
                 modifier = Modifier.size(iconSize),
                 tint = iconColor
             )
+            AnimatedVisibility(
+                visible = selected,
+                enter = fadeIn(tween(160)) + expandHorizontally(tween(180)),
+                exit = fadeOut(tween(100)) + shrinkHorizontally(tween(140))
+            ) {
+                Text(
+                    text = destination.accessibilityLabel,
+                    modifier = Modifier.padding(start = 5.dp),
+                    maxLines = 1,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }
@@ -288,7 +311,7 @@ private fun ModernRailItem(
             )
             if (selected) {
                 Text(
-                    destination.label,
+                    destination.accessibilityLabel,
                     maxLines = 1,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
