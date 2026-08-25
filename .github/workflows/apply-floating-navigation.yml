@@ -1,0 +1,64 @@
+name: Apply floating navigation redesign
+
+on:
+  push:
+    branches:
+      - ui/iphone-floating-navigation
+
+permissions:
+  contents: write
+
+jobs:
+  redesign:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Redesign mobile navigation
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path("app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt")
+          text = path.read_text()
+
+          old_constants = '''private val MobileDockHeight = 94.dp
+private val MobileDockContentClearance = 112.dp
+private val MobileDockGlassTop = Color(0xE6131414)
+private val MobileDockGlassBottom = Color(0xC9050606)
+private val MobileDockBackdrop = Color(0x99000000)
+private val MobileDockBorder = Color(0xFF343735)
+private val MobileDockMuted = Color(0xFFB8BBB3)
+private val MobileDockSelectedTop = Color(0xFF4BA642)
+private val MobileDockSelectedBottom = Color(0xFF235F2B)
+private val MobileDockSelectedBorder = Color(0xFF57B94F)
+private val MobileDockSelectedContent = Color(0xFFF7FAF4)'''
+          new_constants = '''private val MobileDockHeight = 76.dp
+private val MobileDockContentClearance = 96.dp'''
+          if old_constants not in text:
+              raise SystemExit("Missing expected navigation constants")
+          text = text.replace(old_constants, new_constants, 1)
+
+          start = text.index('@Composable\ninternal fun AppNavigationBar(')
+          end = text.index('@Composable\nprivate fun AppNavigationRail(', start)
+
+          new_bar = '''@Composable\ninternal fun AppNavigationBar(\n    selectedRoute: String?,\n    onDestinationSelected: (TopDestination) -> Unit,\n    modifier: Modifier = Modifier\n) {\n    val dockShape = RoundedCornerShape(36.dp)\n\n    Box(\n        modifier = modifier\n            .fillMaxWidth()\n            .navigationBarsPadding()\n            .padding(horizontal = 16.dp, vertical = 8.dp),\n        contentAlignment = Alignment.BottomCenter\n    ) {\n        Box(\n            modifier = Modifier\n                .fillMaxWidth()\n                .widthIn(max = 560.dp)\n                .height(MobileDockHeight)\n                .shadow(18.dp, dockShape, clip = false)\n                .clip(dockShape)\n                .background(\n                    Brush.verticalGradient(\n                        listOf(\n                            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),\n                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.90f)\n                        )\n                    )\n                )\n                .border(\n                    1.dp,\n                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),\n                    dockShape\n                )\n        ) {\n            Box(\n                modifier = Modifier\n                    .fillMaxWidth()\n                    .height(1.dp)\n                    .padding(horizontal = 26.dp)\n                    .background(\n                        Brush.horizontalGradient(\n                            listOf(\n                                Color.Transparent,\n                                Color.White.copy(alpha = 0.72f),\n                                Color.Transparent\n                            )\n                        )\n                    )\n            )\n\n            Row(\n                modifier = Modifier\n                    .fillMaxSize()\n                    .padding(horizontal = 6.dp, vertical = 6.dp)\n                    .selectableGroup(),\n                horizontalArrangement = Arrangement.spacedBy(4.dp),\n                verticalAlignment = Alignment.CenterVertically\n            ) {\n                topDestinations.forEach { destination ->\n                    NavigationDockItem(\n                        destination = destination,\n                        selected = selectedRoute == destination.route,\n                        onClick = { onDestinationSelected(destination) }\n                    )\n                }\n            }\n        }\n    }\n}\n\n@Composable\nprivate fun RowScope.NavigationDockItem(\n    destination: TopDestination,\n    selected: Boolean,\n    onClick: () -> Unit\n) {\n    val indicatorAlpha by androidx.compose.animation.core.animateFloatAsState(\n        targetValue = if (selected) 1f else 0f,\n        animationSpec = androidx.compose.animation.core.tween(220),\n        label = "navigation indicator alpha"\n    )\n    val iconSize by androidx.compose.animation.core.animateDpAsState(\n        targetValue = if (selected) 25.dp else 23.dp,\n        animationSpec = androidx.compose.animation.core.tween(220),\n        label = "navigation icon size"\n    )\n    val shape = RoundedCornerShape(30.dp)\n\n    Box(\n        modifier = Modifier\n            .weight(1f)\n            .fillMaxHeight()\n            .clip(shape)\n            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f * indicatorAlpha))\n            .border(\n                1.dp,\n                MaterialTheme.colorScheme.primary.copy(alpha = 0.26f * indicatorAlpha),\n                shape\n            )\n            .selectable(selected = selected, role = Role.Tab, onClick = onClick)\n            .semantics(mergeDescendants = true) {\n                contentDescription = destination.accessibilityLabel\n            },\n        contentAlignment = Alignment.Center\n    ) {\n        Icon(\n            imageVector = destination.icon,\n            contentDescription = null,\n            modifier = Modifier.size(iconSize),\n            tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant\n        )\n    }\n}\n\n'''
+          text = text[:start] + new_bar + text[end:]
+          path.write_text(text)
+          PY
+
+      - name: Compile Android app
+        run: ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
+
+      - name: Remove temporary workflow and commit
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-floating-navigation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt .github/workflows/apply-floating-navigation.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "feat(ui): redesign mobile navigation as floating capsule [skip ci]"
+          git push
