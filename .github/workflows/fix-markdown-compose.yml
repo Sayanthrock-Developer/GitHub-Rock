@@ -1,0 +1,39 @@
+name: Fix Markdown Compose Annotation
+
+on:
+  push:
+    branches:
+      - fix/readme-markdown-fidelity
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fix InlineMarkdownText composable annotation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt")
+          text = path.read_text()
+          old = "\nprivate fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {"
+          new = "\n@Composable\nprivate fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {"
+          if old not in text:
+              raise SystemExit("Expected InlineMarkdownText declaration not found")
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Commit and push fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt
+          git commit -m "fix(markdown): mark inline renderer composable"
+          git push
