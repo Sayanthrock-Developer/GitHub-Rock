@@ -37,6 +37,11 @@ data class BackendTokenRefreshRequest(
 )
 
 @Serializable
+data class BackendWebOAuthExchangeRequest(
+    val code: String,
+)
+
+@Serializable
 data class BackendDeviceTokenResponse(
     val state: String,
     @SerialName("access_token") val accessToken: String? = null,
@@ -67,5 +72,10 @@ interface GitHubRockBackendApi {
     @POST("v1/auth/device/refresh")
     suspend fun refreshToken(
         @Body request: BackendTokenRefreshRequest,
+    ): BackendDeviceTokenResponse
+
+    @POST("v1/auth/github/exchange")
+    suspend fun exchangeWebOAuth(
+        @Body request: BackendWebOAuthExchangeRequest,
     ): BackendDeviceTokenResponse
 }
