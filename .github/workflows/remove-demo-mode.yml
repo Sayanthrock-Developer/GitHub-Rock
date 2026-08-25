@@ -21,42 +21,39 @@ jobs:
           import re
 
           root = Path('.')
-          demo_data = root / 'app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt'
-          demo_data.unlink(missing_ok=True)
+          (root / 'app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt').unlink(missing_ok=True)
 
           def edit(path, transform):
               p = root / path
-              text = p.read_text()
-              p.write_text(transform(text))
+              p.write_text(transform(p.read_text()))
 
-          edit('app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt', lambda s: s.replace('                onDemo = viewModel::enterDemo\n', ''))
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt', lambda s: '\n'.join(line for line in s.splitlines() if 'onDemo' not in line) + '\n')
 
           def login(s):
-              s = s.replace('    onDemo: () -> Unit\n', '')
-              s = re.sub(r'\n\s*TextButton\(onClick = onDemo, modifier = Modifier\.fillMaxWidth\(\)\) \{\n\s*Text\("Explore isolated demo mode"[^\n]*\)\n\s*\}\n', '\n', s)
-              s = s.replace('Guest and demo modes still work.', 'Guest access is still available.')
-              return s
+              s = '\n'.join(line for line in s.splitlines() if 'onDemo' not in line) + '\n'
+              s = re.sub(r'\n\s*TextButton\(onClick = onDemo.*?\n\s*\}\n', '\n', s, flags=re.S)
+              return s.replace('Guest and demo modes still work.', 'Guest access is still available.')
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/LoginScreen.kt', login)
 
           def nav(s):
-              s = s.replace('navController.navigate("repo/${repo.owner.login}/${repo.name}?demo=${mode == AppMode.Demo}")', 'navController.navigate("repo/${repo.owner.login}/${repo.name}")')
+              s = re.sub(r'\?demo=\$\{mode == AppMode\.Demo\}', '', s)
               s = s.replace('?demo={demo}', '')
-              s = re.sub(r',\s*navArgument\("demo"\)\s*\{\s*type = NavType\.BoolType\s*defaultValue = false\s*\}', '', s)
+              s = re.sub(r',\s*navArgument\("demo"\)\s*\{.*?\}', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigation.kt', nav)
 
           def hub(s):
               s = s.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
-              s = re.sub(r'\n\s*if \(demo\) \{.*?\n\s*\n\s*_state\.update \{', '\n\n        _state.update {', s, flags=re.S)
-              s = re.sub(r'\n\s*val DEMO_RELEASES = listOf\(.*?\n\s*\)\n\s*\n\s*const val DEMO_README = """.*?\n"""', '', s, flags=re.S)
+              s = re.sub(r'\n\s*if \(demo\) \{.*?\n\s*_state\.update \{', '\n\n        _state.update {', s, flags=re.S, count=1)
+              s = re.sub(r'\n\s*val DEMO_RELEASES = listOf\(.*?\n\s*const val DEMO_README = """.*?\n"""', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryHubViewModel.kt', hub)
 
           def showcase(s):
               s = s.replace('import com.sayanthrock.githubrock.data.demo.DemoData\n', '')
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
-              s = re.sub(r'\n\s*if \(demo\) \{.*?\n\s*\}\n\n\s*_state\.update \{', '\n\n        _state.update {', s, flags=re.S)
+              s = re.sub(r'\n\s*if \(demo\) \{.*?\n\s*\}\n\n\s*_state\.update \{', '\n\n        _state.update {', s, flags=re.S, count=1)
               s = re.sub(r'\n\s*const val DEMO_README = """.*?\n"""', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseViewModel.kt', showcase)
@@ -66,7 +63,7 @@ jobs:
               s = re.sub(r'\n\s*private val demo: Boolean = savedStateHandle\["demo"\] \?: false', '', s)
               s = s.replace('val entries = if (demo) DemoData.contents else repository.contents(owner, repo, normalized, defaultBranch)', 'val entries = repository.contents(owner, repo, normalized, defaultBranch)')
               s = re.sub(r'val content = if \(demo\) \{.*?\n\s*\} else \{\n\s*SourceFileDecoder\.decode\(repository\.file\(owner, repo, entry\.path, defaultBranch\)\)\n\s*\}', 'val content = SourceFileDecoder.decode(repository.file(owner, repo, entry.path, defaultBranch))', s, flags=re.S)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*reportError\("Demo mode does not upload files"\)\s*return@launch\s*\}', '', s)
+              s = re.sub(r'\n\s*if \(demo\) \{.*?return@launch\s*\}', '', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryFileManagerViewModel.kt', file_manager)
 
@@ -76,22 +73,32 @@ jobs:
               s = re.sub(r'val entry = if \(demo\) \{.*?\n\s*\} else \{\n\s*repository\.file\(owner, repo, path, baseBranch\)\n\s*\}', 'val entry = repository.file(owner, repo, path, baseBranch)', s, flags=re.S)
               s = re.sub(r'val content = if \(demo\) \{.*?\n\s*\} else \{\n\s*SourceFileDecoder\.decode\(entry\)\n\s*\}', 'val content = SourceFileDecoder.decode(entry)', s, flags=re.S)
               s = re.sub(r'val branchProtected = if \(demo\) false else runCatching \{', 'val branchProtected = runCatching {', s)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*_state\.update \{ it\.copy\(error = "Demo mode does not commit files"\) \}\s*return@launch\s*\}', '', s)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*_state\.update \{ it\.copy\(error = "Demo mode does not rename or move files"\) \}\s*return@launch\s*\}', '', s)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*_state\.update \{ it\.copy\(error = "Demo mode does not delete files"\) \}\s*return@launch\s*}', '', s)
-              s = re.sub(r'\n\s*runCatching \{ if \(demo\) emptyList\(\) else repository\.issueComments\(owner, repo, issueNumber\) \}', '\n        runCatching { repository.issueComments(owner, repo, issueNumber) }', s)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*_state\.update \{ it\.copy\(error = "Demo mode does not post to GitHub"\) \}\s*return@launch\s*\}', '', s)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*_state\.update \{ it\.copy\(error = "Demo mode does not create issues"\) \}\s*return@launch\s*\}', '', s)
-              s = re.sub(r'\n\s*if \(demo\) \{\s*_state\.update \{ it\.copy\(error = "Demo mode does not create pull requests"\) \}\s*return@launch\s*\}', '', s)
+              s = re.sub(r'\n\s*if \(demo\) \{.*?return@launch\s*\}', '', s, flags=re.S)
+              s = s.replace('runCatching { if (demo) emptyList() else repository.issueComments(owner, repo, issueNumber) }', 'runCatching { repository.issueComments(owner, repo, issueNumber) }')
+              s = s.replace('runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }', 'runCatching { repository.pullReviews(owner, repo, pullNumber) }')
+              s = s.replace('if (demo) loadDemo(section) else when (section)', 'when (section)')
+              s = re.sub(r'\n\s*private fun loadDemo\(section: RepoSection\) \{.*?\n\s*\}\n\n\s*private fun isSafeFilePath', '\n\n    private fun isSafeFilePath', s, flags=re.S)
               return s
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryDetailViewModel.kt', detail)
+
+          def detail_screen(s):
+              s = s.replace('enabled = !demo && changed &&', 'enabled = changed &&')
+              s = re.sub(r'\n\s*if \(demo\) Text\("Demo mode never commits to GitHub\."[^\n]*\)', '', s)
+              return s
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryDetailScreen.kt', detail_screen)
+
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/FeaturePreviewScreen.kt', lambda s: '\n'.join(line for line in s.splitlines() if 'Isolated demo mode' not in line) + '\n')
+
+          def login_tests(s):
+              return '\n'.join(line for line in s.splitlines() if 'onDemo = {}' not in line and 'Explore isolated demo mode' not in line) + '\n'
+          edit('app/src/androidTest/java/com/sayanthrock/githubrock/LoginScreenTest.kt', login_tests)
 
       - name: Verify demo mode is completely absent
         shell: bash
         run: |
           set -euo pipefail
           test ! -e app/src/main/java/com/sayanthrock/githubrock/data/demo/DemoData.kt
-          if grep -Rni --exclude-dir=.git -E 'DemoData|AppMode\.Demo|enterDemo|onDemo|Explore isolated demo mode|\?demo=|data/demo|Demo mode' app; then
+          if grep -Rni --exclude-dir=.git -E 'DemoData|AppMode\.Demo|enterDemo|onDemo|Explore isolated demo mode|\?demo=|data/demo|Demo mode|demo-mode' app; then
             echo 'Legacy demo-mode references remain.'
             exit 1
           fi
