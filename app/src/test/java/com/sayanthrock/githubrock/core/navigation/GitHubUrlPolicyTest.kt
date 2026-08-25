@@ -1,34 +1,12 @@
 package com.sayanthrock.githubrock.core.navigation
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GitHubUrlPolicyTest {
-    @Test fun signupAndDeviceAuthorizationAreNotRepositoryLinks() {
-        assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/signup"))
+    @Test fun deviceAuthorizationIsNotRepositoryLink() {
         assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/login/device"))
-        assertFalse(GitHubUrlPolicy.isRepositoryUrl(GITHUB_ADD_ACCOUNT_URL))
-    }
-
-    @Test fun signupLeveragesAddAccountPageWhenEphemeralBrowsingIsSupported() {
-        assertEquals(
-            GitHubSignupLaunchPlan(
-                primaryUrl = GITHUB_ADD_ACCOUNT_URL,
-                fallbackUrl = GITHUB_SIGN_UP_URL,
-                useEphemeralTab = true
-            ),
-            githubSignupLaunchPlan(ephemeralBrowsingSupported = true)
-        )
-        assertEquals(
-            GitHubSignupLaunchPlan(
-                primaryUrl = GITHUB_SIGN_UP_URL,
-                fallbackUrl = GITHUB_SIGN_UP_URL,
-                useEphemeralTab = false
-            ),
-            githubSignupLaunchPlan(ephemeralBrowsingSupported = false)
-        )
     }
 
     @Test fun standardGitHubRepositoryUrlsAreAccepted() {
@@ -43,8 +21,8 @@ class GitHubUrlPolicyTest {
     }
 
     @Test fun nonGitHubAndLookalikeHostsAreRejected() {
-        assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("http://github.com/signup"))
-        assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("https://github.com.example.com/signup"))
+        assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("http://github.com/login/device"))
+        assertFalse(GitHubUrlPolicy.isGitHubHttpsUrl("https://github.com.example.com/login/device"))
     }
 
     @Test fun customTabsMustUseAnExternalBrowserPackage() {
