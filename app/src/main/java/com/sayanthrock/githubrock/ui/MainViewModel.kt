@@ -7,7 +7,6 @@ import com.sayanthrock.githubrock.core.model.*
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.data.auth.DeviceFlowAuthRepository
-import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -19,7 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class AppMode { Connected, Guest, Demo }
+enum class AppMode { Connected, Guest }
 
 data class DeviceAuthState(
     val code: DeviceCodeResponse? = null,
@@ -133,21 +132,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun enterDemo() {
-        cancelAllJobs()
-        _state.value = MainUiState(
-            mode = AppMode.Demo,
-            profile = DemoData.profile,
-            repositories = DemoData.repositories,
-            workflowRuns = DemoData.workflows,
-            rateLimit = RateLimit(5_000, 4_862, 0),
-            profileExplorer = ProfileExplorerState(
-                snapshot = GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails)
-            ),
-            message = "Demo mode uses isolated sample data."
-        )
-    }
-
     fun searchRepositories(options: RepositorySearchOptions) {
         val mode = _state.value.mode ?: return
         searchJob?.cancel()
@@ -155,11 +139,6 @@ class MainViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, isRefreshing = false, message = null) }
             val result = when (mode) {
-                AppMode.Demo -> Result.success(
-                    DemoData.repositories.filter {
-                        it.fullName.contains(options.query, true) || it.description.orEmpty().contains(options.query, true)
-                    }.let(options::applyLocally)
-                )
                 AppMode.Guest, AppMode.Connected -> runCatchingPreservingCancellation {
                     githubRepository.publicRepositories(options)
                 }
@@ -199,18 +178,11 @@ class MainViewModel @Inject constructor(
                         )
                     }
                 }
-                AppMode.Demo -> _state.update {
-                    it.copy(
-                        isRefreshing = false,
-                        message = "Demo data is already up to date."
-                    )
-                }
             }
         }
     }
 
     fun rememberRepository(repository: GitHubRepositoryModel) {
-        if (_state.value.mode == AppMode.Demo) return
         rememberJob?.cancel()
         rememberJob = viewModelScope.launch {
             runCatchingPreservingCancellation { githubRepository.remember(repository) }
@@ -235,11 +207,6 @@ class MainViewModel @Inject constructor(
                 it.copy(profileExplorer = it.profileExplorer.copy(loading = true, error = null))
             }
             val result = when (mode) {
-                AppMode.Demo -> if (normalized.equals(DemoData.profile.login, ignoreCase = true)) {
-                    Result.success(GitHubProfileSnapshot(DemoData.profile, DemoData.profileDetails))
-                } else {
-                    Result.failure(IllegalArgumentException("Demo mode only contains @${DemoData.profile.login}."))
-                }
                 AppMode.Guest, AppMode.Connected -> runCatchingPreservingCancellation {
                     githubRepository.profile(normalized)
                 }
