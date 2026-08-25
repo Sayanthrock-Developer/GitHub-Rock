@@ -674,11 +674,10 @@ private fun CodeEditorCard(
                 OutlinedButton(onClick = onClose, modifier = Modifier.weight(1f)) { Text("Close") }
                 Button(
                     onClick = { onSave(featureBranch, commitMessage) },
-                    enabled = !demo && changed && editor.pullRequestUrl == null && !loading && featureBranch.isNotBlank() && commitMessage.isNotBlank(),
+                    enabled = changed && editor.pullRequestUrl == null && !loading && featureBranch.isNotBlank() && commitMessage.isNotBlank(),
                     modifier = Modifier.weight(1f)
                 ) { Text(if (loading) "Saving…" else if (editor.pullRequestUrl != null) "Pull request created" else "Open pull request") }
             }
-            if (demo) Text("Demo mode never commits to GitHub.", color = MaterialTheme.colorScheme.primary)
             editor.pullRequestUrl?.let { url ->
                 val context = LocalContext.current
                 TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) { Text("Open created pull request") }

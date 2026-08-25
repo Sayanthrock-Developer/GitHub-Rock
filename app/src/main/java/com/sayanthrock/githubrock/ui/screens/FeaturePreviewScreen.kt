@@ -688,7 +688,6 @@ private val featureCategories: List<FeatureCategory> = listOf(
             GitHubFeature("GitHub Device Flow", "Password-free browser authorization with a one-time code.", FeatureAvailability.Ready),
             GitHubFeature("Connected profile", "Account identity, avatar, profile details, and API health.", FeatureAvailability.Connected),
             GitHubFeature("Guest browsing", "Explore public repositories without connecting an account.", FeatureAvailability.Ready),
-            GitHubFeature("Isolated demo mode", "Preview the app safely with sample repositories and workflows.", FeatureAvailability.Ready),
             GitHubFeature("Organization switching", "Browse GitHub App installations and organization workspaces.", FeatureAvailability.Roadmap)
         )
     ),

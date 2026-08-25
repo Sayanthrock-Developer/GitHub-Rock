@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.*
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
-import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +53,6 @@ class RepositoryDetailViewModel @Inject constructor(
 ) : ViewModel() {
     private val owner: String = checkNotNull(savedStateHandle["owner"])
     private val repo: String = checkNotNull(savedStateHandle["repo"])
-    private val demo: Boolean = savedStateHandle["demo"] ?: false
     private var baseBranch: String = "main"
     private val _state = MutableStateFlow(RepositoryDetailState())
     val state: StateFlow<RepositoryDetailState> = _state.asStateFlow()
@@ -77,20 +75,11 @@ class RepositoryDetailViewModel @Inject constructor(
         if (path.isBlank()) return@launch
         _state.update { it.copy(loading = true, error = null, message = null, editor = null) }
         try {
-            val entry = if (demo) {
-                DemoData.contents.firstOrNull { it.path == path }
-                    ?: error("Demo file was not found")
-            } else {
-                repository.file(owner, repo, path, baseBranch)
-            }
+            val entry = repository.file(owner, repo, path, baseBranch)
             if (entry.type != "file") error("Only text files can be opened")
             if (entry.size > MAX_EDITABLE_FILE_BYTES) error("This file is too large to edit in the app")
-            val content = if (demo) {
-                "# Demo file\n\nDemo mode does not load repository file contents.\n"
-            } else {
-                SourceFileDecoder.decode(entry)
-            }
-            val branchProtected = if (demo) false else runCatching {
+            val content = SourceFileDecoder.decode(entry)
+            val branchProtected = runCatching {
                 repository.branchProtected(owner, repo, baseBranch)
             }.getOrDefault(false)
             _state.update {
@@ -142,10 +131,6 @@ class RepositoryDetailViewModel @Inject constructor(
 
     fun saveEditor(featureBranch: String, commitMessage: String) = viewModelScope.launch {
         val editor = _state.value.editor ?: return@launch
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not commit files") }
-            return@launch
-        }
         if (!BuildRunTracker.isSafeRef(featureBranch)) {
             _state.update { it.copy(error = "Use a valid review branch name") }
             return@launch
@@ -185,10 +170,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun renameOrMoveFile(sourcePath: String, destinationPath: String, featureBranch: String, commitMessage: String) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not rename or move files") }
-            return@launch
-        }
         if (!isSafeFilePath(sourcePath) || !isSafeFilePath(destinationPath) || sourcePath == destinationPath) {
             _state.update { it.copy(error = "Use a different valid relative destination path") }
             return@launch
@@ -214,10 +195,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun deleteFile(path: String, featureBranch: String, commitMessage: String) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not delete files") }
-            return@launch
-        }
         if (!isSafeFilePath(path)) {
             _state.update { it.copy(error = "Use a valid relative file path") }
             return@launch
@@ -286,7 +263,7 @@ class RepositoryDetailViewModel @Inject constructor(
 
     fun loadIssueComments(issueNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, issueComments = emptyList()) }
-        runCatching { if (demo) emptyList() else repository.issueComments(owner, repo, issueNumber) }
+        runCatching { repository.issueComments(owner, repo, issueNumber) }
             .onSuccess { comments -> _state.update { it.copy(issueComments = comments) } }
             .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load issue comments") } }
         _state.update { it.copy(loading = false) }
@@ -295,10 +272,6 @@ class RepositoryDetailViewModel @Inject constructor(
     fun addIssueComment(issueNumber: Int, body: String) = viewModelScope.launch {
         if (body.isBlank()) {
             _state.update { it.copy(error = "A comment cannot be empty") }
-            return@launch
-        }
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not post to GitHub") }
             return@launch
         }
         _state.update { it.copy(loading = true, error = null, message = null) }
@@ -311,10 +284,6 @@ class RepositoryDetailViewModel @Inject constructor(
     fun createIssue(title: String, body: String) = viewModelScope.launch {
         if (title.isBlank()) {
             _state.update { it.copy(error = "An issue title is required") }
-            return@launch
-        }
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not create issues") }
             return@launch
         }
         _state.update { it.copy(loading = true, error = null, message = null) }
@@ -333,10 +302,6 @@ class RepositoryDetailViewModel @Inject constructor(
             _state.update { it.copy(error = "Use a valid source branch name") }
             return@launch
         }
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not create pull requests") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.createPullRequest(owner, repo, title.trim(), head.trim(), base, body.trim()) }
             .onSuccess { pull ->
@@ -348,10 +313,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun updateIssueState(issueNumber: Int, state: String) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not change issue state") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.updateIssueState(owner, repo, issueNumber, state) }
             .onSuccess { updated ->
@@ -367,10 +328,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun updateIssueMetadata(issueNumber: Int, labelsInput: String, assigneesInput: String, milestoneInput: String) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not edit issue metadata") }
-            return@launch
-        }
         val labels = labelsInput.split(',').map(String::trim).filter(String::isNotBlank).distinct()
         val assignees = assigneesInput.split(',').map(String::trim).filter(String::isNotBlank).distinct()
         if (labels.any { it.length > 50 || !it.matches(Regex("^[A-Za-z0-9][A-Za-z0-9 _./-]*$")) }) {
@@ -406,10 +363,6 @@ class RepositoryDetailViewModel @Inject constructor(
             _state.update { it.copy(error = "Unsupported reaction") }
             return@launch
         }
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not add reactions") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.addIssueReaction(owner, repo, issueNumber, content) }
             .onSuccess {
@@ -421,10 +374,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun setRepositoryStarred(starred: Boolean) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not change repository stars") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.setRepositoryStarred(owner, repo, starred) }
             .onSuccess { ok -> _state.update { if (ok) it.copy(message = if (starred) "Repository starred" else "Repository unstarred") else it.copy(error = "GitHub rejected the star change") } }
@@ -433,10 +382,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun forkRepository() = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not create forks") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.forkRepository(owner, repo) }
             .onSuccess { fork -> _state.update { it.copy(message = "Fork created: ${fork.fullName}") } }
@@ -449,10 +394,6 @@ class RepositoryDetailViewModel @Inject constructor(
             _state.update { it.copy(error = "Use a valid release tag") }
             return@launch
         }
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not create releases") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.createDraftRelease(owner, repo, tag.trim(), name.trim(), body.trim(), prerelease) }
             .onSuccess { release -> _state.update { it.copy(releases = listOf(release) + it.releases, message = "Draft release ${release.tagName} created") } }
@@ -461,10 +402,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun deleteRelease(releaseId: Long) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not delete releases") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.deleteRelease(owner, repo, releaseId) }
             .onSuccess { deleted ->
@@ -475,10 +412,6 @@ class RepositoryDetailViewModel @Inject constructor(
     }
 
     fun updateRelease(releaseId: Long, name: String, body: String, draft: Boolean, prerelease: Boolean) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not edit releases") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.updateRelease(owner, repo, releaseId, name.trim(), body.trim(), draft, prerelease) }
             .onSuccess { updated -> _state.update { current -> current.copy(releases = current.releases.map { if (it.id == updated.id) updated else it }, message = "Release ${updated.tagName} updated") } }
@@ -488,17 +421,13 @@ class RepositoryDetailViewModel @Inject constructor(
 
     fun loadPullReviews(pullNumber: Int) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, pullReviews = emptyList()) }
-        runCatching { if (demo) emptyList() else repository.pullReviews(owner, repo, pullNumber) }
+        runCatching { repository.pullReviews(owner, repo, pullNumber) }
             .onSuccess { reviews -> _state.update { it.copy(pullReviews = reviews) } }
             .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load pull request reviews") } }
         _state.update { it.copy(loading = false) }
     }
 
     fun submitPullReview(pullNumber: Int, event: String, body: String) = viewModelScope.launch {
-        if (demo) {
-            _state.update { it.copy(error = "Demo mode does not submit reviews") }
-            return@launch
-        }
         _state.update { it.copy(loading = true, error = null, message = null) }
         runCatching { repository.submitPullReview(owner, repo, pullNumber, event, body.trim()) }
             .onSuccess { review -> _state.update { it.copy(pullReviews = it.pullReviews + review, message = "Review submitted") } }
@@ -509,7 +438,7 @@ class RepositoryDetailViewModel @Inject constructor(
     private fun load(section: RepoSection) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null) }
         runCatching {
-            if (demo) loadDemo(section) else when (section) {
+            when (section) {
                 RepoSection.Overview -> Unit
                 RepoSection.Code -> _state.update { it.copy(contents = repository.contents(owner, repo, it.currentPath, baseBranch)) }
                 RepoSection.Issues -> _state.update { it.copy(issues = repository.issues(owner, repo)) }
@@ -530,19 +459,6 @@ class RepositoryDetailViewModel @Inject constructor(
             }
         }.onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load this section") } }
         _state.update { it.copy(loading = false) }
-    }
-
-    private fun loadDemo(section: RepoSection) {
-        _state.update {
-            when (section) {
-                RepoSection.Code -> it.copy(contents = DemoData.contents)
-                RepoSection.Issues -> it.copy(issues = DemoData.issues)
-                RepoSection.Pulls -> it.copy(pulls = DemoData.pulls)
-                RepoSection.Actions -> it.copy(runs = DemoData.workflows, workflows = listOf(Workflow(1, "Android Build", ".github/workflows/android-build.yml", "active")))
-                RepoSection.Releases -> it.copy(releases = DemoData.releases)
-                RepoSection.Overview -> it
-            }
-        }
     }
 
     private fun isSafeFilePath(path: String): Boolean =

@@ -89,7 +89,6 @@ fun LoginScreen(
     onOpenGitHubUrl: (String) -> Unit,
     onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
-    onDemo: () -> Unit
 ) {
     val context = LocalContext.current
     val code = auth.code
@@ -137,7 +136,6 @@ fun LoginScreen(
                     onLogin = onLogin,
                     onOpenSignup = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
                     onGuest = onGuest,
-                    onDemo = onDemo
                 )
             } else {
                 DeviceCodeExperience(
@@ -207,7 +205,6 @@ private fun AccountAccessPanel(
     onLogin: () -> Unit,
     onOpenSignup: () -> Unit,
     onGuest: () -> Unit,
-    onDemo: () -> Unit
 ) {
     AuthGlassPanel {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -334,7 +331,7 @@ private fun AccountAccessPanel(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))
                 ) {
                     Text(
-                        "This build is missing its public GitHub App client ID, so account connection is unavailable. Guest and demo modes still work.",
+                        "This build is missing its public GitHub App client ID, so account connection is unavailable. Guest access is still available.",
                         modifier = Modifier.padding(14.dp),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
@@ -361,8 +358,6 @@ private fun AccountAccessPanel(
                     )
                 }
             }
-            TextButton(onClick = onDemo, modifier = Modifier.fillMaxWidth()) {
-                Text("Explore isolated demo mode", color = Color(0xFF63E2D8))
             }
         }
     }

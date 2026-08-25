@@ -9,7 +9,6 @@ import com.sayanthrock.githubrock.core.model.ReleaseAsset
 import com.sayanthrock.githubrock.core.util.RepositoryReadmePolicy
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
-import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -42,7 +41,6 @@ class RepositoryHubViewModel @Inject constructor(
 ) : ViewModel() {
     private val owner: String = checkNotNull(savedStateHandle["owner"])
     private val repoName: String = checkNotNull(savedStateHandle["repo"])
-    private val demo: Boolean = savedStateHandle["demo"] ?: false
 
     private val _state = MutableStateFlow(RepositoryHubState())
     val state: StateFlow<RepositoryHubState> = _state.asStateFlow()
@@ -69,34 +67,6 @@ class RepositoryHubViewModel @Inject constructor(
     }
 
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
-        if (demo) {
-            val repository = initialRepository
-                ?: DemoData.repositories.firstOrNull {
-                    it.owner.login.equals(owner, ignoreCase = true) &&
-                        it.name.equals(repoName, ignoreCase = true)
-                }
-
-            if (repository == null) {
-                _state.value = RepositoryHubState(
-                    loading = false,
-                    releasesLoading = false,
-                    readmeLoading = false,
-                    error = "This repository is unavailable in demo mode."
-                )
-                return
-            }
-
-            currentRepositoryId = repository.id
-            _state.value = RepositoryHubState(
-                repository = repository,
-                releases = DEMO_RELEASES,
-                readme = DEMO_README,
-                loading = false,
-                releasesLoading = false,
-                readmeLoading = false
-            )
-            return
-        }
 
         _state.update {
             it.copy(
@@ -195,76 +165,5 @@ class RepositoryHubViewModel @Inject constructor(
 
     private companion object {
         val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
-
-        val DEMO_RELEASES = listOf(
-            Release(
-                id = 1,
-                tagName = "v1.4.0",
-                name = "GitHub Rock 1.4",
-                body = "## What changed\n\n- Cross-platform release picker\n- Fingerprinted download flow\n- Improved release and README presentation",
-                publishedAt = "2026-07-14T00:00:00Z",
-                assets = listOf(
-                    ReleaseAsset(
-                        id = 11,
-                        name = "github-rock-arm64-v8a.apk",
-                        size = 25_900_000,
-                        downloadUrl = "https://example.com/github-rock-arm64-v8a.apk"
-                    ),
-                    ReleaseAsset(
-                        id = 12,
-                        name = "github-rock-universal.apk",
-                        size = 31_400_000,
-                        downloadUrl = "https://example.com/github-rock-universal.apk"
-                    ),
-                    ReleaseAsset(
-                        id = 13,
-                        name = "github-rock-windows-x64.msi",
-                        size = 46_800_000,
-                        downloadUrl = "https://example.com/github-rock-windows-x64.msi"
-                    ),
-                    ReleaseAsset(
-                        id = 14,
-                        name = "github-rock-linux-x86_64.AppImage",
-                        size = 52_300_000,
-                        downloadUrl = "https://example.com/github-rock-linux-x86_64.AppImage"
-                    ),
-                    ReleaseAsset(
-                        id = 15,
-                        name = "github-rock-ios-arm64.ipa",
-                        size = 39_700_000,
-                        downloadUrl = "https://example.com/github-rock-ios-arm64.ipa"
-                    ),
-                    ReleaseAsset(
-                        id = 16,
-                        name = "github-rock-macos-universal.dmg",
-                        size = 55_100_000,
-                        downloadUrl = "https://example.com/github-rock-macos-universal.dmg"
-                    )
-                )
-            ),
-            Release(
-                id = 2,
-                tagName = "v1.5.0-beta01",
-                name = "GitHub Rock beta",
-                body = "Preview build for the next repository experience.",
-                prerelease = true,
-                publishedAt = "2026-07-13T00:00:00Z"
-            )
-        )
-
-        const val DEMO_README = """
-# GitHub Rock Demo
-
-A premium Android developer control centre for repository management, Actions, releases, managed downloads, and APK inspection.
-
-## Highlights
-
-- Kotlin and Jetpack Compose
-- GitHub Device Flow authentication
-- Repository, issue, pull request, workflow, and release tools
-- Clean Material 3 themes with persistent appearance controls
-
-> Demo mode uses isolated sample data and never writes to GitHub.
-"""
     }
 }

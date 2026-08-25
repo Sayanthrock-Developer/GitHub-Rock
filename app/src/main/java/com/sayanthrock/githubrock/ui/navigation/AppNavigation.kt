@@ -125,7 +125,7 @@ fun MainNavigation(
     val mode = requireNotNull(state.mode)
     val openRepo: (com.sayanthrock.githubrock.core.model.GitHubRepositoryModel) -> Unit = { repo ->
         onRememberRepository(repo)
-        navController.navigate("repo/${repo.owner.login}/${repo.name}?demo=${mode == AppMode.Demo}")
+        navController.navigate("repo/${repo.owner.login}/${repo.name}")
     }
     val openNativeProfile: (String, NativeProfileSection) -> Unit = { login, section ->
         navController.navigate(NativeProfileDestination(login, section).route) {
@@ -312,14 +312,10 @@ fun MainNavigation(
                             )
                         }
                         composable(
-                            route = "repo/{owner}/{repo}?demo={demo}",
+                            route = "repo/{owner}/{repo}",
                             arguments = listOf(
                                 navArgument("owner") { type = NavType.StringType },
-                                navArgument("repo") { type = NavType.StringType },
-                                navArgument("demo") {
-                                    type = NavType.BoolType
-                                    defaultValue = false
-                                }
+                                navArgument("repo") { type = NavType.StringType }
                             ),
                             deepLinks = listOf(
                                 navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" },
@@ -363,15 +359,11 @@ fun MainNavigation(
                             )
                         }
                         composable(
-                            route = "release/{owner}/{repo}/{tag}?demo={demo}",
+                            route = "release/{owner}/{repo}/{tag}",
                             arguments = listOf(
                                 navArgument("owner") { type = NavType.StringType },
                                 navArgument("repo") { type = NavType.StringType },
-                                navArgument("tag") { type = NavType.StringType },
-                                navArgument("demo") {
-                                    type = NavType.BoolType
-                                    defaultValue = false
-                                }
+                                navArgument("tag") { type = NavType.StringType }
                             ),
                             deepLinks = listOf(
                                 navDeepLink { uriPattern = "githubrock://release/{owner}/{repo}/{tag}" }

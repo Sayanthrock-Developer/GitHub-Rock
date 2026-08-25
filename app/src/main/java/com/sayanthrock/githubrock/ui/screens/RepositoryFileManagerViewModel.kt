@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.ContentEntry
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
-import com.sayanthrock.githubrock.data.demo.DemoData
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.nio.ByteBuffer
@@ -45,7 +44,6 @@ class RepositoryFileManagerViewModel @Inject constructor(
 ) : ViewModel() {
     private val owner: String = checkNotNull(savedStateHandle["owner"])
     private val repo: String = checkNotNull(savedStateHandle["repo"])
-    private val demo: Boolean = savedStateHandle["demo"] ?: false
     private var defaultBranch: String = "main"
     private var browseRequestId: Long = 0
 
@@ -70,7 +68,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
         }
         startOperation("Opening repository files")
         try {
-            val entries = if (demo) DemoData.contents else repository.contents(owner, repo, normalized, defaultBranch)
+            val entries = repository.contents(owner, repo, normalized, defaultBranch)
             if (requestId != browseRequestId) return@launch
             updateOperation("Preparing file list")
             _state.update {
@@ -115,11 +113,7 @@ class RepositoryFileManagerViewModel @Inject constructor(
         }
 
         try {
-            val content = if (demo) {
-                "# Demo file\n\nDemo mode does not download repository contents.\n"
-            } else {
-                SourceFileDecoder.decode(repository.file(owner, repo, entry.path, defaultBranch))
-            }
+            val content = SourceFileDecoder.decode(repository.file(owner, repo, entry.path, defaultBranch))
             if (requestId != browseRequestId) return@launch
             _state.update {
                 it.copy(
@@ -155,10 +149,6 @@ class RepositoryFileManagerViewModel @Inject constructor(
         featureBranch: String,
         commitMessage: String
     ) = viewModelScope.launch {
-        if (demo) {
-            reportError("Demo mode does not upload files")
-            return@launch
-        }
         if (!isSafePath(path)) {
             reportError("Use a valid relative file path")
             return@launch

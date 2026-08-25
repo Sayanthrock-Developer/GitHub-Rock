@@ -34,7 +34,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -44,7 +43,6 @@ class LoginScreenTest {
         compose.onNodeWithContentDescription("Sign up for GitHub").assertIsDisplayed()
         compose.onNodeWithText("Private signup · Google, Apple, or email").assertIsDisplayed()
         compose.onNodeWithText("Continue with public repositories").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Explore isolated demo mode").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun signInButtonStartsGitHubDeviceFlow() {
@@ -59,7 +57,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -83,7 +80,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = { openedUrl = it },
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -111,7 +107,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = { openedUrl = it },
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -146,7 +141,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = { openedUrls += it },
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -187,7 +181,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = { opened = true },
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -220,7 +213,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = {},
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }
@@ -253,7 +245,6 @@ class LoginScreenTest {
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = { checked = true },
                     onGuest = {},
-                    onDemo = {}
                 )
             }
         }

@@ -128,7 +128,6 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                 onOpenGitHubUrl = openGitHubUrl,
                 onCheckAuthorization = viewModel::checkLoginStatus,
                 onGuest = viewModel::continueAsGuest,
-                onDemo = viewModel::enterDemo
             )
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
