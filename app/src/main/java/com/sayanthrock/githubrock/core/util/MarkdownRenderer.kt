@@ -140,13 +140,13 @@ object MarkdownRenderer {
     }
 
     fun cleanInline(text: String): String = text
-        .replace(Regex("!\\[([^]]*)]\\(([^)]+)\\)"), "$1")
-        .replace(Regex("\\[([^]]+)]\\(([^)]+)\\)"), "$1 ($2)")
-        .replace(Regex("<https?://[^>]+>")) { it.value.removePrefix("<").removeSuffix(">") }
-        .replace(Regex("`([^`]+)`"), "$1")
-        .replace(Regex("\\*\\*([^*]+)\\*\\*"), "$1")
-        .replace(Regex("__([^_]+)__"), "$1")
-        .replace(Regex("(?<!\\*)\\*([^*]+)\\*(?!\\*)"), "$1")
-        .replace(Regex("(?<!_)_([^_]+)_(?!_)"), "$1")
-        .replace(Regex("<[^>]+>"), "")
+        .replace(Regex("""!\[([^]]*)\]\(([^)]+)\)"""), "$1")
+        .replace(Regex("""\[([^]]+)\]\(([^)]+)\)"""), "$1 ($2)")
+        .replace(Regex("""<https?://[^>]+>""")) { it.value.removePrefix("<").removeSuffix(">") }
+        .replace(Regex("""`([^`]+)`"""), "$1")
+        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
+        .replace(Regex("""__([^_]+)__"""), "$1")
+        .replace(Regex("""(?<!\*)\*([^*]+)\*(?!\*)"""), "$1")
+        .replace(Regex("""(?<!_)_([^_]+)_(?!_)"""), "$1")
+        .replace(Regex("""<[^>]+>"""), "")
 }
