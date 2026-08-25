@@ -117,10 +117,11 @@ private fun ReadmeBlock(block: MarkdownBlock, onOpenLink: (String) -> Unit, repo
 }
 
 @Composable
-private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurface) {
+private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {
+    val resolvedColor = color ?: MaterialTheme.colorScheme.onSurface
     val linkColor = MaterialTheme.colorScheme.primary
-    val annotated = remember(text, color, linkColor) { buildMarkdownAnnotatedString(text, color, linkColor) }
-    ClickableText(text = annotated, modifier = modifier, style = style.copy(color = color), onClick = { offset -> annotated.getStringAnnotations("URL", offset, offset).firstOrNull()?.let { onOpenLink(it.item) } })
+    val annotated = remember(text, resolvedColor, linkColor) { buildMarkdownAnnotatedString(text, resolvedColor, linkColor) }
+    ClickableText(text = annotated, modifier = modifier, style = style.copy(color = resolvedColor), onClick = { offset -> annotated.getStringAnnotations("URL", offset, offset).firstOrNull()?.let { onOpenLink(it.item) } })
 }
 
 private fun buildMarkdownAnnotatedString(text: String, codeBackground: Color, linkColor: Color): AnnotatedString = buildAnnotatedString {
