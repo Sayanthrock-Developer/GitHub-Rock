@@ -1,20 +1,22 @@
 name: Fix Markdown Compose Annotation
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/readme-markdown-fidelity
+      - main
+    types: [opened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   fix:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.ref == 'fix/readme-markdown-fidelity' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Fix InlineMarkdownText composable annotation
@@ -26,7 +28,8 @@ jobs:
           old = "\nprivate fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {"
           new = "\n@Composable\nprivate fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier, color: Color? = null) {"
           if old not in text:
-              raise SystemExit("Expected InlineMarkdownText declaration not found")
+              print("InlineMarkdownText is already fixed; nothing to do")
+              raise SystemExit(0)
           path.write_text(text.replace(old, new, 1))
           PY
 
@@ -36,4 +39,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryShowcaseScreen.kt
           git commit -m "fix(markdown): mark inline renderer composable"
-          git push
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
