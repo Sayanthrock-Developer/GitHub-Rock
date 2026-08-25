@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - ui/iphone-floating-navigation
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
