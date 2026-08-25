@@ -29,6 +29,7 @@ class DeviceFlowAuthRepository @Inject constructor(
     private val backendGateway: BackendGateway,
 ) {
     val isConfigured: Boolean get() = backendGateway.isConfigured || BuildConfig.GITHUB_CLIENT_ID.isNotBlank()
+    val isWebOAuthConfigured: Boolean get() = backendGateway.isConfigured
     val hasSession: Boolean get() = tokenStore.read() != null
     val accounts: List<StoredAccount> get() = tokenStore.accounts()
     val activeAccountId: String? get() = tokenStore.activeAccountId()
@@ -47,14 +48,10 @@ class DeviceFlowAuthRepository @Inject constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (backendFailure: Exception) {
-                if (BuildConfig.GITHUB_CLIENT_ID.isBlank()) {
-                    throw DeviceFlowException("GitHub Rock Backend could not start login: ${backendFailure.message ?: "connection failed"}")
-                }
+                if (BuildConfig.GITHUB_CLIENT_ID.isBlank()) throw DeviceFlowException("GitHub Rock Backend could not start login: ${backendFailure.message ?: "connection failed"}")
                 requestDirectDeviceCode().also { activeTransport = DeviceFlowTransport.DirectGitHub }
             }
-        } else {
-            requestDirectDeviceCode().also { activeTransport = DeviceFlowTransport.DirectGitHub }
-        }
+        } else requestDirectDeviceCode().also { activeTransport = DeviceFlowTransport.DirectGitHub }
         return device.also {
             pollMutex.withLock {
                 requiredIntervalSeconds = it.interval.coerceAtLeast(MINIMUM_POLL_INTERVAL_SECONDS)
@@ -78,9 +75,7 @@ class DeviceFlowAuthRepository @Inject constructor(
         val deadline = Instant.now().epochSecond + device.expiresIn
         while (Instant.now().epochSecond < deadline) {
             val response = requestTokenAtAllowedInterval(device)
-            response.accessToken?.let { token ->
-                return response.toStoredTokens(token).also { tokens -> if (save) tokenStore.save(tokens) }
-            }
+            response.accessToken?.let { token -> return response.toStoredTokens(token).also { tokens -> if (save) tokenStore.save(tokens) } }
             when (response.error) {
                 "authorization_pending" -> onStatus("Waiting for approval on GitHub…")
                 "slow_down" -> onStatus("GitHub requested slower polling. Still waiting…")
@@ -94,9 +89,7 @@ class DeviceFlowAuthRepository @Inject constructor(
         throw DeviceFlowException("The device code expired. Start login again.")
     }
 
-    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String =
-        tokenStore.addAccount(tokens, login, name, avatarUrl)
-
+    fun addAccount(tokens: StoredTokens, login: String? = null, name: String? = null, avatarUrl: String? = null): String = tokenStore.addAccount(tokens, login, name, avatarUrl)
     fun updateActiveAccount(login: String, name: String?, avatarUrl: String?) = tokenStore.updateActiveAccount(login, name, avatarUrl)
     fun switchAccount(accountId: String): Boolean = tokenStore.switchAccount(accountId)
     fun removeAccount(accountId: String): Boolean = tokenStore.removeAccount(accountId)
@@ -126,11 +119,7 @@ class DeviceFlowAuthRepository @Inject constructor(
             try {
                 val backendResponse = backendGateway.refreshToken(refreshToken)
                 if (!backendResponse.accessToken.isNullOrBlank()) return backendResponse
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                // Direct GitHub remains the availability fallback.
-            }
+            } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { }
         }
         if (BuildConfig.GITHUB_CLIENT_ID.isBlank()) return DeviceTokenResponse(error = "refresh_unavailable")
         return api.refreshToken(clientId = BuildConfig.GITHUB_CLIENT_ID, refreshToken = refreshToken)
