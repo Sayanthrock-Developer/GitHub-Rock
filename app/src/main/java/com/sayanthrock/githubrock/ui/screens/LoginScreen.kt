@@ -92,9 +92,7 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val code = auth.code
-    var hasOpenedVerificationUri by rememberSaveable(code?.deviceCode) {
-        mutableStateOf(false)
-    }
+    var hasOpenedVerificationUri by rememberSaveable(code?.deviceCode) { mutableStateOf(false) }
     var showAccountSetup by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(code?.deviceCode, onOpenGitHubUrl) {
@@ -106,32 +104,20 @@ fun LoginScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(WindowInsets.safeDrawing.asPaddingValues())
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(WindowInsets.safeDrawing.asPaddingValues())
     ) {
         Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth()
-                .widthIn(max = 560.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth().widthIn(max = 560.dp).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             AuthBrandHeader()
-
             if (code == null) {
                 AccountAccessPanel(
                     configured = configured,
                     loading = loading,
                     showAccountSetup = showAccountSetup,
-                    onShowAccountSetup = {
-                        showAccountSetup = true
-                        onOpenGitHubUrl(GITHUB_SIGN_UP_URL)
-                    },
+                    onShowAccountSetup = { showAccountSetup = true; onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
                     onHideAccountSetup = { showAccountSetup = false },
                     onLogin = onLogin,
                     onOpenSignup = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
@@ -143,9 +129,7 @@ fun LoginScreen(
                     checking = loading,
                     onCopy = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(
-                            ClipData.newPlainText("GitHub verification code", code.userCode)
-                        )
+                        clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", code.userCode))
                     },
                     onOpen = { onOpenGitHubUrl(code.verificationUri) },
                     onCheck = onCheckAuthorization,
@@ -159,37 +143,15 @@ fun LoginScreen(
 
 @Composable
 private fun AuthBrandHeader() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Surface(
-            modifier = Modifier.size(58.dp),
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = .16f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .38f))
-        ) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Surface(modifier = Modifier.size(58.dp), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .16f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .38f))) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Default.Code,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(30.dp)
-                )
+                Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
             }
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                "GitHub Rock",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black
-            )
-            Text(
-                "Secure developer access",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text("GitHub Rock", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Text("Secure developer access", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         SecureStatusPill(label = "Protected")
     }
@@ -209,155 +171,44 @@ private fun AccountAccessPanel(
     AuthGlassPanel {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(if (showAccountSetup) "Finish signup, then connect" else "Connect your GitHub account", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                 Text(
-                    if (showAccountSetup) "Finish signup, then connect" else "Connect your GitHub account",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    if (showAccountSetup) {
-                        "GitHub Rock opens signup in an isolated browser session, so an account already signed in cannot redirect you to Dashboard. Choose Google, Apple, or email, then return here."
-                    } else {
-                        "Authorize GitHub Rock in your trusted browser. Your GitHub password is never entered or stored inside this app."
-                    },
+                    if (showAccountSetup) "GitHub Rock opens signup in an isolated browser session, so an account already signed in cannot redirect you to Dashboard. Choose Google, Apple, or email, then return here."
+                    else "Authorize GitHub Rock in your trusted browser. Your GitHub password is never entered or stored inside this app.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
             SecuritySummaryCard()
-
             if (showAccountSetup) {
-                Button(
-                    onClick = onLogin,
-                    enabled = configured && !loading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
-                        .semantics { contentDescription = "Connect new GitHub account" },
-                    shape = RoundedCornerShape(22.dp)
-                ) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = null)
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        if (loading) "Preparing sign-in…" else "Continue with my new account",
-                        fontWeight = FontWeight.Bold
-                    )
+                Button(onClick = onLogin, enabled = configured && !loading, modifier = Modifier.fillMaxWidth().height(64.dp).semantics { contentDescription = "Connect new GitHub account" }, shape = RoundedCornerShape(22.dp)) {
+                    Icon(Icons.Default.ArrowForward, contentDescription = null); Spacer(Modifier.width(10.dp)); Text(if (loading) "Preparing sign-in…" else "Continue with my new account", fontWeight = FontWeight.Bold)
                 }
-                OutlinedButton(
-                    onClick = onOpenSignup,
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Icon(Icons.Default.OpenInBrowser, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Open GitHub signup again")
+                OutlinedButton(onClick = onOpenSignup, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(18.dp)) {
+                    Icon(Icons.Default.OpenInBrowser, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("Open GitHub signup again")
                 }
-                TextButton(
-                    onClick = onHideAccountSetup,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text("I already have an account")
-                }
+                TextButton(onClick = onHideAccountSetup, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("I already have an account") }
             } else {
-                Button(
-                    onClick = onLogin,
-                    enabled = configured && !loading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(68.dp)
-                        .semantics { contentDescription = "Sign in to GitHub" },
-                    shape = RoundedCornerShape(22.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF63E2D8),
-                        contentColor = Color(0xFF161B22)
-                    )
-                ) {
-                    Surface(
-                        modifier = Modifier.size(38.dp),
-                        shape = CircleShape,
-                        color = Color(0xFF161B22).copy(alpha = .16f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.AccountCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        if (loading) "Preparing sign-in…" else "Sign in to GitHub",
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = .4.sp
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null)
+                Button(onClick = onLogin, enabled = configured && !loading, modifier = Modifier.fillMaxWidth().height(68.dp).semantics { contentDescription = "Sign in to GitHub" }, shape = RoundedCornerShape(22.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63E2D8), contentColor = Color(0xFF161B22))) {
+                    Surface(modifier = Modifier.size(38.dp), shape = CircleShape, color = Color(0xFF161B22).copy(alpha = .16f)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp)) } }
+                    Spacer(Modifier.weight(1f)); Text(if (loading) "Preparing sign-in…" else "Sign in to GitHub", fontWeight = FontWeight.Black, letterSpacing = .4.sp); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowForward, contentDescription = null)
                 }
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(76.dp)
-                        .clickable(onClick = onShowAccountSetup, role = Role.Button)
-                        .semantics { contentDescription = "Sign up for GitHub" },
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                Surface(modifier = Modifier.fillMaxWidth().height(76.dp).clickable(onClick = onShowAccountSetup, role = Role.Button).semantics { contentDescription = "Sign up for GitHub" }, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+                    Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Sign up for GitHub", fontWeight = FontWeight.Bold)
-                            Text(
-                                "Private signup · Google, Apple, or email",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("Private signup · Google, Apple, or email", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             }
-
             if (!configured) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.error.copy(alpha = .10f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))
-                ) {
-                    Text(
-                        "This build is missing its public GitHub App client ID, so account connection is unavailable. Guest access is still available.",
-                        modifier = Modifier.padding(14.dp),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.error.copy(alpha = .10f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))) {
+                    Text("This build is missing its public GitHub App client ID, so account connection is unavailable. Guest access is still available.", modifier = Modifier.padding(14.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                 }
             }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .clickable(onClick = onGuest, role = Role.Button),
-                shape = RoundedCornerShape(18.dp),
-                color = Color.Transparent,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "Continue with public repositories",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            Surface(modifier = Modifier.fillMaxWidth().height(52.dp).clickable(onClick = onGuest, role = Role.Button), shape = RoundedCornerShape(18.dp), color = Color.Transparent, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Continue with public repositories", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
     }
@@ -365,37 +216,12 @@ private fun AccountAccessPanel(
 
 @Composable
 private fun SecuritySummaryCard() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .56f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .48f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 15.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(42.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Security,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .56f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .48f))) {
+        Row(modifier = Modifier.padding(horizontal = 15.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(modifier = Modifier.size(42.dp), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary) } }
             Column(modifier = Modifier.weight(1f)) {
                 Text("GitHub Device Flow", fontWeight = FontWeight.Bold)
-                Text(
-                    "Browser authorization · no password sharing",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("Browser authorization · no password sharing", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             SecureStatusPill(label = "Secure")
         }
@@ -404,285 +230,78 @@ private fun SecuritySummaryCard() {
 
 @Composable
 private fun SecureStatusPill(label: String) {
-    Surface(
-        shape = RoundedCornerShape(999.dp),
-        color = MaterialTheme.colorScheme.tertiary.copy(alpha = .14f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .22f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            Icon(
-                Icons.Default.Security,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(15.dp)
-            )
-            Text(
-                label,
-                color = MaterialTheme.colorScheme.tertiary,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
-            )
+    Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.tertiary.copy(alpha = .14f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .22f))) {
+        Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(15.dp))
+            Text(label, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
-private fun DeviceCodeExperience(
-    auth: DeviceAuthState,
-    checking: Boolean,
-    onCopy: () -> Unit,
-    onOpen: () -> Unit,
-    onCheck: () -> Unit,
-    onRestart: () -> Unit,
-    onGuest: () -> Unit
-) {
+private fun DeviceCodeExperience(auth: DeviceAuthState, checking: Boolean, onCopy: () -> Unit, onOpen: () -> Unit, onCheck: () -> Unit, onRestart: () -> Unit, onGuest: () -> Unit) {
     val code = requireNotNull(auth.code)
-    val expireAtEpochSeconds by rememberSaveable(code.deviceCode) {
-        mutableStateOf(currentEpochSeconds() + code.expiresIn.coerceAtLeast(0).toLong())
-    }
-    var remainingSeconds by remember(code.deviceCode, expireAtEpochSeconds) {
-        mutableIntStateOf(
-            (expireAtEpochSeconds - currentEpochSeconds())
-                .coerceAtLeast(0L)
-                .toInt()
-        )
-    }
-
+    val expireAtEpochSeconds by rememberSaveable(code.deviceCode) { mutableStateOf(currentEpochSeconds() + code.expiresIn.coerceAtLeast(0).toLong()) }
+    var remainingSeconds by remember(code.deviceCode, expireAtEpochSeconds) { mutableIntStateOf((expireAtEpochSeconds - currentEpochSeconds()).coerceAtLeast(0L).toInt()) }
     LaunchedEffect(code.deviceCode, expireAtEpochSeconds) {
-        while (remainingSeconds > 0) {
-            delay(1_000)
-            remainingSeconds = (expireAtEpochSeconds - currentEpochSeconds())
-                .coerceAtLeast(0L)
-                .toInt()
-        }
+        while (remainingSeconds > 0) { delay(1_000); remainingSeconds = (expireAtEpochSeconds - currentEpochSeconds()).coerceAtLeast(0L).toInt() }
     }
-
-    val expiryProgress = if (code.expiresIn > 0) {
-        (remainingSeconds.toFloat() / code.expiresIn.toFloat()).coerceIn(0f, 1f)
-    } else {
-        0f
-    }
+    val expiryProgress = if (code.expiresIn > 0) (remainingSeconds.toFloat() / code.expiresIn.toFloat()).coerceIn(0f, 1f) else 0f
     val isExpired = remainingSeconds <= 0
-
     AuthGlassPanel {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    "Authorize GitHub Rock",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    "Use this one-time code in GitHub. It is linked only to this secure sign-in request.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("Authorize GitHub Rock", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                Text("Use this one-time code in GitHub. It is linked only to this secure sign-in request.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
             DeviceCodeField(code = code.userCode, onCopy = onCopy)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                LinearProgressIndicator(
-                    progress = { expiryProgress },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(7.dp)
-                        .clip(CircleShape),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-                Text(
-                    formatDuration(remainingSeconds),
-                    color = if (isExpired) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
-                )
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                LinearProgressIndicator(progress = { expiryProgress }, modifier = Modifier.weight(1f).height(7.dp).clip(CircleShape), color = MaterialTheme.colorScheme.primary, trackColor = MaterialTheme.colorScheme.surfaceVariant)
+                Text(formatDuration(remainingSeconds), color = if (isExpired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
             }
         }
     }
-
     AuthGlassPanel(contentPadding = PaddingValues(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(46.dp),
-                shape = RoundedCornerShape(15.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Security,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-            }
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(modifier = Modifier.size(46.dp), shape = RoundedCornerShape(15.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .14f)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp)) } }
             Column(modifier = Modifier.weight(1f)) {
                 Text("Secure authentication via GitHub", fontWeight = FontWeight.Bold)
-                Text(
-                    "The code is completed only on GitHub’s official website.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("The code is completed only on GitHub’s official website.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             SecureStatusPill(label = "Secure")
         }
     }
-
-    Button(
-        onClick = onOpen,
-        enabled = !isExpired,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(74.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF63E2D8),
-                        contentColor = Color(0xFF161B22)
-        )
-    ) {
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = CircleShape,
-                        color = Color(0xFF161B22).copy(alpha = .16f)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Default.Code,
-                    contentDescription = null,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-        Spacer(Modifier.width(14.dp))
-        Text(
-            "OPEN GITHUB",
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 1.sp
-        )
-        Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(28.dp))
+    Button(onClick = onOpen, enabled = !isExpired, modifier = Modifier.fillMaxWidth().height(74.dp), shape = RoundedCornerShape(24.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF63E2D8), contentColor = Color(0xFF161B22))) {
+        Surface(modifier = Modifier.size(44.dp), shape = CircleShape, color = Color(0xFF161B22).copy(alpha = .16f)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Code, contentDescription = null, modifier = Modifier.size(26.dp)) } }
+        Spacer(Modifier.width(14.dp)); Text("OPEN GITHUB", modifier = Modifier.weight(1f), textAlign = TextAlign.Start, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, letterSpacing = 1.sp); Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(28.dp))
     }
-
     AuthGlassPanel {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(13.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "You can enter this code at github.com/login/device in any trusted browser.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                "GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.tertiary,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                "After GitHub says you’re all set, return with Android Back or the app switcher. GitHub Rock checks automatically; the button below is a backup.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
+        Column(verticalArrangement = Arrangement.spacedBy(13.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("You can enter this code at github.com/login/device in any trusted browser.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            Text("GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary, textAlign = TextAlign.Center)
+            Text("After GitHub says you’re all set, return with Android Back or the app switcher. GitHub Rock checks automatically; the button below is a backup.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             if (isExpired) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.error.copy(alpha = .10f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            "Code expired — request a new one",
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                        TextButton(onClick = onRestart, enabled = !checking) {
-                            Text("Get a new verification code")
-                        }
+                Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.error.copy(alpha = .10f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .28f))) {
+                    Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Code expired — request a new one", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        TextButton(onClick = onRestart, enabled = !checking) { Text("Get a new verification code") }
                     }
                 }
             }
-
-            Button(
-                onClick = onCheck,
-                enabled = !checking && !isExpired,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(18.dp)
-            ) {
-                Icon(Icons.Default.Refresh, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(if (checking) "Checking GitHub…" else "I’ve authorized — check now")
+            Button(onClick = onCheck, enabled = !checking && !isExpired, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(18.dp)) {
+                Icon(Icons.Default.Refresh, contentDescription = null); Spacer(Modifier.width(8.dp)); Text(if (checking) "Checking GitHub…" else "I’ve authorized — check now")
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                if (!isExpired) {
-                    TextButton(onClick = onRestart, enabled = !checking) {
-                        Text("Get a new verification code")
-                    }
-                }
-                TextButton(onClick = onGuest, enabled = !checking) {
-                    Text("Use guest mode instead")
-                }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                if (!isExpired) TextButton(onClick = onRestart, enabled = !checking) { Text("Get a new verification code") }
+                TextButton(onClick = onGuest, enabled = !checking) { Text("Use guest mode instead") }
             }
-
             val statusText = auth.error ?: auth.status.orEmpty()
             if (statusText.isNotBlank()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = if (auth.error != null) {
-                        MaterialTheme.colorScheme.error.copy(alpha = .10f)
-                    } else {
-                        MaterialTheme.colorScheme.primary.copy(alpha = .08f)
-                    }
-                ) {
-                    Text(
-                        statusText,
-                        modifier = Modifier.padding(13.dp),
-                        color = if (auth.error != null) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        textAlign = TextAlign.Center
-                    )
+                Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = if (auth.error != null) MaterialTheme.colorScheme.error.copy(alpha = .10f) else MaterialTheme.colorScheme.primary.copy(alpha = .08f)) {
+                    Text(statusText, modifier = Modifier.padding(13.dp), color = if (auth.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
             }
-
-            if (auth.error == null && checking) {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
-            }
+            if (auth.error == null && checking) LinearProgressIndicator(Modifier.fillMaxWidth())
         }
     }
 }
@@ -690,78 +309,22 @@ private fun DeviceCodeExperience(
 @Composable
 private fun DeviceCodeField(code: String, onCopy: () -> Unit) {
     val shape = MaterialTheme.shapes.large
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(88.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = shape
-            ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = code,
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                style = MaterialTheme.typography.headlineMedium,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
-                maxLines = 1
-            )
+    Row(modifier = Modifier.fillMaxWidth().height(88.dp).clip(shape).background(MaterialTheme.colorScheme.surfaceContainerHigh).border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = shape), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
+            Text(text = code, modifier = Modifier.horizontalScroll(rememberScrollState()), style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Black, letterSpacing = 2.sp, maxLines = 1)
         }
-        Surface(
-            modifier = Modifier.width(64.dp).fillMaxHeight(),
-            color = MaterialTheme.colorScheme.primary,
-            shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
-        ) {
-            IconButton(
-                onClick = onCopy,
-                modifier = Modifier.semantics {
-                    contentDescription = "Copy GitHub verification code"
-                }
-            ) {
-                Icon(
-                    Icons.Default.ContentCopy,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(28.dp)
-                )
+        Surface(modifier = Modifier.width(64.dp).fillMaxHeight(), color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)) {
+            IconButton(onClick = onCopy, modifier = Modifier.semantics { contentDescription = "Copy GitHub verification code" }) {
+                Icon(Icons.Default.ContentCopy, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(28.dp))
             }
         }
     }
 }
 
 @Composable
-private fun AuthGlassPanel(
-    modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(20.dp),
-    content: @Composable ColumnScope.() -> Unit
-) {
+private fun AuthGlassPanel(modifier: Modifier = Modifier, contentPadding: PaddingValues = PaddingValues(20.dp), content: @Composable ColumnScope.() -> Unit) {
     val shape = MaterialTheme.shapes.extraLarge
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = shape
-            )
-            .padding(contentPadding),
-        content = content
-    )
+    Column(modifier = modifier.fillMaxWidth().clip(shape).background(MaterialTheme.colorScheme.surfaceContainer).border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = shape).padding(contentPadding), content = content)
 }
 
 private fun formatDuration(totalSeconds: Int): String {
