@@ -16,8 +16,8 @@ object MarkdownRenderer {
     private val orderedPattern = Regex("^\\s*(\\d+)[.)]\\s+(.+)$")
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
-    private val imagePattern = Regex("^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\\\".*?\\\")?\\)\\s*$")
-    private val htmlImagePattern = Regex("^\\s*(?:<a\\s+[^>]*>\\s*)?<img\\s+[^>]*src=[\\\"']([^\\\"']+)[\\\"'][^>]*(?:alt=[\\\"']([^\\\"']*)[\\\"'][^>]*)?>\\s*(?:</a>\\s*)?$")
+    private val imagePattern = Regex("""^\s*!\[(.*?)\]\((\S+?)(?:\s+\".*?\")?\)\s*$""")
+    private val htmlImagePattern = Regex("""^\s*(?:<a\s+[^>]*>\s*)?<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*(?:alt=[\"']([^\"']*)[\"'][^>]*)?>\s*(?:</a>\s*)?$""")
     private val tableSeparator = Regex("^\\s*\\|?\\s*:?-+:?\\s*(?:\\|\\s*:?-+:?\\s*)+\\|?\\s*$")
     private val tableSplitter = Regex("\\s*\\|\\s*")
 
@@ -39,8 +39,6 @@ object MarkdownRenderer {
 
         fun flushTable() {
             if (inTable && tableText.isNotBlank()) {
-                // Preserve the complete table as a monospaced, readable block. This keeps
-                // every row/column visible without dropping content from long READMEs.
                 blocks += MarkdownBlock(MarkdownBlockKind.Code, tableText.toString().trimEnd())
             }
             inTable = false
@@ -80,7 +78,6 @@ object MarkdownRenderer {
                 return@forEachIndexed
             }
 
-            // GitHub pipe tables are kept intact and rendered as readable monospaced tables.
             if (!inTable && line.contains('|') && index + 1 < lines.size && tableSeparator.matches(lines[index + 1])) {
                 flushParagraph()
                 inTable = true
@@ -142,7 +139,6 @@ object MarkdownRenderer {
         return blocks
     }
 
-    /** Preserve link destinations in rendered text instead of silently deleting them. */
     fun cleanInline(text: String): String = text
         .replace(Regex("!\\[([^]]*)]\\(([^)]+)\\)"), "$1")
         .replace(Regex("\\[([^]]+)]\\(([^)]+)\\)"), "$1 ($2)")
