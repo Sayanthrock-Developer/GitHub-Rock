@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.ui.navigation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,8 +58,8 @@ private val rockNavigationDestinations = listOf(
 /**
  * The single navigation chrome for GitHub Rock.
  *
- * Phone: floating pill navigation.
- * Large screens: compact navigation rail.
+ * Phone: floating capsule navigation.
+ * Large screens: compact floating rail.
  * The navigation chrome owns only top-level navigation; nested screens remain
  * inside the existing NavHost and are intentionally not shown here.
  */
@@ -76,6 +76,7 @@ fun RockNavigationChrome(
         if (maxWidth < 600.dp) {
             RockBottomNavigation(
                 selectedRoute = selectedRoute,
+                compact = maxWidth < 360.dp,
                 onDestinationSelected = { navigateToTopLevel(navController, it) },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
@@ -105,25 +106,30 @@ private fun navigateToTopLevel(
 @Composable
 private fun RockBottomNavigation(
     selectedRoute: String?,
+    compact: Boolean,
     onDestinationSelected: (TopDestinationV2) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 12.dp)
-            .widthIn(max = 680.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+            .padding(horizontal = 12.dp, vertical = 12.dp)
+            .widthIn(max = 620.dp),
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        tonalElevation = 3.dp,
-        shadowElevation = 12.dp
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+        ),
+        tonalElevation = 2.dp,
+        shadowElevation = 18.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(70.dp)
-                .padding(6.dp),
+                .height(72.dp)
+                .padding(horizontal = 7.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -131,6 +137,7 @@ private fun RockBottomNavigation(
                 RockBottomItem(
                     destination = destination,
                     selected = selectedRoute == destination.route,
+                    compact = compact,
                     onClick = { onDestinationSelected(destination) }
                 )
             }
@@ -142,15 +149,16 @@ private fun RockBottomNavigation(
 private fun RowScope.RockBottomItem(
     destination: TopDestinationV2,
     selected: Boolean,
+    compact: Boolean,
     onClick: () -> Unit
 ) {
     val containerColor = if (selected) {
-        MaterialTheme.colorScheme.secondaryContainer
+        MaterialTheme.colorScheme.primaryContainer
     } else {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0f)
     }
     val contentColor = if (selected) {
-        MaterialTheme.colorScheme.onSecondaryContainer
+        MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -165,7 +173,7 @@ private fun RowScope.RockBottomItem(
                 role = Role.Tab
                 this.selected = selected
             },
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(26.dp),
         color = containerColor,
         contentColor = contentColor
     ) {
@@ -174,11 +182,19 @@ private fun RowScope.RockBottomItem(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(destination.icon, null, Modifier.size(if (selected) 24.dp else 23.dp))
-            AnimatedVisibility(visible = selected, enter = fadeIn(), exit = fadeOut()) {
+            Icon(
+                destination.icon,
+                null,
+                Modifier.size(if (selected) 24.dp else 22.dp)
+            )
+            AnimatedVisibility(
+                visible = selected && !compact,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
                 Text(
                     text = destination.accessibilityLabel,
-                    modifier = Modifier.padding(start = 6.dp),
+                    modifier = Modifier.padding(start = 6.dp, end = 2.dp),
                     maxLines = 1,
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -195,29 +211,32 @@ private fun RockNavigationRail(
 ) {
     Surface(
         modifier = modifier
-            .fillMaxHeight()
-            .width(92.dp)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+            .padding(start = 14.dp)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .width(78.dp),
+        shape = RoundedCornerShape(30.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
         contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+        ),
         tonalElevation = 2.dp,
-        shadowElevation = 8.dp
+        shadowElevation = 14.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(horizontal = 8.dp, vertical = 18.dp),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Surface(
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(42.dp),
                 shape = RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("R", style = MaterialTheme.typography.titleMedium)
+                    Text("GR", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -239,12 +258,12 @@ private fun RockRailItem(
     onClick: () -> Unit
 ) {
     val containerColor = if (selected) {
-        MaterialTheme.colorScheme.secondaryContainer
+        MaterialTheme.colorScheme.primaryContainer
     } else {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0f)
     }
     val contentColor = if (selected) {
-        MaterialTheme.colorScheme.onSecondaryContainer
+        MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -252,14 +271,14 @@ private fun RockRailItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .height(58.dp)
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
                 contentDescription = destination.accessibilityLabel
                 role = Role.Tab
                 this.selected = selected
             },
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(24.dp),
         color = containerColor,
         contentColor = contentColor
     ) {
@@ -267,7 +286,11 @@ private fun RockRailItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(destination.icon, null, Modifier.size(23.dp))
+            Icon(
+                destination.icon,
+                null,
+                Modifier.size(if (selected) 24.dp else 22.dp)
+            )
             AnimatedVisibility(visible = selected, enter = fadeIn(), exit = fadeOut()) {
                 Text(
                     text = destination.accessibilityLabel,
