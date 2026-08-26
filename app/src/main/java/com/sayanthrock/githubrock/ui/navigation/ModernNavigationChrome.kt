@@ -2,7 +2,7 @@ package com.sayanthrock.githubrock.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -50,10 +48,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 /**
- * The single modern navigation chrome for GitHub Rock.
- * The mobile dock is a floating iPhone-style capsule with animated icon/label states.
- * MainNavigation's legacy dock remains underneath only as a compatibility layer and is
- * completely covered by the background mask below; users see one navigation bar only.
+ * Adaptive navigation chrome for GitHub Rock.
+ * Uses Material 3 system/dynamic colors through MaterialTheme and keeps one navigation
+ * surface on screen at a time: a floating bottom dock on phones and a compact rail on
+ * larger windows.
  */
 @Composable
 fun ModernNavigationChrome(
@@ -73,17 +71,6 @@ fun ModernNavigationChrome(
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             } else {
-                // Fully cover the legacy dock so only the modern dock is visible.
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(112.dp),
-                    color = MaterialTheme.colorScheme.background,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
-                ) {}
-
                 ModernNavigationBottomBar(
                     selectedRoute = selectedRoute,
                     onDestinationSelected = { navigate(navController, it) },
@@ -111,18 +98,19 @@ internal fun ModernNavigationBottomBar(
     Surface(
         modifier = modifier
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
             .widthIn(max = 560.dp),
-        shape = IphoneFloatingDockShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 4.dp,
-        shadowElevation = 16.dp
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        tonalElevation = 3.dp,
+        shadowElevation = 12.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
-                .padding(horizontal = 6.dp, vertical = 6.dp),
+                .height(68.dp)
+                .padding(horizontal = 6.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -145,9 +133,9 @@ private fun RowScope.ModernBottomItem(
 ) {
     val indicatorColor by animateColorAsState(
         targetValue = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+            MaterialTheme.colorScheme.surfaceContainer
         },
         animationSpec = tween(220),
         label = "navigation indicator color"
@@ -158,7 +146,7 @@ private fun RowScope.ModernBottomItem(
         label = "navigation icon size"
     )
     val iconColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        MaterialTheme.colorScheme.onSecondaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -166,14 +154,14 @@ private fun RowScope.ModernBottomItem(
     Surface(
         modifier = Modifier
             .weight(1f)
-            .height(58.dp)
+            .height(56.dp)
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
                 contentDescription = destination.accessibilityLabel
                 role = Role.Tab
                 this.selected = selected
             },
-        shape = RoundedCornerShape(29.dp),
+        shape = RoundedCornerShape(24.dp),
         color = indicatorColor
     ) {
         Row(
@@ -198,28 +186,11 @@ private fun RowScope.ModernBottomItem(
                     maxLines = 1,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }
     }
-}
-
-/** Lifted capsule silhouette with raised/curved ends, matching the iPhone-style reference. */
-private val IphoneFloatingDockShape: Shape = GenericShape { size, _ ->
-    val width = size.width
-    val height = size.height
-    val lift = (height * 0.30f).coerceAtLeast(10f)
-    val curve = (width * 0.035f).coerceIn(14f, 28f)
-
-    moveTo(0f, height / 2f)
-    cubicTo(0f, lift, curve, 0f, curve * 2.2f, 0f)
-    lineTo(width - curve * 2.2f, 0f)
-    cubicTo(width - curve, 0f, width, lift, width, height / 2f)
-    cubicTo(width, height - lift, width - curve, height, width - curve * 2.2f, height)
-    lineTo(curve * 2.2f, height)
-    cubicTo(curve, height, 0f, height - lift, 0f, height / 2f)
-    close()
 }
 
 @Composable
@@ -231,28 +202,29 @@ private fun ModernNavigationRail(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(92.dp)
+            .width(88.dp)
             .windowInsetsPadding(WindowInsets.safeDrawing),
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         tonalElevation = 2.dp,
         shadowElevation = 6.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(horizontal = 10.dp, vertical = 16.dp),
+                .padding(horizontal = 8.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         "GR",
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 12.sp
                     )
@@ -277,9 +249,9 @@ private fun ModernRailItem(
 ) {
     val indicatorColor by animateColorAsState(
         targetValue = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surface
+            MaterialTheme.colorScheme.surfaceContainer
         },
         animationSpec = tween(220),
         label = "rail indicator color"
@@ -306,7 +278,7 @@ private fun ModernRailItem(
                 destination.icon,
                 null,
                 Modifier.size(23.dp),
-                tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (selected) {
@@ -315,7 +287,7 @@ private fun ModernRailItem(
                     maxLines = 1,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }
