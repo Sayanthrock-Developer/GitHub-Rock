@@ -51,9 +51,7 @@ fun RepositoryShowcaseScreen(repository: GitHubRepositoryModel?, onBack: () -> U
     LaunchedEffect(repository) { viewModel.start(repository) }
     val displayedRepository = state.repository ?: repository
     val openGitHub: () -> Unit = {
-        displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it)))
-        }
+        displayedRepository?.htmlUrl?.let { openHttpsBrowser(context, it) }
     }
     Scaffold(topBar = {
         TopAppBar(
@@ -74,7 +72,7 @@ fun RepositoryShowcaseContent(repository: GitHubRepositoryModel?, readme: String
     val openLink: (String) -> Unit = remember(context, repository?.htmlUrl, repository?.defaultBranch) {
         { url ->
             val resolved = resolveReadmeUrl(url, repository, image = false)
-            if (!resolved.startsWith("#")) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(resolved)))
+            if (resolved.isNotBlank() && !resolved.startsWith("#")) openHttpsBrowser(context, resolved)
         }
     }
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 48.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -172,6 +170,17 @@ private fun resolveReadmeUrl(url: String, repository: GitHubRepositoryModel?, im
         val base = if (image) URI("https://raw.githubusercontent.com/$owner/$name/$branch/") else URI("https://github.com/$owner/$name/blob/$branch/")
         base.resolve(url.removePrefix("./")).toString()
     }.getOrDefault(url)
+}
+
+private fun openHttpsBrowser(context: android.content.Context, rawUrl: String): Boolean {
+    val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return false
+    if (!uri.scheme.equals("https", ignoreCase = true) || uri.host.isNullOrBlank() || uri.userInfo != null) return false
+    val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+        addCategory(Intent.CATEGORY_BROWSABLE)
+        selector = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).apply { addCategory(Intent.CATEGORY_BROWSABLE) }
+        if (context !is android.app.Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    return runCatching { context.startActivity(intent); true }.getOrDefault(false)
 }
 
 @Composable private fun RepositoryIdentityHero(repository: GitHubRepositoryModel) { GlassCard(contentPadding = PaddingValues(0.dp)) { Column { Box(Modifier.fillMaxWidth()) { RepositoryArtwork(repository, compact = false); RepositoryProjectIcon(repository, Modifier.align(Alignment.BottomStart).offset(x = 18.dp, y = 34.dp)) }; Spacer(Modifier.height(42.dp)); Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) { Column(Modifier.weight(1f)) { Text(repository.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis); Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }; RepositoryTypeBadge(repository) }; Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (repository.private) MiniBadge("Private"); if (repository.fork) MiniBadge("Fork"); if (repository.isTemplate) MiniBadge("Template"); if (!repository.private && !repository.fork && !repository.isTemplate) MiniBadge("Public") } } } } }
