@@ -8,11 +8,7 @@ import androidx.browser.customtabs.CustomTabsClient
 import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
-const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
 const val GITHUB_ACCOUNT_SECURITY_URL = "https://github.com/settings/security"
-
-internal data class GitHubSignupLaunchPlan(val primaryUrl: String, val fallbackUrl: String, val useEphemeralTab: Boolean)
-internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan = GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, ephemeralBrowsingSupported)
 
 object GitHubUrlPolicy {
     private val repositorySegment = Regex("[A-Za-z0-9_.-]+")
@@ -49,19 +45,11 @@ object GitHubUrlPolicy {
 internal fun isExternalBrowserPackage(candidatePackage: String?, applicationPackage: String): Boolean = !candidatePackage.isNullOrBlank() && candidatePackage != applicationPackage
 
 object GitHubExternalLinkLauncher {
-    fun open(context: Context, rawUrl: String): Boolean = if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) false else if (rawUrl == GITHUB_SIGN_UP_URL) openSignup(context) else openStandard(context, rawUrl)
+    fun open(context: Context, rawUrl: String): Boolean = if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) false else openStandard(context, rawUrl)
 
     fun openOAuthUrl(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isBackendOAuthStartUrl(rawUrl)) return false
         return openStandardUnchecked(context, rawUrl)
-    }
-
-    private fun openSignup(context: Context): Boolean {
-        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
-        val supportsEphemeralBrowsing = customTabsPackage?.takeIf { isExternalBrowserPackage(it, context.packageName) }?.let { runCatching { CustomTabsClient.isEphemeralBrowsingSupported(context, it) }.getOrDefault(false) } ?: false
-        val plan = githubSignupLaunchPlan(supportsEphemeralBrowsing)
-        if (plan.useEphemeralTab && customTabsPackage != null && launchCustomTab(context, plan.primaryUrl, customTabsPackage, true)) return true
-        return openStandard(context, plan.fallbackUrl)
     }
 
     private fun openStandard(context: Context, rawUrl: String): Boolean = if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) false else openStandardUnchecked(context, rawUrl)
