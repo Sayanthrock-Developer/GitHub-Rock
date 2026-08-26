@@ -63,3 +63,5 @@ private fun MarkdownBlockView'''
           git diff --cached --quiet && exit 0
           git commit -m "fix: render complete README without truncation"
           git push
+
+# Triggered intentionally to apply the one-time README preview migration.
