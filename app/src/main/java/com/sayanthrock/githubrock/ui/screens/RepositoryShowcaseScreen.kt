@@ -142,9 +142,9 @@ private fun buildMarkdownAnnotatedString(text: String): AnnotatedString = buildA
             g[1].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(g[2]) }
             g[4].isNotEmpty() -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(g[5]) }
             g[7].isNotEmpty() -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(g[8]) }
-            g[9].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[9]) }
             g[10].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[10]) }
-            g[11].isNotEmpty() -> { pushStringAnnotation("URL", g[12]); withStyle(SpanStyle(color = Color(0xFF58A6FF), textDecoration = TextDecoration.Underline)) { append(g[11]) }; pop() }
+            g[11].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[11]) }
+            g[12].isNotEmpty() -> { pushStringAnnotation("URL", g[13]); withStyle(SpanStyle(color = Color(0xFF58A6FF), textDecoration = TextDecoration.Underline)) { append(g[12]) }; pop() }
             else -> append(match.value)
         }
         cursor = match.range.last + 1
