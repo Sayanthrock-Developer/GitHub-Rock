@@ -125,7 +125,8 @@ private fun RenderMarkdownBlock(block: MarkdownBlock, openLink: (String) -> Unit
 
 @Composable
 private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier) {
-    val annotated = remember(text) { buildMarkdownAnnotatedString(text) }
+    val linkColor = MaterialTheme.colorScheme.primary
+    val annotated = remember(text, linkColor) { buildMarkdownAnnotatedString(text, linkColor) }
     ClickableText(
         text = annotated,
         modifier = modifier,
@@ -134,8 +135,7 @@ private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (Stri
     )
 }
 
-@Composable
-private fun buildMarkdownAnnotatedString(text: String): AnnotatedString = buildAnnotatedString {
+private fun buildMarkdownAnnotatedString(text: String, linkColor: androidx.compose.ui.graphics.Color): AnnotatedString = buildAnnotatedString {
     val pattern = Regex("(\\*\\*|__)(.+?)(\\1)|(`)(.+?)(\\4)|(~~)(.+?)(\\7)|(?<!\\*)\\*([^*]+)\\*(?!\\*)|(?<!_)_([^_]+)_(?!_)|\\[([^]]+)]\\(([^)]+)\\)")
     var cursor = 0
     pattern.findAll(text).forEach { match ->
@@ -149,7 +149,7 @@ private fun buildMarkdownAnnotatedString(text: String): AnnotatedString = buildA
             g[10].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[10]) }
             g[11].isNotEmpty() -> {
                 pushStringAnnotation("URL", g[12])
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)) { append(g[11]) }
+                withStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)) { append(g[11]) }
                 pop()
             }
             else -> append(match.value)
