@@ -72,55 +72,11 @@ private fun AccentColor.palette(): AccentPalette = when (this) {
 }
 
 private fun darkColors(accentColor: AccentColor) = accentColor.palette().let { accent ->
-    darkColorScheme(
-        primary = accent.dark,
-        onPrimary = Color(0xFF071012),
-        primaryContainer = accent.darkContainer,
-        onPrimaryContainer = accent.dark,
-        secondary = Color(0xFFB6C2CF),
-        onSecondary = Color(0xFF1B242D),
-        tertiary = RockGreen,
-        background = RockDarkBackground,
-        surface = RockDarkSurface,
-        surfaceVariant = RockDarkSurfaceHigh,
-        surfaceContainerLowest = RockDarkBackground,
-        surfaceContainerLow = Color(0xFF121820),
-        surfaceContainer = RockDarkSurface,
-        surfaceContainerHigh = RockDarkSurfaceHigh,
-        surfaceContainerHighest = Color(0xFF292F36),
-        outline = RockDarkBorder,
-        outlineVariant = Color(0xFF252B33),
-        error = RockRed,
-        onBackground = RockDarkText,
-        onSurface = RockDarkText,
-        onSurfaceVariant = RockDarkMuted
-    )
+    darkColorScheme(primary = accent.dark, onPrimary = Color(0xFF071012), primaryContainer = accent.darkContainer, onPrimaryContainer = accent.dark, secondary = Color(0xFFB6C2CF), onSecondary = Color(0xFF1B242D), tertiary = RockGreen, background = RockDarkBackground, surface = RockDarkSurface, surfaceVariant = RockDarkSurfaceHigh, surfaceContainerLowest = RockDarkBackground, surfaceContainerLow = Color(0xFF121820), surfaceContainer = RockDarkSurface, surfaceContainerHigh = RockDarkSurfaceHigh, surfaceContainerHighest = Color(0xFF292F36), outline = RockDarkBorder, outlineVariant = Color(0xFF252B33), error = RockRed, onBackground = RockDarkText, onSurface = RockDarkText, onSurfaceVariant = RockDarkMuted)
 }
 
 private fun lightColors(accentColor: AccentColor) = accentColor.palette().let { accent ->
-    lightColorScheme(
-        primary = accent.light,
-        onPrimary = Color.White,
-        primaryContainer = accent.lightContainer,
-        onPrimaryContainer = Color(0xFF102A2D),
-        secondary = Color(0xFF59636E),
-        onSecondary = Color.White,
-        tertiary = RockLightGreen,
-        background = RockLightBackground,
-        surface = RockLightSurface,
-        surfaceVariant = RockLightSurfaceHigh,
-        surfaceContainerLowest = RockLightSurface,
-        surfaceContainerLow = Color(0xFFF0F3F6),
-        surfaceContainer = RockLightSurface,
-        surfaceContainerHigh = RockLightSurfaceHigh,
-        surfaceContainerHighest = Color(0xFFDDE2E7),
-        outline = RockLightBorder,
-        outlineVariant = Color(0xFFE1E5EA),
-        error = RockLightRed,
-        onBackground = RockLightText,
-        onSurface = RockLightText,
-        onSurfaceVariant = RockLightMuted
-    )
+    lightColorScheme(primary = accent.light, onPrimary = Color.White, primaryContainer = accent.lightContainer, onPrimaryContainer = Color(0xFF102A2D), secondary = Color(0xFF59636E), onSecondary = Color.White, tertiary = RockLightGreen, background = RockLightBackground, surface = RockLightSurface, surfaceVariant = RockLightSurfaceHigh, surfaceContainerLowest = RockLightSurface, surfaceContainerLow = Color(0xFFF0F3F6), surfaceContainer = RockLightSurface, surfaceContainerHigh = RockLightSurfaceHigh, surfaceContainerHighest = Color(0xFFDDE2E7), outline = RockLightBorder, outlineVariant = Color(0xFFE1E5EA), error = RockLightRed, onBackground = RockLightText, onSurface = RockLightText, onSurfaceVariant = RockLightMuted)
 }
 
 private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
@@ -161,11 +117,10 @@ private fun FontSize.scale(): Float = when (this) {
     FontSize.Large -> 1.16f
 }
 
-/** Material 3 visual system with selectable personality, density, typography, and isolated code palettes. */
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = true,
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     trueBlack: Boolean = false,
     accentColor: AccentColor = AccentColor.Cyan,
     themeStyle: ThemeStyle = ThemeStyle.Clean,
@@ -183,12 +138,17 @@ fun GitHubRockTheme(
     val context = LocalContext.current
     val baseDensity = LocalDensity.current
     val codeColors = codeColors(codeColorStyle, darkTheme)
+    val usesSystemColors = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val colors = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme -> dynamicDarkColorScheme(context)
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
+        usesSystemColors && darkTheme -> dynamicDarkColorScheme(context)
+        usesSystemColors -> dynamicLightColorScheme(context)
         darkTheme -> darkColors(accentColor)
         else -> lightColors(accentColor)
-    }.applyStyle(themeStyle, darkTheme).let { scheme ->
+    }.let { scheme ->
+        // System/dynamic color is authoritative. Theme personalities may change shapes,
+        // but must not replace the user's Android system palette with hard-coded colors.
+        if (usesSystemColors) scheme else scheme.applyStyle(themeStyle, darkTheme)
+    }.let { scheme ->
         if (darkTheme && trueBlack) {
             scheme.copy(background = Color.Black, surface = Color(0xFF080A0D), surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF06080A), surfaceContainer = Color(0xFF0A0D10))
         } else scheme
