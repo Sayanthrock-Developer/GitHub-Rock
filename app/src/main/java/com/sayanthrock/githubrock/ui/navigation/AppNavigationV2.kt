@@ -9,15 +9,10 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
@@ -60,14 +55,6 @@ private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"
 private const val BUILD_DETAILS_ROUTE = "build-details/{owner}/{repo}/{runId}"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
-private val destinations = listOf(
-    TopDestinationV2.Home,
-    TopDestinationV2.Repositories,
-    TopDestinationV2.Builds,
-    TopDestinationV2.Downloads,
-    TopDestinationV2.Profile
-)
-
 @Composable
 fun MainNavigationV2(
     navController: NavHostController,
@@ -101,9 +88,15 @@ fun MainNavigationV2(
                 RepositoriesScreen(state.repositories, state.isLoading, onSearch, mode == AppMode.Connected, openRepo, state.profile?.login)
             }
             composable(TopDestinationV2.Builds.route) {
-                BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo) { repo, run ->
-                    navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}")
-                }
+                BuildsScreen(
+                    mode = mode,
+                    repositories = state.repositories,
+                    runs = state.workflowRuns,
+                    onSelectRepository = openRepo,
+                    onOpenRun = { repo, run ->
+                        navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}")
+                    }
+                )
             }
             composable(BUILD_DETAILS_ROUTE, arguments = listOf(
                 navArgument("owner") { type = NavType.StringType },
@@ -183,9 +176,14 @@ fun MainNavigationV2(
                 val owner = entry.arguments?.getString("owner")
                 val repo = entry.arguments?.getString("repo")
                 val runId = entry.arguments?.getLong("runId")
-                BuildsScreen(mode, state.repositories, state.workflowRuns, openRepo,
+                BuildsScreen(
+                    mode = mode,
+                    repositories = state.repositories,
+                    runs = state.workflowRuns,
+                    onSelectRepository = openRepo,
                     initialRepository = state.repositories.firstOrNull { it.owner.login == owner && it.name == repo },
-                    initialRunId = runId)
+                    initialRunId = runId
+                )
             }
             composable("release/{owner}/{repo}/{tag}", arguments = listOf(
                 navArgument("owner") { type = NavType.StringType },
