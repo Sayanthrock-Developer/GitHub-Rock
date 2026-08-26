@@ -6,13 +6,48 @@ GitHub Rock is a native Android application that uses **GitHub OAuth App Device 
 
 ## TL;DR
 
-1. Create a GitHub OAuth App.
+1. Create/manage the GitHub OAuth App **under the `Sayanthrock-Developer` organization**.
 2. Enable Device Flow.
 3. Use the public Client ID `Ov23lim8WhLjeUMqvuMj`.
 4. Put it in `local.properties` for local builds, or override it with the `PUBLIC_GITHUB_OAUTH_CLIENT_ID` Actions variable.
-5. Sync and run the project.
-6. Keep the Client Secret out of the Android app and repository.
-7. Before publishing a release, verify the reviewed `.github/release-signing-cert.sha256` pin against the independently controlled release keystore.
+5. Keep the organization policy **Third-party application access: Restricted**.
+6. Because GitHub Rock is owned by `Sayanthrock-Developer`, it must be the organization-owned/approved OAuth application used by the app. Do not bypass GitHub's organization authorization controls in client code.
+7. Sync and run the project.
+8. Keep the Client Secret out of the Android app and repository.
+9. Before publishing a release, verify the reviewed `.github/release-signing-cert.sha256` pin against the independently controlled release keystore.
+
+---
+
+## 🛡️ Organization third-party application access policy
+
+GitHub Rock is designed to work with the organization's restricted third-party application policy:
+
+| Policy | GitHub Rock behavior |
+| --- | --- |
+| Organization | `Sayanthrock-Developer` |
+| Third-party application access | **Restricted** |
+| Approved/organization-owned GitHub Rock application | **Allowed** |
+| Unapproved third-party applications | **Denied by GitHub** |
+
+The restriction is enforced by GitHub. **The Android application must never attempt to bypass, suppress, or work around an organization authorization denial.**
+
+For GitHub Rock to retain access to organization-controlled resources while this policy is enabled, the OAuth application used by GitHub Rock must be owned/approved by `Sayanthrock-Developer` according to the organization's GitHub settings.
+
+If GitHub reports that an organization has restricted the OAuth application, GitHub Rock should respect that response and direct the user/admin to GitHub's official organization authorization controls. The app must not request credentials outside GitHub, substitute another application's credentials, or proxy around the restriction.
+
+> **Important:** Organization-level third-party application access is a GitHub server-side setting. The Android client cannot grant itself access. An organization owner/admin must configure the OAuth App ownership/approval in GitHub.
+
+### Required GitHub organization setup
+
+An organization owner should verify:
+
+1. `Sayanthrock-Developer` has **Third-party application access** set to **Restricted**.
+2. The OAuth App used by GitHub Rock is owned by, or explicitly approved for, `Sayanthrock-Developer`.
+3. The OAuth App has **Device Flow** enabled.
+4. The application's callback and homepage configuration match the values below.
+5. No secret or organization authorization token is placed in the Android application.
+
+GitHub remains the authority for determining whether an OAuth application can access organization resources.
 
 ---
 
@@ -23,9 +58,7 @@ GitHub Rock is a native Android application that uses **GitHub OAuth App Device 
 
 ### 1 — Create the OAuth App
 
-Open:
-
-**GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**
+Open the GitHub Developer settings for the **`Sayanthrock-Developer` organization** and create/manage the OAuth App there. If the application already exists under another owner, transfer/replace it through GitHub's official settings rather than trying to emulate organization ownership in application code.
 
 Use:
 
@@ -94,8 +127,9 @@ GitHub Rock requests these scopes during Device Flow authorization:
 | `user:email` | Read account email addresses where required |
 | `read:org` | Read organization membership needed for repository access and reviewer resolution |
 | `notifications` | Read and manage GitHub notifications used by the app |
+| `user:follow` | Follow/unfollow users where supported by the app |
 
-Users see the requested access on GitHub's official authorization page before approving it.
+Users see the requested access on GitHub's official authorization page before approving it. Organization restrictions are enforced by GitHub independently of these requested scopes.
 
 ### 5 — How sign-in works
 
@@ -103,8 +137,9 @@ Users see the requested access on GitHub's official authorization page before ap
 2. The app displays the verification code.
 3. GitHub opens in an Android Custom Tab.
 4. The user approves GitHub Rock on GitHub's official page.
-5. GitHub Rock polls only at GitHub's supplied interval.
+5. GitHub polls only at GitHub's supplied interval.
 6. The returned token is stored with Android Keystore-backed encryption.
+7. GitHub remains responsible for organization-level third-party application authorization.
 
 No embedded WebView password form is used. GitHub Rock never asks for or stores a GitHub password.
 
@@ -216,6 +251,9 @@ Never update the expected fingerprint only to make a failing release pass.
 - [x] Explicit OAuth scopes requested during Device Flow
 - [x] `local.properties`, `keystore.properties`, `*.jks`, and `*.keystore` ignored by Git
 - [x] GitHub authorization through official GitHub pages
+- [x] Organization third-party application restrictions are respected server-side
+- [x] GitHub Rock is intended to use the organization-owned/approved OAuth application
+- [x] Unapproved third-party applications are not granted access by client code
 - [x] Device Flow polling follows GitHub's supplied interval
 - [x] Tokens stored with Android Keystore-backed encryption
 - [x] Signed release APK verified with `apksigner`
