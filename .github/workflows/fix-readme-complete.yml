@@ -1,0 +1,65 @@
+name: Fix complete README preview
+
+on:
+  push:
+    branches:
+      - fix/readme-markdown-fidelity
+    paths:
+      - .github/workflows/fix-readme-complete.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-readme-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Remove README preview truncation
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path("app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryHubContent.kt")
+          source = path.read_text(encoding="utf-8")
+
+          pattern = re.compile(
+              r'@Composable\nprivate fun RepositoryMarkdownCard\(markdown: String\) \{.*?\n\}\n\n@Composable\nprivate fun MarkdownBlockView',
+              re.DOTALL,
+          )
+          replacement = '''@Composable
+private fun RepositoryMarkdownCard(markdown: String) {
+    val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            blocks.forEach { block ->
+                MarkdownBlockView(block)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarkdownBlockView'''
+
+          updated, count = pattern.subn(replacement, source, count=1)
+          if count != 1:
+              raise SystemExit("RepositoryMarkdownCard target was not found")
+          if "MAX_README_BLOCKS" in updated:
+              raise SystemExit("README truncation constant is still referenced")
+
+          path.write_text(updated, encoding="utf-8")
+
+      - name: Commit README preview fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryHubContent.kt
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: render complete README without truncation"
+          git push
