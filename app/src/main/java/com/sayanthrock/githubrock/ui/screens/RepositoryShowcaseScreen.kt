@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -18,8 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.*
@@ -129,7 +125,12 @@ private fun RenderMarkdownBlock(block: MarkdownBlock, openLink: (String) -> Unit
 @Composable
 private fun InlineMarkdownText(text: String, style: TextStyle, onOpenLink: (String) -> Unit, modifier: Modifier = Modifier) {
     val annotated = remember(text) { buildMarkdownAnnotatedString(text) }
-    ClickableText(text = annotated, modifier = modifier, style = style, onClick = { offset -> annotated.getStringAnnotations("URL", offset, offset).firstOrNull()?.let { onOpenLink(it.item) } })
+    ClickableText(
+        text = annotated,
+        modifier = modifier,
+        style = style,
+        onClick = { offset -> annotated.getStringAnnotations("URL", offset, offset).firstOrNull()?.let { onOpenLink(it.item) } }
+    )
 }
 
 private fun buildMarkdownAnnotatedString(text: String): AnnotatedString = buildAnnotatedString {
@@ -142,9 +143,13 @@ private fun buildMarkdownAnnotatedString(text: String): AnnotatedString = buildA
             g[1].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(g[2]) }
             g[4].isNotEmpty() -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(g[5]) }
             g[7].isNotEmpty() -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(g[8]) }
+            g[9].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[9]) }
             g[10].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[10]) }
-            g[11].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[11]) }
-            g[12].isNotEmpty() -> { pushStringAnnotation("URL", g[13]); withStyle(SpanStyle(color = Color(0xFF58A6FF), textDecoration = TextDecoration.Underline)) { append(g[12]) }; pop() }
+            g[11].isNotEmpty() -> {
+                pushStringAnnotation("URL", g[12])
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)) { append(g[11]) }
+                pop()
+            }
             else -> append(match.value)
         }
         cursor = match.range.last + 1
