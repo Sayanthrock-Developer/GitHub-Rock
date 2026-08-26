@@ -1,14 +1,19 @@
 package com.sayanthrock.githubrock.core.util
 
-enum class MarkdownBlockKind {
-    Heading,
-    Paragraph,
-    Bullet,
-    Quote,
-    Code,
-    Divider,
-    Image,
-    Table
+/**
+ * Markdown block kinds are intentionally open so renderers can safely ignore a
+ * block introduced by a newer parser without requiring every UI surface to be
+ * updated in lockstep.
+ */
+interface MarkdownBlockKind {
+    data object Heading : MarkdownBlockKind
+    data object Paragraph : MarkdownBlockKind
+    data object Bullet : MarkdownBlockKind
+    data object Quote : MarkdownBlockKind
+    data object Code : MarkdownBlockKind
+    data object Divider : MarkdownBlockKind
+    data object Image : MarkdownBlockKind
+    data object Table : MarkdownBlockKind
 }
 
 data class MarkdownTable(
