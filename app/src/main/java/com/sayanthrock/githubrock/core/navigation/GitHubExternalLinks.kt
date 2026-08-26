@@ -9,11 +9,10 @@ import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
 const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
-const val GITHUB_ADD_ACCOUNT_URL = "https://github.com/login?add_account=1"
 const val GITHUB_ACCOUNT_SECURITY_URL = "https://github.com/settings/security"
 
 internal data class GitHubSignupLaunchPlan(val primaryUrl: String, val fallbackUrl: String, val useEphemeralTab: Boolean)
-internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan = GitHubSignupLaunchPlan(if (ephemeralBrowsingSupported) GITHUB_ADD_ACCOUNT_URL else GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, ephemeralBrowsingSupported)
+internal fun githubSignupLaunchPlan(ephemeralBrowsingSupported: Boolean): GitHubSignupLaunchPlan = GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, ephemeralBrowsingSupported)
 
 object GitHubUrlPolicy {
     private val repositorySegment = Regex("[A-Za-z0-9_.-]+")

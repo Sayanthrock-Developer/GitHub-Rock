@@ -9,8 +9,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
 import com.sayanthrock.githubrock.core.model.DownloadMirror
-import com.sayanthrock.githubrock.core.util.ApkInspection
-import com.sayanthrock.githubrock.core.util.ApkInspector
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.download.DownloadWorker
@@ -18,15 +16,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
@@ -85,23 +80,6 @@ class DownloadsViewModel @Inject constructor(
     }
 
     fun retry(download: DownloadEntity) = resume(download)
-
-    /** Parses APK metadata, signing certificates, and hashes on a worker dispatcher. */
-    fun inspectApk(file: File, onResult: (Result<ApkInspection>) -> Unit) = viewModelScope.launch {
-        val result = withContext(Dispatchers.IO) {
-            try {
-                Result.success(
-                    ApkInspector.inspect(applicationContext, file)
-                        ?: error("Android could not read APK metadata from this file.")
-                )
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (problem: Throwable) {
-                Result.failure(problem)
-            }
-        }
-        onResult(result)
-    }
 
     private fun schedule(download: DownloadEntity) {
         val input = Data.Builder()
