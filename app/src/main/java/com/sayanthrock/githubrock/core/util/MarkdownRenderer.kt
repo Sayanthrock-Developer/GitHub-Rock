@@ -37,7 +37,8 @@ object MarkdownRenderer {
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
     private val imagePattern = Regex("""^\s*!\[(.*?)\]\((\S+?)(?:\s+\".*?\")?\)\s*$""")
-    private val htmlImagePattern = Regex("""^\s*(?:<a\s+[^>]*>\s*)?<img\s+[^>]*?src=[\"']([^\"']+)[\"'][^>]*?(?:alt=[\"']([^\"']*)[\"'])?[^>]*?>\s*(?:</a>\s*)?$""")
+    private val htmlImagePattern = Regex("""^\s*(?:<a\s+[^>]*>\s*)?<img\s+[^>]*\bsrc=[\"']([^\"']+)[\"'][^>]*>\s*(?:</a>\s*)?$""")
+    private val htmlAltPattern = Regex("""\balt=[\"']([^\"']*)[\"']""")
     private val tableSeparator = Regex("^\\s*\\|?\\s*:?-+:?\\s*(?:\\|\\s*:?-+:?\\s*)+\\|?\\s*$")
 
     fun render(markdown: String): List<MarkdownBlock> {
@@ -168,9 +169,10 @@ object MarkdownRenderer {
                 }
                 htmlImage != null -> {
                     flushParagraph()
+                    val alt = htmlAltPattern.find(line)?.groupValues?.getOrNull(1).orEmpty()
                     blocks += MarkdownBlock(
                         MarkdownBlockKind.Image,
-                        htmlImage.groupValues.getOrElse(2) { "Image" }.ifBlank { "Image" },
+                        alt.ifBlank { "Image" },
                         url = htmlImage.groupValues[1]
                     )
                 }
