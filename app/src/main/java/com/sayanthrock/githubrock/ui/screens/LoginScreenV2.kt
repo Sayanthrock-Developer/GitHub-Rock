@@ -5,11 +5,9 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -43,10 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -58,7 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
 import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 
@@ -79,7 +72,6 @@ fun LoginScreenV2(
     onGuest: () -> Unit,
 ) {
     val context = LocalContext.current
-    var showSignup by rememberSaveable { mutableStateOf(false) }
     val code = auth.code
 
     LaunchedEffect(code?.deviceCode) {
@@ -101,9 +93,7 @@ fun LoginScreenV2(
             when {
                 code != null -> AuthorizationCard(code, loading, auth.status, onCheckAuthorization, onOpenGitHubUrl, context, onLogin, onGuest)
                 auth.error != null -> ErrorCard(auth.error, onLogin)
-                else -> WelcomeCard(configured, loading, showSignup, onLogin,
-                    onSignup = { showSignup = true; onOpenGitHubUrl(GITHUB_SIGN_UP_URL) },
-                    onOpenSignup = { onOpenGitHubUrl(GITHUB_SIGN_UP_URL) }, onGuest = onGuest)
+                else -> WelcomeCard(configured, loading, onLogin, onGuest)
             }
             Text("GitHub Rock · Secure developer access", color = RockMuted.copy(alpha = .72f), fontSize = 12.sp, textAlign = TextAlign.Center)
         }
@@ -122,18 +112,15 @@ private fun RockLogoHeader() {
 }
 
 @Composable
-private fun WelcomeCard(configured: Boolean, loading: Boolean, showSignup: Boolean, onLogin: () -> Unit, onSignup: () -> Unit, onOpenSignup: () -> Unit, onGuest: () -> Unit) {
+private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onGuest: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(30.dp), color = RockSurface.copy(alpha = .94f), border = BorderStroke(1.dp, Color.White.copy(alpha = .08f))) {
         Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(if (showSignup) "Create your GitHub account" else "Sign in to continue", color = RockInk, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-            Text(if (showSignup) "Create your GitHub account in GitHub's secure browser flow, then return to GitHub Rock." else "Connect your GitHub account without entering your GitHub password inside the app.", color = RockMuted, fontSize = 14.sp)
+            Text("Sign in to continue", color = RockInk, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+            Text("Connect your GitHub account without entering your GitHub password inside the app.", color = RockMuted, fontSize = 14.sp)
             SecurityRow()
             Button(onClick = onLogin, enabled = configured && !loading, modifier = Modifier.fillMaxWidth().height(62.dp).semantics { contentDescription = "Sign in to GitHub" }, shape = RoundedCornerShape(20.dp), colors = ButtonDefaults.buttonColors(containerColor = RockAccent, contentColor = Color(0xFF0B1116))) {
                 if (loading) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = Color(0xFF0B1116)) else Icon(Icons.Default.ArrowForward, contentDescription = null)
-                Spacer(Modifier.width(10.dp)); Text(if (loading) "Preparing secure sign-in…" else if (showSignup) "Connect my account" else "Continue with GitHub", fontWeight = FontWeight.Black)
-            }
-            OutlinedButton(onClick = if (showSignup) onOpenSignup else onSignup, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, Color.White.copy(alpha = .12f))) {
-                Icon(Icons.Default.OpenInBrowser, contentDescription = null, tint = RockInk); Spacer(Modifier.width(8.dp)); Text(if (showSignup) "Open GitHub signup" else "Create a GitHub account", color = RockInk, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(10.dp)); Text(if (loading) "Preparing secure sign-in…" else "Continue with GitHub", fontWeight = FontWeight.Black)
             }
             Surface(modifier = Modifier.fillMaxWidth().height(52.dp).clickable(onClick = onGuest).semantics { contentDescription = "Continue with public repositories" }, shape = RoundedCornerShape(17.dp), color = Color.Transparent, border = BorderStroke(1.dp, Color.White.copy(alpha = .10f))) {
                 Box(contentAlignment = Alignment.Center) { Text("Explore public repositories", color = RockMuted, fontWeight = FontWeight.SemiBold) }
