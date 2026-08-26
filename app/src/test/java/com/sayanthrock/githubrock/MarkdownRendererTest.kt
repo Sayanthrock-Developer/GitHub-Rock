@@ -20,9 +20,22 @@ class MarkdownRendererTest {
     }
 
     @Test
-    fun `preserves markdown link destinations while stripping html tags`() {
+    fun `preserves inline markdown instead of flattening it`() {
         val blocks = MarkdownRenderer.render("[Open](https://example.com) <script>alert(1)</script>")
 
-        assertEquals("Open (https://example.com) alert(1)", blocks.single().text)
+        assertEquals(1, blocks.size)
+        assertEquals(MarkdownBlockKind.Paragraph, blocks.single().kind)
+        assertEquals(
+            "[Open](https://example.com) <script>alert(1)</script>",
+            blocks.single().text
+        )
+    }
+
+    @Test
+    fun `cleanInline remains available for explicit plain text conversion`() {
+        assertEquals(
+            "Open alert(1)",
+            MarkdownRenderer.cleanInline("[Open](https://example.com) <script>alert(1)</script>")
+        )
     }
 }
