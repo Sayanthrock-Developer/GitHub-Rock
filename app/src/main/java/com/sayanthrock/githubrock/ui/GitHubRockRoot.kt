@@ -19,7 +19,7 @@ import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.MainNavigationV2
-import com.sayanthrock.githubrock.ui.navigation.ModernNavigationChrome
+import com.sayanthrock.githubrock.ui.navigation.RockNavigationChrome
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import kotlinx.coroutines.launch
@@ -59,14 +59,14 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
     BoxWithConstraints(Modifier.fillMaxSize().rockBackground()) {
-        val navigationChromePadding = if (state.mode == null) 20.dp else if (maxWidth < 600.dp) 96.dp else 20.dp
+        val navigationChromePadding = if (state.mode == null) 20.dp else if (maxWidth < 600.dp) 104.dp else 20.dp
         if (state.mode == null) {
             LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
                     MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
-                    ModernNavigationChrome(navController, Modifier.fillMaxSize())
+                    RockNavigationChrome(navController, Modifier.fillMaxSize())
                 }
             }
         }
