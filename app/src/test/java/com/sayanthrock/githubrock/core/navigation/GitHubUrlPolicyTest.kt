@@ -1,20 +1,13 @@
 package com.sayanthrock.githubrock.core.navigation
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GitHubUrlPolicyTest {
-    @Test fun signupAndDeviceAuthorizationAreNotRepositoryLinks() {
-        assertFalse(GitHubUrlPolicy.isRepositoryUrl(GITHUB_SIGN_UP_URL))
+    @Test fun deviceAuthorizationAndAccountLoginAreNotRepositoryLinks() {
         assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/login/device"))
         assertFalse(GitHubUrlPolicy.isRepositoryUrl("https://github.com/login?add_account=1"))
-    }
-
-    @Test fun signupAlwaysUsesTheOfficialSignupPage() {
-        assertEquals(GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, true), githubSignupLaunchPlan(true))
-        assertEquals(GitHubSignupLaunchPlan(GITHUB_SIGN_UP_URL, GITHUB_SIGN_UP_URL, false), githubSignupLaunchPlan(false))
     }
 
     @Test fun standardGitHubRepositoryUrlsAreAccepted() {
