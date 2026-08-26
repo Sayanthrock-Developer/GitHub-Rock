@@ -47,17 +47,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-/**
- * Adaptive navigation chrome for GitHub Rock.
- * Uses Material 3 system/dynamic colors through MaterialTheme and keeps one navigation
- * surface on screen at a time: a floating bottom dock on phones and a compact rail on
- * larger windows.
- */
+/** New GitHub Rock navigation chrome: one adaptive surface, system-color aware. */
 @Composable
-fun ModernNavigationChrome(
-    navController: NavHostController,
-    modifier: Modifier = Modifier
-) {
+fun ModernNavigationChrome(navController: NavHostController, modifier: Modifier = Modifier) {
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
     if (modernTopDestinations.none { it.route == selectedRoute }) return
@@ -81,9 +73,9 @@ fun ModernNavigationChrome(
     }
 }
 
-private fun navigate(navController: NavHostController, destination: TopDestination) {
+private fun navigate(navController: NavHostController, destination: TopDestinationV2) {
     navController.navigate(destination.route) {
-        popUpTo(navController.graph.startDestinationId) { saveState = true }
+        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
@@ -92,34 +84,32 @@ private fun navigate(navController: NavHostController, destination: TopDestinati
 @Composable
 internal fun ModernNavigationBottomBar(
     selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit,
+    onDestinationSelected: (TopDestinationV2) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .widthIn(max = 560.dp),
-        shape = RoundedCornerShape(28.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .widthIn(max = 620.dp),
+        shape = RoundedCornerShape(30.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        tonalElevation = 3.dp,
-        shadowElevation = 12.dp
+        tonalElevation = 4.dp,
+        shadowElevation = 14.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
-                .padding(horizontal = 6.dp, vertical = 5.dp),
+                .height(72.dp)
+                .padding(horizontal = 6.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             modernTopDestinations.forEach { destination ->
-                ModernBottomItem(
-                    destination = destination,
-                    selected = selectedRoute == destination.route,
-                    onClick = { onDestinationSelected(destination) }
-                )
+                ModernBottomItem(destination, selectedRoute == destination.route) {
+                    onDestinationSelected(destination)
+                }
             }
         }
     }
@@ -127,34 +117,22 @@ internal fun ModernNavigationBottomBar(
 
 @Composable
 private fun RowScope.ModernBottomItem(
-    destination: TopDestination,
+    destination: TopDestinationV2,
     selected: Boolean,
     onClick: () -> Unit
 ) {
     val indicatorColor by animateColorAsState(
-        targetValue = if (selected) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainer
-        },
-        animationSpec = tween(220),
+        if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+        tween(220),
         label = "navigation indicator color"
     )
-    val iconSize by animateDpAsState(
-        targetValue = if (selected) 25.dp else 23.dp,
-        animationSpec = tween(180),
-        label = "navigation icon size"
-    )
-    val iconColor = if (selected) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val iconSize by animateDpAsState(if (selected) 25.dp else 23.dp, tween(180), label = "navigation icon size")
+    val iconColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(
         modifier = Modifier
             .weight(1f)
-            .height(56.dp)
+            .height(58.dp)
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
                 contentDescription = destination.accessibilityLabel
@@ -164,25 +142,16 @@ private fun RowScope.ModernBottomItem(
         shape = RoundedCornerShape(24.dp),
         color = indicatorColor
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = destination.icon,
-                contentDescription = null,
-                modifier = Modifier.size(iconSize),
-                tint = iconColor
-            )
+        Row(Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterVertically) {
+            Icon(destination.icon, null, Modifier.size(iconSize), tint = iconColor)
             AnimatedVisibility(
                 visible = selected,
                 enter = fadeIn(tween(160)) + expandHorizontally(tween(180)),
                 exit = fadeOut(tween(100)) + shrinkHorizontally(tween(140))
             ) {
                 Text(
-                    text = destination.accessibilityLabel,
-                    modifier = Modifier.padding(start = 5.dp),
+                    destination.accessibilityLabel,
+                    Modifier.padding(start = 5.dp),
                     maxLines = 1,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -196,100 +165,50 @@ private fun RowScope.ModernBottomItem(
 @Composable
 private fun ModernNavigationRail(
     selectedRoute: String?,
-    onDestinationSelected: (TopDestination) -> Unit,
+    onDestinationSelected: (TopDestinationV2) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxHeight()
-            .width(88.dp)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
+        modifier = modifier.fillMaxHeight().width(88.dp).windowInsetsPadding(WindowInsets.safeDrawing),
         color = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface,
         tonalElevation = 2.dp,
-        shadowElevation = 6.dp
+        shadowElevation = 8.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(horizontal = 8.dp, vertical = 16.dp),
+            Modifier.fillMaxHeight().padding(horizontal = 8.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        "GR",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 12.sp
-                    )
-                }
+            Surface(Modifier.size(40.dp), RoundedCornerShape(12.dp), MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                Box(contentAlignment = Alignment.Center) { Text("GR", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp) }
             }
             modernTopDestinations.forEach { destination ->
-                ModernRailItem(
-                    destination = destination,
-                    selected = selectedRoute == destination.route,
-                    onClick = { onDestinationSelected(destination) }
-                )
+                ModernRailItem(destination, selectedRoute == destination.route) { onDestinationSelected(destination) }
             }
         }
     }
 }
 
 @Composable
-private fun ModernRailItem(
-    destination: TopDestination,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
+private fun ModernRailItem(destination: TopDestinationV2, selected: Boolean, onClick: () -> Unit) {
     val indicatorColor by animateColorAsState(
-        targetValue = if (selected) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainer
-        },
-        animationSpec = tween(220),
+        if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+        tween(220),
         label = "rail indicator color"
     )
-
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .clickable(role = Role.Tab, onClick = onClick)
-            .semantics {
-                contentDescription = destination.accessibilityLabel
-                role = Role.Tab
-                this.selected = selected
-            },
-        shape = RoundedCornerShape(18.dp),
-        color = indicatorColor
+        Modifier.fillMaxWidth().height(64.dp).clickable(role = Role.Tab, onClick = onClick).semantics {
+            contentDescription = destination.accessibilityLabel
+            role = Role.Tab
+            this.selected = selected
+        },
+        RoundedCornerShape(18.dp),
+        indicatorColor
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                destination.icon,
-                null,
-                Modifier.size(23.dp),
-                tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (selected) {
-                Text(
-                    destination.accessibilityLabel,
-                    maxLines = 1,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(destination.icon, null, Modifier.size(23.dp), tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+            if (selected) Text(destination.accessibilityLabel, maxLines = 1, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
     }
 }
