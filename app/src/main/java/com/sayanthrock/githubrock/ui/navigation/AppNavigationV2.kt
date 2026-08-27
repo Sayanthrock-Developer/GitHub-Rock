@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -27,6 +28,7 @@ import com.sayanthrock.githubrock.ui.screens.*
 
 sealed class TopDestinationV2(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val accessibilityLabel: String = label) {
     data object Home : TopDestinationV2("home", "Home", Icons.Default.Home)
+    data object Explore : TopDestinationV2("explore", "Explore", Icons.Default.Explore)
     data object Repositories : TopDestinationV2("repositories", "Repos", Icons.Default.Folder, "Repositories")
     data object Builds : TopDestinationV2("builds", "Builds", Icons.Default.Build)
     data object Downloads : TopDestinationV2("downloads", "Downloads", Icons.Default.Download)
@@ -59,6 +61,7 @@ fun MainNavigationV2(
     Box(Modifier.fillMaxSize()) {
         NavHost(navController, TopDestinationV2.Home.route, Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
             composable(TopDestinationV2.Home.route) { HomeScreen(state.repositories, openRepo, state.isLoading, state.isRefreshing, onRefresh) }
+            composable(TopDestinationV2.Explore.route) { ExploreScreen(onOpenRepo = openRepo, onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) }) }
             composable(TopDestinationV2.Repositories.route) { RepositoriesScreen(state.repositories, state.isLoading, onSearch, mode == AppMode.Connected, openRepo, state.profile?.login) }
             composable(TopDestinationV2.Builds.route) {
                 BuildsScreen(
