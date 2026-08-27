@@ -29,7 +29,8 @@ object AppInformationProvider {
             versionCode = PackageInfoCompat.getLongVersionCode(packageInfo),
             applicationId = context.packageName,
             buildType = BuildConfig.BUILD_TYPE,
-            minimumSdk = applicationInfo.minSdkVersion,
+            minimumSdk = BuildConfig.ANDROID_MIN_SDK,
+            compileSdk = BuildConfig.ANDROID_COMPILE_SDK,
             targetSdk = applicationInfo.targetSdkVersion,
             deviceSdk = Build.VERSION.SDK_INT,
             androidVersion = Build.VERSION.RELEASE.orEmpty(),
@@ -41,7 +42,10 @@ object AppInformationProvider {
             supportedAbis = Build.SUPPORTED_ABIS.toList(),
             firstInstalled = packageInfo.firstInstallTime.asReadableDate(),
             lastUpdated = packageInfo.lastUpdateTime.asReadableDate(),
-            requestedPermissions = packageInfo.requestedPermissions?.size ?: 0
+            requestedPermissions = packageInfo.requestedPermissions?.size ?: 0,
+            gitCommit = BuildConfig.GIT_COMMIT,
+            gitRef = BuildConfig.GIT_REF,
+            buildTimestampUtc = BuildConfig.BUILD_TIMESTAMP_UTC
         )
     }
 
