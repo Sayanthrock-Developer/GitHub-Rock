@@ -33,11 +33,34 @@ val LocalReduceMotion = staticCompositionLocalOf { false }
 val LocalCodeColorStyle = staticCompositionLocalOf { CodeColorStyle.Classic }
 val LocalLogDisplayStyle = staticCompositionLocalOf { LogDisplayStyle.Terminal }
 
-data class CodeColors(val keyword: Color, val string: Color, val comment: Color, val number: Color, val type: Color, val property: Color)
-val LocalCodeColors = staticCompositionLocalOf { CodeColors(Color(0xFF79B8FF), Color(0xFF85E89D), Color(0xFF8B949E), Color(0xFFFFAB70), Color(0xFFBC8CFF), Color(0xFFFF7B72)) }
+data class CodeColors(
+    val keyword: Color,
+    val string: Color,
+    val comment: Color,
+    val number: Color,
+    val type: Color,
+    val property: Color
+)
 
-private data class AccentPalette(val dark: Color, val darkContainer: Color, val light: Color, val lightContainer: Color)
-private fun AccentColor.palette() = when (this) {
+val LocalCodeColors = staticCompositionLocalOf {
+    CodeColors(
+        keyword = Color(0xFF79B8FF),
+        string = Color(0xFF85E89D),
+        comment = Color(0xFF8B949E),
+        number = Color(0xFFFFAB70),
+        type = Color(0xFFBC8CFF),
+        property = Color(0xFFFF7B72)
+    )
+}
+
+private data class AccentPalette(
+    val dark: Color,
+    val darkContainer: Color,
+    val light: Color,
+    val lightContainer: Color
+)
+
+private fun AccentColor.palette(): AccentPalette = when (this) {
     AccentColor.Cyan -> AccentPalette(Color(0xFF52D3DC), Color(0xFF143F43), Color(0xFF007A83), Color(0xFFB7EEF1))
     AccentColor.Blue -> AccentPalette(Color(0xFF79B8FF), Color(0xFF173B63), Color(0xFF0969DA), Color(0xFFDDF4FF))
     AccentColor.Violet -> AccentPalette(Color(0xFFBC8CFF), Color(0xFF3C2361), Color(0xFF8250DF), Color(0xFFEFE3FF))
@@ -48,53 +71,192 @@ private fun AccentColor.palette() = when (this) {
     AccentColor.Orange -> AccentPalette(Color(0xFFFFA657), Color(0xFF553018), Color(0xFFBC4C00), Color(0xFFFFE2C6))
 }
 
-private fun darkColors(a: AccentColor) = a.palette().let { p -> darkColorScheme(primary=p.dark,onPrimary=Color(0xFF071012),primaryContainer=p.darkContainer,onPrimaryContainer=p.dark,secondary=Color(0xFFB6C2CF),onSecondary=Color(0xFF1B242D),tertiary=RockGreen,background=RockDarkBackground,surface=RockDarkSurface,surfaceVariant=RockDarkSurfaceHigh,surfaceContainerLowest=RockDarkBackground,surfaceContainerLow=Color(0xFF121820),surfaceContainer=RockDarkSurface,surfaceContainerHigh=RockDarkSurfaceHigh,surfaceContainerHighest=Color(0xFF292F36),outline=RockDarkBorder,outlineVariant=Color(0xFF252B33),error=RockRed,onBackground=RockDarkText,onSurface=RockDarkText,onSurfaceVariant=RockDarkMuted) }
-private fun lightColors(a: AccentColor) = a.palette().let { p -> lightColorScheme(primary=p.light,onPrimary=Color.White,primaryContainer=p.lightContainer,onPrimaryContainer=Color(0xFF102A2D),secondary=Color(0xFF59636E),onSecondary=Color.White,tertiary=RockLightGreen,background=RockLightBackground,surface=RockLightSurface,surfaceVariant=RockLightSurfaceHigh,surfaceContainerLowest=RockLightSurface,surfaceContainerLow=Color(0xFFF0F3F6),surfaceContainer=RockLightSurface,surfaceContainerHigh=RockLightSurfaceHigh,surfaceContainerHighest=Color(0xFFDDE2E7),outline=RockLightBorder,outlineVariant=Color(0xFFE1E5EA),error=RockLightRed,onBackground=RockLightText,onSurface=RockLightText,onSurfaceVariant=RockLightMuted) }
-
-private fun shapesFor(style: ThemeStyle) = when(style) {
-    ThemeStyle.Clean -> Shapes(extraSmall=RoundedCornerShape(6.dp),small=RoundedCornerShape(9.dp),medium=RoundedCornerShape(12.dp),large=RoundedCornerShape(16.dp),extraLarge=RoundedCornerShape(24.dp))
-    ThemeStyle.LiquidGlass -> Shapes(extraSmall=RoundedCornerShape(12.dp),small=RoundedCornerShape(16.dp),medium=RoundedCornerShape(20.dp),large=RoundedCornerShape(26.dp),extraLarge=RoundedCornerShape(34.dp))
-    ThemeStyle.Studio -> Shapes(extraSmall=RoundedCornerShape(4.dp),small=RoundedCornerShape(7.dp),medium=RoundedCornerShape(10.dp),large=RoundedCornerShape(13.dp),extraLarge=RoundedCornerShape(18.dp))
-    ThemeStyle.Midnight -> Shapes(extraSmall=RoundedCornerShape(8.dp),small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(16.dp),large=RoundedCornerShape(20.dp),extraLarge=RoundedCornerShape(28.dp))
-    ThemeStyle.Aurora -> Shapes(extraSmall=RoundedCornerShape(10.dp),small=RoundedCornerShape(14.dp),medium=RoundedCornerShape(18.dp),large=RoundedCornerShape(24.dp),extraLarge=RoundedCornerShape(32.dp))
-    ThemeStyle.HighContrast -> Shapes(extraSmall=RoundedCornerShape(2.dp),small=RoundedCornerShape(4.dp),medium=RoundedCornerShape(6.dp),large=RoundedCornerShape(8.dp),extraLarge=RoundedCornerShape(12.dp))
+private fun darkColors(accentColor: AccentColor): ColorScheme = accentColor.palette().let { accent ->
+    darkColorScheme(
+        primary = accent.dark,
+        onPrimary = Color(0xFF071012),
+        primaryContainer = accent.darkContainer,
+        onPrimaryContainer = accent.dark,
+        secondary = Color(0xFFB6C2CF),
+        onSecondary = Color(0xFF1B242D),
+        tertiary = RockGreen,
+        background = RockDarkBackground,
+        surface = RockDarkSurface,
+        surfaceVariant = RockDarkSurfaceHigh,
+        surfaceContainerLowest = RockDarkBackground,
+        surfaceContainerLow = Color(0xFF121820),
+        surfaceContainer = RockDarkSurface,
+        surfaceContainerHigh = RockDarkSurfaceHigh,
+        surfaceContainerHighest = Color(0xFF292F36),
+        outline = RockDarkBorder,
+        outlineVariant = Color(0xFF252B33),
+        error = RockRed,
+        onBackground = RockDarkText,
+        onSurface = RockDarkText,
+        onSurfaceVariant = RockDarkMuted
+    )
 }
 
-private fun ColorScheme.applyStyle(style: ThemeStyle, dark: Boolean): ColorScheme = when(style) {
+private fun lightColors(accentColor: AccentColor): ColorScheme = accentColor.palette().let { accent ->
+    lightColorScheme(
+        primary = accent.light,
+        onPrimary = Color.White,
+        primaryContainer = accent.lightContainer,
+        onPrimaryContainer = Color(0xFF102A2D),
+        secondary = Color(0xFF59636E),
+        onSecondary = Color.White,
+        tertiary = RockLightGreen,
+        background = RockLightBackground,
+        surface = RockLightSurface,
+        surfaceVariant = RockLightSurfaceHigh,
+        surfaceContainerLowest = RockLightSurface,
+        surfaceContainerLow = Color(0xFFF0F3F6),
+        surfaceContainer = RockLightSurface,
+        surfaceContainerHigh = RockLightSurfaceHigh,
+        surfaceContainerHighest = Color(0xFFDDE2E7),
+        outline = RockLightBorder,
+        outlineVariant = Color(0xFFE1E5EA),
+        error = RockLightRed,
+        onBackground = RockLightText,
+        onSurface = RockLightText,
+        onSurfaceVariant = RockLightMuted
+    )
+}
+
+private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
+    ThemeStyle.Clean -> Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(9.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(24.dp))
+    ThemeStyle.LiquidGlass -> Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(16.dp), medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(26.dp), extraLarge = RoundedCornerShape(34.dp))
+    ThemeStyle.Studio -> Shapes(extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(7.dp), medium = RoundedCornerShape(10.dp), large = RoundedCornerShape(13.dp), extraLarge = RoundedCornerShape(18.dp))
+    ThemeStyle.Midnight -> Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
+    ThemeStyle.Aurora -> Shapes(extraSmall = RoundedCornerShape(10.dp), small = RoundedCornerShape(14.dp), medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(32.dp))
+    ThemeStyle.HighContrast -> Shapes(extraSmall = RoundedCornerShape(2.dp), small = RoundedCornerShape(4.dp), medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp), extraLarge = RoundedCornerShape(12.dp))
+}
+
+private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): ColorScheme = when (style) {
     ThemeStyle.Clean -> this
-    ThemeStyle.LiquidGlass -> copy(surface=surface.copy(alpha=.94f),surfaceContainer=surfaceContainer.copy(alpha=.90f),surfaceContainerHigh=surfaceContainerHigh.copy(alpha=.92f),surfaceVariant=surfaceVariant.copy(alpha=.88f),outlineVariant=primary.copy(alpha=.20f))
-    ThemeStyle.Studio -> copy(background=if(dark) Color(0xFF0B0E12) else Color(0xFFF6F7F9),surface=if(dark) Color(0xFF11161D) else Color.White,surfaceContainer=if(dark) Color(0xFF151B23) else Color(0xFFF0F2F5),surfaceContainerHigh=if(dark) Color(0xFF1B222C) else Color(0xFFE7EBF0),outlineVariant=if(dark) Color(0xFF313A46) else Color(0xFFD4D9E0))
-    ThemeStyle.Midnight -> copy(background=if(dark) Color(0xFF070B14) else Color(0xFFF4F7FC),surface=if(dark) Color(0xFF0D1422) else Color.White,surfaceContainer=if(dark) Color(0xFF121C2D) else Color(0xFFEAF0FA),surfaceContainerHigh=if(dark) Color(0xFF19263A) else Color(0xFFDDE7F5),outlineVariant=primary.copy(alpha=.28f))
-    ThemeStyle.Aurora -> copy(background=if(dark) Color(0xFF07110F) else Color(0xFFF4FBF8),surface=if(dark) Color(0xFF0D1A17) else Color.White,surfaceContainer=if(dark) Color(0xFF13231F) else Color(0xFFE8F6F0),surfaceContainerHigh=if(dark) Color(0xFF1A2E29) else Color(0xFFD9EEE6),outlineVariant=tertiary.copy(alpha=.30f))
-    ThemeStyle.HighContrast -> copy(background=if(dark) Color.Black else Color.White,surface=if(dark) Color(0xFF050505) else Color.White,surfaceContainer=if(dark) Color(0xFF0D0D0D) else Color(0xFFF4F4F4),surfaceContainerHigh=if(dark) Color(0xFF161616) else Color(0xFFEAEAEA),outline=if(dark) Color.White else Color.Black,outlineVariant=if(dark) Color(0xFFBDBDBD) else Color(0xFF2B2B2B),onBackground=if(dark) Color.White else Color.Black,onSurface=if(dark) Color.White else Color.Black,onSurfaceVariant=if(dark) Color(0xFFE3E3E3) else Color(0xFF222222))
+    ThemeStyle.LiquidGlass -> copy(
+        surface = surface.copy(alpha = .94f),
+        surfaceContainer = surfaceContainer.copy(alpha = .90f),
+        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f),
+        surfaceVariant = surfaceVariant.copy(alpha = .88f),
+        outlineVariant = primary.copy(alpha = .20f)
+    )
+    ThemeStyle.Studio -> copy(
+        background = if (darkTheme) Color(0xFF0B0E12) else Color(0xFFF6F7F9),
+        surface = if (darkTheme) Color(0xFF11161D) else Color.White,
+        surfaceContainer = if (darkTheme) Color(0xFF151B23) else Color(0xFFF0F2F5),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF1B222C) else Color(0xFFE7EBF0),
+        outlineVariant = if (darkTheme) Color(0xFF313A46) else Color(0xFFD4D9E0)
+    )
+    ThemeStyle.Midnight -> copy(
+        background = if (darkTheme) Color(0xFF070B14) else Color(0xFFF4F7FC),
+        surface = if (darkTheme) Color(0xFF0D1422) else Color.White,
+        surfaceContainer = if (darkTheme) Color(0xFF121C2D) else Color(0xFFEAF0FA),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF19263A) else Color(0xFFDDE7F5),
+        outlineVariant = primary.copy(alpha = .28f)
+    )
+    ThemeStyle.Aurora -> copy(
+        background = if (darkTheme) Color(0xFF07110F) else Color(0xFFF4FBF8),
+        surface = if (darkTheme) Color(0xFF0D1A17) else Color.White,
+        surfaceContainer = if (darkTheme) Color(0xFF13231F) else Color(0xFFE8F6F0),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF1A2E29) else Color(0xFFD9EEE6),
+        outlineVariant = tertiary.copy(alpha = .30f)
+    )
+    ThemeStyle.HighContrast -> copy(
+        background = if (darkTheme) Color.Black else Color.White,
+        surface = if (darkTheme) Color(0xFF050505) else Color.White,
+        surfaceContainer = if (darkTheme) Color(0xFF0D0D0D) else Color(0xFFF4F4F4),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF161616) else Color(0xFFEAEAEA),
+        outline = if (darkTheme) Color.White else Color.Black,
+        outlineVariant = if (darkTheme) Color(0xFFBDBDBD) else Color(0xFF2B2B2B),
+        onBackground = if (darkTheme) Color.White else Color.Black,
+        onSurface = if (darkTheme) Color.White else Color.Black,
+        onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222)
+    )
 }
 
-private fun codeColors(style: CodeColorStyle, dark: Boolean) = when(style) {
-    CodeColorStyle.Classic -> CodeColors(if(dark) Color(0xFF79B8FF) else Color(0xFF0550AE),if(dark) Color(0xFF85E89D) else Color(0xFF116329),if(dark) Color(0xFF8B949E) else Color(0xFF57606A),if(dark) Color(0xFFFFAB70) else Color(0xFF953800),if(dark) Color(0xFFBC8CFF) else Color(0xFF8250DF),if(dark) Color(0xFFFF7B72) else Color(0xFFCF222E))
-    CodeColorStyle.Ocean -> CodeColors(if(dark) Color(0xFF58A6FF) else Color(0xFF0550AE),if(dark) Color(0xFF7EE787) else Color(0xFF116329),if(dark) Color(0xFF8B949E) else Color(0xFF57606A),if(dark) Color(0xFF79C0FF) else Color(0xFF0A4A7A),if(dark) Color(0xFFD2A8FF) else Color(0xFF6639BA),if(dark) Color(0xFF39C5CF) else Color(0xFF006D75))
-    CodeColorStyle.Sunset -> CodeColors(if(dark) Color(0xFFFF7B72) else Color(0xFFA40E26),if(dark) Color(0xFFF2CC60) else Color(0xFF6F5500),if(dark) Color(0xFF9DA7B3) else Color(0xFF57606A),if(dark) Color(0xFFFFA657) else Color(0xFF953800),if(dark) Color(0xFFD2A8FF) else Color(0xFF6639BA),if(dark) Color(0xFFFF8FB3) else Color(0xFF9E1B59))
-    CodeColorStyle.Monochrome -> CodeColors(if(dark) Color.White else Color.Black,if(dark) Color(0xFFD0D7DE) else Color(0xFF24292F),if(dark) Color(0xFF8C959F) else Color(0xFF57606A),if(dark) Color(0xFFE6EDF3) else Color(0xFF24292F),if(dark) Color.White else Color.Black,if(dark) Color(0xFFC9D1D9) else Color(0xFF24292F))
-    CodeColorStyle.GitHub -> CodeColors(if(dark) Color(0xFFFF7B72) else Color(0xFFCF222E),if(dark) Color(0xFFA5D6FF) else Color(0xFF0A3069),if(dark) Color(0xFF8B949E) else Color(0xFF6E7781),if(dark) Color(0xFF79C0FF) else Color(0xFF0550AE),if(dark) Color(0xFFD2A8FF) else Color(0xFF8250DF),if(dark) Color(0xFFFFA657) else Color(0xFF953800))
+private fun codeColors(style: CodeColorStyle, darkTheme: Boolean): CodeColors = when (style) {
+    CodeColorStyle.Classic -> CodeColors(keyword = if (darkTheme) Color(0xFF79B8FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF85E89D) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFFFAB70) else Color(0xFF953800), type = if (darkTheme) Color(0xFFBC8CFF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E))
+    CodeColorStyle.Ocean -> CodeColors(keyword = if (darkTheme) Color(0xFF58A6FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF7EE787) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0A4A7A), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFF39C5CF) else Color(0xFF006D75))
+    CodeColorStyle.Sunset -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFA40E26), string = if (darkTheme) Color(0xFFF2CC60) else Color(0xFF6F5500), comment = if (darkTheme) Color(0xFF9DA7B3) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFFFF8FB3) else Color(0xFF9E1B59))
+    CodeColorStyle.Monochrome -> CodeColors(keyword = if (darkTheme) Color.White else Color.Black, string = if (darkTheme) Color(0xFFD0D7DE) else Color(0xFF24292F), comment = if (darkTheme) Color(0xFF8C959F) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFE6EDF3) else Color(0xFF24292F), type = if (darkTheme) Color.White else Color.Black, property = if (darkTheme) Color(0xFFC9D1D9) else Color(0xFF24292F))
+    CodeColorStyle.GitHub -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E), string = if (darkTheme) Color(0xFFA5D6FF) else Color(0xFF0A3069), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF6E7781), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0550AE), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800))
 }
 
-private fun DisplaySize.scale() = when(this) { DisplaySize.Small->.90f; DisplaySize.Standard->1f; DisplaySize.Large->1.12f }
-private fun FontSize.scale() = when(this) { FontSize.Small->.90f; FontSize.Default->1f; FontSize.Large->1.16f }
+private fun DisplaySize.scale(): Float = when (this) {
+    DisplaySize.Small -> .90f
+    DisplaySize.Standard -> 1f
+    DisplaySize.Large -> 1.12f
+}
+
+private fun FontSize.scale(): Float = when (this) {
+    FontSize.Small -> .90f
+    FontSize.Default -> 1f
+    FontSize.Large -> 1.16f
+}
 
 @Composable
-fun GitHubRockTheme(darkTheme:Boolean=true,dynamicColor:Boolean=true,trueBlack:Boolean=false,accentColor:AccentColor=AccentColor.Cyan,themeStyle:ThemeStyle=ThemeStyle.Clean,displaySize:DisplaySize=DisplaySize.Standard,fontSize:FontSize=FontSize.Default,fontWeight:FontWeightStyle=FontWeightStyle.Default,fontFamily:AppFontFamily=AppFontFamily.SystemSans,loadingStyle:LoadingStyle=LoadingStyle.Spinner,codeColorStyle:CodeColorStyle=CodeColorStyle.Classic,logDisplayStyle:LogDisplayStyle=LogDisplayStyle.Terminal,reduceMotion:Boolean=false,showImages:Boolean=true,content:@Composable()->Unit) {
-    val context=LocalContext.current
-    val baseDensity=LocalDensity.current
-    val usesSystemColors=dynamicColor && Build.VERSION.SDK_INT>=Build.VERSION_CODES.S
-    val colors=when {
+fun GitHubRockTheme(
+    darkTheme: Boolean = true,
+    dynamicColor: Boolean = true,
+    trueBlack: Boolean = false,
+    accentColor: AccentColor = AccentColor.Cyan,
+    themeStyle: ThemeStyle = ThemeStyle.Clean,
+    displaySize: DisplaySize = DisplaySize.Standard,
+    fontSize: FontSize = FontSize.Default,
+    fontWeight: FontWeightStyle = FontWeightStyle.Default,
+    fontFamily: AppFontFamily = AppFontFamily.SystemSans,
+    loadingStyle: LoadingStyle = LoadingStyle.Spinner,
+    codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
+    logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
+    reduceMotion: Boolean = false,
+    showImages: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val baseDensity = LocalDensity.current
+    val usesSystemColors = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val colors = when {
         usesSystemColors && darkTheme -> dynamicDarkColorScheme(context)
         usesSystemColors -> dynamicLightColorScheme(context)
         darkTheme -> darkColors(accentColor)
         else -> lightColors(accentColor)
-    }.let { if(usesSystemColors) it else it.applyStyle(themeStyle,darkTheme) }.let { scheme ->
-        if(darkTheme && trueBlack) scheme.copy(background=Color.Black,surface=Color.Black,surfaceVariant=Color.Black,surfaceContainerLowest=Color.Black,surfaceContainerLow=Color.Black,surfaceContainer=Color.Black,surfaceContainerHigh=Color.Black,surfaceContainerHighest=Color.Black) else scheme
+    }.let { scheme ->
+        if (usesSystemColors) scheme else scheme.applyStyle(themeStyle, darkTheme)
+    }.let { scheme ->
+        if (darkTheme && trueBlack) {
+            scheme.copy(
+                background = Color.Black,
+                surface = Color.Black,
+                surfaceVariant = Color.Black,
+                surfaceContainerLowest = Color.Black,
+                surfaceContainerLow = Color.Black,
+                surfaceContainer = Color.Black,
+                surfaceContainerHigh = Color.Black,
+                surfaceContainerHighest = Color.Black
+            )
+        } else scheme
     }
-    val scaledDensity=Density(baseDensity.density*displaySize.scale(),baseDensity.fontScale*fontSize.scale())
-    CompositionLocalProvider(LocalRemoteImagesEnabled provides showImages,LocalLoadingStyle provides loadingStyle,LocalReduceMotion provides reduceMotion,LocalCodeColorStyle provides codeColorStyle,LocalLogDisplayStyle provides logDisplayStyle,LocalCodeColors provides codeColors(codeColorStyle,darkTheme),LocalDensity provides scaledDensity) {
-        MaterialTheme(colorScheme=colors,typography=rockTypography(fontFamily,fontWeight),shapes=shapesFor(themeStyle),content=content)
+
+    val scaledDensity = Density(
+        density = baseDensity.density * displaySize.scale(),
+        fontScale = baseDensity.fontScale * fontSize.scale()
+    )
+
+    CompositionLocalProvider(
+        LocalRemoteImagesEnabled provides showImages,
+        LocalLoadingStyle provides loadingStyle,
+        LocalReduceMotion provides reduceMotion,
+        LocalCodeColorStyle provides codeColorStyle,
+        LocalLogDisplayStyle provides logDisplayStyle,
+        LocalCodeColors provides codeColors(codeColorStyle, darkTheme),
+        LocalDensity provides scaledDensity
+    ) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = rockTypography(fontFamily, fontWeight),
+            shapes = shapesFor(themeStyle),
+            content = content
+        )
     }
 }
