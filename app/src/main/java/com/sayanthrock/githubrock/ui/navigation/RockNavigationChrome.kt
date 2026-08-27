@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,7 +53,8 @@ private val rockNavigationDestinations = listOf(
     TopDestinationV2.Repositories,
     TopDestinationV2.Builds,
     TopDestinationV2.Downloads,
-    TopDestinationV2.Profile
+    TopDestinationV2.Profile,
+    TopDestinationV2.Options
 )
 
 /**
@@ -76,7 +78,7 @@ fun RockNavigationChrome(
         if (maxWidth < 600.dp) {
             RockBottomNavigation(
                 selectedRoute = selectedRoute,
-                compact = maxWidth < 360.dp,
+                compact = maxWidth < 420.dp,
                 onDestinationSelected = { navigateToTopLevel(navController, it) },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
@@ -130,7 +132,7 @@ private fun RockBottomNavigation(
                 .fillMaxWidth()
                 .height(72.dp)
                 .padding(horizontal = 7.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             rockNavigationDestinations.forEach { destination ->
@@ -194,7 +196,7 @@ private fun RowScope.RockBottomItem(
             ) {
                 Text(
                     text = destination.accessibilityLabel,
-                    modifier = Modifier.padding(start = 6.dp, end = 2.dp),
+                    modifier = Modifier.padding(start = 5.dp, end = 1.dp),
                     maxLines = 1,
                     style = MaterialTheme.typography.labelMedium
                 )
