@@ -85,13 +85,15 @@ class DownloadsViewModel @Inject constructor(
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val current = dao.latestCompletedForPackage(file.nameWithoutExtension)
+                    val firstPass = inspectApk(applicationContext, file)
+                    val previous = dao.latestCompletedForPackage(firstPass.packageName)
                     inspectApk(
                         applicationContext,
                         file,
-                        previousVersionCode = current?.versionCode,
-                        previousPermissions = current?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                        previousCertificateSha256 = current?.certificateSha256
+                        expectedPackage = firstPass.packageName,
+                        previousVersionCode = previous?.versionCode,
+                        previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
+                        previousCertificateSha256 = previous?.certificateSha256
                     )
                 }
             }
