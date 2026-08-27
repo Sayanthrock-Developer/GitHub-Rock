@@ -103,7 +103,7 @@ fun AppInformationContent(
             item { StandardSectionHeader("Application") }
             item {
                 InformationCard(
-                    listOf(
+                    listOf<Pair<String, String>>(
                         "Version" to "${information.versionName} (${information.versionCode})",
                         "Application ID" to information.applicationId,
                         "Build type" to information.buildType,
@@ -116,8 +116,8 @@ fun AppInformationContent(
             item { StandardSectionHeader("Current build") }
             item {
                 InformationCard(
-                    listOf(
-                        "Git commit" to information.gitCommit.takeIf { it.length <= 12 } ?: information.gitCommit.take(12),
+                    listOf<Pair<String, String>>(
+                        "Git commit" to information.gitCommit.takeIf { it.length <= 12 }.orEmpty().ifBlank { information.gitCommit.take(12) },
                         "Git ref" to information.gitRef,
                         "Built (UTC)" to information.buildTimestampUtc
                     )
@@ -126,7 +126,7 @@ fun AppInformationContent(
             item { StandardSectionHeader("SDK information") }
             item {
                 InformationCard(
-                    listOf(
+                    listOf<Pair<String, String>>(
                         "Minimum Android" to "API ${information.minimumSdk}",
                         "Compile Android" to "API ${information.compileSdk}",
                         "Target Android" to "API ${information.targetSdk}",
@@ -138,7 +138,7 @@ fun AppInformationContent(
             item { StandardSectionHeader("Device") }
             item {
                 InformationCard(
-                    listOf(
+                    listOf<Pair<String, String>>(
                         "Model" to information.device,
                         "Supported ABIs" to information.supportedAbis.joinToString().ifBlank { "Not reported" }
                     )
