@@ -47,9 +47,9 @@ class DownloadsViewModel @Inject constructor(
         preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
     }
 
-    fun enqueue(url: String, fileName: String) = viewModelScope.launch {
+    fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
         val resolvedUrl = runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
-        val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued")
+        val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued", packageName = expectedPackage)
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
     }
@@ -84,7 +84,16 @@ class DownloadsViewModel @Inject constructor(
     fun inspectApk(file: File, callback: (Result<ApkInspection>) -> Unit) {
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching { inspectApk(applicationContext, file) }
+                runCatching {
+                    val current = dao.latestCompletedForPackage(file.nameWithoutExtension)
+                    inspectApk(
+                        applicationContext,
+                        file,
+                        previousVersionCode = current?.versionCode,
+                        previousPermissions = current?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
+                        previousCertificateSha256 = current?.certificateSha256
+                    )
+                }
             }
             callback(result)
         }
@@ -96,6 +105,7 @@ class DownloadsViewModel @Inject constructor(
             .putString(DownloadWorker.KEY_URL, download.sourceUrl)
             .putString(DownloadWorker.KEY_NAME, download.fileName)
             .apply {
+                download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
                 download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
             }
             .build()
