@@ -127,6 +127,9 @@ fun AppLoadingIndicator(
     reduceMotion: Boolean
 ) {
     AppLoadingIndicator(
+        modifier = Modifier,
+        progress = null,
+        compact = false,
         style = style,
         reduceMotion = reduceMotion
     )
