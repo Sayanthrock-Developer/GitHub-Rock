@@ -7,6 +7,7 @@ data class AppInformation(
     val applicationId: String,
     val buildType: String,
     val minimumSdk: Int,
+    val compileSdk: Int,
     val targetSdk: Int,
     val deviceSdk: Int,
     val androidVersion: String,
@@ -15,5 +16,8 @@ data class AppInformation(
     val supportedAbis: List<String>,
     val firstInstalled: String,
     val lastUpdated: String,
-    val requestedPermissions: Int
+    val requestedPermissions: Int,
+    val gitCommit: String,
+    val gitRef: String,
+    val buildTimestampUtc: String
 )
