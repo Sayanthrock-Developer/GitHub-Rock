@@ -134,8 +134,8 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                 onRetry = viewModel::retry,
                 onOpenUrl = openUrl,
                 onDownload = { asset ->
-                    if (asset.downloadUrl.startsWith("https://example.com")) scope.launch { snackbar.showSnackbar("Demo assets are preview-only") }
-                    else { downloadsViewModel.enqueue(asset.downloadUrl, asset.name); scope.launch { snackbar.showSnackbar("${asset.name} added to Downloads") } }
+                    downloadsViewModel.enqueue(asset.downloadUrl, asset.name)
+                    scope.launch { snackbar.showSnackbar("${asset.name} added to Downloads") }
                 },
                 modifier = Modifier.weight(1f)
             )
