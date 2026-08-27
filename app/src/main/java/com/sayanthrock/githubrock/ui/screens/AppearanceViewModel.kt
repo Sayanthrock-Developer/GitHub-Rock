@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.data.settings.AccentColor
+import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.AppFontFamily
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
@@ -39,6 +40,7 @@ class AppearanceViewModel @Inject constructor(
     fun setFontWeight(weight: FontWeightStyle) = viewModelScope.launch { preferences.setFontWeight(weight) }
     fun setFontFamily(family: AppFontFamily) = viewModelScope.launch { preferences.setFontFamily(family) }
     fun setLoadingStyle(style: LoadingStyle) = viewModelScope.launch { preferences.setLoadingStyle(style) }
+    fun setAnimationStyle(style: AnimationStyle) = viewModelScope.launch { preferences.setAnimationStyle(style) }
     fun setCodeColorStyle(style: CodeColorStyle) = viewModelScope.launch { preferences.setCodeColorStyle(style) }
     fun setLogDisplayStyle(style: LogDisplayStyle) = viewModelScope.launch { preferences.setLogDisplayStyle(style) }
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { preferences.setDynamicColor(enabled) }
