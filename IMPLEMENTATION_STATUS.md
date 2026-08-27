@@ -1,6 +1,65 @@
 # Implementation Status
 
-This file separates working alpha functionality from roadmap scope so the application never represents an unfinished action as complete.
+This document is the authoritative status record for GitHub Rock. It distinguishes verified functionality from partial work, platform boundaries, and roadmap scope. A feature is never considered complete merely because a screen, route, button, or API method exists.
+
+## Current Build Snapshot
+
+> **CI-generated metadata:** Build values must come from the actual CI/build environment. Do not manually invent or update these values.
+
+| Property | Source of truth |
+|---|---|
+| App version | Gradle release version |
+| Version code | CI build number / Gradle version code |
+| Build type | Gradle variant (`debug` / `release`) |
+| Git commit | `GITHUB_SHA` / checked-out commit |
+| Android API | Project `minSdk` / `compileSdk` / `targetSdk` |
+| Build date | CI build timestamp (UTC) |
+| CI workflow | GitHub Actions workflow name and run |
+| Build status | Verified workflow result |
+| Unit tests | Verified test job result |
+| Compose/UI tests | Verified UI test job result |
+| Lint | Verified lint job result |
+| Security / CodeQL | Verified security job result |
+| Release signing | Verified certificate fingerprint |
+| APK checksum | SHA-256 of the produced APK |
+| Last verified commit | Commit for which all required checks passed |
+
+### Build verification contract
+
+Every release build should produce a machine-readable build metadata record alongside the verified artifacts. The record should contain the same values above and must be derived from CI variables and the actual Gradle build, not hard-coded source text.
+
+Recommended metadata fields:
+
+- `appVersion`
+- `versionCode`
+- `buildType`
+- `gitCommit`
+- `gitRef`
+- `androidMinSdk`
+- `androidCompileSdk`
+- `androidTargetSdk`
+- `buildTimestampUtc`
+- `workflow`
+- `workflowRunId`
+- `buildStatus`
+- `unitTests`
+- `uiTests`
+- `lint`
+- `security`
+- `codeql`
+- `releaseCertificateSha256`
+- `apkSha256`
+
+The metadata is evidence about a specific build; it must not be used to mark functionality as implemented unless the corresponding implementation, tests, security checks, accessibility checks, and CI verification are complete.
+
+## Status Legend
+
+- **Implemented** — real functionality is integrated and verified for the stated platform.
+- **Partial** — some required paths work, but the complete capability is not yet available.
+- **Needs verification** — implementation exists, but current evidence is insufficient to claim completion.
+- **Platform-dependent** — requires GitHub permissions, a secure backend, or another supported execution boundary.
+- **Companion-only** — belongs to the desktop/Tauri companion rather than native Android.
+- **Roadmap** — planned work that must remain visibly incomplete.
 
 ## Implemented in the current alpha
 
@@ -62,7 +121,7 @@ The program also adds two specific parity targets:
 
 ### Definition of done
 
-A capability may be marked supported only after its real API integration, minimum permissions, loading/empty/error/offline/recovery states, accessibility validation, unit/UI tests, security checks, and CI evidence are complete.
+A capability may be marked **Implemented** only after its real API integration, minimum permissions, loading/empty/error/offline/recovery states, accessibility validation, unit/UI tests, security checks, and CI evidence are complete.
 
 Do not claim that every website capability is available on Android when GitHub does not expose the required API or when the operation belongs to a desktop/backend execution boundary.
 
@@ -85,5 +144,9 @@ Status rules:
 The broader reference-feature request is tracked in [issue #172](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues/172) and documented in [Reference feature integration](docs/REFERENCE_FEATURE_INTEGRATION.md).
 
 This program is a historical roadmap reference. Its checklists must not be interpreted as proof that every capability is currently shipped in the Android runtime. The current implementation status above and issue #235 are authoritative for the new GitHub Android parity work.
+
+## Release and maintenance rule
+
+When implementation changes, update this document only with facts supported by the repository and CI. Build metadata should be generated automatically; feature status should be changed only after verification.
 
 Every milestone must update this file and the in-app feature status only after the implementation, tests, permission checks, accessibility validation, and CI evidence are merged.
