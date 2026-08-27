@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,8 +39,17 @@ class MainActivity : ComponentActivity() {
             val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
             val useDarkTheme = when (appearance.themeMode) { ThemeMode.System -> isSystemInDarkTheme(); ThemeMode.Light -> false; ThemeMode.Dark -> true }
             val view = LocalView.current
-            SideEffect { WindowCompat.getInsetsController(window, view).apply { isAppearanceLightStatusBars = !useDarkTheme; isAppearanceLightNavigationBars = !useDarkTheme } }
-            GitHubRockTheme(darkTheme = useDarkTheme, dynamicColor = appearance.dynamicColor, trueBlack = appearance.trueBlack, accentColor = appearance.accentColor, themeStyle = appearance.themeStyle, displaySize = appearance.displaySize, fontSize = appearance.fontSize, fontWeight = appearance.fontWeight, fontFamily = appearance.fontFamily, loadingStyle = appearance.loadingStyle, codeColorStyle = appearance.codeColorStyle, logDisplayStyle = appearance.logDisplayStyle, reduceMotion = appearance.reduceMotion, showImages = appearance.showImages) { GitHubRockRoot(viewModel) }
+            GitHubRockTheme(darkTheme = useDarkTheme, dynamicColor = appearance.dynamicColor, trueBlack = appearance.trueBlack, accentColor = appearance.accentColor, themeStyle = appearance.themeStyle, displaySize = appearance.displaySize, fontSize = appearance.fontSize, fontWeight = appearance.fontWeight, fontFamily = appearance.fontFamily, loadingStyle = appearance.loadingStyle, codeColorStyle = appearance.codeColorStyle, logDisplayStyle = appearance.logDisplayStyle, reduceMotion = appearance.reduceMotion, showImages = appearance.showImages) {
+                SideEffect {
+                    val backgroundColor = androidx.compose.material3.MaterialTheme.colorScheme.background.toArgb()
+                    window.statusBarColor = backgroundColor
+                    WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = !useDarkTheme
+                        isAppearanceLightNavigationBars = !useDarkTheme
+                    }
+                }
+                GitHubRockRoot(viewModel)
+            }
         }
     }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); if (consumeOAuthCallback(intent)) setIntent(Intent()) else if (!redirectNonRepositoryGitHubUrl(intent)) setIntent(intent) }
