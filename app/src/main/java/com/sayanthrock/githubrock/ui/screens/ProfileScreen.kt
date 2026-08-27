@@ -1,7 +1,5 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
@@ -42,15 +39,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,13 +52,9 @@ import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
-import com.sayanthrock.githubrock.core.util.ProfileExportFormatter
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /** Retained for source compatibility with existing previews and tests. */
 data class ConnectedProfileDashboardUiState(
@@ -120,34 +110,9 @@ fun ProfileScreen(
 
     val displayedProfile = explorerState.snapshot?.profile ?: profile
     val login = normalizedGitHubLogin(displayedProfile?.login)
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var exportMessage by remember(displayedProfile?.id) { mutableStateOf<String?>(null) }
-    var pendingExportProfile by remember { mutableStateOf<GitHubUser?>(null) }
 
     LaunchedEffect(mode, login) {
         login?.let(onInspectProfile)
-    }
-
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        val target = pendingExportProfile
-        pendingExportProfile = null
-        if (uri == null || target == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
-                        writer.write(ProfileExportFormatter.toJson(target))
-                    } ?: error("Unable to create the profile file")
-                }
-            }.onSuccess {
-                exportMessage = "Profile downloaded successfully"
-            }.onFailure { problem ->
-                exportMessage = problem.message ?: "Unable to download this profile"
-            }
-        }
     }
 
     val openFullProfile = login?.let { normalizedLogin ->
@@ -232,20 +197,6 @@ fun ProfileScreen(
                 onClick = onOpenAccounts
             )
         )
-        displayedProfile?.let { target ->
-            add(
-                ProfileMenuItem(
-                    icon = Icons.Default.SaveAlt,
-                    title = "Download profile",
-                    subtitle = "Save this public profile as a JSON file",
-                    onClick = {
-                        exportMessage = null
-                        pendingExportProfile = target
-                        exportLauncher.launch(ProfileExportFormatter.fileName(target))
-                    }
-                )
-            )
-        }
         add(
             ProfileMenuItem(
                 icon = Icons.Default.Logout,
@@ -314,31 +265,6 @@ fun ProfileScreen(
         item { ProfileMenuGroup(title = "Updates", items = updateItems) }
         item { ProfileMenuGroup(title = "App", items = appItems) }
         item { ProfileMenuGroup(title = "Account", items = accountItems) }
-
-        exportMessage?.let { message ->
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = if (message.contains("success", ignoreCase = true)) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.errorContainer
-                    }
-                ) {
-                    Text(
-                        message,
-                        modifier = Modifier.padding(14.dp),
-                        color = if (message.contains("success", ignoreCase = true)) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onErrorContainer
-                        },
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
     }
 }
 
