@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -50,7 +49,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 
 private val rockNavigationDestinations = listOf(
     TopDestinationV2.Home,
-    TopDestinationV2.Explore,
     TopDestinationV2.Repositories,
     TopDestinationV2.Builds,
     TopDestinationV2.Downloads,
