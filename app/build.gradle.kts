@@ -1,5 +1,6 @@
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.time.Instant
 
 plugins {
     alias(libs.plugins.android.application)
@@ -33,6 +34,17 @@ val configuredVersionName = providers.gradleProperty("GITHUB_ROCK_VERSION_NAME")
     ?.trim()?.takeIf(String::isNotBlank) ?: "0.1.0"
 val configuredVersionCode = providers.gradleProperty("GITHUB_ROCK_VERSION_CODE").orNull
     ?.toIntOrNull()?.takeIf { it > 0 } ?: 1
+val gitCommit = sequenceOf(
+    System.getenv("GITHUB_SHA"),
+    providers.gradleProperty("GITHUB_SHA").orNull
+).firstOrNull { !it.isNullOrBlank() } ?: "local"
+val gitRef = sequenceOf(
+    System.getenv("GITHUB_REF_NAME"),
+    providers.gradleProperty("GITHUB_REF_NAME").orNull
+).firstOrNull { !it.isNullOrBlank() } ?: "local"
+val buildTimestampUtc = System.getenv("GITHUB_RUN_STARTED_AT")
+    ?.takeIf { it.isNotBlank() }
+    ?: Instant.now().toString()
 
 android {
     namespace = "com.sayanthrock.githubrock"
@@ -50,6 +62,12 @@ android {
         buildConfigField("String", "GITHUB_CLIENT_ID", quotedBuildConfig(githubClientId))
         buildConfigField("String", "BACKEND_BASE_URL", quotedBuildConfig(backendBaseUrl))
         buildConfigField("String", "GITHUB_API_VERSION", "\"2022-11-28\"")
+        buildConfigField("String", "GIT_COMMIT", quotedBuildConfig(gitCommit))
+        buildConfigField("String", "GIT_REF", quotedBuildConfig(gitRef))
+        buildConfigField("String", "BUILD_TIMESTAMP_UTC", quotedBuildConfig(buildTimestampUtc))
+        buildConfigField("Int", "ANDROID_MIN_SDK", "29")
+        buildConfigField("Int", "ANDROID_COMPILE_SDK", "36")
+        buildConfigField("Int", "ANDROID_TARGET_SDK", "36")
     }
 
     buildTypes {
