@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
@@ -29,19 +30,49 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject lateinit var appPreferences: AppPreferences
     private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (consumeOAuthCallback(intent)) setIntent(Intent())
-        if (redirectNonRepositoryGitHubUrl(intent)) { finish(); return }
+        if (redirectNonRepositoryGitHubUrl(intent)) {
+            finish()
+            return
+        }
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) { window.navigationBarColor = Color.TRANSPARENT; window.isNavigationBarContrastEnforced = false }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            window.navigationBarColor = Color.TRANSPARENT
+            window.isNavigationBarContrastEnforced = false
+        }
         setContent {
-            val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
-            val useDarkTheme = when (appearance.themeMode) { ThemeMode.System -> isSystemInDarkTheme(); ThemeMode.Light -> false; ThemeMode.Dark -> true }
+            val appearance = appPreferences.appearance.collectAsStateWithLifecycle(
+                initialValue = AppearancePreferences(showImages = false)
+            ).value
+            val useDarkTheme = when (appearance.themeMode) {
+                ThemeMode.System -> isSystemInDarkTheme()
+                ThemeMode.Light -> false
+                ThemeMode.Dark -> true
+            }
             val view = LocalView.current
-            GitHubRockTheme(darkTheme = useDarkTheme, dynamicColor = appearance.dynamicColor, trueBlack = appearance.trueBlack, accentColor = appearance.accentColor, themeStyle = appearance.themeStyle, displaySize = appearance.displaySize, fontSize = appearance.fontSize, fontWeight = appearance.fontWeight, fontFamily = appearance.fontFamily, loadingStyle = appearance.loadingStyle, codeColorStyle = appearance.codeColorStyle, logDisplayStyle = appearance.logDisplayStyle, reduceMotion = appearance.reduceMotion, showImages = appearance.showImages) {
+            GitHubRockTheme(
+                darkTheme = useDarkTheme,
+                dynamicColor = appearance.dynamicColor,
+                trueBlack = appearance.trueBlack,
+                accentColor = appearance.accentColor,
+                themeStyle = appearance.themeStyle,
+                displaySize = appearance.displaySize,
+                fontSize = appearance.fontSize,
+                fontWeight = appearance.fontWeight,
+                fontFamily = appearance.fontFamily,
+                loadingStyle = appearance.loadingStyle,
+                codeColorStyle = appearance.codeColorStyle,
+                logDisplayStyle = appearance.logDisplayStyle,
+                reduceMotion = appearance.reduceMotion,
+                showImages = appearance.showImages
+            ) {
+                // Read the Compose theme value while still in the composable context.
+                // SideEffect's callback is not a composable scope.
+                val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect {
-                    val backgroundColor = androidx.compose.material3.MaterialTheme.colorScheme.background.toArgb()
                     window.statusBarColor = backgroundColor
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !useDarkTheme
@@ -52,7 +83,34 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); if (consumeOAuthCallback(intent)) setIntent(Intent()) else if (!redirectNonRepositoryGitHubUrl(intent)) setIntent(intent) }
-    private fun consumeOAuthCallback(incomingIntent: Intent): Boolean { val uri = incomingIntent.data ?: return false; if (uri.scheme.equals("githubrock", true) && uri.host.equals("oauth", true) && uri.path == "/callback") { viewModel.handleWebOAuthCallback(uri); incomingIntent.data = null; return true }; return false }
-    private fun redirectNonRepositoryGitHubUrl(incomingIntent: Intent): Boolean { val url = incomingIntent.dataString ?: return false; if (!GitHubUrlPolicy.isGitHubHttpsUrl(url) || GitHubUrlPolicy.isRepositoryUrl(url)) return false; val opened = GitHubExternalLinkLauncher.open(this, url); if (opened) incomingIntent.data = null; return opened }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (consumeOAuthCallback(intent)) {
+            setIntent(Intent())
+        } else if (!redirectNonRepositoryGitHubUrl(intent)) {
+            setIntent(intent)
+        }
+    }
+
+    private fun consumeOAuthCallback(incomingIntent: Intent): Boolean {
+        val uri = incomingIntent.data ?: return false
+        if (uri.scheme.equals("githubrock", true) &&
+            uri.host.equals("oauth", true) &&
+            uri.path == "/callback"
+        ) {
+            viewModel.handleWebOAuthCallback(uri)
+            incomingIntent.data = null
+            return true
+        }
+        return false
+    }
+
+    private fun redirectNonRepositoryGitHubUrl(incomingIntent: Intent): Boolean {
+        val url = incomingIntent.dataString ?: return false
+        if (!GitHubUrlPolicy.isGitHubHttpsUrl(url) || GitHubUrlPolicy.isRepositoryUrl(url)) return false
+        val opened = GitHubExternalLinkLauncher.open(this, url)
+        if (opened) incomingIntent.data = null
+        return opened
+    }
 }
