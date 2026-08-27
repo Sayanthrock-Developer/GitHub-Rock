@@ -40,7 +40,7 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
         viewModelScope.launch {
             runCatching { repository.load(1) }
                 .onSuccess { result -> page = 1; _state.update { it.copy(items = result, loading = false, hasMore = result.size >= 50) } }
-                .onFailure { _state.update { it.copy(loading = false, error = message(it)) } }
+                .onFailure { error -> _state.update { state -> state.copy(loading = false, error = message(error)) } }
         }
     }
 
@@ -52,7 +52,7 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
             val next = page + 1
             runCatching { repository.load(next) }
                 .onSuccess { result -> page = next; _state.update { it.copy(items = it.items + result, loadingMore = false, hasMore = result.size >= 50) } }
-                .onFailure { _state.update { it.copy(loadingMore = false, error = message(it)) } }
+                .onFailure { error -> _state.update { state -> state.copy(loadingMore = false, error = message(error)) } }
         }
     }
 
@@ -63,7 +63,7 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
         viewModelScope.launch {
             runCatching { repository.markRead(id) }
                 .onSuccess { ok -> if (ok) _state.update { s -> s.copy(items = s.items.map { if (it.id == id) it.copy(unread = false) else it }) } else _state.update { it.copy(actionError = "GitHub could not mark this notification as read.") } }
-                .onFailure { _state.update { it.copy(actionError = message(it)) } }
+                .onFailure { error -> _state.update { state -> state.copy(actionError = message(error)) } }
         }
     }
 
@@ -72,7 +72,7 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
         viewModelScope.launch {
             runCatching { repository.markAllRead() }
                 .onSuccess { ok -> if (ok) _state.update { s -> s.copy(items = s.items.map { it.copy(unread = false) }) } else _state.update { it.copy(actionError = "GitHub could not mark notifications as read.") } }
-                .onFailure { _state.update { it.copy(actionError = message(it)) } }
+                .onFailure { error -> _state.update { state -> state.copy(actionError = message(error)) } }
         }
     }
 
