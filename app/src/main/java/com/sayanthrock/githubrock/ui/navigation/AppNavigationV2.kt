@@ -83,7 +83,25 @@ fun MainNavigationV2(
                 if (repository != null && runId > 0) BuildDetailsScreen(mode, repository, runId, navController::navigateUp) else Column(Modifier.fillMaxSize().padding(24.dp)) { Text("Build unavailable"); Button(onClick = navController::navigateUp) { Text("Back to Builds") } }
             }
             composable(TopDestinationV2.Downloads.route) { DownloadsHubScreen() }
-            composable(TopDestinationV2.Profile.route) { ProfileScreen(mode = mode, profile = state.profile, explorerState = state.profileExplorer, onInspectProfile = onInspectProfile, onOpenDownloads = { navController.navigate(TopDestinationV2.Downloads.route) { launchSingleTop = true } }, onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) }, onOpenAccounts = { navController.navigate(ACCOUNT_SWITCHER_ROUTE) }, onOpenSettings = { navController.navigate(SETTINGS_ROUTE) }, onOpenAppInfo = { navController.navigate(APP_INFORMATION_ROUTE) }, onOpenGitHubUrl = { url -> nativeProfileDestination(url)?.let { openNativeProfile(it.login, it.section) } ?: onOpenGitHubUrl(url) }, onOpenRepository = openRepo, onLogout = onLogout) }
+            composable(TopDestinationV2.Profile.route) {
+                ProfileScreenWithMetricNavigation(
+                    mode = mode,
+                    profile = state.profile,
+                    explorerState = state.profileExplorer,
+                    onInspectProfile = onInspectProfile,
+                    onOpenDownloads = { navController.navigate(TopDestinationV2.Downloads.route) { launchSingleTop = true } },
+                    onOpenFeatures = { navController.navigate(FEATURES_PREVIEW_ROUTE) },
+                    onOpenAccounts = { navController.navigate(ACCOUNT_SWITCHER_ROUTE) },
+                    onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+                    onOpenAppInfo = { navController.navigate(APP_INFORMATION_ROUTE) },
+                    onOpenGitHubUrl = { url -> nativeProfileDestination(url)?.let { openNativeProfile(it.login, it.section) } ?: onOpenGitHubUrl(url) },
+                    onOpenRepository = openRepo,
+                    onLogout = onLogout,
+                    onOpenRepositories = { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Repositories) } },
+                    onOpenFollowers = { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Followers) } },
+                    onOpenFollowing = { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Following) } }
+                )
+            }
             composable(ACCOUNT_SWITCHER_ROUTE) { AccountSwitcherScreen(mode = mode, connectedProfile = state.profile, onBack = navController::navigateUp, onOpenProfile = openAccountProfile, onReplaceConnectedAccount = onLogout) }
             composable(NATIVE_PROFILE_ROUTE, arguments = listOf(navArgument("login") { type = NavType.StringType }, navArgument("section") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://profile/{login}/{section}" })) {
                 NativeProfileScreen(mode = mode, ownLogin = state.profile?.login, onBack = navController::navigateUp, onOpenRepository = openRepo, onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) })
