@@ -7,6 +7,8 @@ import android.os.Build
 import com.sayanthrock.githubrock.core.util.ChecksumVerifier
 import java.io.File
 import java.security.MessageDigest
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 import java.util.zip.ZipFile
 
 /** Performs local APK inspection before Android's package installer is opened. */
@@ -50,11 +52,9 @@ object ApkSecurityInspector {
 
         val permissions = info.requestedPermissions?.toList()?.sorted().orEmpty()
         val versionCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
-        val minSdk = app.minSdkVersion
-        val targetSdk = app.targetSdkVersion
         val certs = signingCertificates(info)
         val certificate = certs.firstOrNull()?.let(::sha256)
-        val schemes = detectSignatureSchemes(file)
+        val schemes = detectSignatureSchemes(file, info)
         val architectures = detectArchitectures(file)
         val permissionDelta = permissions.filterNot(previousPermissions.toSet()::contains)
         val downgrade = previousVersionCode != null && versionCode < previousVersionCode
@@ -66,16 +66,15 @@ object ApkSecurityInspector {
             if (certificateChanged) add("Signing certificate changed from the previously observed certificate")
             if (permissionDelta.isNotEmpty()) add("${permissionDelta.size} new permission(s) requested")
             if (debugSigned) add("APK appears to use a debug signing certificate")
-            if (schemes.isEmpty()) add("No recognized APK signature scheme was detected")
-            if (architectures.isEmpty()) add("No native architecture entries were detected")
+            if (schemes.isEmpty()) add("Android could not report a recognized signing scheme for this APK")
         }
 
         return Result(
             packageName = packageName,
             versionCode = versionCode,
             versionName = info.versionName,
-            minSdk = minSdk,
-            targetSdk = targetSdk,
+            minSdk = app.minSdkVersion,
+            targetSdk = app.targetSdkVersion,
             permissions = permissions,
             certificateSha256 = certificate,
             signatureSchemes = schemes,
@@ -100,8 +99,11 @@ object ApkSecurityInspector {
         MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
             .joinToString("") { "%02x".format(it) }
 
-    private fun looksLikeDebugCertificate(signature: Signature): Boolean =
-        sha256(signature) == DEBUG_CERT_SHA256
+    private fun looksLikeDebugCertificate(signature: Signature): Boolean = runCatching {
+        val certificate = CertificateFactory.getInstance("X.509")
+            .generateCertificate(signature.toByteArray().inputStream()) as X509Certificate
+        certificate.subjectX500Principal.name.contains("CN=Android Debug", ignoreCase = true)
+    }.getOrDefault(false)
 
     private fun detectArchitectures(file: File): List<String> = buildSet {
         ZipFile(file).use { zip ->
@@ -111,19 +113,16 @@ object ApkSecurityInspector {
         }
     }.sorted()
 
-    /** APK Signature Scheme v2+ stores signing data in META-INF-free ZIP structures; v1 uses META-INF signatures. */
-    private fun detectSignatureSchemes(file: File): List<String> = buildList {
+    /** Reports v1 from the APK container and Android's platform-level signing verification for modern APKs. */
+    private fun detectSignatureSchemes(file: File, info: android.content.pm.PackageInfo): List<String> = buildList {
         ZipFile(file).use { zip ->
-            val names = zip.entries().asSequence().map { it.name }.toList()
-            if (names.any { it.startsWith("META-INF/") && (it.endsWith(".RSA", true) || it.endsWith(".DSA", true) || it.endsWith(".EC", true)) }) {
-                add("v1")
-            }
+            if (zip.entries().asSequence().any { entry ->
+                    entry.name.startsWith("META-INF/") &&
+                        (entry.name.endsWith(".RSA", true) || entry.name.endsWith(".DSA", true) || entry.name.endsWith(".EC", true))
+                }) add("v1")
         }
-        // A definitive v2/v3/v4 parse requires Android's ApkSignatureSchemeV2Verifier internals.
-        // Keep this field conservative rather than claiming a scheme was verified when it was not.
-    }
+        if (Build.VERSION.SDK_INT >= 28 && info.signingInfo != null) add("platform-verified")
+    }.distinct()
 
     class InvalidApkException(message: String) : Exception(message)
-
-    private const val DEBUG_CERT_SHA256 = "b3e9b7c8f4d8e5c8d4c8e4e6c0d6c7b0e1f7b6a8f2e3d1c4b5a6e7f8c9d0a1b2"
 }
