@@ -24,6 +24,7 @@ enum class FontSize { Small, Default, Large; companion object { fun fromStored(v
 enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
 enum class AppFontFamily { SystemSans, Serif, Monospace; companion object { fun fromStored(value: String?): AppFontFamily = entries.firstOrNull { it.name == value } ?: SystemSans } }
 enum class LoadingStyle { Spinner, Linear, Pulse, Skeleton; companion object { fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: Spinner } }
+enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
 enum class CodeColorStyle { Classic, Ocean, Sunset, Monochrome, GitHub; companion object { fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic } }
 enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal } }
 
@@ -36,6 +37,7 @@ data class AppearancePreferences(
     val fontWeight: FontWeightStyle = FontWeightStyle.Default,
     val fontFamily: AppFontFamily = AppFontFamily.SystemSans,
     val loadingStyle: LoadingStyle = LoadingStyle.Spinner,
+    val animationStyle: AnimationStyle = AnimationStyle.Spring,
     val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
     val logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
     val dynamicColor: Boolean = true,
@@ -63,6 +65,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             fontWeight = FontWeightStyle.fromStored(preferences[FONT_WEIGHT]),
             fontFamily = AppFontFamily.fromStored(preferences[FONT_FAMILY]),
             loadingStyle = LoadingStyle.fromStored(preferences[LOADING_STYLE]),
+            animationStyle = AnimationStyle.fromStored(preferences[ANIMATION_STYLE]),
             codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
             logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
@@ -83,6 +86,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setFontWeight(weight: FontWeightStyle) = context.dataStore.edit { it[FONT_WEIGHT] = weight.name }
     suspend fun setFontFamily(family: AppFontFamily) = context.dataStore.edit { it[FONT_FAMILY] = family.name }
     suspend fun setLoadingStyle(style: LoadingStyle) = context.dataStore.edit { it[LOADING_STYLE] = style.name }
+    suspend fun setAnimationStyle(style: AnimationStyle) = context.dataStore.edit { it[ANIMATION_STYLE] = style.name }
     suspend fun setCodeColorStyle(style: CodeColorStyle) = context.dataStore.edit { it[CODE_COLOR_STYLE] = style.name }
     suspend fun setLogDisplayStyle(style: LogDisplayStyle) = context.dataStore.edit { it[LOG_DISPLAY_STYLE] = style.name }
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
@@ -101,7 +105,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
         preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
-        preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE)
+        preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
         preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
@@ -128,6 +132,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val FONT_WEIGHT = stringPreferencesKey("font_weight")
         val FONT_FAMILY = stringPreferencesKey("font_family")
         val LOADING_STYLE = stringPreferencesKey("loading_style")
+        val ANIMATION_STYLE = stringPreferencesKey("animation_style")
         val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style")
         val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
