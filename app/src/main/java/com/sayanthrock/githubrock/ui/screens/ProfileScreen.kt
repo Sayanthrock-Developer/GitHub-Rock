@@ -39,7 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,10 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
-import com.sayanthrock.githubrock.core.model.GitHubUser
-import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
-import com.sayanthrock.githubrock.ui.AppMode
-import com.sayanthrock.githubrock.ui.ProfileExplorerState
+import com.sayanth.githubrock.core.model.GitHubUser
+import com.sayanth.githubrock.core.navigation.normalizedGitHubLogin
+import com.sayanth.githubrock.ui.AppMode
+import com.sayanth.githubrock.ui.ProfileExplorerState
 import java.util.Locale
 
 /** Retained for source compatibility with existing previews and tests. */
