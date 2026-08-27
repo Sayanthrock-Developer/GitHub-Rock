@@ -50,10 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
-import com.sayanth.githubrock.core.model.GitHubUser
-import com.sayanth.githubrock.core.navigation.normalizedGitHubLogin
-import com.sayanth.githubrock.ui.AppMode
-import com.sayanth.githubrock.ui.ProfileExplorerState
+import com.sayanthrock.githubrock.core.model.GitHubUser
+import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
+import com.sayanthrock.githubrock.ui.AppMode
+import com.sayanthrock.githubrock.ui.ProfileExplorerState
 import java.util.Locale
 
 /** Retained for source compatibility with existing previews and tests. */
@@ -120,97 +120,34 @@ fun ProfileScreen(
     }
 
     val libraryItems = listOf(
-        ProfileMenuItem(
-            icon = Icons.Default.Star,
-            title = "Stars",
-            subtitle = "Your starred repositories from GitHub",
-            onClick = { activeLibraryRoute = ProfileLibrarySection.Stars.route }
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.Favorite,
-            title = "Favourites",
-            subtitle = "Repositories pinned inside GitHub Rock",
-            onClick = { activeLibraryRoute = ProfileLibrarySection.Favourites.route }
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.History,
-            title = "Recently viewed",
-            subtitle = "Repositories you have opened on this device",
-            onClick = { activeLibraryRoute = ProfileLibrarySection.RecentlyViewed.route }
-        )
+        ProfileMenuItem(Icons.Default.Star, "Stars", "Your starred repositories from GitHub", { activeLibraryRoute = ProfileLibrarySection.Stars.route }),
+        ProfileMenuItem(Icons.Default.Favorite, "Favourites", "Repositories pinned inside GitHub Rock", { activeLibraryRoute = ProfileLibrarySection.Favourites.route }),
+        ProfileMenuItem(Icons.Default.History, "Recently viewed", "Repositories you have opened on this device", { activeLibraryRoute = ProfileLibrarySection.RecentlyViewed.route })
     )
 
     val updateItems = listOf(
-        ProfileMenuItem(
-            icon = Icons.Default.AutoAwesome,
-            title = "What's new",
-            subtitle = "Highlights from recent GitHub Rock updates",
-            onClick = { activeUpdateRoute = ProfileUpdateSection.WhatsNew.route }
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.Announcement,
-            title = "Announcements",
-            subtitle = "Security, account, and important app notices",
-            onClick = { activeUpdateRoute = ProfileUpdateSection.Announcements.route }
-        )
+        ProfileMenuItem(Icons.Default.AutoAwesome, "What's new", "Highlights from recent GitHub Rock updates", { activeUpdateRoute = ProfileUpdateSection.WhatsNew.route }),
+        ProfileMenuItem(Icons.Default.Announcement, "Announcements", "Security, account, and important app notices", { activeUpdateRoute = ProfileUpdateSection.Announcements.route })
     )
 
     val appItems = listOf(
-        ProfileMenuItem(
-            icon = Icons.Default.Tune,
-            title = "Tweaks",
-            subtitle = "App settings, theme, network, and display",
-            onClick = onOpenSettings
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.Settings,
-            title = "GitHub settings",
-            subtitle = "Account, security, notifications, and applications",
-            onClick = onOpenSettings
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.AutoAwesome,
-            title = "GitHub features",
-            subtitle = "Native, connected, and roadmap capabilities",
-            onClick = onOpenFeatures
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.Download,
-            title = "Downloads",
-            subtitle = "Applications, artifacts, files, and APK safety",
-            onClick = onOpenDownloads
-        ),
-        ProfileMenuItem(
-            icon = Icons.Default.Info,
-            title = "About",
-            subtitle = "Version, Android capabilities, community, and legal",
-            onClick = onOpenAppInfo
-        )
+        ProfileMenuItem(Icons.Default.Tune, "Tweaks", "App settings, theme, network, and display", onOpenSettings),
+        ProfileMenuItem(Icons.Default.Settings, "GitHub settings", "Account, security, notifications, and applications", onOpenSettings),
+        ProfileMenuItem(Icons.Default.AutoAwesome, "GitHub features", "Native, connected, and roadmap capabilities", onOpenFeatures),
+        ProfileMenuItem(Icons.Default.Download, "Downloads", "Applications, artifacts, files, and APK safety", onOpenDownloads),
+        ProfileMenuItem(Icons.Default.Info, "About", "Version, Android capabilities, community, and legal", onOpenAppInfo)
     )
 
-    val accountItems = buildList {
-        add(
-            ProfileMenuItem(
-                icon = Icons.Default.AccountCircle,
-                title = "Accounts & organizations",
-                subtitle = "Connected account, organizations, and public profiles",
-                onClick = onOpenAccounts
-            )
+    val accountItems = listOf(
+        ProfileMenuItem(Icons.Default.AccountCircle, "Accounts & organizations", "Connected account, organizations, and public profiles", onOpenAccounts),
+        ProfileMenuItem(
+            Icons.Default.Logout,
+            if (mode == AppMode.Connected) "Logout" else "Exit ${mode.name.lowercase()} mode",
+            if (mode == AppMode.Connected) "Remove the connected GitHub session from this device" else "Close the current ${mode.name.lowercase()} session",
+            onLogout,
+            destructive = true
         )
-        add(
-            ProfileMenuItem(
-                icon = Icons.Default.Logout,
-                title = if (mode == AppMode.Connected) "Logout" else "Exit ${mode.name.lowercase()} mode",
-                subtitle = if (mode == AppMode.Connected) {
-                    "Remove the connected GitHub session from this device"
-                } else {
-                    "Close the current ${mode.name.lowercase()} session"
-                },
-                onClick = onLogout,
-                destructive = true
-            )
-        )
-    }
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -218,156 +155,57 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Text(
-                text = "Profile",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
-            )
+            Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
         }
-
-        item {
-            CompactProfileCard(
-                profile = displayedProfile,
-                mode = mode,
-                onClick = openFullProfile
-            )
-        }
-
+        item { CompactProfileCard(displayedProfile, mode, openFullProfile) }
         if (explorerState.loading) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.Center) {
                     CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 }
             }
         }
-
         explorerState.error?.let { message ->
             item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.errorContainer
-                ) {
-                    Text(
-                        message,
-                        modifier = Modifier.padding(14.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) {
+                    Text(message, Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer)
                 }
             }
         }
-
-        item { ProfileMenuGroup(title = "Library", items = libraryItems) }
-        item { ProfileMenuGroup(title = "Updates", items = updateItems) }
-        item { ProfileMenuGroup(title = "App", items = appItems) }
-        item { ProfileMenuGroup(title = "Account", items = accountItems) }
+        item { ProfileMenuGroup("Library", libraryItems) }
+        item { ProfileMenuGroup("Updates", updateItems) }
+        item { ProfileMenuGroup("App", appItems) }
+        item { ProfileMenuGroup("Account", accountItems) }
     }
 }
 
 @Composable
-private fun CompactProfileCard(
-    profile: GitHubUser?,
-    mode: AppMode,
-    onClick: (() -> Unit)?
-) {
-    Surface(
-        onClick = { onClick?.invoke() },
-        enabled = onClick != null,
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 1.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.Top
-            ) {
+private fun CompactProfileCard(profile: GitHubUser?, mode: AppMode, onClick: (() -> Unit)?) {
+    Surface(onClick = { onClick?.invoke() }, enabled = onClick != null, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 1.dp) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
                 if (!profile?.avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = profile?.avatarUrl,
-                        contentDescription = "${profile?.login} avatar",
-                        modifier = Modifier.size(82.dp).clip(MaterialTheme.shapes.extraLarge)
-                    )
+                    AsyncImage(model = profile?.avatarUrl, contentDescription = "${profile?.login} avatar", modifier = Modifier.size(82.dp).clip(MaterialTheme.shapes.extraLarge))
                 } else {
-                    Surface(
-                        modifier = Modifier.size(82.dp),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
+                    Surface(Modifier.size(82.dp), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primaryContainer) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                profile?.login?.take(2)?.uppercase(Locale.getDefault()) ?: "GR",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Text(profile?.login?.take(2)?.uppercase(Locale.getDefault()) ?: "GR", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
                 }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    Text(
-                        profile?.name ?: profile?.login ?: "GitHub Rock",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        profile?.login?.let { "@$it" } ?: mode.name,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(profile?.name ?: profile?.login ?: "GitHub Rock", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(profile?.login?.let { "@$it" } ?: mode.name, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     profile?.bio?.takeIf(String::isNotBlank)?.let { bio ->
                         Spacer(Modifier.height(4.dp))
-                        Text(
-                            bio,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(bio, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CompactProfileMetric(
-                    value = profile?.publicRepos ?: 0,
-                    label = "Repos",
-                    modifier = Modifier.weight(1f)
-                )
-                MetricDivider()
-                CompactProfileMetric(
-                    value = profile?.followers ?: 0,
-                    label = "Followers",
-                    modifier = Modifier.weight(1f)
-                )
-                MetricDivider()
-                CompactProfileMetric(
-                    value = profile?.following ?: 0,
-                    label = "Following",
-                    modifier = Modifier.weight(1f)
-                )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                CompactProfileMetric(profile?.publicRepos ?: 0, "Repos", Modifier.weight(1f)); MetricDivider()
+                CompactProfileMetric(profile?.followers ?: 0, "Followers", Modifier.weight(1f)); MetricDivider()
+                CompactProfileMetric(profile?.following ?: 0, "Following", Modifier.weight(1f))
             }
         }
     }
@@ -375,11 +213,7 @@ private fun CompactProfileCard(
 
 @Composable
 private fun CompactProfileMetric(value: Int, label: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(value.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -387,36 +221,18 @@ private fun CompactProfileMetric(value: Int, label: String, modifier: Modifier =
 
 @Composable
 private fun MetricDivider() {
-    Box(
-        modifier = Modifier
-            .width(1.dp)
-            .height(36.dp)
-            .background(MaterialTheme.colorScheme.outlineVariant)
-    )
+    Box(Modifier.width(1.dp).height(36.dp).background(MaterialTheme.colorScheme.outlineVariant))
 }
 
 @Composable
 private fun ProfileMenuGroup(title: String, items: List<ProfileMenuItem>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black
-        )
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainer
-        ) {
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+        Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer) {
             Column {
                 items.forEachIndexed { index, item ->
                     ProfileMenuRow(item)
-                    if (index < items.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 74.dp, end = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
+                    if (index < items.lastIndex) HorizontalDivider(Modifier.padding(start = 74.dp, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
@@ -427,55 +243,15 @@ private fun ProfileMenuGroup(title: String, items: List<ProfileMenuItem>) {
 private fun ProfileMenuRow(item: ProfileMenuItem) {
     val accent = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
     val iconTint = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-    val iconBackground = if (item.destructive) {
-        MaterialTheme.colorScheme.error.copy(alpha = .08f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = item.onClick)
-            .padding(horizontal = 16.dp, vertical = 13.dp),
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = iconBackground
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(item.icon, contentDescription = null, tint = iconTint)
-            }
+    val iconBackground = if (item.destructive) MaterialTheme.colorScheme.error.copy(alpha = .08f) else MaterialTheme.colorScheme.surfaceContainerHigh
+    Row(Modifier.fillMaxWidth().clickable(onClick = item.onClick).padding(horizontal = 16.dp, vertical = 13.dp), horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(Modifier.size(44.dp), shape = MaterialTheme.shapes.extraLarge, color = iconBackground) {
+            Box(contentAlignment = Alignment.Center) { Icon(item.icon, contentDescription = null, tint = iconTint) }
         }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                item.title,
-                color = accent,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                item.subtitle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(item.title, color = accent, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(item.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (!item.destructive) {
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        if (!item.destructive) Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
