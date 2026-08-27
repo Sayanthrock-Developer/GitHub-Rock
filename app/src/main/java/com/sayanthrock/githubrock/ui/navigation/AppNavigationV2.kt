@@ -57,7 +57,15 @@ fun MainNavigationV2(
         NavHost(navController, TopDestinationV2.Home.route, Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
             composable(TopDestinationV2.Home.route) { HomeScreen(state.repositories, openRepo, state.isLoading, state.isRefreshing, onRefresh) }
             composable(TopDestinationV2.Repositories.route) { RepositoriesScreen(state.repositories, state.isLoading, onSearch, mode == AppMode.Connected, openRepo, state.profile?.login) }
-            composable(TopDestinationV2.Builds.route) { BuildsScreen(mode = mode, repositories = state.repositories, runs = state.workflowRuns, onSelectRepository = openRepo) { repo, run -> navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}") } }
+            composable(TopDestinationV2.Builds.route) {
+                BuildsScreen(
+                    mode = mode,
+                    repositories = state.repositories,
+                    runs = state.workflowRuns,
+                    onSelectRepository = openRepo,
+                    onOpenRun = { repo, run -> navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}") }
+                )
+            }
             composable(BUILD_DETAILS_ROUTE, arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("runId") { type = NavType.LongType })) { e ->
                 val owner = e.arguments?.getString("owner").orEmpty(); val repo = e.arguments?.getString("repo").orEmpty(); val runId = e.arguments?.getLong("runId") ?: 0L
                 val repository = state.repositories.firstOrNull { it.owner.login.equals(owner, true) && it.name == repo }
