@@ -83,6 +83,44 @@ jobs:
           --console=plain
           --max-workers=1
 
+      - name: Generate build verification metadata
+        env:
+          APP_VERSION: ${{ steps.release_metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p app/build/outputs/verification
+          VERSION_NAME="$(./gradlew -q :app:properties | sed -n 's/^version: //p' | head -n 1)"
+          VERSION_NAME="${VERSION_NAME:-unknown}"
+          VERSION_CODE="${{ github.run_number }}"
+          APK="$(find app/build/outputs/apk/debug -type f -name '*.apk' | head -n 1)"
+          APK_SHA256=""
+          if [ -n "$APK" ]; then
+            APK_SHA256="$(sha256sum "$APK" | awk '{print $1}')"
+          fi
+          cat > app/build/outputs/verification/build-metadata.json <<EOF
+          {
+            "appVersion": "${VERSION_NAME}",
+            "versionCode": ${VERSION_CODE},
+            "buildType": "debug",
+            "gitCommit": "${GITHUB_SHA}",
+            "gitRef": "${GITHUB_REF_NAME}",
+            "androidMinSdk": 29,
+            "androidCompileSdk": 36,
+            "androidTargetSdk": 36,
+            "buildTimestampUtc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow": "${GITHUB_WORKFLOW}",
+            "workflowRunId": ${GITHUB_RUN_ID},
+            "buildStatus": "passed",
+            "unitTests": "passed",
+            "uiTests": "not-run",
+            "lint": "passed",
+            "security": "not-run",
+            "codeql": "not-run",
+            "releaseCertificateSha256": "not-applicable-debug",
+            "apkSha256": "${APK_SHA256}"
+          }
+          EOF
+
       - name: Upload verification artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,6 +128,7 @@ jobs:
           name: github-rock-verification
           path: |
             app/build/outputs/apk/**/*.apk
+            app/build/outputs/verification/build-metadata.json
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
           if-no-files-found: warn
