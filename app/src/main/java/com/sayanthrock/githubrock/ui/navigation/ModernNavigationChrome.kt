@@ -47,15 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-private val modernTopDestinations = listOf(
-    TopDestinationV2.Home,
-    TopDestinationV2.Repositories,
-    TopDestinationV2.Builds,
-    TopDestinationV2.Downloads,
-    TopDestinationV2.Profile
-)
-
-/** Single adaptive navigation chrome. Uses the same destination model as the NavHost. */
+/** Single adaptive navigation chrome. Uses the shared destination model. */
 @Composable
 fun ModernNavigationChrome(
     navController: NavHostController,
