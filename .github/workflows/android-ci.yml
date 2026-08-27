@@ -84,8 +84,6 @@ jobs:
           --max-workers=1
 
       - name: Generate build verification metadata
-        env:
-          APP_VERSION: ${{ steps.release_metadata.outputs.version }}
         run: |
           set -euo pipefail
           mkdir -p app/build/outputs/verification
