@@ -64,10 +64,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
     BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .rockBackground()
+        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).rockBackground()
     ) {
         val navigationChromePadding = if (state.mode == null) 20.dp else if (maxWidth < 600.dp) 104.dp else 20.dp
         if (state.mode == null) {
@@ -95,6 +92,7 @@ private fun SwipeNavigationContent(
     val selectedRoute = entry?.destination?.route
     val destinations = listOf(
         TopDestinationV2.Home,
+        TopDestinationV2.Explore,
         TopDestinationV2.Repositories,
         TopDestinationV2.Builds,
         TopDestinationV2.Downloads,
@@ -104,31 +102,25 @@ private fun SwipeNavigationContent(
     val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
 
     Box(
-        Modifier
-            .fillMaxSize()
-            .pointerInput(selectedRoute) {
-                var totalDragX = 0f
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { _, dragAmount ->
-                        totalDragX += dragAmount
-                    },
-                    onDragEnd = {
-                        if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
-                            val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
-                            destinations.getOrNull(nextIndex)?.let { destination ->
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+        Modifier.fillMaxSize().pointerInput(selectedRoute) {
+            var totalDragX = 0f
+            detectHorizontalDragGestures(
+                onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount },
+                onDragEnd = {
+                    if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
+                        val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
+                        destinations.getOrNull(nextIndex)?.let { destination ->
+                            navController.navigate(destination.route) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
                             }
                         }
-                        totalDragX = 0f
-                    },
-                    onDragCancel = { totalDragX = 0f }
-                )
-            }
-    ) {
-        content()
-    }
+                    }
+                    totalDragX = 0f
+                },
+                onDragCancel = { totalDragX = 0f }
+            )
+        }
+    ) { content() }
 }
