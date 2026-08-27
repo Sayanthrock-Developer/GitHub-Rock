@@ -38,6 +38,7 @@ private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
 private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"
 private const val BUILD_DETAILS_ROUTE = "build-details/{owner}/{repo}/{runId}"
+private const val BUILD_STATUS_ROUTE = "builds/status/{filter}"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
 @Composable
@@ -62,6 +63,16 @@ fun MainNavigationV2(
                     mode = mode,
                     repositories = state.repositories,
                     runs = state.workflowRuns,
+                    onSelectRepository = openRepo,
+                    onOpenRun = { repo, run -> navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}") }
+                )
+            }
+            composable(BUILD_STATUS_ROUTE, arguments = listOf(navArgument("filter") { type = NavType.StringType })) { e ->
+                BuildStatusPage(
+                    mode = mode,
+                    repositories = state.repositories,
+                    runs = state.workflowRuns,
+                    filterName = e.arguments?.getString("filter").orEmpty(),
                     onSelectRepository = openRepo,
                     onOpenRun = { repo, run -> navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}") }
                 )
