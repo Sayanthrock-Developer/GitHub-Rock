@@ -70,7 +70,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
             trueBlack = preferences[TRUE_BLACK] ?: false,
-            showImages = preferences[SHOW_IMAGES] ?: true
+            showImages = preferences[SHOW_IMAGES] ?: true,
+            reduceMotion = preferences[REDUCE_MOTION] ?: false
         )
     }
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
@@ -92,6 +93,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
+    suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
 
     suspend fun addRepositorySearch(query: String) {
@@ -107,6 +109,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
         preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
         preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
+        preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
@@ -138,6 +141,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
         val SHOW_IMAGES = booleanPreferencesKey("show_images")
+        val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
         val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
