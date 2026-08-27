@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -55,8 +54,7 @@ private val rockNavigationDestinations = listOf(
     TopDestinationV2.Repositories,
     TopDestinationV2.Builds,
     TopDestinationV2.Downloads,
-    TopDestinationV2.Profile,
-    TopDestinationV2.Options
+    TopDestinationV2.Profile
 )
 
 /**
