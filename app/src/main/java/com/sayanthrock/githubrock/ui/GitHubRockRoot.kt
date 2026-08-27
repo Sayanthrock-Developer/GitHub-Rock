@@ -72,7 +72,10 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
-                    SwipeNavigationContent(navController) {
+                    SwipeNavigationContent(
+                        navController = navController,
+                        bottomContentPadding = navigationBarPadding + navigationChromePadding
+                    ) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
                     RockNavigationChrome(navController, Modifier.fillMaxSize())
@@ -86,6 +89,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
 @Composable
 private fun SwipeNavigationContent(
     navController: androidx.navigation.NavHostController,
+    bottomContentPadding: androidx.compose.ui.unit.Dp,
     content: @Composable () -> Unit
 ) {
     val entry by navController.currentBackStackEntryAsState()
@@ -102,25 +106,28 @@ private fun SwipeNavigationContent(
     val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
 
     Box(
-        Modifier.fillMaxSize().pointerInput(selectedRoute) {
-            var totalDragX = 0f
-            detectHorizontalDragGestures(
-                onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount },
-                onDragEnd = {
-                    if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
-                        val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
-                        destinations.getOrNull(nextIndex)?.let { destination ->
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+        Modifier
+            .fillMaxSize()
+            .padding(bottom = bottomContentPadding)
+            .pointerInput(selectedRoute) {
+                var totalDragX = 0f
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount },
+                    onDragEnd = {
+                        if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
+                            val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
+                            destinations.getOrNull(nextIndex)?.let { destination ->
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         }
-                    }
-                    totalDragX = 0f
-                },
-                onDragCancel = { totalDragX = 0f }
-            )
-        }
+                        totalDragX = 0f
+                    },
+                    onDragCancel = { totalDragX = 0f }
+                )
+            }
     ) { content() }
 }
