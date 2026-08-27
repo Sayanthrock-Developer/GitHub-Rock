@@ -27,6 +27,9 @@ interface GitHubRestApi {
     @GET("user") suspend fun me(@Header("Authorization") authorization: String? = null): GitHubUser
     @GET("users/{username}") suspend fun user(@Path("username") username: String): GitHubUser
     @GET("rate_limit") suspend fun rateLimit(): RateLimitResponse
+    @GET("notifications") suspend fun notifications(@Query("all") all: Boolean = true, @Query("participating") participating: Boolean = false, @Query("page") page: Int = 1, @Query("per_page") perPage: Int = 50): List<GitHubNotification>
+    @PUT("notifications/threads/{threadId}") suspend fun markNotificationRead(@Path("threadId") threadId: String): Response<Unit>
+    @PUT("notifications") suspend fun markNotificationsRead(): Response<Unit>
     @GET("repos/{owner}/{repo}") suspend fun repository(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositoryModel
     @PUT("user/starred/{owner}/{repo}") suspend fun starRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
     @DELETE("user/starred/{owner}/{repo}") suspend fun unstarRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
