@@ -58,7 +58,12 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
-    BoxWithConstraints(Modifier.fillMaxSize().rockBackground()) {
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .rockBackground()
+    ) {
         val navigationChromePadding = if (state.mode == null) 20.dp else if (maxWidth < 600.dp) 104.dp else 20.dp
         if (state.mode == null) {
             LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
