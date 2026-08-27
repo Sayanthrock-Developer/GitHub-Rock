@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,11 +16,7 @@ import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
 
-/**
- * Keeps the existing ProfileScreen intact while making the three profile metrics
- * actionable. The metric hit targets sit over the existing metric row and route
- * into the native profile screen.
- */
+/** Keeps the existing Profile screen while adding native navigation hit targets to its metrics. */
 @Composable
 fun ProfileScreenWithMetricNavigation(
     mode: AppMode,
@@ -58,26 +55,13 @@ fun ProfileScreenWithMetricNavigation(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp)
-                    .height(64.dp)
-                    .padding(top = 0.dp),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly
+                    .padding(start = 16.dp, end = 16.dp, top = 205.dp)
+                    .height(64.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                MetricHitTarget(
-                    label = "Repositories",
-                    onClick = onOpenRepositories,
-                    modifier = Modifier.weight(1f)
-                )
-                MetricHitTarget(
-                    label = "Followers",
-                    onClick = onOpenFollowers,
-                    modifier = Modifier.weight(1f)
-                )
-                MetricHitTarget(
-                    label = "Following",
-                    onClick = onOpenFollowing,
-                    modifier = Modifier.weight(1f)
-                )
+                MetricHitTarget("Repositories", onOpenRepositories, Modifier.weight(1f))
+                MetricHitTarget("Followers", onOpenFollowers, Modifier.weight(1f))
+                MetricHitTarget("Following", onOpenFollowing, Modifier.weight(1f))
             }
         }
     }
@@ -92,12 +76,9 @@ private fun MetricHitTarget(
     Box(
         modifier = modifier
             .height(64.dp)
-            .clickable(onClick = onClick)
-            .then(Modifier),
+            .clickable(onClick = onClick),
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
-        androidx.compose.foundation.layout.Spacer(
-            Modifier.fillMaxSize()
-        )
+        androidx.compose.foundation.layout.Spacer(Modifier.fillMaxSize())
     }
 }
