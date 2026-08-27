@@ -80,14 +80,14 @@ private fun darkColors(accentColor: AccentColor): ColorScheme = accentColor.pale
         secondary = Color(0xFFB6C2CF),
         onSecondary = Color(0xFF1B242D),
         tertiary = RockGreen,
-        background = RockDarkBackground,
-        surface = RockDarkSurface,
-        surfaceVariant = RockDarkSurfaceHigh,
-        surfaceContainerLowest = RockDarkBackground,
-        surfaceContainerLow = Color(0xFF121820),
-        surfaceContainer = RockDarkSurface,
-        surfaceContainerHigh = RockDarkSurfaceHigh,
-        surfaceContainerHighest = Color(0xFF292F36),
+        background = Color.Black,
+        surface = Color.Black,
+        surfaceVariant = Color.Black,
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color.Black,
+        surfaceContainer = Color.Black,
+        surfaceContainerHigh = Color.Black,
+        surfaceContainerHighest = Color.Black,
         outline = RockDarkBorder,
         outlineVariant = Color(0xFF252B33),
         error = RockRed,
@@ -199,7 +199,7 @@ private fun FontSize.scale(): Float = when (this) {
 fun GitHubRockTheme(
     darkTheme: Boolean = true,
     dynamicColor: Boolean = true,
-    trueBlack: Boolean = false,
+    trueBlack: Boolean = true,
     accentColor: AccentColor = AccentColor.Cyan,
     themeStyle: ThemeStyle = ThemeStyle.Clean,
     displaySize: DisplaySize = DisplaySize.Standard,
@@ -224,6 +224,8 @@ fun GitHubRockTheme(
     }.let { scheme ->
         if (usesSystemColors) scheme else scheme.applyStyle(themeStyle, darkTheme)
     }.let { scheme ->
+        // Final dark-theme normalization deliberately happens last so no style,
+        // dynamic palette, or Material surface token can reintroduce dark gray.
         if (darkTheme && trueBlack) {
             scheme.copy(
                 background = Color.Black,
