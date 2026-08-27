@@ -94,11 +94,7 @@ fun ExploreScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ExploreViewModel.ExploreMode.entries.forEach { mode ->
-                        FilterChip(
-                            selected = state.mode == mode,
-                            onClick = { viewModel.load(mode, query) },
-                            label = { Text(mode.title) },
-                        )
+                        FilterChip(selected = state.mode == mode, onClick = { viewModel.load(mode, query) }, label = { Text(mode.title) })
                     }
                 }
             }
@@ -163,7 +159,7 @@ private fun ExploreRepositoryCard(
                     Icon(Icons.Default.Star, null, Modifier.size(17.dp))
                     Text(formatCompact(repository.stars))
                 }
-                Text("⑂ ${formatCompact(repository.forks)}")
+                Text("Forks ${formatCompact(repository.forks)}")
                 repository.language?.takeIf { it.isNotBlank() }?.let { Text(it) }
             }
             if (repository.topics.isNotEmpty()) {
@@ -174,7 +170,7 @@ private fun ExploreRepositoryCard(
     }
 }
 
-private fun formatCompact(value: Long): String = when {
+private fun formatCompact(value: Int): String = when {
     value >= 1_000_000 -> "%.1fM".format(value / 1_000_000.0)
     value >= 1_000 -> "%.1fk".format(value / 1_000.0)
     else -> value.toString()
