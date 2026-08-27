@@ -46,5 +46,6 @@ class AppearanceViewModel @Inject constructor(
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { preferences.setDynamicColor(enabled) }
     fun setTrueBlack(enabled: Boolean) = viewModelScope.launch { preferences.setTrueBlack(enabled) }
     fun setShowImages(enabled: Boolean) = viewModelScope.launch { preferences.setShowImages(enabled) }
+    fun setReduceMotion(enabled: Boolean) = viewModelScope.launch { preferences.setReduceMotion(enabled) }
     fun resetAppearance() = viewModelScope.launch { preferences.resetAppearance() }
 }
