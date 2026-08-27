@@ -120,6 +120,18 @@ fun AppLoadingIndicator(
     }
 }
 
+/** Compatibility overload for callers using style and reduce-motion as the leading arguments. */
+@Composable
+fun AppLoadingIndicator(
+    style: LoadingStyle,
+    reduceMotion: Boolean
+) {
+    AppLoadingIndicator(
+        style = style,
+        reduceMotion = reduceMotion
+    )
+}
+
 @Composable
 private fun SkeletonLoader(compact: Boolean, reduceMotion: Boolean) {
     if (reduceMotion) {
