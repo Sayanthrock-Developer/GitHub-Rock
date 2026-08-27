@@ -14,6 +14,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.util.ChecksumVerifier
+import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -38,6 +39,7 @@ class DownloadWorker @AssistedInject constructor(
         val url = inputData.getString(KEY_URL) ?: return Result.failure()
         val name = inputData.getString(KEY_NAME)?.safeFileName() ?: return Result.failure()
         val expectedSha = inputData.getString(KEY_SHA256)
+        val expectedPackage = inputData.getString(KEY_EXPECTED_PACKAGE)?.takeIf(String::isNotBlank)
         val directory = File(applicationContext.filesDir, "downloads").apply { mkdirs() }
         val resumedPath = inputData.getString(KEY_PARTIAL_PATH)?.let(::File)
             ?.takeIf { it.canonicalFile.parentFile == directory.canonicalFile && it.name.endsWith(".part") }
@@ -53,41 +55,44 @@ class DownloadWorker @AssistedInject constructor(
                 if (existing > 0) header("Range", "bytes=$existing-")
             }.build()
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful && response.code != 206) {
-                    error("Download failed: HTTP ${response.code}")
-                }
+                if (!response.isSuccessful && response.code != 206) error("Download failed: HTTP ${response.code}")
                 val body = response.body ?: error("Empty download response")
                 val append = existing > 0 && response.code == 206
                 if (!append && partial.exists()) partial.delete()
                 val startingBytes = if (append) existing else 0L
-                knownTotal = body.contentLength()
-                    .takeIf { it >= 0 }
-                    ?.plus(startingBytes)
-                    ?: 0L
-                dao.updateProgress(
-                    id = id,
-                    status = "downloading",
-                    downloaded = startingBytes,
-                    total = knownTotal,
-                    path = partial.absolutePath,
-                    sha = null
-                )
+                knownTotal = body.contentLength().takeIf { it >= 0 }?.plus(startingBytes) ?: 0L
+                dao.updateProgress(id, "downloading", startingBytes, knownTotal, partial.absolutePath, null)
                 setForeground(downloadForegroundInfo(id, name, startingBytes, knownTotal))
-                copyResponseWithProgress(
-                    id = id,
-                    fileName = name,
-                    body = body.byteStream(),
-                    target = partial,
-                    append = append,
-                    startingBytes = startingBytes,
-                    totalBytes = knownTotal
-                )
+                copyResponseWithProgress(id, name, body.byteStream(), partial, append, startingBytes, knownTotal)
             }
 
             currentCoroutineContext().ensureActive()
             if (name.endsWith(".apk", ignoreCase = true)) {
-                validateApk(partial)
+                val previous = expectedPackage?.let { dao.latestCompletedForPackage(it) }
+                val inspection = inspectApk(
+                    context = applicationContext,
+                    file = partial,
+                    expectedPackage = expectedPackage,
+                    previousVersionCode = previous?.versionCode,
+                    previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
+                    previousCertificateSha256 = previous?.certificateSha256
+                )
+                dao.updateSecurity(
+                    id = id,
+                    packageName = inspection.packageName,
+                    versionCode = inspection.versionCode,
+                    versionName = inspection.versionName,
+                    minSdk = inspection.minSdk,
+                    targetSdk = inspection.targetSdk,
+                    permissions = inspection.permissions.joinToString("\n"),
+                    certificateSha256 = inspection.certificateSha256,
+                    signatureSchemes = inspection.signatureSchemes.joinToString(","),
+                    architectures = inspection.architectures.joinToString(","),
+                    securityRisk = if (inspection.riskReasons.isEmpty()) "low" else "review",
+                    securityReasons = inspection.riskReasons.joinToString("\n")
+                )
             }
+
             val sha = ChecksumVerifier.sha256(partial)
             if (expectedSha != null && !ChecksumVerifier.matches(sha, expectedSha)) {
                 partial.delete()
@@ -99,7 +104,7 @@ class DownloadWorker @AssistedInject constructor(
             Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (error: InvalidApkException) {
+        } catch (error: IllegalArgumentException) {
             partial.delete()
             dao.updateProgress(id, "failed", 0, knownTotal, null, null)
             Result.failure()
@@ -115,16 +120,6 @@ class DownloadWorker @AssistedInject constructor(
                 null
             )
             if (willRetry) Result.retry() else Result.failure()
-        }
-    }
-
-    private fun validateApk(file: File) {
-        val packageInfo = applicationContext.packageManager.getPackageArchiveInfo(
-            file.absolutePath,
-            PackageManager.GET_META_DATA
-        )
-        if (packageInfo?.packageName.isNullOrBlank()) {
-            throw InvalidApkException()
         }
     }
 
@@ -160,19 +155,10 @@ class DownloadWorker @AssistedInject constructor(
         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
     }
 
-    private fun downloadForegroundInfo(
-        downloadId: Long,
-        fileName: String,
-        downloadedBytes: Long,
-        totalBytes: Long
-    ): ForegroundInfo {
+    private fun downloadForegroundInfo(downloadId: Long, fileName: String, downloadedBytes: Long, totalBytes: Long): ForegroundInfo {
         ensureDownloadChannel()
         val hasKnownTotal = totalBytes > 0
-        val percent = if (hasKnownTotal) {
-            (downloadedBytes.coerceAtLeast(0) * 100 / totalBytes).toInt().coerceIn(0, 100)
-        } else {
-            0
-        }
+        val percent = if (hasKnownTotal) (downloadedBytes.coerceAtLeast(0) * 100 / totalBytes).toInt().coerceIn(0, 100) else 0
         val notification = NotificationCompat.Builder(applicationContext, DOWNLOAD_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Downloading $fileName")
@@ -183,39 +169,22 @@ class DownloadWorker @AssistedInject constructor(
             .setOngoing(true)
             .setProgress(if (hasKnownTotal) 100 else 0, percent, !hasKnownTotal)
             .build()
-
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(
-                notificationId(downloadId),
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            ForegroundInfo(notificationId(downloadId), notification)
-        }
+            ForegroundInfo(notificationId(downloadId), notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else ForegroundInfo(notificationId(downloadId), notification)
     }
 
     private fun ensureDownloadChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = applicationContext.getSystemService(Service.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(
-            NotificationChannel(
-                DOWNLOAD_CHANNEL_ID,
-                "Downloads",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "GitHub release, artifact, image, and APK download progress"
-                setShowBadge(false)
-            }
-        )
+        manager.createNotificationChannel(NotificationChannel(DOWNLOAD_CHANNEL_ID, "Downloads", NotificationManager.IMPORTANCE_LOW).apply {
+            description = "GitHub release, artifact, image, and APK download progress"
+            setShowBadge(false)
+        })
     }
 
-    private fun notificationId(downloadId: Long): Int =
-        ((downloadId xor (downloadId ushr 32)).toInt() and Int.MAX_VALUE).coerceAtLeast(1)
-
+    private fun notificationId(downloadId: Long): Int = ((downloadId xor (downloadId ushr 32)).toInt() and Int.MAX_VALUE).coerceAtLeast(1)
     private fun String.safeFileName(): String = replace(Regex("[^A-Za-z0-9._-]"), "_")
-
-    private class InvalidApkException : Exception()
 
     companion object {
         const val KEY_ID = "download_id"
@@ -223,10 +192,10 @@ class DownloadWorker @AssistedInject constructor(
         const val KEY_NAME = "download_name"
         const val KEY_SHA256 = "download_sha256"
         const val KEY_PARTIAL_PATH = "download_partial_path"
+        const val KEY_EXPECTED_PACKAGE = "download_expected_package"
         private const val DOWNLOAD_CHANNEL_ID = "github_rock_downloads"
         private const val PROGRESS_UPDATE_BYTES = 256 * 1024L
         private const val MAX_AUTOMATIC_RETRIES = 2
-
         fun workName(id: Long): String = "github-rock-download-$id"
     }
 }
