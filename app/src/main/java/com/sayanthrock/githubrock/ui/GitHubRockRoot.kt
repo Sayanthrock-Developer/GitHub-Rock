@@ -98,7 +98,8 @@ private fun SwipeNavigationContent(
         TopDestinationV2.Repositories,
         TopDestinationV2.Builds,
         TopDestinationV2.Downloads,
-        TopDestinationV2.Profile
+        TopDestinationV2.Profile,
+        TopDestinationV2.Options
     )
     val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
 
