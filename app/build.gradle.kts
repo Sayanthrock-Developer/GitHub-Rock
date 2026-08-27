@@ -65,9 +65,9 @@ android {
         buildConfigField("String", "GIT_COMMIT", quotedBuildConfig(gitCommit))
         buildConfigField("String", "GIT_REF", quotedBuildConfig(gitRef))
         buildConfigField("String", "BUILD_TIMESTAMP_UTC", quotedBuildConfig(buildTimestampUtc))
-        buildConfigField("Int", "ANDROID_MIN_SDK", "29")
-        buildConfigField("Int", "ANDROID_COMPILE_SDK", "36")
-        buildConfigField("Int", "ANDROID_TARGET_SDK", "36")
+        buildConfigField("int", "ANDROID_MIN_SDK", "29")
+        buildConfigField("int", "ANDROID_COMPILE_SDK", "36")
+        buildConfigField("int", "ANDROID_TARGET_SDK", "36")
     }
 
     buildTypes {
