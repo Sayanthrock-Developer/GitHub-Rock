@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Sayanthrock-Developer/GitHub-Rock/main/site/assets/icon-512.png" alt="GitHub Rock" width="120" height="120" />
+  <img src="https://raw.githubusercontent.com/Sayanthrock-Developer/GitHub-Rock/main/site/assets/icon-512.png" alt="GitHub Rock" width="112" height="112" />
 
   # GitHub Rock
 
-  **A premium, native GitHub companion for Android.**
+  **A native GitHub companion for Android developers.**
 
-  Browse, discover, manage, build, download, and install developer applications from GitHub through one focused mobile experience.
+  Browse repositories, inspect code, follow GitHub activity, monitor Actions, build Android projects, download releases, and install APKs from one focused app.
 
   <p>
     <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases"><img src="https://img.shields.io/github/v/release/Sayanthrock-Developer/GitHub-Rock?style=for-the-badge&label=Release" alt="Latest release" /></a>
@@ -16,454 +16,260 @@
 
 ---
 
-## ✦ Overview
+## Overview
 
-**GitHub Rock** is a native, mobile-first GitHub client for Android developers. It brings GitHub discovery, repositories, profiles, Issues, Pull Requests, Actions, releases, builds, downloads, and application installation into one coherent workflow.
+GitHub Rock is a mobile-first GitHub client built around a simple idea: **keep supported GitHub workflows inside the app, make every state understandable, and never pretend an unfinished capability is complete.**
 
-The project is designed around one principle:
+The Android application currently targets **Android 10–16 (API 29–36)**. A web companion and desktop-oriented companion shell are also included in the repository; platform-specific capabilities are labelled according to where they actually run.
 
-> **Unlock the complete developer workflow without forcing users to leave the app for normal GitHub tasks.**
+## What you can do
 
-## ✦ Complete Documentation
+### Account
 
-This README is the central project guide. It documents the product areas, supported workflows, architecture, build requirements, security expectations, troubleshooting path, and project status.
+- Sign in with GitHub Device Flow
+- Securely store authentication data with Android Keystore
+- Sign out and manage the current session
+- Browse public GitHub content without signing in
+- Use connected-account features when GitHub permissions allow them
 
-The goal is simple: **everything that is part of GitHub Rock should be discoverable, understandable, and actionable from the project documentation.**
-
-When a feature is unavailable because of GitHub permissions, API limits, Android restrictions, repository rules, or an unfinished implementation, it should be reported honestly rather than hidden behind a fake or placeholder flow.
-
-## ✦ All Features
-
-### 🔐 Account & Authentication
-
-- GitHub Device Flow authentication
-- Secure token storage with Android Keystore
-- Sign in and sign out
-- Account/profile information
-- Guest browsing for public content
-- Account switching support
-- Session and authentication-state handling
-
-### 🏠 Home & Dashboard
+### Home
 
 - Account overview
 - Repository activity
-- Quick actions
-- Developer metrics
 - Recent repositories
-- Recent Issues and Pull Requests
+- Relevant Issues and Pull Requests
 - Build and download status
-- Release/update notifications
+- Release/update information
+- Pull to refresh with clear loading, empty, and error states
 
-### 🔎 Search & Discovery
+### Repositories
 
-- Fast unified search
-- Search repositories by name, description, owner, language, stars, forks, and topics
-- Search GitHub users/owners
-- Search topics
-- Search Issues
-- Search Pull Requests
-- Filter results by type
-- Recent searches
-- Search suggestions
-- Pagination and incremental loading
+- Browse and search repositories
+- Open repository details without unnecessary website redirects
+- Read rendered README files
+- Browse files and directories
+- Switch branches
+- View releases, Issues, Pull Requests, commits, workflows, and repository metadata
+- View stars, forks, topics, languages, and update information
+- Use **Open on GitHub** only when an external page is explicitly required
 
-### 📦 Repository Browser
+### Stars
 
-- Repository list and discovery
-- Native Repository Details screen
-- Owner and repository metadata
-- README rendering
-- File and folder browsing
-- Branch selection
-- Releases
-- Issues
-- Pull Requests
-- Commits
-- Actions/workflows
-- Stars and forks
-- Topics and languages
-- Last-updated information
-- Repository search and filtering
-- Explicit **Open on GitHub** action when external browsing is required
+- View starred repositories
+- See owner, repository name, description, language, stars, forks, and update time
+- Open repositories in the native repository experience
 
-### ⭐ Stars
+### Search & discovery
 
-- View starred repositories inside GitHub Rock
-- Repository owner, name, description, language, stars, forks, and update time
-- Native Repository Details navigation
-- No unnecessary external redirects
+- Search GitHub repositories
+- Filter repositories by language, source/fork or visibility type, and sort order
+- Search users, Issues, and Pull Requests where supported
+- Discover installable applications backed by real GitHub releases
 
-### 👤 Profiles
+### Profiles
 
-- User profile
-- Avatar and bio
-- Followers and following
-- Repositories
-- Contributions/activity
-- Organizations
-- Achievements
-- Pronouns when available
-- Local time when available
-- ORCID information when available
-- Follow/unfollow actions where supported
+- View the connected user's profile
+- Repositories, followers, following, organizations, and contributions
+- Supported profile fields, social links, pronouns, and ORCID information when available
+- Native profile and repository navigation
 
-### 🐛 Issues
+> Arbitrary profile search and follow actions are intentionally not presented as shipped functionality unless the current API implementation supports them.
 
-- Browse Issues
-- Issue details
-- Issue comments
-- Labels
-- Assignees
-- Open/closed state
-- Create and manage Issues where permissions allow
-- Native navigation from repositories
+### Issues
 
-### 🔀 Pull Requests
+- Browse and open Issues
+- View comments, labels, assignees, and state
+- Create and manage supported Issue actions when permissions allow them
+
+### Pull Requests
 
 - Browse Pull Requests
-- Pull Request details
-- Changed files and diffs
-- Review comments
-- Review threads
-- Approve or request changes where permitted
-- Comment and reply
-- Reactions
-- Resolve review threads
-- Request/remove reviewers
-- Draft/ready state
-- Merge Pull Requests where permissions and repository rules allow
+- Inspect changed files and diffs
+- Read and participate in review discussions where supported
+- Comments, reactions, reviewers, draft/ready state, and review-thread actions
+- Merge and other repository actions only when GitHub permissions and repository rules allow them
 
-### ⚙️ GitHub Actions
+### GitHub Actions & Builds
 
-- Workflow monitoring
-- Workflow runs
-- Job status
-- Step status
-- Build logs
-- Failed-job reruns where permitted
-- Workflow artifacts
-- Build history
-- Clear success/failure states
-
-### 🏗️ Android Builds
-
+- View workflows, runs, jobs, and steps
+- Read full build logs
+- Inspect artifacts
+- Cancel, rerun, or dispatch supported workflows
 - Detect Android projects
 - Generate Android CI workflows
-- Configure build workflows
-- Create Pull Requests for generated workflows
-- Monitor build execution
-- Inspect failed jobs and logs
-- Download build artifacts
-- Verify generated APKs
+- Create Pull Requests for generated workflow files
+- Monitor builds and download resulting artifacts
 
-### 📥 Downloads
+### Releases, downloads & APKs
 
-- Release asset downloads
-- APK artifact downloads
-- Desktop installer downloads when available
-- Background download handling
-- Live progress
-- Download state persistence
-- Retry failed downloads
-- Completed-download management
-- Correct application icon handling
+- Browse releases and release assets
+- Classify Android, macOS, Windows, Linux, and iOS assets when identifiable
+- Download supported release assets and artifacts
+- Resumable background downloads with progress and retry handling
+- Inspect APK package information, permissions, signing information, and SHA-256 fingerprints
+- Validate expected checksums when supplied
+- Use the Android system installer for APK installation
+- Compare installed application versions with available releases
+- Support update notifications where the required information is available
 
-### 📱 APK & Application Installation
+### Appearance & reliability
 
-- Detect APK files from releases and artifacts
-- Extract the APK's own application icon
-- Cache extracted icons safely
-- Fall back to a generic icon only when extraction fails
-- Inspect APK metadata
-- Inspect permissions
-- Inspect signing information
-- Calculate hashes
-- Launch Android installation flow
-- Detect installed application versions
-- Compare installed version with newer releases
-- Update notifications
-- Open the update/download screen from notifications
+- Material 3 / Jetpack Compose interface
+- Adaptive phone, tablet, and landscape navigation
+- Light, dark, and true-black appearance options
+- Clear loading, empty, error, offline, permission, and recovery states
+- Accessible controls and readable information hierarchy
+- Cached data and background work where appropriate
+- No fake production data or silent success states
 
-### 🔄 Releases & Updates
-
-- Browse repository releases
-- Release details
-- Release assets
-- APK detection
-- Version information
-- Download assets
-- New-release detection
-- Installed-version comparison
-- Update prompts and notifications
-
-### 🔔 Notifications
-
-- New release/update notifications
-- Download completion notifications
-- Build status notifications where supported
-- Notification actions that open the relevant native screen
-
-### 🎨 UI & Personalization
-
-- Jetpack Compose UI
-- Mobile-first layouts
-- Adaptive navigation
-- Light theme
-- Dark theme
-- True-black theme
-- Developer-focused visual hierarchy
-- Responsive loading states
-- Clear error states
-- Native dialogs and bottom sheets
-- Accessibility-conscious controls
-
-### ⚡ Reliability & UX
-
-- Loading states for every asynchronous operation
-- Empty states
-- Retry actions
-- Error handling
-- Offline-safe cached information where available
-- Pagination
-- Background work
-- State restoration
-- No fake/mock functionality in production workflows
-- Preserve existing working functionality while adding new features
-
-## ✦ App Areas
+## Main app areas
 
 | Area | Purpose |
-|:---|:---|
-| **Home** | Account status, activity, metrics, updates, and quick actions |
-| **Explore** | Discover installable applications and repositories |
-| **Top Charts** | Trending, just-released, and popular applications |
-| **Search** | Repositories, users, topics, Issues, and Pull Requests |
+|:--|:--|
+| **Home** | Account, activity, updates, builds, and downloads |
+| **Explore** | Discover repositories and installable open-source applications |
 | **Repositories** | Browse and manage repositories |
-| **Stars** | View starred repositories natively |
+| **Stars** | View starred repositories |
+| **Search** | Find supported GitHub content |
 | **Repository** | README, files, branches, releases, Issues, PRs, commits, and Actions |
-| **Profile** | Profile, activity, followers, organizations, and account settings |
-| **Issues** | Read, create, organize, label, and manage Issues |
-| **Pull Requests** | Review, comment, react, resolve, and merge |
-| **Actions** | Monitor workflows, jobs, steps, logs, and artifacts |
-| **Builds** | Generate, run, monitor, and download Android builds |
-| **Releases** | Browse releases and release assets |
-| **Downloads** | Track downloads and inspect APKs |
-| **Settings** | Account, appearance, notifications, downloads, and application preferences |
+| **Profile** | Account profile, activity, repositories, and social information |
+| **Builds** | Create, monitor, and inspect Android builds |
+| **Downloads** | Manage downloaded releases, artifacts, and APKs |
+| **Settings** | Appearance, account, notifications, downloads, and app preferences |
 
-## ✦ Explore & App Store Experience
+## Application discovery
 
-GitHub Rock can act as a developer-focused open-source application discovery layer on top of public GitHub releases.
+GitHub Rock can provide an open-source application discovery experience using **real GitHub repository and release data**.
 
-### Explore
+- Fresh and incremental discovery feeds
+- Installable application entries backed by actual release assets
+- Version, description, icon, and release information when available
+- Platform and architecture-aware asset selection
+- No invented packages, releases, or download information
 
-- Fresh daily feed of installable applications
-- Repository/release-based application discovery
-- Infinite scrolling and incremental loading
-- Application icons, names, versions, descriptions, and release information
-- Direct install/download actions when a compatible release asset is available
+## Platform contract
 
-### Top Charts
+| Status | Meaning |
+|:--|:--|
+| **Native Android** | Implemented inside the Android application |
+| **Connected GitHub** | Requires GitHub authentication and the required permission |
+| **Backend-dependent** | Requires a secure service for secrets, schedules, cloud agents, or long-running jobs |
+| **Companion-only** | Belongs to the web/desktop companion or operating-system integration |
+| **Roadmap** | Planned work; not represented as a working feature |
 
-- Trending applications
-- Just released
-- Most popular
-- Ranked store-wide discovery
-- Popularity based on available repository/release signals
+The authoritative implementation details are maintained in [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md). It is intentionally separate from this README so this page stays useful to users while the implementation record remains complete.
 
-GitHub Rock does not invent packages or releases. Installable entries must be backed by real release or artifact data.
-
-## ✦ Native-First Experience
-
-GitHub Rock is a **real GitHub client**, not a collection of website links.
-
-Normal repository, profile, Issue, Pull Request, Actions, release, and download workflows stay inside the app wherever native functionality is available. External GitHub pages are reserved for actions that explicitly require opening GitHub.
-
-**Discover → Open → Understand → Act → Build → Download → Install → Update**
-
-## ✦ Architecture
-
-GitHub Rock uses a layered Android architecture centered around Jetpack Compose.
+## Architecture
 
 ```text
-┌─────────────────────────────────┐
-│            Compose UI           │
-├─────────────────────────────────┤
-│           ViewModels            │
-├─────────────────────────────────┤
-│          Repositories           │
-├─────────────────────────────────┤
-│ API · Database · Preferences    │
-├─────────────────────────────────┤
-│ Auth · Actions · Downloads      │
-└─────────────────────────────────┘
+Compose UI
+   ↓
+ViewModels / UI state
+   ↓
+Repositories / domain logic
+   ↓
+GitHub API · Room · DataStore
+   ↓
+Auth · Actions · Downloads · APK inspection
 ```
 
-### Project structure
+Key technologies:
 
-```text
-app/
-├── core/       Shared utilities and infrastructure
-├── data/       GitHub API, authentication, database, data sources
-├── ui/         Compose screens, navigation, components, theme
-└── download/   Background downloads, APK handling, and artifacts
-```
+- Kotlin
+- Jetpack Compose / Material 3
+- Android SDK 36
+- JDK 17
+- Retrofit
+- Room
+- DataStore
+- Android Keystore
+- GitHub REST APIs
+- GitHub Actions
+- WorkManager
 
-## ✦ Technology
+Repository documentation:
 
-- **Kotlin**
-- **Jetpack Compose**
-- **Android SDK 36**
-- **JDK 17**
-- **Retrofit**
-- **Room**
-- **Android Keystore**
-- **GitHub REST APIs**
-- **GitHub Actions**
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — architecture and boundaries
+- [`BUILD.md`](BUILD.md) — complete local/release build instructions
+- [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md) — implementation and roadmap status
+- [`PRIVACY.md`](PRIVACY.md) — privacy information
+- [`SECURITY.md`](SECURITY.md) — security reporting
+- [`SUPPORT.md`](SUPPORT.md) — support guidance
+- [`TERMS.md`](TERMS.md) — terms
 
-## ✦ Build Locally
+## Build locally
 
 ### Requirements
 
 - Android Studio
 - JDK 17
 - Android SDK 36
-- Android SDK path configured in `local.properties`
+- A configured GitHub OAuth App client ID when authentication configuration requires one
 
-### Debug APK
-
-```bash
-./gradlew assembleDebug
-```
-
-APK output:
-
-```text
-app/build/outputs/apk/debug/
-```
-
-### Unit tests
+### Setup
 
 ```bash
+cp local.properties.example local.properties
+```
+
+Set `sdk.dir` in `local.properties`. Optional local configuration can provide `GITHUB_CLIENT_ID` and `GITHUB_ROCK_BACKEND_URL` as documented in [`BUILD.md`](BUILD.md).
+
+**Never commit tokens, client secrets, signing keys, keystores, passwords, or `local.properties`.**
+
+### Verify
+
+Use the committed Gradle wrapper:
+
+```bash
+./gradlew --version
+./gradlew lint
 ./gradlew testDebugUnitTest
+./gradlew assembleDebug
+./gradlew assembleRelease
+./gradlew assembleDebugAndroidTest
 ```
 
-## ✦ Troubleshooting & Problem Solving
+Debug APKs are generated under `app/build/outputs/apk/debug/`. Signed release builds use protected signing configuration; see [`BUILD.md`](BUILD.md).
 
-Use this section as the first diagnostic path when something does not work. Do not bypass a failure by hiding the error or replacing a real workflow with mock data.
+## Security
 
-### Build or Gradle failure
+GitHub Rock uses GitHub authentication flows rather than asking users for their GitHub password. Authentication data is protected using Android Keystore-backed storage, and sensitive values must never be committed to the repository.
 
-1. Confirm JDK 17 is being used.
-2. Confirm Android SDK 36 is installed.
-3. Confirm `local.properties` points to a valid Android SDK.
-4. Run `./gradlew testDebugUnitTest`.
-5. Run `./gradlew assembleDebug`.
-6. Fix the first actionable compiler or dependency error before addressing downstream failures.
+For security reports, see [`SECURITY.md`](SECURITY.md).
 
-### GitHub Actions failure
+## Development standard
 
-1. Open the failed workflow run from **Actions**.
-2. Identify the first failed job.
-3. Inspect the failed step and its logs.
-4. Fix the underlying repository code or workflow configuration.
-5. Re-run only after the cause has been corrected.
-6. Verify the complete workflow, not only the previously failed step.
-
-### Authentication failure
-
-- Check the OAuth configuration used by the build.
-- Confirm the device can reach GitHub.
-- Verify that the requested GitHub permissions are available.
-- Sign out and retry if the stored session is invalid.
-- Never expose or commit tokens or secrets while debugging.
-
-### Download or APK installation failure
-
-- Confirm a real release asset or workflow artifact exists.
-- Verify that the selected asset is compatible with Android.
-- Retry a failed download before starting another one.
-- Check the downloaded file and APK metadata before installation.
-- If installation is blocked, verify Android's package-installation permissions and the device's security restrictions.
-
-### Missing feature or broken navigation
-
-- Confirm the route exists and has a real destination screen.
-- Verify loading, success, empty, and error states.
-- Check that the action uses live GitHub data where required.
-- Avoid external redirects for normal native workflows.
-- If GitHub permissions prevent an action, show a clear explanation instead of pretending it succeeded.
-
-### API or permission errors
-
-GitHub may reject requests because of authentication state, missing permissions, rate limits, repository visibility, repository rules, or API availability. The app should surface the real reason and provide a useful recovery action whenever possible.
-
-## ✦ Verification Standard
-
-A change is not considered complete merely because the code compiles. The expected verification flow is:
+A feature is not considered complete because its code compiles or its screen exists. The expected workflow is:
 
 **Audit → Fix → Build/Test → Verify → Commit → CI → Next issue**
 
-For user-facing workflows, verification should cover the complete path from navigation to data loading, action execution, result handling, and error recovery.
+A supported user workflow should have:
 
-## ✦ Authentication & Security
+- Real API/data integration where required
+- Correct permission handling
+- Loading, success, empty, error, and recovery states
+- Accessibility support
+- Unit/UI coverage where appropriate
+- Security checks
+- Passing CI evidence
 
-GitHub Rock uses **OAuth Device Flow** and does not request a GitHub password.
+When GitHub, Android, permissions, repository rules, or platform boundaries prevent an operation, GitHub Rock should explain the limitation clearly instead of presenting fake functionality.
 
-For local development:
+## Project status
 
-1. Open **GitHub → Settings → Developer settings → OAuth Apps**.
-2. Create or select an OAuth application for development.
-3. Configure it according to the authentication implementation in this repository.
-4. Copy `local.properties.example` to `local.properties`.
-5. Add your local Android SDK configuration.
+GitHub Rock is actively developed. Current implementation status is maintained in [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md); planned capabilities are not treated as shipped features.
 
-**Never commit:**
+**Latest:** [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases)  ·  **Work:** [Issues](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues)  ·  **Code review:** [Pull Requests](https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls)
 
-- GitHub Client Secrets
-- Personal Access Tokens
-- Passwords
-- Private credentials
-- Local configuration
-
-Security reports and responsible disclosure: [SECURITY.md](SECURITY.md)
-
-## ✦ Project Status
-
-GitHub Rock is under active development. This README documents the intended complete product feature set and the expected behavior of supported workflows; individual capabilities may depend on GitHub permissions, API availability, Android version, or the current application build.
-
-The project should expose problems clearly rather than masking them. A missing, blocked, broken, or incomplete workflow should be treated as an issue to diagnose and fix, not as a reason to add fake behavior.
-
-For the latest implementation state, see [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases), [Issues](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues), and [Pull Requests](https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls).
-
-## ✦ Contributing
-
-Contributions, bug reports, feature requests, and UI/UX feedback are welcome.
-
-Before opening a Pull Request:
-
-1. Check existing Issues and Pull Requests.
-2. Keep the change focused and reviewable.
-3. Run the relevant tests locally.
-4. Explain what changed and why.
-5. Never commit secrets, credentials, generated local configuration, or private data.
-
-## ✦ License
+## License
 
 Copyright © 2026 **Sayanth Rock**.
 
-GitHub Rock is licensed under the **Apache License 2.0**. See [LICENSE](LICENSE) for the complete license text.
+Licensed under the **Apache License 2.0**. See [`LICENSE`](LICENSE).
 
 ---
 
 <div align="center">
-  <strong>GitHub Rock</strong>
-  <br />
+  <strong>GitHub Rock</strong><br />
   <sub>GitHub, refined for mobile developers.</sub>
-  <br /><br />
-  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a>
-  ·
-  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/issues">Issues</a>
-  ·
-  <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/pulls">Pull Requests</a>
 </div>
