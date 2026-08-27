@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,11 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,9 +52,10 @@ fun ExploreScreen(
     onOpenProfile: (String) -> Unit,
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycleCompat()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var query by remember(state.query) { mutableStateOf(state.query) }
     var searchJob by remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
 
     PullToRefreshBox(
         isRefreshing = state.refreshing,
@@ -66,10 +70,7 @@ fun ExploreScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("Explore", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
-                    Text(
-                        "Discover what the GitHub community is building.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Text("Discover what the GitHub community is building.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             item {
@@ -78,7 +79,7 @@ fun ExploreScreen(
                     onValueChange = {
                         query = it
                         searchJob?.cancel()
-                        searchJob = kotlinx.coroutines.MainScope().launch {
+                        searchJob = scope.launch {
                             delay(350)
                             viewModel.search(it)
                         }
@@ -101,21 +102,11 @@ fun ExploreScreen(
                     }
                 }
             }
-            item {
-                Text(
-                    text = state.mode.description,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            item { Text(state.mode.description, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
             if (state.loading) {
                 item {
                     GlassCard {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                             Text("Finding repositories…", fontWeight = FontWeight.Bold)
                         }
@@ -159,28 +150,14 @@ private fun ExploreRepositoryCard(
 ) {
     GlassCard(modifier = Modifier.fillMaxWidth(), onClick = { onOpenRepo(repository) }) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(repository.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        "@${repository.owner.login}",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    Text("@${repository.owner.login}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 2.dp))
                 }
                 Icon(Icons.Default.ArrowForward, contentDescription = "Open repository")
             }
-            Text(
-                repository.description ?: "No repository description provided.",
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(repository.description ?: "No repository description provided.", maxLines = 3, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Star, null, Modifier.size(17.dp))
@@ -190,13 +167,7 @@ private fun ExploreRepositoryCard(
                 repository.language?.takeIf { it.isNotBlank() }?.let { Text(it) }
             }
             if (repository.topics.isNotEmpty()) {
-                Text(
-                    repository.topics.take(5).joinToString("  •  "),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Text(repository.topics.take(5).joinToString("  •  "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             TextButton(onClick = { onOpenProfile(repository.owner.login) }) { Text("View developer") }
         }
