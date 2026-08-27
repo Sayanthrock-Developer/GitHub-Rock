@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ sealed class TopDestinationV2(val route: String, val label: String, val icon: an
     data object Builds : TopDestinationV2("builds", "Builds", Icons.Default.Build)
     data object Downloads : TopDestinationV2("downloads", "Downloads", Icons.Default.Download)
     data object Profile : TopDestinationV2("profile", "Profile", Icons.Default.AccountCircle)
+    data object Options : TopDestinationV2("settings", "Options", Icons.Default.Settings)
 }
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
@@ -100,6 +102,14 @@ fun MainNavigationV2(
                     onOpenRepositories = { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Repositories) } },
                     onOpenFollowers = { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Followers) } },
                     onOpenFollowing = { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Following) } }
+                )
+            }
+            composable(TopDestinationV2.Options.route) {
+                GitHubSettingsScreen(
+                    login = state.profile?.login,
+                    onOpenAppSettings = { navController.navigate(APP_CUSTOMIZATION_ROUTE) { launchSingleTop = true } },
+                    onOpenGitHubUrl = onOpenGitHubUrl,
+                    onBack = { navController.navigate(TopDestinationV2.Home.route) { launchSingleTop = true } }
                 )
             }
             composable(ACCOUNT_SWITCHER_ROUTE) { AccountSwitcherScreen(mode = mode, connectedProfile = state.profile, onBack = navController::navigateUp, onOpenProfile = openAccountProfile, onReplaceConnectedAccount = onLogout) }
