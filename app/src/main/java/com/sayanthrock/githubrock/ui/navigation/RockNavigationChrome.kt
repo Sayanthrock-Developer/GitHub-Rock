@@ -1,9 +1,5 @@
 package com.sayanthrock.githubrock.ui.navigation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,19 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -56,12 +48,9 @@ private val rockNavigationDestinations = listOf(
 )
 
 /**
- * The single navigation chrome for GitHub Rock.
- *
- * Phone: floating capsule navigation.
- * Large screens: compact floating rail.
- * The navigation chrome owns only top-level navigation; nested screens remain
- * inside the existing NavHost and are intentionally not shown here.
+ * Fixed navigation chrome. Phones use the original full-width bottom bar;
+ * large screens use the compact rail. Content is responsible for reserving
+ * the bottom bar's measured area so the bar never obscures the page.
  */
 @Composable
 fun RockNavigationChrome(
@@ -76,7 +65,6 @@ fun RockNavigationChrome(
         if (maxWidth < 600.dp) {
             RockBottomNavigation(
                 selectedRoute = selectedRoute,
-                compact = maxWidth < 420.dp,
                 onDestinationSelected = { navigateToTopLevel(navController, it) },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
@@ -101,55 +89,30 @@ private fun navigateToTopLevel(navController: NavHostController, destination: To
 @Composable
 private fun RockBottomNavigation(
     selectedRoute: String?,
-    compact: Boolean,
     onDestinationSelected: (TopDestinationV2) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 12.dp).widthIn(max = 620.dp),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
-        tonalElevation = 2.dp,
-        shadowElevation = 18.dp
+    NavigationBar(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding(),
+        tonalElevation = 3.dp,
+        windowInsets = WindowInsets(0, 0, 0, 0)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(72.dp).padding(horizontal = 7.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            rockNavigationDestinations.forEach { destination ->
-                RockBottomItem(destination, selectedRoute == destination.route, compact, { onDestinationSelected(destination) })
-            }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.RockBottomItem(
-    destination: TopDestinationV2,
-    selected: Boolean,
-    compact: Boolean,
-    onClick: () -> Unit
-) {
-    val containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0f)
-    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-    Surface(
-        modifier = Modifier.weight(1f).height(58.dp).clickable(role = Role.Tab, onClick = onClick).semantics {
-            contentDescription = destination.accessibilityLabel
-            role = Role.Tab
-            this.selected = selected
-        },
-        shape = RoundedCornerShape(26.dp),
-        color = containerColor,
-        contentColor = contentColor
-    ) {
-        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(destination.icon, null, Modifier.size(if (selected) 24.dp else 22.dp))
-            AnimatedVisibility(visible = selected && !compact, enter = fadeIn(), exit = fadeOut()) {
-                Text(text = destination.accessibilityLabel, modifier = Modifier.padding(start = 5.dp, end = 1.dp), maxLines = 1, style = MaterialTheme.typography.labelMedium)
-            }
+        rockNavigationDestinations.forEach { destination ->
+            NavigationBarItem(
+                selected = selectedRoute == destination.route,
+                onClick = { onDestinationSelected(destination) },
+                icon = { Icon(destination.icon, contentDescription = null) },
+                label = { Text(destination.accessibilityLabel, maxLines = 1) },
+                alwaysShowLabel = true,
+                modifier = Modifier.semantics {
+                    contentDescription = destination.accessibilityLabel
+                    role = Role.Tab
+                    this.selected = selectedRoute == destination.route
+                },
+                colors = NavigationBarItemDefaults.colors()
+            )
         }
     }
 }
@@ -161,34 +124,54 @@ private fun RockNavigationRail(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.padding(start = 14.dp).windowInsetsPadding(WindowInsets.safeDrawing).width(78.dp),
+        modifier = modifier
+            .padding(start = 14.dp)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .width(78.dp),
         shape = RoundedCornerShape(30.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
         tonalElevation = 2.dp,
         shadowElevation = 18.dp
     ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             rockNavigationDestinations.forEach { destination ->
-                RockRailItem(destination, selectedRoute == destination.route) { onDestinationSelected(destination) }
+                RockRailItem(destination, selectedRoute == destination.route) {
+                    onDestinationSelected(destination)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun RockRailItem(destination: TopDestinationV2, selected: Boolean, onClick: () -> Unit) {
+private fun RockRailItem(
+    destination: TopDestinationV2,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
     val containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0f)
     val contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(
-        modifier = Modifier.padding(horizontal = 8.dp).size(58.dp).clickable(role = Role.Tab, onClick = onClick).semantics {
-            contentDescription = destination.accessibilityLabel
-            role = Role.Tab
-            this.selected = selected
-        },
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+            .size(58.dp)
+            .clickable(role = Role.Tab, onClick = onClick)
+            .semantics {
+                contentDescription = destination.accessibilityLabel
+                role = Role.Tab
+                this.selected = selected
+            },
         shape = RoundedCornerShape(22.dp),
         color = containerColor,
         contentColor = contentColor
-    ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(destination.icon, null, Modifier.size(if (selected) 24.dp else 22.dp)) } }
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(destination.icon, null, Modifier.size(if (selected) 24.dp else 22.dp))
+        }
+    }
 }
