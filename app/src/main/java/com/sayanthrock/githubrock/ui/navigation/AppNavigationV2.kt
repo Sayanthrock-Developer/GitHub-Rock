@@ -9,6 +9,8 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -74,6 +76,9 @@ fun MainNavigationV2(
     val openNativeProfile: (String, NativeProfileSection) -> Unit = { login, section ->
         navController.navigate(NativeProfileDestination(login, section).route) { launchSingleTop = true }
     }
+    val openAccountProfile: (String) -> Unit = { login ->
+        openNativeProfile(login, NativeProfileSection.Repositories)
+    }
 
     Box(Modifier.fillMaxSize()) {
         NavHost(
@@ -137,7 +142,13 @@ fun MainNavigationV2(
                 )
             }
             composable(ACCOUNT_SWITCHER_ROUTE) {
-                AccountSwitcherScreen(mode, state.profile, navController::navigateUp, { login -> openNativeProfile(login, NativeProfileSection.Repositories) }, onLogout)
+                AccountSwitcherScreen(
+                    mode = mode,
+                    connectedProfile = state.profile,
+                    onBack = navController::navigateUp,
+                    onOpenProfile = openAccountProfile,
+                    onReplaceConnectedAccount = onLogout
+                )
             }
             composable(NATIVE_PROFILE_ROUTE, arguments = listOf(
                 navArgument("login") { type = NavType.StringType },
