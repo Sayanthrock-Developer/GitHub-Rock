@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -27,6 +28,7 @@ class ProfileScreenTest {
         var openedAccounts = false
         var openedDownloads = false
         var openedAbout = false
+        var inspectedLogin: String? = null
         var openedGitHubUrl: String? = null
         val profile = GitHubUser(
             login = "SayanthRock",
@@ -43,9 +45,8 @@ class ProfileScreenTest {
                 ProfileScreen(
                     mode = AppMode.Connected,
                     profile = profile,
-                    explorerState = ProfileExplorerState(
-                        snapshot = GitHubProfileSnapshot(profile)
-                    ),
+                    explorerState = ProfileExplorerState(snapshot = GitHubProfileSnapshot(profile)),
+                    onInspectProfile = { inspectedLogin = it },
                     onOpenDownloads = { openedDownloads = true },
                     onOpenFeatures = { openedFeatures = true },
                     onOpenAccounts = { openedAccounts = true },
@@ -60,7 +61,8 @@ class ProfileScreenTest {
         compose.onNodeWithText("Profile").assertIsDisplayed()
         compose.onNodeWithText("Sayanth Rock").assertIsDisplayed().performClick()
         compose.runOnIdle {
-            assertEquals("https://github.com/SayanthRock?tab=repositories", openedGitHubUrl)
+            assertEquals("SayanthRock", inspectedLogin)
+            assertEquals(null, openedGitHubUrl)
         }
 
         compose.onNodeWithText("49").assertIsDisplayed()
@@ -85,15 +87,43 @@ class ProfileScreenTest {
     }
 
     @Test
+    fun profileMetricsUseNativeCallbacksWithoutFragileOverlay() {
+        var repositoriesOpened = false
+        var followersOpened = false
+        var followingOpened = false
+        val profile = GitHubUser(login = "SayanthRock", id = 1, name = "Sayanth Rock", publicRepos = 8, followers = 18, following = 9)
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                ProfileScreen(
+                    mode = AppMode.Connected,
+                    profile = profile,
+                    onOpenDownloads = {},
+                    onOpenFeatures = {},
+                    onOpenAccounts = {},
+                    onOpenSettings = {},
+                    onOpenGitHubUrl = {},
+                    onLogout = {},
+                    onOpenRepositories = { repositoriesOpened = true },
+                    onOpenFollowers = { followersOpened = true },
+                    onOpenFollowing = { followingOpened = true }
+                )
+            }
+        }
+
+        compose.onNodeWithText("8").performClick()
+        compose.onNodeWithText("18").performClick()
+        compose.onNodeWithText("9").performClick()
+        compose.runOnIdle {
+            assertTrue(repositoriesOpened)
+            assertTrue(followersOpened)
+            assertTrue(followingOpened)
+        }
+    }
+
+    @Test
     fun updatesOpenInsideProfileAndOldLongDashboardIsNotDuplicated() {
-        val profile = GitHubUser(
-            login = "SayanthRock",
-            id = 1,
-            name = "Sayanth Rock",
-            publicRepos = 8,
-            followers = 18,
-            following = 9
-        )
+        val profile = GitHubUser(login = "SayanthRock", id = 1, name = "Sayanth Rock", publicRepos = 8, followers = 18, following = 9)
 
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
@@ -112,11 +142,9 @@ class ProfileScreenTest {
 
         compose.onNodeWithText("Contribution activity").assertDoesNotExist()
         compose.onNodeWithText("Search repositories…").assertDoesNotExist()
-
         compose.onNodeWithText("What's new").performScrollTo().performClick()
         compose.onNodeWithText("New profile experience").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Icon-first downloads").performScrollTo().assertIsDisplayed()
-
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Library").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Updates").performScrollTo().assertIsDisplayed()
