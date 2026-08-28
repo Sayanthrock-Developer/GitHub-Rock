@@ -54,6 +54,20 @@ class DownloadsViewModel @Inject constructor(
         schedule(queued.copy(id = id))
     }
 
+    fun downloadAgain(download: DownloadEntity) = viewModelScope.launch {
+        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
+        download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
+        val queued = download.copy(
+            localPath = null,
+            totalBytes = 0,
+            downloadedBytes = 0,
+            sha256 = null,
+            status = "queued"
+        )
+        dao.upsert(queued)
+        schedule(queued)
+    }
+
     fun pause(download: DownloadEntity) = viewModelScope.launch {
         if (download.status !in ACTIVE_STATUSES) return@launch
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
