@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +43,19 @@ class DownloadsViewModel @Inject constructor(
     val downloads: StateFlow<List<DownloadEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    init {
+        viewModelScope.launch {
+            dao.observeAll().collect { items ->
+                items.filter { it.status == "completed" && it.isApkDownload() }.forEach { download ->
+                    val file = download.localPath?.let(::File)
+                    if (file == null || !file.isFile || file.length() <= 0L) {
+                        downloadAgain(download)
+                    }
+                }
+            }
+        }
+    }
+
     fun selectMirror(mirror: DownloadMirror) {
         _selectedMirror.value = mirror
         preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
@@ -52,6 +66,20 @@ class DownloadsViewModel @Inject constructor(
         val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued", packageName = expectedPackage)
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
+    }
+
+    fun downloadAgain(download: DownloadEntity) = viewModelScope.launch {
+        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
+        download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
+        val queued = download.copy(
+            localPath = null,
+            totalBytes = 0,
+            downloadedBytes = 0,
+            sha256 = null,
+            status = "queued"
+        )
+        dao.upsert(queued)
+        schedule(queued)
     }
 
     fun pause(download: DownloadEntity) = viewModelScope.launch {
@@ -114,6 +142,9 @@ class DownloadsViewModel @Inject constructor(
         val request = OneTimeWorkRequestBuilder<DownloadWorker>().setInputData(input).build()
         workManager.enqueueUniqueWork(DownloadWorker.workName(download.id), ExistingWorkPolicy.REPLACE, request)
     }
+
+    private fun DownloadEntity.isApkDownload(): Boolean =
+        fileName.endsWith(".apk", ignoreCase = true)
 
     companion object {
         private const val PREFERENCES_NAME = "github_rock_downloads"
