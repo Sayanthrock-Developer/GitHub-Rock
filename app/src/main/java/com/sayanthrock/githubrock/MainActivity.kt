@@ -69,11 +69,12 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = appearance.reduceMotion,
                 showImages = appearance.showImages
             ) {
-                // Read the Compose theme value while still in the composable context.
-                // SideEffect's callback is not a composable scope.
-                val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
+                // Keep the system status bar visually continuous with the top app surface.
+                // This matches the light reference UI: a clean white status-bar area with
+                // dark system icons, while preserving true-black dark mode.
+                val surfaceColor = MaterialTheme.colorScheme.surface.toArgb()
                 SideEffect {
-                    window.statusBarColor = backgroundColor
+                    window.statusBarColor = surfaceColor
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !useDarkTheme
                         isAppearanceLightNavigationBars = !useDarkTheme
