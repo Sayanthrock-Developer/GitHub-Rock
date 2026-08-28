@@ -100,6 +100,7 @@ class DownloadWorker @AssistedInject constructor(
             }
             if (final.exists()) final.delete()
             check(partial.renameTo(final)) { "Unable to finalize download" }
+            check(final.isFile && final.length() > 0L) { "Final download file is unavailable" }
             dao.updateProgress(id, "completed", final.length(), final.length(), final.absolutePath, sha)
             Result.success()
         } catch (cancelled: CancellationException) {
