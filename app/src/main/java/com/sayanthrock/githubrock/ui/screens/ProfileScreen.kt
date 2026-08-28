@@ -227,3 +227,38 @@ private fun CompactProfileMetric(value: Int, label: String, modifier: Modifier =
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
+
+@Composable
+private fun MetricDivider() {
+    Box(Modifier.width(1.dp).height(36.dp).background(MaterialTheme.colorScheme.outlineVariant))
+}
+
+@Composable
+private fun ProfileMenuGroup(title: String, items: List<ProfileMenuItem>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+        Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer) {
+            Column {
+                items.forEachIndexed { index, item ->
+                    ProfileMenuRow(item)
+                    if (index < items.lastIndex) HorizontalDivider(Modifier.padding(start = 74.dp, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileMenuRow(item: ProfileMenuItem) {
+    val accent = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val iconTint = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+    val iconBackground = if (item.destructive) MaterialTheme.colorScheme.error.copy(alpha = .08f) else MaterialTheme.colorScheme.surfaceContainerHigh
+    Row(Modifier.fillMaxWidth().clickable(onClick = item.onClick).padding(horizontal = 16.dp, vertical = 13.dp), horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(Modifier.size(44.dp), shape = MaterialTheme.shapes.extraLarge, color = iconBackground) { Box(contentAlignment = Alignment.Center) { Icon(item.icon, contentDescription = null, tint = iconTint) } }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(item.title, color = accent, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(item.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (!item.destructive) Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+    }
+}
