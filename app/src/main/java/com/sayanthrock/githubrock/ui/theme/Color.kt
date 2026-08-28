@@ -10,9 +10,10 @@ val RockDarkText = Color(0xFFF0F3F6)
 val RockDarkMuted = Color(0xFF8B949E)
 val RockDarkBorder = Color(0xFF3D444D)
 
-val RockLightBackground = Color(0xFFF6F8FA)
-val RockLightSurface = Color(0xFFFFFFFF)
-val RockLightSurfaceHigh = Color(0xFFEAEEF2)
+// GitHub Rock light foundation: true white for the app canvas and surfaces.
+val RockLightBackground = Color.White
+val RockLightSurface = Color.White
+val RockLightSurfaceHigh = Color.White
 val RockLightText = Color(0xFF1F2328)
 val RockLightMuted = Color(0xFF59636E)
 val RockLightBorder = Color(0xFFD0D7DE)

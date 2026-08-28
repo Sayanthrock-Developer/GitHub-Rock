@@ -52,11 +52,16 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.Light -> false
                 ThemeMode.Dark -> true
             }
+            // Dynamic wallpaper colors belong to System mode only. Explicit Dark/Light
+            // selections remain deterministic and are never overridden by wallpaper colors.
+            val useSystemDynamicColors = appearance.themeMode == ThemeMode.System && appearance.dynamicColor
             val view = LocalView.current
             GitHubRockTheme(
                 darkTheme = useDarkTheme,
-                dynamicColor = appearance.dynamicColor,
-                trueBlack = appearance.trueBlack,
+                dynamicColor = useSystemDynamicColors,
+                // Explicit Dark mode is always true black. Keep the stored preference for
+                // backwards compatibility without allowing it to weaken the Dark contract.
+                trueBlack = useDarkTheme || appearance.trueBlack,
                 accentColor = appearance.accentColor,
                 themeStyle = appearance.themeStyle,
                 displaySize = appearance.displaySize,
@@ -69,9 +74,7 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = appearance.reduceMotion,
                 showImages = appearance.showImages
             ) {
-                // Keep the system status bar visually continuous with the top app surface.
-                // This matches the light reference UI: a clean white status-bar area with
-                // dark system icons, while preserving true-black dark mode.
+                // Keep the system status bar visually continuous with the active app surface.
                 val surfaceColor = MaterialTheme.colorScheme.surface.toArgb()
                 SideEffect {
                     window.statusBarColor = surfaceColor
