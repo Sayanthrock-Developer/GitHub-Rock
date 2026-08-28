@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubNotification
 import com.sayanthrock.githubrock.data.repository.GitHubNotificationsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,15 +34,24 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
     private val _state = MutableStateFlow(GitHubNotificationsState())
     val state: StateFlow<GitHubNotificationsState> = _state.asStateFlow()
     private var page = 0
+    private var loadJob: Job? = null
+
     init { refresh() }
 
     fun refresh() {
+        loadJob?.cancel()
         page = 0
-        _state.update { it.copy(loading = true, error = null, actionError = null, hasMore = true) }
-        viewModelScope.launch {
-            runCatching { repository.load(1) }
-                .onSuccess { result -> page = 1; _state.update { it.copy(items = result, loading = false, hasMore = result.size >= 50) } }
-                .onFailure { error -> _state.update { state -> state.copy(loading = false, error = message(error)) } }
+        _state.update { it.copy(loading = true, loadingMore = false, error = null, actionError = null, hasMore = true) }
+        loadJob = viewModelScope.launch {
+            try {
+                val result = repository.load(1)
+                page = 1
+                _state.update { it.copy(items = result, loading = false, hasMore = result.size >= PAGE_SIZE) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update { state -> state.copy(loading = false, error = message(error)) }
+            }
         }
     }
 
@@ -48,11 +59,17 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
         val current = _state.value
         if (current.loading || current.loadingMore || !current.hasMore) return
         _state.update { it.copy(loadingMore = true, error = null) }
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             val next = page + 1
-            runCatching { repository.load(next) }
-                .onSuccess { result -> page = next; _state.update { it.copy(items = it.items + result, loadingMore = false, hasMore = result.size >= 50) } }
-                .onFailure { error -> _state.update { state -> state.copy(loadingMore = false, error = message(error)) } }
+            try {
+                val result = repository.load(next)
+                page = next
+                _state.update { it.copy(items = it.items + result, loadingMore = false, hasMore = result.size >= PAGE_SIZE) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update { state -> state.copy(loadingMore = false, error = message(error)) }
+            }
         }
     }
 
@@ -79,5 +96,9 @@ class GitHubNotificationsViewModel @Inject constructor(private val repository: G
     private fun message(error: Throwable) = when (error) {
         is retrofit2.HttpException -> if (error.code() == 401 || error.code() == 403) "GitHub authentication is required to load notifications." else "GitHub notifications are temporarily unavailable (HTTP ${error.code()})."
         else -> "Unable to reach GitHub. Check your connection and try again."
+    }
+
+    private companion object {
+        const val PAGE_SIZE = 50
     }
 }
