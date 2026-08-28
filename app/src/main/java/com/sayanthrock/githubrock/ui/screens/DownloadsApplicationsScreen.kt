@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -97,7 +98,7 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
     }
 
     LaunchedEffect(downloads, refreshKey) {
-        val apkItems = downloads.filter { it.isApkDownload() && it.localPath != null }
+        val apkItems = downloads.filter { it.isApkDownload() && it.status == "completed" && it.localPath != null }
         appStates = withContext(Dispatchers.IO) {
             apkItems.mapNotNull { item ->
                 val file = item.localPath?.let(::File) ?: return@mapNotNull null
@@ -153,10 +154,25 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
                     state = state,
                     onOpenRepository = { owner, repo -> openNativeRepository(context, owner, repo) },
                     onPrimary = {
+                        if (item.status != "completed") {
+                            when (item.status) {
+                                "paused" -> viewModel.resume(item)
+                                "failed", "cancelled" -> viewModel.retry(item)
+                                else -> viewModel.pause(item)
+                            }
+                            return@ApplicationDownloadCard
+                        }
                         val file = item.localPath?.let(::File)
-                        if (file == null || !file.exists()) {
-                            errorMessage = "The downloaded APK file is no longer available."
-                        } else if (state?.installed == true && state.isSameOrOlderVersion) {
+                        if (file == null || !file.isFile || file.length() <= 0L) {
+                            viewModel.downloadAgain(item)
+                            return@ApplicationDownloadCard
+                        }
+                        val inspection = runCatching { InstalledApkStateResolver.resolve(context, file) }.getOrNull()
+                        if (inspection == null) {
+                            errorMessage = "The downloaded APK could not be read. Download it again."
+                            return@ApplicationDownloadCard
+                        }
+                        if (state?.installed == true && state.isSameOrOlderVersion) {
                             if (!InstalledApkStateResolver.launchInstalledApp(context, state)) errorMessage = "Android could not open the installed application."
                         } else {
                             openApkInstaller(context, file).onFailure { errorMessage = it.message ?: "Android could not open the package installer." }
@@ -230,6 +246,7 @@ private fun ApplicationDownloadCard(
         item.status != "completed" -> when (item.status) { "paused" -> "Resume"; "failed", "cancelled" -> "Retry"; else -> "Pause" }
         state?.installed == true && state.isUpdateAvailable -> "Update"
         state?.installed == true -> "Open"
+        item.localPath?.let(::File)?.isFile != true -> "Download again"
         else -> "Install"
     }
     val repository = remember(item.sourceUrl) { repositoryFromDownloadUrl(item.sourceUrl) }
@@ -262,6 +279,7 @@ private fun ApplicationDownloadCard(
             Text(
                 when {
                     item.status != "completed" -> item.status.replaceFirstChar { it.uppercase() }
+                    item.localPath?.let(::File)?.isFile != true -> "APK unavailable — download again"
                     state?.installed == true && state.isUpdateAvailable -> "Update available"
                     state?.installed == true -> "Installed"
                     else -> "Ready to install"
@@ -271,7 +289,7 @@ private fun ApplicationDownloadCard(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onPrimary, modifier = Modifier.weight(1f)) {
-                    Icon(when (primaryLabel) { "Open" -> Icons.Default.PlayArrow; "Install", "Update" -> Icons.Default.Android; "Resume" -> Icons.Default.PlayArrow; "Retry" -> Icons.Default.Refresh; else -> Icons.Default.Pause }, contentDescription = null)
+                    Icon(when (primaryLabel) { "Open" -> Icons.Default.PlayArrow; "Install", "Update", "Download again" -> Icons.Default.Android; "Resume" -> Icons.Default.PlayArrow; "Retry" -> Icons.Default.Refresh; else -> Icons.Default.Pause }, contentDescription = null)
                     Spacer(Modifier.width(6.dp)); Text(primaryLabel)
                 }
                 OutlinedButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Delete download") }
@@ -334,12 +352,25 @@ private fun openNativeRepository(context: Context, owner: String, repo: String) 
 }
 
 private fun openApkInstaller(context: Context, file: File): Result<Unit> = runCatching {
-    require(file.exists()) { "The downloaded APK file is no longer available." }
+    require(file.isFile && file.length() > 0L) { "The downloaded APK file is no longer available. Download it again." }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+        error("Allow GitHub Rock to install unknown apps, then try again.")
+    }
+    val archive = InstalledApkStateResolver.resolve(context, file)
+        ?: error("The downloaded file is not a readable APK. Download it again.")
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(uri, "application/vnd.android.package-archive")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-    })
+    }
+    require(intent.resolveActivity(context.packageManager) != null) { "No Android package installer is available on this device." }
+    context.grantUriPermission(
+        intent.resolveActivity(context.packageManager)?.packageName,
+        uri,
+        Intent.FLAG_GRANT_READ_URI_PERMISSION
+    )
+    archive.packageName.isNotBlank()
+    context.startActivity(intent)
 }
 
 private fun shareDownload(context: Context, item: DownloadEntity): Result<Unit> = runCatching {
