@@ -43,7 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,7 +56,6 @@ import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
 import java.util.Locale
 
-/** Retained for source compatibility with existing previews and tests. */
 data class ConnectedProfileDashboardUiState(
     val repositories: List<GitHubRepositoryModel> = emptyList(),
     val loading: Boolean = false,
@@ -86,6 +85,9 @@ fun ProfileScreen(
     onOpenGitHubUrl: (String) -> Unit,
     onOpenRepository: (GitHubRepositoryModel) -> Unit = {},
     onLogout: () -> Unit,
+    onOpenRepositories: () -> Unit = {},
+    onOpenFollowers: () -> Unit = {},
+    onOpenFollowing: () -> Unit = {},
     dashboardStateOverride: ConnectedProfileDashboardUiState? = null
 ) {
     var activeLibraryRoute by rememberSaveable { mutableStateOf<String?>(null) }
@@ -115,8 +117,10 @@ fun ProfileScreen(
         login?.let(onInspectProfile)
     }
 
+    // Keep profile navigation native. The explicit GitHub URL callback remains available
+    // for the compatibility API, but the profile card itself opens the in-app profile route.
     val openFullProfile = login?.let { normalizedLogin ->
-        { onOpenGitHubUrl("https://github.com/$normalizedLogin?tab=repositories") }
+        { onInspectProfile(normalizedLogin) }
     }
 
     val libraryItems = listOf(
@@ -124,12 +128,10 @@ fun ProfileScreen(
         ProfileMenuItem(Icons.Default.Favorite, "Favourites", "Repositories pinned inside GitHub Rock", { activeLibraryRoute = ProfileLibrarySection.Favourites.route }),
         ProfileMenuItem(Icons.Default.History, "Recently viewed", "Repositories you have opened on this device", { activeLibraryRoute = ProfileLibrarySection.RecentlyViewed.route })
     )
-
     val updateItems = listOf(
         ProfileMenuItem(Icons.Default.AutoAwesome, "What's new", "Highlights from recent GitHub Rock updates", { activeUpdateRoute = ProfileUpdateSection.WhatsNew.route }),
         ProfileMenuItem(Icons.Default.Announcement, "Announcements", "Security, account, and important app notices", { activeUpdateRoute = ProfileUpdateSection.Announcements.route })
     )
-
     val appItems = listOf(
         ProfileMenuItem(Icons.Default.Tune, "Tweaks", "App settings, theme, network, and display", onOpenSettings),
         ProfileMenuItem(Icons.Default.Settings, "GitHub settings", "Account, security, notifications, and applications", onOpenSettings),
@@ -137,7 +139,6 @@ fun ProfileScreen(
         ProfileMenuItem(Icons.Default.Download, "Downloads", "Applications, artifacts, files, and APK safety", onOpenDownloads),
         ProfileMenuItem(Icons.Default.Info, "About", "Version, Android capabilities, community, and legal", onOpenAppInfo)
     )
-
     val accountItems = listOf(
         ProfileMenuItem(Icons.Default.AccountCircle, "Accounts & organizations", "Connected account, organizations, and public profiles", onOpenAccounts),
         ProfileMenuItem(
@@ -154,23 +155,13 @@ fun ProfileScreen(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
-        }
-        item { CompactProfileCard(displayedProfile, mode, openFullProfile) }
+        item { Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)) }
+        item { CompactProfileCard(displayedProfile, mode, openFullProfile, onOpenRepositories, onOpenFollowers, onOpenFollowing) }
         if (explorerState.loading) {
-            item {
-                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.Center) {
-                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                }
-            }
+            item { Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.Center) { CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) } }
         }
         explorerState.error?.let { message ->
-            item {
-                Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) {
-                    Text(message, Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer)
-                }
-            }
+            item { Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) { Text(message, Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer) } }
         }
         item { ProfileMenuGroup("Library", libraryItems) }
         item { ProfileMenuGroup("Updates", updateItems) }
@@ -180,8 +171,23 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun CompactProfileCard(profile: GitHubUser?, mode: AppMode, onClick: (() -> Unit)?) {
-    Surface(onClick = { onClick?.invoke() }, enabled = onClick != null, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 1.dp) {
+private fun CompactProfileCard(
+    profile: GitHubUser?,
+    mode: AppMode,
+    onClick: (() -> Unit)?,
+    onOpenRepositories: () -> Unit,
+    onOpenFollowers: () -> Unit,
+    onOpenFollowing: () -> Unit
+) {
+    Surface(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp
+    ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
                 if (!profile?.avatarUrl.isNullOrBlank()) {
@@ -196,24 +202,27 @@ private fun CompactProfileCard(profile: GitHubUser?, mode: AppMode, onClick: (()
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(profile?.name ?: profile?.login ?: "GitHub Rock", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(profile?.login?.let { "@$it" } ?: mode.name, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    profile?.bio?.takeIf(String::isNotBlank)?.let { bio ->
-                        Spacer(Modifier.height(4.dp))
-                        Text(bio, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    }
+                    profile?.bio?.takeIf(String::isNotBlank)?.let { bio -> Spacer(Modifier.height(4.dp)); Text(bio, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis) }
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                CompactProfileMetric(profile?.publicRepos ?: 0, "Repos", Modifier.weight(1f)); MetricDivider()
-                CompactProfileMetric(profile?.followers ?: 0, "Followers", Modifier.weight(1f)); MetricDivider()
-                CompactProfileMetric(profile?.following ?: 0, "Following", Modifier.weight(1f))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                CompactProfileMetric(profile?.publicRepos ?: 0, "Repos", Modifier.weight(1f), onOpenRepositories)
+                MetricDivider()
+                CompactProfileMetric(profile?.followers ?: 0, "Followers", Modifier.weight(1f), onOpenFollowers)
+                MetricDivider()
+                CompactProfileMetric(profile?.following ?: 0, "Following", Modifier.weight(1f), onOpenFollowing)
             }
         }
     }
 }
 
 @Composable
-private fun CompactProfileMetric(value: Int, label: String, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+private fun CompactProfileMetric(value: Int, label: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+    Column(
+        modifier = modifier.clickable(onClick = onClick).padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
         Text(value.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -245,9 +254,7 @@ private fun ProfileMenuRow(item: ProfileMenuItem) {
     val iconTint = if (item.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
     val iconBackground = if (item.destructive) MaterialTheme.colorScheme.error.copy(alpha = .08f) else MaterialTheme.colorScheme.surfaceContainerHigh
     Row(Modifier.fillMaxWidth().clickable(onClick = item.onClick).padding(horizontal = 16.dp, vertical = 13.dp), horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(Modifier.size(44.dp), shape = MaterialTheme.shapes.extraLarge, color = iconBackground) {
-            Box(contentAlignment = Alignment.Center) { Icon(item.icon, contentDescription = null, tint = iconTint) }
-        }
+        Surface(Modifier.size(44.dp), shape = MaterialTheme.shapes.extraLarge, color = iconBackground) { Box(contentAlignment = Alignment.Center) { Icon(item.icon, contentDescription = null, tint = iconTint) } }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(item.title, color = accent, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(item.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
