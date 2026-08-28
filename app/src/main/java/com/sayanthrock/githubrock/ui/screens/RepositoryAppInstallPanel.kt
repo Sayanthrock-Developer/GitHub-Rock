@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
@@ -244,16 +245,22 @@ internal fun RepositoryAppInstallPanel(
 
 internal fun installRepositoryApk(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
     val file = File(state.apkPath)
-    require(file.isFile) { "The downloaded APK is no longer available. Download it again." }
+    require(file.isFile && file.canRead() && file.length() > 0L) {
+        "The downloaded APK is missing or incomplete. Download it again."
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
         error("APK installation permission is disabled for GitHub Rock.")
     }
+
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_VIEW).apply {
+    val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
         setDataAndType(uri, "application/vnd.android.package-archive")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        clipData = ClipData.newRawUri("APK", uri)
     }
-    require(intent.resolveActivity(context.packageManager) != null) { "No Android package installer is available on this device." }
+    require(intent.resolveActivity(context.packageManager) != null) {
+        "No Android package installer is available on this device."
+    }
     context.startActivity(intent)
 }
 
