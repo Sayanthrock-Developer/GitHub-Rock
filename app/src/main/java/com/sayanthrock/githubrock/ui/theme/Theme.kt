@@ -81,13 +81,13 @@ private fun darkColors(accentColor: AccentColor): ColorScheme = accentColor.pale
         onSecondary = Color(0xFF1B242D),
         tertiary = RockGreen,
         background = Color.Black,
-        surface = Color.Black,
-        surfaceVariant = Color.Black,
+        surface = Color(0xFF080808),
+        surfaceVariant = Color(0xFF0D0D0D),
         surfaceContainerLowest = Color.Black,
-        surfaceContainerLow = Color.Black,
-        surfaceContainer = Color.Black,
-        surfaceContainerHigh = Color.Black,
-        surfaceContainerHighest = Color.Black,
+        surfaceContainerLow = Color(0xFF080808),
+        surfaceContainer = Color(0xFF101010),
+        surfaceContainerHigh = Color(0xFF171717),
+        surfaceContainerHighest = Color(0xFF202020),
         outline = RockDarkBorder,
         outlineVariant = Color(0xFF252B33),
         error = RockRed,
@@ -175,6 +175,14 @@ private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): Color
     )
 }
 
+private fun ColorScheme.applyTrueBlack(darkTheme: Boolean, enabled: Boolean): ColorScheme {
+    if (!darkTheme || !enabled) return this
+    return copy(
+        background = Color.Black,
+        surfaceContainerLowest = Color.Black
+    )
+}
+
 private fun codeColors(style: CodeColorStyle, darkTheme: Boolean): CodeColors = when (style) {
     CodeColorStyle.Classic -> CodeColors(keyword = if (darkTheme) Color(0xFF79B8FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF85E89D) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFFFAB70) else Color(0xFF953800), type = if (darkTheme) Color(0xFFBC8CFF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E))
     CodeColorStyle.Ocean -> CodeColors(keyword = if (darkTheme) Color(0xFF58A6FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF7EE787) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0A4A7A), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFF39C5CF) else Color(0xFF006D75))
@@ -221,24 +229,9 @@ fun GitHubRockTheme(
         usesSystemColors -> dynamicLightColorScheme(context)
         darkTheme -> darkColors(accentColor)
         else -> lightColors(accentColor)
-    }.let { scheme ->
-        if (usesSystemColors) scheme else scheme.applyStyle(themeStyle, darkTheme)
-    }.let { scheme ->
-        // Final dark-theme normalization deliberately happens last so no style,
-        // dynamic palette, or Material surface token can reintroduce dark gray.
-        if (darkTheme && trueBlack) {
-            scheme.copy(
-                background = Color.Black,
-                surface = Color.Black,
-                surfaceVariant = Color.Black,
-                surfaceContainerLowest = Color.Black,
-                surfaceContainerLow = Color.Black,
-                surfaceContainer = Color.Black,
-                surfaceContainerHigh = Color.Black,
-                surfaceContainerHighest = Color.Black
-            )
-        } else scheme
     }
+        .applyStyle(themeStyle, darkTheme)
+        .applyTrueBlack(darkTheme, trueBlack)
 
     val scaledDensity = Density(
         density = baseDensity.density * displaySize.scale(),
