@@ -70,7 +70,7 @@ fun GitHubRockRoot(
     val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
-    BoxWithConstraints(
+    Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).rockBackground()
     ) {
         val navigationChromePadding = if (state.mode == null) 0.dp else navigationContentInset(appearanceState.navigationBarStyle)
