@@ -27,6 +27,8 @@ import com.sayanthrock.githubrock.ui.navigation.TopDestinationV2
 import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
+import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
+import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -71,7 +73,7 @@ fun GitHubRockRoot(
     BoxWithConstraints(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).rockBackground()
     ) {
-        val navigationChromePadding = if (state.mode == null) 0.dp else if (maxWidth < 600.dp) 96.dp else 20.dp
+        val navigationChromePadding = if (state.mode == null) 0.dp else navigationContentInset(appearanceState.navigationBarStyle)
         if (state.mode == null) {
             LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
         } else {
@@ -83,12 +85,26 @@ fun GitHubRockRoot(
                     ) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
-                    RockNavigationChrome(navController, appearanceState.navigationBarStyle, Modifier.fillMaxSize())
+                    RockNavigationChrome(
+                        navController = navController,
+                        style = appearanceState.navigationBarStyle,
+                        animationStyle = appearanceState.animationStyle,
+                        reduceMotion = appearanceState.reduceMotion,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding))
     }
+}
+
+private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.ui.unit.Dp = when (style) {
+    NavigationBarStyle.FloatingCapsule -> 100.dp
+    NavigationBarStyle.Classic -> 88.dp
+    NavigationBarStyle.Minimal -> 72.dp
+    NavigationBarStyle.Glass -> 98.dp
+    NavigationBarStyle.Compact -> 68.dp
 }
 
 @Composable
