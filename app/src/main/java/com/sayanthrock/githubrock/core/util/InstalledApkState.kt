@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import java.io.File
@@ -39,8 +38,6 @@ object InstalledApkStateResolver {
 
         // Installation must not depend on the UI metadata resolver. Android's package
         // installer is the authority for whether an otherwise valid APK can be installed.
-        // Returning a neutral state here keeps the Install action usable when PackageManager
-        // cannot expose archive metadata on a particular Android build.
         if (archive == null) {
             return InstalledApkState(
                 packageName = apkFile.nameWithoutExtension,
@@ -104,34 +101,47 @@ object InstalledApkStateResolver {
         return runCatching { context.startActivity(intent); true }.getOrDefault(false)
     }
 
-    /**
-     * Launches Android's package installer without requiring archive metadata first.
-     * PackageManager metadata is useful for UI/update detection, but it must never be
-     * a prerequisite for the actual user-initiated install operation.
-     */
+    /** Launches Android's package installer without requiring archive metadata first. */
     fun launchInstaller(context: Context, apkFile: File): Result<Unit> = runCatching {
-        require(apkFile.isFile && apkFile.length() > 0L) { "The downloaded APK file is no longer available. Download it again." }
+        require(apkFile.isFile && apkFile.length() > 0L) {
+            "The downloaded APK file is no longer available. Download it again."
+        }
+
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", apkFile)
-        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+        val installIntent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
             data = uri
             type = "application/vnd.android.package-archive"
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        val resolver = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-            ?: run {
-                Intent(Intent.ACTION_VIEW).apply {
-                    data = uri
-                    type = "application/vnd.android.package-archive"
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        val resolvedIntent = if (context.packageManager.resolveActivity(
+                installIntent,
+                PackageManager.MATCH_DEFAULT_ONLY
+            ) != null
+        ) {
+            installIntent
+        } else {
+            Intent(Intent.ACTION_VIEW).apply {
+                data = uri
+                type = "application/vnd.android.package-archive"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }.also { fallback ->
+                require(
+                    context.packageManager.resolveActivity(fallback, PackageManager.MATCH_DEFAULT_ONLY) != null
+                ) {
+                    "No Android package installer is available on this device."
                 }
-            }.let { fallback ->
-                context.packageManager.resolveActivity(fallback, PackageManager.MATCH_DEFAULT_ONLY)?.let { fallback }
-                    ?: error("No Android package installer is available on this device.")
             }
-        val targetPackage = context.packageManager.resolveActivity(resolver, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+        }
+
+        val targetPackage = context.packageManager
+            .resolveActivity(resolvedIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo
+            ?.packageName
+
         if (targetPackage != null) {
             context.grantUriPermission(targetPackage, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(resolver)
+        context.startActivity(resolvedIntent)
     }
 }
