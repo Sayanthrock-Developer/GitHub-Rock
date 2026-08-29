@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui.navigation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BorderStroke
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -63,7 +63,6 @@ fun RockNavigationChrome(
     if (rockNavigationDestinations.none { it.route == selectedRoute }) return
 
     BoxWithConstraints(modifier.fillMaxSize()) {
-        // Keep the selected navigation style visually consistent on phones and tablets.
         RockBottomNavigation(
             selectedRoute = selectedRoute,
             style = style,
@@ -140,8 +139,6 @@ private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animatio
 
 @Composable
 private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    // Frosted-glass treatment: translucent surface + tonal layering + subtle border keeps content
-    // readable on both themes without introducing an API-level-specific blur dependency.
     NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface.copy(alpha = 0.58f), 0.65f, 14.dp, 700.dp) {
         NavigationRow(70.dp, 6.dp, 3.dp) { rockNavigationDestinations.forEach { destination ->
             RockNavigationItem(destination, selectedRoute == destination.route, showLabel = selectedRoute == destination.route && !compact, modifier = Modifier.weight(1f), selectedShape = 22.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
@@ -213,7 +210,7 @@ private fun RowScope.RockNavigationItem(
             this.selected = selected
         },
         shape = RoundedCornerShape(selectedShape),
-        color = if (transparent) selectedContainer else selectedContainer,
+        color = selectedContainer,
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
