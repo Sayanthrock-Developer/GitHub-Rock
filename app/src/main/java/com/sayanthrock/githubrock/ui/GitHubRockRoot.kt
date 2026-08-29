@@ -24,14 +24,19 @@ import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.MainNavigationV2
 import com.sayanthrock.githubrock.ui.navigation.RockNavigationChrome
 import com.sayanthrock.githubrock.ui.navigation.TopDestinationV2
+import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
-fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
+fun GitHubRockRoot(
+    viewModel: MainViewModel = hiltViewModel(),
+    appearanceViewModel: AppearanceViewModel = hiltViewModel()
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val appearanceState by appearanceViewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val context = LocalContext.current
@@ -78,7 +83,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
                     ) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
-                    RockNavigationChrome(navController, Modifier.fillMaxSize())
+                    RockNavigationChrome(navController, appearanceState.navigationBarStyle, Modifier.fillMaxSize())
                 }
             }
         }
@@ -94,7 +99,6 @@ private fun SwipeNavigationContent(
 ) {
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
-    // Keep gestures in the same order as the visible five-item bottom bar.
     val destinations = listOf(
         TopDestinationV2.Home,
         TopDestinationV2.Repositories,
