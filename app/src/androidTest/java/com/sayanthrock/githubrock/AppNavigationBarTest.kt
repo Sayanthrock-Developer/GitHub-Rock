@@ -7,7 +7,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.sayanthrock.githubrock.ui.navigation.ModernNavigationBottomBar
-import com.sayanthrock.githubrock.ui.navigation.TopDestination
+import com.sayanthrock.githubrock.ui.navigation.TopDestinationV2
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -18,11 +18,12 @@ class AppNavigationBarTest {
 
     @Test
     fun modernNavigationShowsDestinationsAndRoutesSelection() {
-        var selectedDestination: TopDestination? = null
+        var selectedDestination: TopDestinationV2? = null
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ModernNavigationBottomBar(
-                    selectedRoute = TopDestination.Builds.route,
+                    selectedRoute = TopDestinationV2.Builds.route,
+                    compact = false,
                     onDestinationSelected = { selectedDestination = it }
                 )
             }
@@ -30,7 +31,7 @@ class AppNavigationBarTest {
         compose.onNodeWithText("Builds").assertIsDisplayed()
         compose.onNodeWithContentDescription("Builds").assertIsSelected()
         compose.onNodeWithContentDescription("Repositories").performClick()
-        compose.runOnIdle { assertEquals(TopDestination.Repositories, selectedDestination) }
+        compose.runOnIdle { assertEquals(TopDestinationV2.Repositories, selectedDestination) }
     }
 
     @Test
@@ -38,7 +39,8 @@ class AppNavigationBarTest {
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 ModernNavigationBottomBar(
-                    selectedRoute = TopDestination.Home.route,
+                    selectedRoute = TopDestinationV2.Home.route,
+                    compact = false,
                     onDestinationSelected = {}
                 )
             }
