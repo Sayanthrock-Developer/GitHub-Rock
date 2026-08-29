@@ -24,6 +24,7 @@ class AppInformationScreenTest {
                         applicationId = "com.sayanthrock.githubrock",
                         buildType = "debug",
                         minimumSdk = 29,
+                        compileSdk = 36,
                         targetSdk = 36,
                         deviceSdk = 36,
                         androidVersion = "16",
@@ -32,7 +33,10 @@ class AppInformationScreenTest {
                         supportedAbis = listOf("arm64-v8a"),
                         firstInstalled = "18 Jul 2026, 12:00",
                         lastUpdated = "18 Jul 2026, 12:30",
-                        requestedPermissions = 11
+                        requestedPermissions = 11,
+                        gitCommit = "test-commit",
+                        gitRef = "test-ref",
+                        buildTimestampUtc = "2026-07-18T12:00:00Z"
                     ),
                     onBack = {},
                     onOpenCapabilities = {},
