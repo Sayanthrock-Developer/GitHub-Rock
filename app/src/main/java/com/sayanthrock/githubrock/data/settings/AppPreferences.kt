@@ -27,6 +27,7 @@ enum class LoadingStyle { Spinner, Linear, Pulse, Skeleton; companion object { f
 enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
 enum class CodeColorStyle { Classic, Ocean, Sunset, Monochrome, GitHub; companion object { fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic } }
 enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal } }
+enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compact; companion object { fun fromStored(value: String?): NavigationBarStyle = entries.firstOrNull { it.name == value } ?: FloatingCapsule } }
 
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
@@ -40,6 +41,7 @@ data class AppearancePreferences(
     val animationStyle: AnimationStyle = AnimationStyle.Spring,
     val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
     val logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
+    val navigationBarStyle: NavigationBarStyle = NavigationBarStyle.FloatingCapsule,
     val dynamicColor: Boolean = true,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
@@ -68,6 +70,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             animationStyle = AnimationStyle.fromStored(preferences[ANIMATION_STYLE]),
             codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
             logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
+            navigationBarStyle = NavigationBarStyle.fromStored(preferences[NAVIGATION_BAR_STYLE]),
             dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
@@ -90,6 +93,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setAnimationStyle(style: AnimationStyle) = context.dataStore.edit { it[ANIMATION_STYLE] = style.name }
     suspend fun setCodeColorStyle(style: CodeColorStyle) = context.dataStore.edit { it[CODE_COLOR_STYLE] = style.name }
     suspend fun setLogDisplayStyle(style: LogDisplayStyle) = context.dataStore.edit { it[LOG_DISPLAY_STYLE] = style.name }
+    suspend fun setNavigationBarStyle(style: NavigationBarStyle) = context.dataStore.edit { it[NAVIGATION_BAR_STYLE] = style.name }
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
@@ -108,7 +112,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
         preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
         preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
-        preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
+        preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
         preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
@@ -138,6 +142,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val ANIMATION_STYLE = stringPreferencesKey("animation_style")
         val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style")
         val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style")
+        val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
         val SHOW_IMAGES = booleanPreferencesKey("show_images")
