@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
-import com.sayanthrock.githubrock.core.navigation.GITHUB_SIGN_UP_URL
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 import com.sayanthrock.githubrock.ui.screens.LoginScreen
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
@@ -19,6 +18,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+
+private const val GITHUB_SIGN_UP_URL = "https://github.com/signup"
 
 class LoginScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -62,9 +63,7 @@ class LoginScreenTest {
         }
 
         compose.onNodeWithContentDescription("Sign in to GitHub").performClick()
-        compose.runOnIdle {
-            assertTrue(loginStarted)
-        }
+        compose.runOnIdle { assertTrue(loginStarted) }
     }
 
     @Test fun signUpButtonOpensOfficialGitHubPageAndOffersConnection() {
@@ -85,14 +84,10 @@ class LoginScreenTest {
         }
 
         compose.onNodeWithContentDescription("Sign up for GitHub").performClick()
-        compose.runOnIdle {
-            assertEquals(GITHUB_SIGN_UP_URL, openedUrl)
-        }
+        compose.runOnIdle { assertEquals(GITHUB_SIGN_UP_URL, openedUrl) }
         compose.onNodeWithText("Finish signup, then connect").assertIsDisplayed()
         compose.onNodeWithContentDescription("Connect new GitHub account").assertIsDisplayed().performClick()
-        compose.runOnIdle {
-            assertTrue(loginStarted)
-        }
+        compose.runOnIdle { assertTrue(loginStarted) }
     }
 
     @Test fun signupRemainsAvailableWhenGitHubAppClientIdIsMissing() {
@@ -113,9 +108,7 @@ class LoginScreenTest {
 
         compose.onNodeWithContentDescription("Sign in to GitHub").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Sign up for GitHub").performClick()
-        compose.runOnIdle {
-            assertEquals(GITHUB_SIGN_UP_URL, openedUrl)
-        }
+        compose.runOnIdle { assertEquals(GITHUB_SIGN_UP_URL, openedUrl) }
     }
 
     @Test fun aFreshDeviceCodeReopensGitHubOnce() {
@@ -155,9 +148,7 @@ class LoginScreenTest {
             )
         }
         compose.waitForIdle()
-        compose.runOnIdle {
-            assertEquals(2, openedUrls.size)
-        }
+        compose.runOnIdle { assertEquals(2, openedUrls.size) }
     }
 
     @Test fun deviceCodeUsesSecureAuthorizationLayout() {
@@ -253,9 +244,7 @@ class LoginScreenTest {
             "After GitHub says you’re all set, return with Android Back or the app switcher. GitHub Rock checks automatically; the button below is a backup."
         ).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("I’ve authorized — check now").performScrollTo().performClick()
-        compose.runOnIdle {
-            assertTrue(checked)
-        }
+        compose.runOnIdle { assertTrue(checked) }
         compose.onNodeWithText("Use guest mode instead").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(
             "GitHub shows the approximate city and IP that requested this code. Authorize only if it matches the network you are using; otherwise cancel."
