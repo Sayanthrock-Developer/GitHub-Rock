@@ -48,7 +48,12 @@ class DownloadsViewModel @Inject constructor(
             dao.observeAll().collect { items ->
                 items.filter { it.status == "completed" && it.isApkDownload() }.forEach { download ->
                     val file = download.localPath?.let(::File)
-                    if (file == null || !file.isFile || file.length() <= 0L) {
+                    val valid = file?.let { apk ->
+                        withContext(Dispatchers.IO) {
+                            runCatching { inspectApk(applicationContext, apk) }.isSuccess
+                        }
+                    } == true
+                    if (!valid) {
                         downloadAgain(download)
                     }
                 }
