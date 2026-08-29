@@ -66,7 +66,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel()) {
     BoxWithConstraints(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).rockBackground()
     ) {
-        val navigationChromePadding = if (state.mode == null) 0.dp else if (maxWidth < 600.dp) 80.dp else 20.dp
+        val navigationChromePadding = if (state.mode == null) 0.dp else if (maxWidth < 600.dp) 96.dp else 20.dp
         if (state.mode == null) {
             LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
         } else {
@@ -94,14 +94,13 @@ private fun SwipeNavigationContent(
 ) {
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
+    // Keep gestures in the same order as the visible five-item bottom bar.
     val destinations = listOf(
         TopDestinationV2.Home,
-        TopDestinationV2.Explore,
         TopDestinationV2.Repositories,
         TopDestinationV2.Builds,
         TopDestinationV2.Downloads,
-        TopDestinationV2.Profile,
-        TopDestinationV2.Options
+        TopDestinationV2.Profile
     )
     val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
 
