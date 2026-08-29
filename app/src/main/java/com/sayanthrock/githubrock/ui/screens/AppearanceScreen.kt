@@ -77,6 +77,7 @@ import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
+import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
@@ -91,7 +92,7 @@ import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
 @Composable
 fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    AppearanceContent(state, onBack, viewModel::setThemeMode, viewModel::setAccentColor, viewModel::setDynamicColor, viewModel::setTrueBlack, viewModel::setThemeStyle, viewModel::setDisplaySize, viewModel::setFontSize, viewModel::setFontWeight, viewModel::setFontFamily, viewModel::setLoadingStyle, viewModel::setAnimationStyle, viewModel::setCodeColorStyle, viewModel::setLogDisplayStyle, viewModel::setShowImages, viewModel::resetAppearance)
+    AppearanceContent(state, onBack, viewModel::setThemeMode, viewModel::setAccentColor, viewModel::setDynamicColor, viewModel::setTrueBlack, viewModel::setThemeStyle, viewModel::setDisplaySize, viewModel::setFontSize, viewModel::setFontWeight, viewModel::setFontFamily, viewModel::setLoadingStyle, viewModel::setAnimationStyle, viewModel::setCodeColorStyle, viewModel::setLogDisplayStyle, viewModel::setShowImages, viewModel::setNavigationBarStyle, viewModel::resetAppearance)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,6 +114,7 @@ fun AppearanceContent(
     onCodeColorStyle: (CodeColorStyle) -> Unit = {},
     onLogDisplayStyle: (LogDisplayStyle) -> Unit = {},
     onShowImages: (Boolean) -> Unit = {},
+    onNavigationBarStyle: (NavigationBarStyle) -> Unit = {},
     onReset: () -> Unit = {}
 ) {
     var confirmReset by remember { mutableStateOf(false) }
@@ -124,6 +126,8 @@ fun AppearanceContent(
             item { ChoiceCard("Design style", "Six complete surface and shape systems", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
             item { AccentPicker(state.accentColor, !state.dynamicColor, onAccentColor) }
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
+            item { StandardSectionHeader("Navigation") }
+            item { NavigationBarStyleControl(state.navigationBarStyle, onNavigationBarStyle) }
             item { StandardSectionHeader("Display size") }
             item { ChoiceCard("Interface scale", "Changes controls, cards, spacing, and navigation app-wide", Icons.Default.ViewCompact, listOf(DisplaySize.Large to "Large", DisplaySize.Standard to "Standard", DisplaySize.Small to "Small"), state.displaySize, onDisplaySize) }
             item { StandardSectionHeader("Fonts") }
@@ -143,7 +147,33 @@ fun AppearanceContent(
             item { Text("Reset restores visual defaults. Your GitHub connection, downloads, and saved repositories stay unchanged.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
         }
     }
-    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent and dynamic colors, true black, remote images, display size, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
+    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent and dynamic colors, true black, remote images, navigation bar style, display size, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
+}
+
+@Composable
+private fun NavigationBarStyleControl(selected: NavigationBarStyle, onSelected: (NavigationBarStyle) -> Unit) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Default.ViewCompact, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text("Navigation Bar Style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Choose how Home, Repositories, Builds, Downloads, and Profile are presented.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NavigationBarStyle.entries.forEach { style ->
+                    FilterChip(
+                        selected = selected == style,
+                        onClick = { onSelected(style) },
+                        label = { Text(style.displayName) },
+                        leadingIcon = if (selected == style) ({ Icon(Icons.Default.Check, contentDescription = null, Modifier.size(18.dp)) }) else null,
+                        modifier = Modifier.semantics { contentDescription = "Navigation bar style: ${style.displayName}" }
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -185,4 +215,5 @@ private val AnimationStyle.displayName: String get() = when (this) { AnimationSt
 private val ThemeStyle.displayName: String get() = when (this) { ThemeStyle.Clean -> "Clean"; ThemeStyle.LiquidGlass -> "Liquid glass"; ThemeStyle.Studio -> "Studio"; ThemeStyle.Midnight -> "Midnight"; ThemeStyle.Aurora -> "Aurora"; ThemeStyle.HighContrast -> "High contrast" }
 private val AppFontFamily.displayName: String get() = when (this) { AppFontFamily.SystemSans -> "System sans"; AppFontFamily.Serif -> "Serif"; AppFontFamily.Monospace -> "Monospace" }
 private val CodeColorStyle.displayName: String get() = when (this) { CodeColorStyle.Classic -> "Classic"; CodeColorStyle.Ocean -> "Ocean"; CodeColorStyle.Sunset -> "Sunset"; CodeColorStyle.Monochrome -> "Mono"; CodeColorStyle.GitHub -> "GitHub" }
+private val NavigationBarStyle.displayName: String get() = when (this) { NavigationBarStyle.FloatingCapsule -> "Floating Capsule"; NavigationBarStyle.Classic -> "Classic"; NavigationBarStyle.Minimal -> "Minimal"; NavigationBarStyle.Glass -> "Glass"; NavigationBarStyle.Compact -> "Compact" }
 private val AccentColor.previewColor: Color get() = when (this) { AccentColor.Cyan -> Color(0xFF52D3DC); AccentColor.Blue -> Color(0xFF79B8FF); AccentColor.Violet -> Color(0xFFBC8CFF); AccentColor.Emerald -> Color(0xFF56D364); AccentColor.Rose -> Color(0xFFFF8FB3); AccentColor.Coral -> Color(0xFFFF9B8F); AccentColor.Amber -> Color(0xFFF2CC60); AccentColor.Orange -> Color(0xFFFFA657) }
