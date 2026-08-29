@@ -13,6 +13,7 @@ import com.sayanthrock.githubrock.data.settings.FontSize
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
+import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,6 +44,7 @@ class AppearanceViewModel @Inject constructor(
     fun setAnimationStyle(style: AnimationStyle) = viewModelScope.launch { preferences.setAnimationStyle(style) }
     fun setCodeColorStyle(style: CodeColorStyle) = viewModelScope.launch { preferences.setCodeColorStyle(style) }
     fun setLogDisplayStyle(style: LogDisplayStyle) = viewModelScope.launch { preferences.setLogDisplayStyle(style) }
+    fun setNavigationBarStyle(style: NavigationBarStyle) = viewModelScope.launch { preferences.setNavigationBarStyle(style) }
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { preferences.setDynamicColor(enabled) }
     fun setTrueBlack(enabled: Boolean) = viewModelScope.launch { preferences.setTrueBlack(enabled) }
     fun setShowImages(enabled: Boolean) = viewModelScope.launch { preferences.setShowImages(enabled) }
