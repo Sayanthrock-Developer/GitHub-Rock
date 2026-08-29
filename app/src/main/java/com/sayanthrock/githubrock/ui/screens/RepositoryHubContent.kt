@@ -979,15 +979,8 @@ private fun RepositoryMarkdownCard(markdown: String) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            blocks.take(MAX_README_BLOCKS).forEach { MarkdownBlockView(it) }
-            if (blocks.size > MAX_README_BLOCKS) {
-                HorizontalDivider()
-                Text(
-                    "README preview shortened for performance. Use the Code tool to open the complete repository documentation.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            blocks.forEach { MarkdownBlockView(it) }
+
         }
     }
 }
@@ -1062,6 +1055,26 @@ private fun MarkdownBlockView(block: MarkdownBlock) {
             )
         }
         MarkdownBlockKind.Divider -> HorizontalDivider()
+        MarkdownBlockKind.Table -> block.table?.let { table ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .35f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .4f))
+            ) {
+                Column(Modifier.horizontalScroll(rememberScrollState())) {
+                    Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        table.headers.forEach { Text(it, fontWeight = FontWeight.Bold, modifier = Modifier.width(120.dp)) }
+                    }
+                    table.rows.forEach { row ->
+                        HorizontalDivider()
+                        Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            row.forEach { Text(it, modifier = Modifier.width(120.dp)) }
+                        }
+                    }
+                }
+            }
+        }
         MarkdownBlockKind.Image -> AsyncImage(
             model = block.url,
             contentDescription = block.text,
@@ -1108,5 +1121,4 @@ private fun compactCount(value: Int): String = when {
     else -> value.toString()
 }
 
-private const val MAX_README_BLOCKS = 20
 private const val MAX_RELEASE_BLOCKS = 10
