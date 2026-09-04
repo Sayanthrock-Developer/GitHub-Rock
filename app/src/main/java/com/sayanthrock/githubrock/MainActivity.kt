@@ -39,9 +39,15 @@ class MainActivity : ComponentActivity() {
             return
         }
         enableEdgeToEdge()
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             window.navigationBarColor = Color.TRANSPARENT
-            window.isNavigationBarContrastEnforced = false
         }
         setContent {
             val appearance = appPreferences.appearance.collectAsStateWithLifecycle(
@@ -74,10 +80,16 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = appearance.reduceMotion,
                 showImages = appearance.showImages
             ) {
-                // Keep the system status bar visually continuous with the active app surface.
-                val surfaceColor = MaterialTheme.colorScheme.surface.toArgb()
+                // System bars must use the same base surface as the root window. This is
+                // especially important with Android 15 edge-to-edge, where transparent
+                // system bars reveal the window/decor background when content is inset.
+                val systemBarColor = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect {
-                    window.statusBarColor = surfaceColor
+                    window.statusBarColor = systemBarColor
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                        window.navigationBarColor = systemBarColor
+                    }
+                    window.decorView.setBackgroundColor(systemBarColor)
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !useDarkTheme
                         isAppearanceLightNavigationBars = !useDarkTheme
