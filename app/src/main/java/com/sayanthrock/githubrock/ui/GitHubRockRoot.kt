@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -20,7 +21,6 @@ import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
 import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
-import com.sayanthrock.githubrock.ui.components.rockBackground
 import com.sayanthrock.githubrock.ui.navigation.MainNavigationV2
 import com.sayanthrock.githubrock.ui.navigation.RockNavigationChrome
 import com.sayanthrock.githubrock.ui.navigation.TopDestinationV2
@@ -70,8 +70,14 @@ fun GitHubRockRoot(
     val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
+    // Draw the root background before applying insets so transparent Android system bars
+    // never expose the Activity's default window background. Content is still kept below
+    // the status bar by the following inset modifier.
     Box(
-        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).rockBackground()
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
     ) {
         val navigationChromePadding = if (state.mode == null) 0.dp else navigationContentInset(appearanceState.navigationBarStyle)
         if (state.mode == null) {
