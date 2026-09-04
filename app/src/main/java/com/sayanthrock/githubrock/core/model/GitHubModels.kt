@@ -114,6 +114,7 @@ data class PullRequestDetail(
 @Serializable data class PullRequestRequest(val title: String, val head: String, val base: String, val body: String? = null, val draft: Boolean = false)
 @Serializable data class PullRequest(val id: Long, val number: Int, val title: String, val state: String, @SerialName("html_url") val htmlUrl: String = "")
 @Serializable data class IssueComment(val id: Long, val body: String, val user: Owner, @SerialName("created_at") val createdAt: String = "")
+@Serializable data class PullRequestReviewComment(val id: Long, val body: String? = null, @SerialName("diff_hunk") val diffHunk: String? = null, val path: String? = null, val position: Int? = null, val line: Int? = null, @SerialName("start_line") val startLine: Int? = null, @SerialName("original_position") val originalPosition: Int? = null, @SerialName("original_line") val originalLine: Int? = null, @SerialName("original_start_line") val originalStartLine: Int? = null, @SerialName("commit_id") val commitId: String = "", @SerialName("created_at") val createdAt: String = "", val user: Owner)
 @Serializable data class ReviewRequest(val body: String, val event: String)
 @Serializable data class PullRequestReview(val id: Long, val user: Owner, val body: String? = null, val state: String, @SerialName("submitted_at") val submittedAt: String? = null)
 @Serializable data class WorkflowJob(val id: Long, val name: String, val status: String, val conclusion: String? = null, val steps: List<WorkflowStep> = emptyList())
