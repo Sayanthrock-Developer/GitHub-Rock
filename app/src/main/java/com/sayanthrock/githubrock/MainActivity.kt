@@ -1,7 +1,6 @@
 package com.sayanthrock.githubrock
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -41,9 +40,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            window.navigationBarColor = Color.TRANSPARENT
         }
         setContent {
             val appearance = appPreferences.appearance.collectAsStateWithLifecycle(
