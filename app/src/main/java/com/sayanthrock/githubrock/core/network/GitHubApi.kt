@@ -8,6 +8,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.Header
+import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -53,6 +54,13 @@ interface GitHubRestApi {
     @GET("repos/{owner}/{repo}/pulls/{pullNumber}") suspend fun pullRequest(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int): PullRequestDetail
     @GET("repos/{owner}/{repo}/issues/{issueNumber}/comments") suspend fun issueComments(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int): List<IssueComment>
     @POST("repos/{owner}/{repo}/issues/{issueNumber}/comments") suspend fun addIssueComment(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int, @Body body: Map<String, String>): IssueComment
+    @GET("repos/{owner}/{repo}/pulls/{pullNumber}/comments") suspend fun pullReviewComments(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int): List<PullRequestReviewComment>
+    @POST("repos/{owner}/{repo}/pulls/comments/{commentId}/reactions") suspend fun addPullReaction(@Path("owner") owner: String, @Path("repo") repo: String, @Path("commentId") commentId: Int, @Body request: IssueReactionRequest): IssueReaction
+    @POST("repos/{owner}/{repo}/pulls/{pullNumber}/requested_reviewers") suspend fun requestPullReviewers(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, List<String>>): PullRequestDetail
+    @HTTP(method = "DELETE", path = "repos/{owner}/{repo}/pulls/{pullNumber}/requested_reviewers", hasBody = true) suspend fun removePullReviewers(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, List<String>>): PullRequestDetail
+    @PATCH("repos/{owner}/{repo}/pulls/{pullNumber}") suspend fun updatePullDraftState(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, Boolean>): PullRequestDetail
+    @PUT("repos/{owner}/{repo}/issues/{issueNumber}/lock") suspend fun lockIssue(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int, @Body request: Map<String, String>? = null): Response<Unit>
+    @DELETE("repos/{owner}/{repo}/issues/{issueNumber}/lock") suspend fun unlockIssue(@Path("owner") owner: String, @Path("repo") repo: String, @Path("issueNumber") issueNumber: Int): Response<Unit>
     @GET("repos/{owner}/{repo}/pulls/{pullNumber}/reviews") suspend fun pullReviews(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int): List<PullRequestReview>
     @POST("repos/{owner}/{repo}/pulls/{pullNumber}/reviews") suspend fun submitPullReview(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: ReviewRequest): PullRequestReview
     @PUT("repos/{owner}/{repo}/pulls/{pullNumber}/merge") suspend fun mergePullRequest(@Path("owner") owner: String, @Path("repo") repo: String, @Path("pullNumber") pullNumber: Int, @Body request: Map<String, String>): MergeResponse
