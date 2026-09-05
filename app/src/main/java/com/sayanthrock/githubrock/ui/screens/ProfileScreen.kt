@@ -43,7 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,6 +54,7 @@ import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
+import com.sayanthrock.githubrock.ui.components.LogoutConfirmationSheet
 import java.util.Locale
 
 data class ConnectedProfileDashboardUiState(
@@ -92,6 +93,7 @@ fun ProfileScreen(
 ) {
     var activeLibraryRoute by rememberSaveable { mutableStateOf<String?>(null) }
     var activeUpdateRoute by rememberSaveable { mutableStateOf<String?>(null) }
+    var showLogoutSheet by rememberSaveable { mutableStateOf(false) }
 
     activeLibraryRoute?.let { route ->
         ProfileLibraryScreen(
@@ -117,8 +119,6 @@ fun ProfileScreen(
         login?.let(onInspectProfile)
     }
 
-    // Keep profile navigation native. The explicit GitHub URL callback remains available
-    // for the compatibility API, but the profile card itself opens the in-app profile route.
     val openFullProfile = login?.let { normalizedLogin ->
         { onInspectProfile(normalizedLogin) }
     }
@@ -143,9 +143,9 @@ fun ProfileScreen(
         ProfileMenuItem(Icons.Default.AccountCircle, "Accounts & organizations", "Connected account, organizations, and public profiles", onOpenAccounts),
         ProfileMenuItem(
             Icons.Default.Logout,
-            if (mode == AppMode.Connected) "Logout" else "Exit ${mode.name.lowercase()} mode",
-            if (mode == AppMode.Connected) "Remove the connected GitHub session from this device" else "Close the current ${mode.name.lowercase()} session",
-            onLogout,
+            if (mode == AppMode.Connected) "Logout" else "Exit ${mode.name.lowercase()}",
+            if (mode == AppMode.Connected) "Sign out safely from this device" else "Close the current ${mode.name.lowercase()} session",
+            { showLogoutSheet = true },
             destructive = true
         )
     )
@@ -167,6 +167,20 @@ fun ProfileScreen(
         item { ProfileMenuGroup("Updates", updateItems) }
         item { ProfileMenuGroup("App", appItems) }
         item { ProfileMenuGroup("Account", accountItems) }
+    }
+
+    if (showLogoutSheet) {
+        LogoutConfirmationSheet(
+            displayName = displayedProfile?.name,
+            login = displayedProfile?.login,
+            avatarUrl = displayedProfile?.avatarUrl,
+            connected = mode == AppMode.Connected,
+            onDismiss = { showLogoutSheet = false },
+            onConfirm = {
+                showLogoutSheet = false
+                onLogout()
+            }
+        )
     }
 }
 
