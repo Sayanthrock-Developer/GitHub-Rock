@@ -115,7 +115,12 @@ fun BuildsScreen(
             item { StandardScreenHeader(title = "Builds", subtitle = "Understand workflow runs, code, jobs, steps and artifacts in one native view") }
             item { BuildSummary(counts, preferences) }
             item { BuildFilterRow(filter) { filter = it } }
-            item { RepositoryPicker(repositories, selectedRepository) { selectedRepository = it } }
+            item {
+                RepositoryPicker(repositories, selectedRepository) {
+                    selectedRepository = it
+                    onSelectRepository(it)
+                }
+            }
             selectedRepo?.let { repo ->
                 item {
                     OutlinedButton(
