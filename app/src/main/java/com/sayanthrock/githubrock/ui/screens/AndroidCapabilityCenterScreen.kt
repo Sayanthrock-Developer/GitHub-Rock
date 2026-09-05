@@ -77,7 +77,7 @@ internal data class AndroidCapabilityState(
             true,
             notificationsEnabled,
             apkInstallAllowed,
-            true,
+            batteryUnrestricted,
             termuxAvailable
         ).count { it }
 }
