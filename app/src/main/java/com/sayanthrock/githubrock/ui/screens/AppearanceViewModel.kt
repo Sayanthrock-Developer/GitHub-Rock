@@ -48,6 +48,13 @@ class AppearanceViewModel @Inject constructor(
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { preferences.setDynamicColor(enabled) }
     fun setTrueBlack(enabled: Boolean) = viewModelScope.launch { preferences.setTrueBlack(enabled) }
     fun setShowImages(enabled: Boolean) = viewModelScope.launch { preferences.setShowImages(enabled) }
+    fun setWorkflowPreview(enabled: Boolean) = viewModelScope.launch { preferences.setWorkflowPreview(enabled) }
+    fun setWorkflowStepDetails(enabled: Boolean) = viewModelScope.launch { preferences.setWorkflowStepDetails(enabled) }
+    fun setStatusColors(enabled: Boolean) = viewModelScope.launch { preferences.setStatusColors(enabled) }
+    fun setActionsControls(enabled: Boolean) = viewModelScope.launch { preferences.setActionsControls(enabled) }
+    fun setRepositoryManager(enabled: Boolean) = viewModelScope.launch { preferences.setRepositoryManager(enabled) }
+    fun setFileTools(enabled: Boolean) = viewModelScope.launch { preferences.setFileTools(enabled) }
+    fun setCompactCards(enabled: Boolean) = viewModelScope.launch { preferences.setCompactCards(enabled) }
     fun setReduceMotion(enabled: Boolean) = viewModelScope.launch { preferences.setReduceMotion(enabled) }
     fun resetAppearance() = viewModelScope.launch { preferences.resetAppearance() }
 }
