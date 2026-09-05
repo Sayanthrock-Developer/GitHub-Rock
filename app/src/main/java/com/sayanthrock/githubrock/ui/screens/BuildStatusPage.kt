@@ -19,7 +19,8 @@ fun BuildStatusPage(
     runs: List<WorkflowRun>,
     filterName: String,
     onSelectRepository: (GitHubRepositoryModel) -> Unit,
-    onOpenRun: (GitHubRepositoryModel, WorkflowRun) -> Unit
+    onOpenRun: (GitHubRepositoryModel, WorkflowRun) -> Unit,
+    ownerLogin: String? = null
 ) {
     val filteredRuns = when (filterName.lowercase()) {
         "running" -> runs.filter {
@@ -34,9 +35,13 @@ fun BuildStatusPage(
         else -> runs
     }
 
+    val ownedRepositories = ownerLogin?.takeIf { it.isNotBlank() }?.let { login ->
+        repositories.filter { it.owner.login.equals(login, ignoreCase = true) }
+    } ?: repositories
+
     BuildsScreen(
         mode = mode,
-        repositories = repositories,
+        repositories = ownedRepositories,
         runs = filteredRuns,
         onSelectRepository = onSelectRepository,
         onOpenRun = onOpenRun
