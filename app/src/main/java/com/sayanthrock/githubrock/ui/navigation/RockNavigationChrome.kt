@@ -1,9 +1,20 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,9 +35,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -49,6 +62,8 @@ private val rockNavigationDestinations = listOf(
     TopDestinationV2.Downloads,
     TopDestinationV2.Profile
 )
+
+private val MotionEase = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
 
 @Composable
 fun RockNavigationChrome(
@@ -178,6 +193,22 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
     )
 }
 
+private data class MotionProfile(
+    val duration: Int,
+    val selectedScale: Float,
+    val pressedScale: Float,
+    val iconLift: Float
+)
+
+private fun motionProfile(style: AnimationStyle, reduceMotion: Boolean): MotionProfile = when {
+    reduceMotion -> MotionProfile(0, 1f, 1f, 0f)
+    style == AnimationStyle.Liquid -> MotionProfile(280, 1.015f, 0.97f, -0.5f)
+    style == AnimationStyle.Spring -> MotionProfile(220, 1.025f, 0.965f, -1.0f)
+    style == AnimationStyle.Cinematic -> MotionProfile(360, 1.02f, 0.97f, -0.75f)
+    style == AnimationStyle.Magnetic -> MotionProfile(200, 1.035f, 0.96f, -1.25f)
+    else -> MotionProfile(230, 1.025f, 0.965f, -1.0f)
+}
+
 @Composable
 private fun RowScope.RockNavigationItem(
     destination: TopDestinationV2,
@@ -191,31 +222,68 @@ private fun RowScope.RockNavigationItem(
     iconSize: Dp = if (selected) 24.dp else 22.dp,
     transparent: Boolean = false
 ) {
-    val duration = if (reduceMotion) 0 else when (animationStyle) {
-        AnimationStyle.Liquid -> 260
-        AnimationStyle.Spring -> 180
-        AnimationStyle.Cinematic -> 320
-        AnimationStyle.Magnetic -> 220
-        AnimationStyle.Dynamic -> 200
+    val profile = motionProfile(animationStyle, reduceMotion)
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val targetScale = when {
+        pressed -> profile.pressedScale
+        selected -> profile.selectedScale
+        else -> 1f
     }
+    val scale by animateFloatAsState(
+        targetValue = targetScale,
+        animationSpec = if (reduceMotion) tween(0) else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = when (animationStyle) {
+                AnimationStyle.Magnetic -> Spring.StiffnessMedium
+                AnimationStyle.Cinematic -> Spring.StiffnessLow
+                else -> Spring.StiffnessMediumLow
+            }
+        ),
+        label = "navigation item scale"
+    )
+    val iconLift by animateFloatAsState(
+        targetValue = if (selected) profile.iconLift else 0f,
+        animationSpec = if (reduceMotion) tween(0) else tween(profile.duration, easing = MotionEase),
+        label = "navigation icon lift"
+    )
     val selectedContainer by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-        animationSpec = tween(durationMillis = duration),
+        animationSpec = if (reduceMotion) tween(0) else tween(profile.duration, easing = MotionEase),
         label = "navigation indicator color"
     )
+    val labelVisible = showLabel
+
     Surface(
-        modifier = modifier.clickable(role = Role.Tab, onClick = onClick).semantics {
-            contentDescription = destination.accessibilityLabel
-            role = Role.Tab
-            this.selected = selected
-        },
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                translationY = iconLift
+            }
+            .clickable(interactionSource = interactionSource, indication = null, role = Role.Tab, onClick = onClick)
+            .semantics {
+                contentDescription = destination.accessibilityLabel
+                role = Role.Tab
+                this.selected = selected
+            },
         shape = RoundedCornerShape(selectedShape),
-        color = selectedContainer,
+        color = if (transparent) selectedContainer else selectedContainer,
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     ) {
-        Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = if (labelVisible) 8.dp else 0.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(destination.icon, contentDescription = null, modifier = Modifier.size(iconSize))
-            if (showLabel) Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 6.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            AnimatedVisibility(
+                visible = labelVisible,
+                enter = fadeIn(tween(profile.duration, easing = MotionEase)) + expandHorizontally(tween(profile.duration, easing = MotionEase)),
+                exit = fadeOut(tween(profile.duration, easing = MotionEase)) + shrinkHorizontally(tween(profile.duration, easing = MotionEase))
+            ) {
+                Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 6.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
