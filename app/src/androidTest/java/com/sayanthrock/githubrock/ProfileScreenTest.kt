@@ -1,8 +1,8 @@
 package com.sayanthrock.githubrock
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -140,8 +140,8 @@ class ProfileScreenTest {
             }
         }
 
-        compose.onNodeWithText("Contribution activity").assertDoesNotExist()
-        compose.onNodeWithText("Search repositories…").assertDoesNotExist()
+        assertTextDoesNotExist("Contribution activity")
+        assertTextDoesNotExist("Search repositories…")
         compose.onNodeWithText("What's new").performScrollTo().performClick()
         compose.onNodeWithText("New profile experience").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Icon-first downloads").performScrollTo().assertIsDisplayed()
@@ -151,5 +151,9 @@ class ProfileScreenTest {
         compose.onNodeWithText("App").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Account").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Logout").performScrollTo().assertIsDisplayed()
+    }
+
+    private fun assertTextDoesNotExist(text: String) {
+        assertTrue(compose.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty())
     }
 }
