@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -83,9 +82,9 @@ fun MainNavigationV2(navController: NavHostController, state: MainUiState, onSea
             composable(APP_CUSTOMIZATION_ROUTE) { AppearanceScreen(navController::navigateUp) }
             composable(APP_INFORMATION_ROUTE) { AppInformationScreen(navController::navigateUp) }
             composable(FEATURES_PREVIEW_ROUTE) { FeaturePreviewScreen(state.profile?.login, onOpenGitHubUrl, navController::navigateUp) }
-            composable("repo/{owner}/{repo}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" }, navDeepLink { uriPattern = "https://github.com/{owner}/{repo}" })) { e -> RepositoryHubScreen(state.repositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, navController::navigateUp) }
+            composable("repo/{owner}/{repo}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" }, navDeepLink { uriPattern = "https://github.com/{owner}/{repo}" })) { e -> RepositoryHubScreen(state.repositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, navController::navigateUp, onOpenProfile = openAccountProfile) }
             composable("build/{owner}/{repo}/{runId}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("runId") { type = NavType.LongType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" })) { e -> BuildsScreen(mode, buildRepositories, state.workflowRuns, openRepo, initialRepository = buildRepositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, initialRunId = e.arguments?.getLong("runId")) }
-            composable("release/{owner}/{repo}/{tag}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("tag") { type = NavType.StringType })) { e -> RepositoryHubScreen(state.repositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, navController::navigateUp, e.arguments?.getString("tag")) }
+            composable("release/{owner}/{repo}/{tag}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("tag") { type = NavType.StringType })) { e -> RepositoryHubScreen(state.repositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, navController::navigateUp, e.arguments?.getString("tag"), onOpenProfile = openAccountProfile) }
         }
     }
 }
