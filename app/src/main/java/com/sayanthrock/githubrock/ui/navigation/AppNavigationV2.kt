@@ -1,17 +1,10 @@
 package com.sayanthrock.githubrock.ui.navigation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -24,16 +17,25 @@ import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.core.navigation.nativeProfileDestination
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.screens.*
 
-sealed class TopDestinationV2(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val accessibilityLabel: String = label) {
-    data object Home : TopDestinationV2("home", "Home", Icons.Default.Home)
-    data object Explore : TopDestinationV2("explore", "Explore", Icons.Default.Explore)
-    data object Repositories : TopDestinationV2("repositories", "Repos", Icons.Default.Folder, "Repositories")
-    data object Builds : TopDestinationV2("builds", "Builds", Icons.Default.Build)
-    data object Downloads : TopDestinationV2("downloads", "Downloads", Icons.Default.Download)
-    data object Profile : TopDestinationV2("profile", "Profile", Icons.Default.AccountCircle)
-    data object Options : TopDestinationV2("settings", "Options", Icons.Default.Settings)
+sealed class TopDestinationV2(
+    val route: String,
+    val label: String,
+    val rockIcon: RockIcon,
+    val accessibilityLabel: String = label
+) {
+    val icon: ImageVector get() = rockIcon.vector()
+    val selectedIcon: ImageVector get() = rockIcon.vector(selected = true)
+
+    data object Home : TopDestinationV2("home", "Home", RockIcon.Home)
+    data object Explore : TopDestinationV2("explore", "Explore", RockIcon.Explore)
+    data object Repositories : TopDestinationV2("repositories", "Repos", RockIcon.Repositories, "Repositories")
+    data object Builds : TopDestinationV2("builds", "Builds", RockIcon.Builds)
+    data object Downloads : TopDestinationV2("downloads", "Downloads", RockIcon.Downloads)
+    data object Profile : TopDestinationV2("profile", "Profile", RockIcon.Profile)
+    data object Options : TopDestinationV2("settings", "Options", RockIcon.Settings)
 }
 
 private const val FEATURES_PREVIEW_ROUTE = "features-preview"
