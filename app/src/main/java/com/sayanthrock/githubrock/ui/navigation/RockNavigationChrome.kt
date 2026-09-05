@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
@@ -256,11 +257,6 @@ private fun RowScope.RockNavigationItem(
 
     Surface(
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationY = iconLift
-            }
             .clickable(interactionSource = interactionSource, indication = null, role = Role.Tab, onClick = onClick)
             .semantics {
                 contentDescription = destination.accessibilityLabel
@@ -272,7 +268,15 @@ private fun RowScope.RockNavigationItem(
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Row(
-            Modifier.fillMaxSize().padding(horizontal = if (labelVisible) 8.dp else 0.dp),
+            Modifier
+                .fillMaxSize()
+                .clipToBounds()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationY = iconLift
+                }
+                .padding(horizontal = if (labelVisible) 8.dp else 0.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
