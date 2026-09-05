@@ -14,10 +14,11 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 fun RepositoryDetailSectionScreen(
     repository: GitHubRepositoryModel?,
     section: RepoSection,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenProfile: (String) -> Unit = {}
 ) {
     if (section == RepoSection.Issues) {
-        IssuesScreen(onBack = onBack)
+        IssuesScreen(onBack = onBack, onOpenProfile = onOpenProfile)
         return
     }
 
