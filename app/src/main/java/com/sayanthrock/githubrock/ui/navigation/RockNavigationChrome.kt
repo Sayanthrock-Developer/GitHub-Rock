@@ -214,7 +214,11 @@ private fun RowScope.RockNavigationItem(
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(destination.icon, contentDescription = null, modifier = Modifier.size(iconSize))
+            Icon(
+                if (selected) destination.selectedIcon else destination.icon,
+                contentDescription = destination.accessibilityLabel,
+                modifier = Modifier.size(iconSize)
+            )
             if (showLabel) Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 6.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
     }
