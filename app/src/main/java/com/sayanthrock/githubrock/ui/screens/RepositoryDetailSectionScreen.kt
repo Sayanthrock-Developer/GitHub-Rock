@@ -7,8 +7,8 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 
 /**
  * Opens the native repository detail workspace on a specific section.
- * Issues use the dedicated native Open/Closed workspace so issue browsing
- * and issue details remain inside GitHub Rock.
+ * Issues and pull requests use dedicated native workspaces so their
+ * browsing and review actions remain inside GitHub Rock.
  */
 @Composable
 fun RepositoryDetailSectionScreen(
@@ -18,6 +18,11 @@ fun RepositoryDetailSectionScreen(
 ) {
     if (section == RepoSection.Issues) {
         IssuesScreen(onBack = onBack)
+        return
+    }
+
+    if (section == RepoSection.Pulls) {
+        PullRequestsParityScreen(onBack = onBack)
         return
     }
 
