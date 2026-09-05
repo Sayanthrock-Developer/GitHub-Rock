@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Info
@@ -24,20 +25,29 @@ import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubUser
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
@@ -55,8 +65,12 @@ fun GitHubSettingsScreen(
     onOpenDownloads: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    appearanceViewModel: AppearanceViewModel = hiltViewModel()
 ) {
+    val appearance by appearanceViewModel.state.collectAsStateWithLifecycle()
+    var showBuildSettings by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -72,9 +86,7 @@ fun GitHubSettingsScreen(
             contentPadding = PaddingValues(16.dp, 10.dp, 16.dp, 36.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                ProfileHeader(profile = profile, onOpen = { profile?.login?.let(onOpenProfile) })
-            }
+            item { ProfileHeader(profile = profile, onOpen = { profile?.login?.let(onOpenProfile) }) }
 
             item { StandardSectionHeader("Public Profile") }
             item {
@@ -104,6 +116,17 @@ fun GitHubSettingsScreen(
             item {
                 StandardSettingsGroup {
                     SettingsRow(Icons.Default.AccountCircle, "Multiple GitHub accounts", "Manage signed-in identities and active account") { onOpenAccounts() }
+                }
+            }
+
+            item { StandardSectionHeader("Builds & Actions") }
+            item {
+                StandardSettingsGroup {
+                    SettingsRow(
+                        Icons.Default.Build,
+                        "Builds & Actions",
+                        "Workflow preview, job details, status colors, controls, and repository selection"
+                    ) { showBuildSettings = true }
                 }
             }
 
@@ -152,9 +175,7 @@ fun GitHubSettingsScreen(
                 StandardSettingsGroup {
                     SettingsRow(Icons.Default.CloudDownload, "Downloads & library", "Downloaded releases, artifacts, and APKs") { onOpenDownloads() }
                     StandardSettingsDivider()
-                    SettingsRow(Icons.Default.Storage, "Cache & local data", "Manage app-local cached data and storage") {
-                        onOpenDownloads()
-                    }
+                    SettingsRow(Icons.Default.Storage, "Cache & local data", "Manage app-local cached data and storage") { onOpenDownloads() }
                 }
             }
 
@@ -170,15 +191,8 @@ fun GitHubSettingsScreen(
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Selected account", fontWeight = FontWeight.Bold)
-                        Text(
-                            profile?.let { "@${it.login}" } ?: "No authenticated account",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "Account sign-out is managed from the account switcher so other connected accounts can remain signed in.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text(profile?.let { "@${it.login}" } ?: "No authenticated account", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Account sign-out is managed from the account switcher so other connected accounts can remain signed in.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.size(4.dp))
@@ -188,6 +202,77 @@ fun GitHubSettingsScreen(
                 }
             }
         }
+    }
+
+    if (showBuildSettings) {
+        BuildSettingsDialog(
+            workflowPreview = appearance.workflowPreview,
+            workflowStepDetails = appearance.workflowStepDetails,
+            statusColors = appearance.statusColors,
+            actionsControls = appearance.actionsControls,
+            repositoryManager = appearance.repositoryManager,
+            fileTools = appearance.fileTools,
+            compactCards = appearance.compactCards,
+            onWorkflowPreview = appearanceViewModel::setWorkflowPreview,
+            onWorkflowStepDetails = appearanceViewModel::setWorkflowStepDetails,
+            onStatusColors = appearanceViewModel::setStatusColors,
+            onActionsControls = appearanceViewModel::setActionsControls,
+            onRepositoryManager = appearanceViewModel::setRepositoryManager,
+            onFileTools = appearanceViewModel::setFileTools,
+            onCompactCards = appearanceViewModel::setCompactCards,
+            onDismiss = { showBuildSettings = false }
+        )
+    }
+}
+
+@Composable
+private fun BuildSettingsDialog(
+    workflowPreview: Boolean,
+    workflowStepDetails: Boolean,
+    statusColors: Boolean,
+    actionsControls: Boolean,
+    repositoryManager: Boolean,
+    fileTools: Boolean,
+    compactCards: Boolean,
+    onWorkflowPreview: (Boolean) -> Unit,
+    onWorkflowStepDetails: (Boolean) -> Unit,
+    onStatusColors: (Boolean) -> Unit,
+    onActionsControls: (Boolean) -> Unit,
+    onRepositoryManager: (Boolean) -> Unit,
+    onFileTools: (Boolean) -> Unit,
+    onCompactCards: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Builds & Actions") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                BuildSettingSwitch("Workflow preview", "Show workflow source and health information", workflowPreview, onWorkflowPreview)
+                BuildSettingSwitch("Job & step details", "Show jobs and expandable step information", workflowStepDetails, onWorkflowStepDetails)
+                BuildSettingSwitch("Status colors", "Use success, failure, and running status accents", statusColors, onStatusColors)
+                BuildSettingSwitch("Actions controls", "Allow refresh, dispatch, cancel, and re-run controls", actionsControls, onActionsControls)
+                BuildSettingSwitch("Repository manager", "Allow changing the active Builds repository", repositoryManager, onRepositoryManager)
+                BuildSettingSwitch("File tools", "Enable repository file-related build tools", fileTools, onFileTools)
+                BuildSettingSwitch("Compact build cards", "Reduce spacing in build cards", compactCards, onCompactCards)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+    )
+}
+
+@Composable
+private fun BuildSettingSwitch(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
