@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -51,12 +50,25 @@ class DownloadWorker @AssistedInject constructor(
 
         return try {
             val existing = partial.takeIf(File::exists)?.length() ?: 0L
-            val request = Request.Builder().url(url).apply {
-                if (existing > 0) header("Range", "bytes=$existing-")
-            }.build()
+            val request = Request.Builder()
+                .url(url)
+                // GitHub release assets are served through redirects/CDN endpoints.
+                // These headers make the in-app request behave like a normal download
+                // client instead of relying on the CDN's default content negotiation.
+                .header("User-Agent", "GitHub-Rock/1.0")
+                .header("Accept", "application/octet-stream")
+                .apply {
+                    if (existing > 0) header("Range", "bytes=$existing-")
+                }
+                .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful && response.code != 206) error("Download failed: HTTP ${response.code}")
                 val body = response.body ?: error("Empty download response")
+                val contentType = body.contentType()?.toString()?.lowercase().orEmpty()
+                if (name.endsWith(".apk", ignoreCase = true) &&
+                    (contentType.contains("text/html") || contentType.contains("text/plain"))) {
+                    error("GitHub returned a non-APK response ($contentType)")
+                }
                 val append = existing > 0 && response.code == 206
                 if (!append && partial.exists()) partial.delete()
                 val startingBytes = if (append) existing else 0L
