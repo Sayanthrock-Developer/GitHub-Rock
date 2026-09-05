@@ -160,7 +160,12 @@ private fun RowScope.ModernBottomItem(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(destination.icon, null, Modifier.size(iconSize), tint = iconColor)
+            Icon(
+                if (selected) destination.selectedIcon else destination.icon,
+                contentDescription = destination.accessibilityLabel,
+                modifier = Modifier.size(iconSize),
+                tint = iconColor
+            )
             AnimatedVisibility(
                 visible = selected && !compact,
                 enter = fadeIn(tween(140)) + expandHorizontally(tween(180)),
@@ -251,9 +256,9 @@ private fun ModernRailItem(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                destination.icon,
-                null,
-                Modifier.size(if (selected) 24.dp else 22.dp),
+                if (selected) destination.selectedIcon else destination.icon,
+                contentDescription = destination.accessibilityLabel,
+                modifier = Modifier.size(if (selected) 24.dp else 22.dp),
                 tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
