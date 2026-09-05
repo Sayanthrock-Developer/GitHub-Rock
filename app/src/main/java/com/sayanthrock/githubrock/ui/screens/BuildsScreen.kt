@@ -77,6 +77,7 @@ fun BuildsScreen(
     val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
     val repositoryRuns = actionState.recentRuns
     val selectedRun = selectedRunId?.let { id -> repositoryRuns.firstOrNull { it.id == id } ?: actionState.run?.takeIf { it.id == id } }
+    val selectedRepo = selectedRepository
 
     LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
         if (mode == AppMode.Connected && selectedRepository != null) {
@@ -115,7 +116,7 @@ fun BuildsScreen(
             item { BuildSummary(counts, preferences) }
             item { BuildFilterRow(filter) { filter = it } }
             item { RepositoryPicker(repositories, selectedRepository) { selectedRepository = it } }
-            selectedRepository?.let { repo ->
+            selectedRepo?.let { repo ->
                 item {
                     OutlinedButton(
                         onClick = { onSelectRepository(repo) },
@@ -134,13 +135,13 @@ fun BuildsScreen(
             item {
                 BuildExecutionPanel(
                     mode = mode,
-                    repository = selectedRepository,
+                    repository = selectedRepo,
                     actionState = actionState,
                     preferences = preferences,
-                    onRefresh = { selectedRepository?.let(viewModel::loadAndroidBuild) },
-                    onDispatch = { ref -> selectedRepository?.let { viewModel.dispatchAndroidBuild(it, ref) } }
+                    onRefresh = { selectedRepo?.let(viewModel::loadAndroidBuild) },
+                    onDispatch = { ref -> selectedRepo?.let { viewModel.dispatchAndroidBuild(it, ref) } }
                 ) { artifact ->
-                    selectedRepository?.let { repo ->
+                    selectedRepo?.let { repo ->
                         downloadsViewModel.enqueue(artifact.archiveDownloadUrl, "${repo.name}-${artifact.name}-${artifact.id}.zip")
                     }
                 }
@@ -155,19 +156,19 @@ fun BuildsScreen(
             }
         }
 
-        if (selectedRun != null && selectedRepository != null) {
+        if (selectedRun != null && selectedRepo != null) {
             RunDetailsDialog(
                 run = selectedRun,
-                repository = selectedRepository,
+                repository = selectedRepo,
                 jobs = actionState.jobs,
                 artifacts = actionState.artifacts,
                 preferences = preferences,
                 onDismiss = { selectedRunId = null },
-                onRefresh = { viewModel.loadAndroidBuild(requireNotNull(selectedRepository), selectedRun.id) },
-                onRerun = { viewModel.rerunRun(requireNotNull(selectedRepository), selectedRun.id) },
-                onCancel = { viewModel.cancelRun(requireNotNull(selectedRepository), selectedRun.id) },
+                onRefresh = { viewModel.loadAndroidBuild(selectedRepo, selectedRun.id) },
+                onRerun = { viewModel.rerunRun(selectedRepo, selectedRun.id) },
+                onCancel = { viewModel.cancelRun(selectedRepo, selectedRun.id) },
                 onDownload = { artifact ->
-                    downloadsViewModel.enqueue(artifact.archiveDownloadUrl, "${selectedRepository.name}-${artifact.name}-${artifact.id}.zip")
+                    downloadsViewModel.enqueue(artifact.archiveDownloadUrl, "${selectedRepo.name}-${artifact.name}-${artifact.id}.zip")
                 }
             )
         }
@@ -490,7 +491,6 @@ private fun RunDetailsDialog(
                                 DetailRow("Branch", run.headBranch.orEmpty())
                                 DetailRow("Event", run.event)
                                 DetailRow("Run", "#${run.id}")
-                                DetailRow("Commit", run.headSha.orEmpty())
                             }
                         }
                     }
