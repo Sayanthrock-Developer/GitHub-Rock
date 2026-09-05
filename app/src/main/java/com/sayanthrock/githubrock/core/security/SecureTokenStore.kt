@@ -56,10 +56,12 @@ class KeystoreTokenStore internal constructor(
     )
 
     override fun read(): StoredTokens? = activeAccount()?.tokens
+
     override fun save(tokens: StoredTokens) {
         val active = activeAccount()
         if (active == null) addAccount(tokens) else writeAccount(active.copy(tokens = tokens))
     }
+
     override fun clear() { preferences.edit().clear().apply() }
 
     override fun accounts(): List<StoredAccount> {
@@ -70,21 +72,30 @@ class KeystoreTokenStore internal constructor(
 
     override fun activeAccountId(): String? {
         migrateLegacyIfNeeded()
-        return preferences.getString(KEY_ACTIVE_ID, null)?.takeIf { id -> accounts().any { it.id == id } } ?: accounts().firstOrNull()?.id
+        return preferences.getString(KEY_ACTIVE_ID, null)?.takeIf { id -> accounts().any { it.id == id } }
+            ?: accounts().firstOrNull()?.id
     }
 
-    override fun addAccount(tokens: StoredTokens, login: String?, name: String?, avatarUrl: String?, activate: Boolean): String {
+    override fun addAccount(
+        tokens: StoredTokens,
+        login: String?,
+        name: String?,
+        avatarUrl: String?,
+        activate: Boolean
+    ): String {
         migrateLegacyIfNeeded()
         val normalizedLogin = login?.trim()?.removePrefix("@").takeIf { !it.isNullOrBlank() }
         val id = normalizedLogin?.lowercase() ?: "account-${System.currentTimeMillis()}"
         val existingIndex = accounts().indexOfFirst { it.id == id }
         val account = StoredAccount(id, normalizedLogin, name, avatarUrl, tokens)
-        if (existingIndex >= 0) writeAccount(account) else {
+        if (existingIndex >= 0) {
+            writeAccount(account)
+        } else {
             val count = preferences.getInt(KEY_COUNT, 0)
             preferences.edit().putInt(KEY_COUNT, count + 1).putString(KEY_ID_PREFIX + count, id).apply()
             writeAccount(account)
         }
-        if (activate) preferences.edit().putString(KEY_ACTIVE_ID, id).remove(KEY_ACTIVE_ORG).apply()
+        if (activate) preferences.edit().putString(KEY_ACTIVE_ID, id).apply()
         return id
     }
 
@@ -96,7 +107,7 @@ class KeystoreTokenStore internal constructor(
 
     override fun switchAccount(accountId: String): Boolean {
         if (accounts().none { it.id == accountId }) return false
-        preferences.edit().putString(KEY_ACTIVE_ID, accountId).remove(KEY_ACTIVE_ORG).apply()
+        preferences.edit().putString(KEY_ACTIVE_ID, accountId).apply()
         return true
     }
 
@@ -104,30 +115,46 @@ class KeystoreTokenStore internal constructor(
         val current = accounts()
         if (current.none { it.id == accountId }) return false
         val remaining = current.filterNot { it.id == accountId }
+        val accountKey = KEY_ACCOUNT_PREFIX + encoded(accountId)
         preferences.edit().apply {
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_LOGIN)
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_NAME)
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_AVATAR)
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_ACCESS)
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_REFRESH)
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_ACCESS_EXPIRY)
-            remove(KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_REFRESH_EXPIRY)
+            remove(accountKey + SUFFIX_LOGIN)
+            remove(accountKey + SUFFIX_NAME)
+            remove(accountKey + SUFFIX_AVATAR)
+            remove(accountKey + SUFFIX_ACCESS)
+            remove(accountKey + SUFFIX_REFRESH)
+            remove(accountKey + SUFFIX_ACCESS_EXPIRY)
+            remove(accountKey + SUFFIX_REFRESH_EXPIRY)
+            remove(accountKey + SUFFIX_ORGANIZATION)
             putInt(KEY_COUNT, remaining.size)
-            for (i in 0 until current.size) remove(KEY_ID_PREFIX + i)
+            for (i in current.indices) remove(KEY_ID_PREFIX + i)
             remaining.forEachIndexed { newIndex, account -> putString(KEY_ID_PREFIX + newIndex, account.id) }
             val activeId = preferences.getString(KEY_ACTIVE_ID, null)
             if (activeId == accountId) {
                 if (remaining.isEmpty()) remove(KEY_ACTIVE_ID) else putString(KEY_ACTIVE_ID, remaining.first().id)
-                remove(KEY_ACTIVE_ORG)
             }
         }.apply()
         return true
     }
 
     override fun setActiveOrganization(login: String?) {
-        preferences.edit().putString(KEY_ACTIVE_ORG, login?.trim()?.removePrefix("@")?.takeIf { it.isNotBlank() }).apply()
+        val activeId = activeAccountId() ?: return
+        val value = login?.trim()?.removePrefix("@")?.takeIf { it.isNotBlank() }
+        preferences.edit().apply {
+            if (value == null) remove(organizationKey(activeId)) else putString(organizationKey(activeId), value)
+            remove(KEY_ACTIVE_ORG_LEGACY)
+        }.apply()
     }
-    override fun activeOrganization(): String? = preferences.getString(KEY_ACTIVE_ORG, null)
+
+    override fun activeOrganization(): String? {
+        val activeId = activeAccountId() ?: return null
+        val key = organizationKey(activeId)
+        preferences.getString(key, null)?.let { return it }
+        val legacy = preferences.getString(KEY_ACTIVE_ORG_LEGACY, null)?.trim()?.removePrefix("@")?.takeIf { it.isNotBlank() }
+        if (legacy != null) {
+            preferences.edit().putString(key, legacy).remove(KEY_ACTIVE_ORG_LEGACY).apply()
+        }
+        return legacy
+    }
 
     private fun activeAccount(): StoredAccount? = accounts().firstOrNull { it.id == activeAccountId() }
 
@@ -182,11 +209,20 @@ class KeystoreTokenStore internal constructor(
             refreshExpiresAtEpochSeconds = preferences.longOrNull(LEGACY_REFRESH_EXPIRY)
         )
         val account = "legacy-account"
-        preferences.edit().putInt(KEY_COUNT, 1).putString(KEY_ID_PREFIX + 0, account).putString(KEY_ACTIVE_ID, account)
-            .remove(LEGACY_ACCESS).remove(LEGACY_REFRESH).remove(LEGACY_ACCESS_EXPIRY).remove(LEGACY_REFRESH_EXPIRY).remove(LEGACY_CLIENT_ID).apply()
+        preferences.edit()
+            .putInt(KEY_COUNT, 1)
+            .putString(KEY_ID_PREFIX + 0, account)
+            .putString(KEY_ACTIVE_ID, account)
+            .remove(LEGACY_ACCESS)
+            .remove(LEGACY_REFRESH)
+            .remove(LEGACY_ACCESS_EXPIRY)
+            .remove(LEGACY_REFRESH_EXPIRY)
+            .remove(LEGACY_CLIENT_ID)
+            .apply()
         writeAccount(StoredAccount(account, null, null, null, tokens))
     }
 
+    private fun organizationKey(accountId: String): String = KEY_ACCOUNT_PREFIX + encoded(accountId) + SUFFIX_ORGANIZATION
     private fun encoded(value: String): String = Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray(Charsets.UTF_8))
     private fun SharedPreferences.longOrNull(key: String): Long? = if (contains(key)) getLong(key, 0L) else null
     private fun SharedPreferences.Editor.putLongOrRemove(key: String, value: Long?) { if (value == null) remove(key) else putLong(key, value) }
@@ -195,7 +231,7 @@ class KeystoreTokenStore internal constructor(
         const val KEY_CLIENT_ID = "oauth_client_id"
         const val KEY_COUNT = "account_count"
         const val KEY_ACTIVE_ID = "active_account_id"
-        const val KEY_ACTIVE_ORG = "active_organization"
+        const val KEY_ACTIVE_ORG_LEGACY = "active_organization"
         const val KEY_ID_PREFIX = "account_id_"
         const val KEY_ACCOUNT_PREFIX = "account_"
         const val SUFFIX_LOGIN = "_login"
@@ -205,10 +241,11 @@ class KeystoreTokenStore internal constructor(
         const val SUFFIX_REFRESH = "_refresh"
         const val SUFFIX_ACCESS_EXPIRY = "_access_expiry"
         const val SUFFIX_REFRESH_EXPIRY = "_refresh_expiry"
+        const val SUFFIX_ORGANIZATION = "_organization"
         const val LEGACY_ACCESS = "access_token"
         const val LEGACY_REFRESH = "refresh_token"
         const val LEGACY_ACCESS_EXPIRY = "access_expiry"
-        const val LEGACY_REFRESH_EXPIRY = "refresh_expiry"
+        const val LEGACY_REFRESH_EXPIRY = "refresh_expires_at"
         const val LEGACY_CLIENT_ID = "oauth_client_id"
     }
 }
