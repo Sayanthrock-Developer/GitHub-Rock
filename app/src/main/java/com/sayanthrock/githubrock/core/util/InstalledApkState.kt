@@ -36,8 +36,6 @@ object InstalledApkStateResolver {
         val pm = context.packageManager
         val archive = resolveArchive(pm, apkFile)
 
-        // Installation must not depend on the UI metadata resolver. Android's package
-        // installer is the authority for whether an otherwise valid APK can be installed.
         if (archive == null) {
             return InstalledApkState(
                 packageName = apkFile.nameWithoutExtension,
@@ -101,10 +99,45 @@ object InstalledApkStateResolver {
         return runCatching { context.startActivity(intent); true }.getOrDefault(false)
     }
 
-    /** Launches Android's package installer without requiring archive metadata first. */
+    /**
+     * Opens the downloaded APK with Android's package installer.
+     *
+     * The method deliberately does not require PackageManager archive metadata to succeed:
+     * a valid APK can still be installable when archive inspection fails on some Android builds.
+     * If the exact same or an older version is already installed, the installed application is
+     * opened instead of incorrectly launching the installer again.
+     */
     fun launchInstaller(context: Context, apkFile: File): Result<Unit> = runCatching {
         require(apkFile.isFile && apkFile.length() > 0L) {
             "The downloaded APK file is no longer available. Download it again."
+        }
+
+        val packageManager = context.packageManager
+        val archive = resolveArchive(packageManager, apkFile)
+        if (archive != null) {
+            val packageName = archive.packageName
+            val downloadedVersionCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
+            val installed = runCatching {
+                if (Build.VERSION.SDK_INT >= 33) {
+                    packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+                } else {
+                    packageManager.getPackageInfo(packageName, 0)
+                }
+            }.getOrNull()
+            val installedVersionCode = installed?.let {
+                if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else it.versionCode.toLong()
+            }
+
+            // The Downloads UI may still be waiting for its async package-state refresh.
+            // Resolve the decision here too, so the primary action can never install an APK
+            // that is already installed at the same or a newer version.
+            if (installed != null && installedVersionCode != null && downloadedVersionCode <= installedVersionCode) {
+                packageManager.getLaunchIntentForPackage(packageName)?.let { launchIntent ->
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(launchIntent)
+                    return@runCatching
+                }
+            }
         }
 
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", apkFile)
@@ -114,7 +147,7 @@ object InstalledApkStateResolver {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        val resolvedIntent = if (context.packageManager.resolveActivity(
+        val resolvedIntent = if (packageManager.resolveActivity(
                 installIntent,
                 PackageManager.MATCH_DEFAULT_ONLY
             ) != null
@@ -127,14 +160,14 @@ object InstalledApkStateResolver {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }.also { fallback ->
                 require(
-                    context.packageManager.resolveActivity(fallback, PackageManager.MATCH_DEFAULT_ONLY) != null
+                    packageManager.resolveActivity(fallback, PackageManager.MATCH_DEFAULT_ONLY) != null
                 ) {
                     "No Android package installer is available on this device."
                 }
             }
         }
 
-        val targetPackage = context.packageManager
+        val targetPackage = packageManager
             .resolveActivity(resolvedIntent, PackageManager.MATCH_DEFAULT_ONLY)
             ?.activityInfo
             ?.packageName
