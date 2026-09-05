@@ -3,8 +3,10 @@ package com.sayanthrock.githubrock.ui.screens
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
@@ -53,9 +55,7 @@ class DownloadsViewModel @Inject constructor(
                             runCatching { inspectApk(applicationContext, apk) }.isSuccess
                         }
                     } == true
-                    if (!valid) {
-                        downloadAgain(download)
-                    }
+                    if (!valid) downloadAgain(download)
                 }
             }
         }
@@ -67,7 +67,14 @@ class DownloadsViewModel @Inject constructor(
     }
 
     fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
-        val resolvedUrl = runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
+        // APKs must always come from the official GitHub asset URL. Community mirrors
+        // are useful for generic files, but they can return HTML/proxy responses that
+        // Android cannot install. This keeps the application download path reliable.
+        val resolvedUrl = if (fileName.endsWith(".apk", ignoreCase = true)) {
+            DownloadMirror.Direct.resolve(url)
+        } else {
+            runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
+        }
         val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued", packageName = expectedPackage)
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
@@ -144,12 +151,14 @@ class DownloadsViewModel @Inject constructor(
                 download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
             }
             .build()
-        val request = OneTimeWorkRequestBuilder<DownloadWorker>().setInputData(input).build()
+        val request = OneTimeWorkRequestBuilder<DownloadWorker>()
+            .setInputData(input)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
         workManager.enqueueUniqueWork(DownloadWorker.workName(download.id), ExistingWorkPolicy.REPLACE, request)
     }
 
-    private fun DownloadEntity.isApkDownload(): Boolean =
-        fileName.endsWith(".apk", ignoreCase = true)
+    private fun DownloadEntity.isApkDownload(): Boolean = fileName.endsWith(".apk", ignoreCase = true)
 
     companion object {
         private const val PREFERENCES_NAME = "github_rock_downloads"
