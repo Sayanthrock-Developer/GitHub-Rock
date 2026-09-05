@@ -74,6 +74,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
+            workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
+            workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true,
+            statusColors = preferences[STATUS_COLORS] ?: true,
+            actionsControls = preferences[ACTIONS_CONTROLS] ?: true,
+            repositoryManager = preferences[REPOSITORY_MANAGER] ?: true,
+            fileTools = preferences[FILE_TOOLS] ?: true,
+            compactCards = preferences[COMPACT_CARDS] ?: false,
             reduceMotion = preferences[REDUCE_MOTION] ?: false
         )
     }
@@ -97,6 +104,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
+    suspend fun setWorkflowPreview(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_PREVIEW] = enabled }
+    suspend fun setWorkflowStepDetails(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_STEP_DETAILS] = enabled }
+    suspend fun setStatusColors(enabled: Boolean) = context.dataStore.edit { it[STATUS_COLORS] = enabled }
+    suspend fun setActionsControls(enabled: Boolean) = context.dataStore.edit { it[ACTIONS_CONTROLS] = enabled }
+    suspend fun setRepositoryManager(enabled: Boolean) = context.dataStore.edit { it[REPOSITORY_MANAGER] = enabled }
+    suspend fun setFileTools(enabled: Boolean) = context.dataStore.edit { it[FILE_TOOLS] = enabled }
+    suspend fun setCompactCards(enabled: Boolean) = context.dataStore.edit { it[COMPACT_CARDS] = enabled }
     suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
 
@@ -113,6 +127,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
         preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
         preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
+        preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS)
         preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
@@ -146,6 +161,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val TRUE_BLACK = booleanPreferencesKey("true_black")
         val SHOW_IMAGES = booleanPreferencesKey("show_images")
+        val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview")
+        val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details")
+        val STATUS_COLORS = booleanPreferencesKey("status_colors")
+        val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls")
+        val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager")
+        val FILE_TOOLS = booleanPreferencesKey("file_tools")
+        val COMPACT_CARDS = booleanPreferencesKey("compact_cards")
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
