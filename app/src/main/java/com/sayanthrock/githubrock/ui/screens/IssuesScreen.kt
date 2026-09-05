@@ -103,12 +103,24 @@ class IssuesViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IssuesScreen(onBack: () -> Unit, viewModel: IssuesViewModel = hiltViewModel()) {
+fun IssuesScreen(
+    onBack: () -> Unit,
+    onOpenProfile: (String) -> Unit = {},
+    viewModel: IssuesViewModel = hiltViewModel()
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val selected = state.selectedIssue
 
     if (selected != null) {
-        IssueDetailsScreen(selected, state.comments, state.commentsLoading, state.error, viewModel::closeDetails) { viewModel.open(selected) }
+        IssueDetailsScreen(
+            selected,
+            state.comments,
+            state.commentsLoading,
+            state.error,
+            viewModel::closeDetails,
+            { viewModel.open(selected) },
+            onOpenProfile
+        )
         return
     }
 
@@ -132,7 +144,7 @@ fun IssuesScreen(onBack: () -> Unit, viewModel: IssuesViewModel = hiltViewModel(
                 Text(if (state.selected == IssueListState.OPEN) "No open issues" else "No closed issues", Modifier.padding(24.dp), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(state.issues, key = { it.id }) { issue -> IssueCard(issue) { viewModel.open(issue) } }
+                    items(state.issues, key = { it.id }) { issue -> IssueCard(issue, onOpenProfile) { viewModel.open(issue) } }
                 }
             }
         }
@@ -140,14 +152,20 @@ fun IssuesScreen(onBack: () -> Unit, viewModel: IssuesViewModel = hiltViewModel(
 }
 
 @Composable
-private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
+private fun IssueCard(issue: GitHubIssue, onOpenProfile: (String) -> Unit, onClick: () -> Unit) {
     androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(if (issue.state.equals("open", true)) Icons.Default.ErrorOutline else Icons.Default.CheckCircle, contentDescription = issue.state)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(issue.title, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text("#${issue.number} · ${issue.user.login}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("#${issue.number} · ")
+                        TextButton(
+                            onClick = { onOpenProfile(issue.user.login) },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                        ) { Text("@${issue.user.login}") }
+                    }
                 }
                 Text(issue.state.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium)
             }
@@ -162,13 +180,28 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IssueDetailsScreen(issue: GitHubIssue, comments: List<IssueComment>, loadingComments: Boolean, error: String?, onBack: () -> Unit, onRetry: () -> Unit) {
+private fun IssueDetailsScreen(
+    issue: GitHubIssue,
+    comments: List<IssueComment>,
+    loadingComments: Boolean,
+    error: String?,
+    onBack: () -> Unit,
+    onRetry: () -> Unit,
+    onOpenProfile: (String) -> Unit
+) {
     Scaffold(topBar = { TopAppBar(title = { Text("Issue #${issue.number}") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(issue.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("#${issue.number} · ${issue.user.login} · ${issue.state}")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("#${issue.number} · ")
+                        TextButton(
+                            onClick = { onOpenProfile(issue.user.login) },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                        ) { Text("@${issue.user.login}") }
+                        Text(" · ${issue.state}")
+                    }
                     Text("Updated ${issue.updatedAt.ifBlank { "—" }}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (issue.labels.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { issue.labels.forEach { AssistChip(onClick = {}, enabled = false, label = { Text(it.name) }) } }
                 }
@@ -178,7 +211,16 @@ private fun IssueDetailsScreen(issue: GitHubIssue, comments: List<IssueComment>,
             if (loadingComments) item { CircularProgressIndicator() }
             error?.let { message -> item { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(message, color = MaterialTheme.colorScheme.error); TextButton(onClick = onRetry) { Text("Retry") } } } }
             items(comments, key = { it.id }) { comment ->
-                androidx.compose.material3.Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text(comment.user.login, fontWeight = FontWeight.SemiBold); Text(comment.createdAt, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(comment.body) } }
+                androidx.compose.material3.Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        TextButton(
+                            onClick = { onOpenProfile(comment.user.login) },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                        ) { Text("@${comment.user.login}", fontWeight = FontWeight.SemiBold) }
+                        Text(comment.createdAt, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(comment.body)
+                    }
+                }
             }
         }
     }
