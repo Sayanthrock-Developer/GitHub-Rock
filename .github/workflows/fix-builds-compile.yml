@@ -1,6 +1,8 @@
 name: Fix Builds Compile
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - fix/builds-repository-selection
 permissions:
   contents: write
 jobs:
@@ -33,9 +35,7 @@ jobs:
           s = s.replace('OutlinedTextField(destination, { destination = it }, enabled = !state.loading, label =', 'OutlinedTextField(value = destination, onValueChange = { destination = it }, enabled = !state.loading, label =')
           s = s.replace('OutlinedTextField(branch, { branch = it }, enabled = !state.loading, label =', 'OutlinedTextField(value = branch, onValueChange = { branch = it }, enabled = !state.loading, label =')
           s = s.replace('OutlinedTextField(message, { message = it }, enabled = !state.loading, label =', 'OutlinedTextField(value = message, onValueChange = { message = it }, enabled = !state.loading, label =')
-          s = s.replace('OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f))', 'OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f))')
           s = s.replace('Surface(onClick = onClick, enabled = enabled, Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), color =', 'Surface(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color =')
-          s = s.replace('Icon(if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, null, tint =', 'Icon(imageVector = if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, contentDescription = null, tint =')
           p.write_text(s)
           PY
       - name: Commit patch
