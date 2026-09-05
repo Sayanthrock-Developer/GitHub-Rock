@@ -160,11 +160,21 @@ private fun IssueCard(issue: GitHubIssue, onOpenProfile: (String) -> Unit, onCli
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(issue.title, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("#${issue.number} · ")
+                        Text(
+                            "#${issue.number} · ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         TextButton(
                             onClick = { onOpenProfile(issue.user.login) },
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                        ) { Text("@${issue.user.login}") }
+                        ) {
+                            Text(
+                                "@${issue.user.login}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
                 Text(issue.state.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium)
