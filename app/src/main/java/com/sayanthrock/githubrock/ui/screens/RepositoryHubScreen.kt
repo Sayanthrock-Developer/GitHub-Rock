@@ -46,7 +46,14 @@ import kotlinx.coroutines.launch
 /** Native repository workspace. GitHub browsing stays inside GitHub Rock; only the explicit external action opens GitHub. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, initialTag: String? = null, viewModel: RepositoryHubViewModel = hiltViewModel(), downloadsViewModel: DownloadsViewModel = hiltViewModel()) {
+fun RepositoryHubScreen(
+    repository: GitHubRepositoryModel?,
+    onBack: () -> Unit,
+    initialTag: String? = null,
+    viewModel: RepositoryHubViewModel = hiltViewModel(),
+    downloadsViewModel: DownloadsViewModel = hiltViewModel(),
+    onOpenProfile: (String) -> Unit = {}
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val downloads by downloadsViewModel.downloads.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -65,7 +72,8 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
             RepositoryDetailSectionScreen(
                 repository = displayedRepository,
                 section = nativeSection ?: RepoSection.Overview,
-                onBack = { workspacePage = "overview"; nativeSection = null }
+                onBack = { workspacePage = "overview"; nativeSection = null },
+                onOpenProfile = onOpenProfile
             )
             return
         }
