@@ -19,6 +19,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.io.File
 import java.io.FileOutputStream
+import javax.inject.Named
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -29,14 +30,14 @@ import okhttp3.Request
 class DownloadWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val client: OkHttpClient,
+    @Named("downloadClient") private val client: OkHttpClient,
     private val dao: DownloadDao
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val id = inputData.getLong(KEY_ID, -1)
-        val url = inputData.getString(KEY_URL) ?: return Result.failure()
-        val name = inputData.getString(KEY_NAME)?.safeFileName() ?: return Result.failure()
+        val url = inputData.getString(KEY_URL)?.trim()?.takeIf(String::isNotBlank) ?: return Result.failure()
+        val name = inputData.getString(KEY_NAME)?.safeFileName()?.takeIf(String::isNotBlank) ?: return Result.failure()
         val expectedSha = inputData.getString(KEY_SHA256)
         val expectedPackage = inputData.getString(KEY_EXPECTED_PACKAGE)?.takeIf(String::isNotBlank)
         val directory = File(applicationContext.filesDir, "downloads").apply { mkdirs() }
@@ -52,23 +53,25 @@ class DownloadWorker @AssistedInject constructor(
             val existing = partial.takeIf(File::exists)?.length() ?: 0L
             val request = Request.Builder()
                 .url(url)
-                // GitHub release assets are served through redirects/CDN endpoints.
-                // These headers make the in-app request behave like a normal download
-                // client instead of relying on the CDN's default content negotiation.
                 .header("User-Agent", "GitHub-Rock/1.0")
                 .header("Accept", "application/octet-stream")
+                .header("Accept-Encoding", "identity")
                 .apply {
                     if (existing > 0) header("Range", "bytes=$existing-")
                 }
                 .build()
+
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful && response.code != 206) error("Download failed: HTTP ${response.code}")
+                if (!response.isSuccessful && response.code != 206) {
+                    error("Download failed: HTTP ${response.code}")
+                }
                 val body = response.body ?: error("Empty download response")
                 val contentType = body.contentType()?.toString()?.lowercase().orEmpty()
                 if (name.endsWith(".apk", ignoreCase = true) &&
-                    (contentType.contains("text/html") || contentType.contains("text/plain"))) {
-                    error("GitHub returned a non-APK response ($contentType)")
+                    (contentType.contains("text/html") || contentType.contains("text/plain") || contentType.contains("application/json"))) {
+                    error("GitHub returned a non-binary response ($contentType)")
                 }
+
                 val append = existing > 0 && response.code == 206
                 if (!append && partial.exists()) partial.delete()
                 val startingBytes = if (append) existing else 0L
@@ -117,10 +120,6 @@ class DownloadWorker @AssistedInject constructor(
             Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (error: IllegalArgumentException) {
-            partial.delete()
-            dao.updateProgress(id, "failed", 0, knownTotal, null, null)
-            Result.failure()
         } catch (error: Exception) {
             val downloaded = partial.takeIf(File::exists)?.length() ?: 0L
             val willRetry = runAttemptCount < MAX_AUTOMATIC_RETRIES
