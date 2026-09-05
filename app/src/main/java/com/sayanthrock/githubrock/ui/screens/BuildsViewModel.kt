@@ -97,17 +97,10 @@ class BuildsViewModel @Inject constructor(
                             }
                         }
                 }
-
                 val workflow = BuildRunTracker.findAndroidWorkflow(repository.workflows(owner, repo))
                 if (workflow == null) {
                     runsJob.join()
-                    _state.update {
-                        it.copy(
-                            loading = false,
-                            workflowSourceLoading = false,
-                            message = "No merged Android build workflow was found. Merge its pull request, then refresh."
-                        )
-                    }
+                    _state.update { it.copy(loading = false, workflowSourceLoading = false, message = "No merged Android build workflow was found. Merge its pull request, then refresh.") }
                     return@launch
                 }
                 val sourceResult = try {
@@ -117,12 +110,9 @@ class BuildsViewModel @Inject constructor(
                 } catch (error: Throwable) {
                     Result.failure(error)
                 }
-                val latest = requestedRunId?.let { repository.run(owner, repo, it) }
-                    ?: repository.runsForWorkflow(owner, repo, workflow.id).firstOrNull()
+                val latest = requestedRunId?.let { repository.run(owner, repo, it) } ?: repository.runsForWorkflow(owner, repo, workflow.id).firstOrNull()
                 val jobs = latest?.let { repository.workflowJobs(owner, repo, it.id) }.orEmpty()
-                val artifacts = if (latest?.displayState() == WorkflowDisplayState.Success) {
-                    repository.workflowArtifacts(owner, repo, latest.id)
-                } else emptyList()
+                val artifacts = if (latest?.displayState() == WorkflowDisplayState.Success) repository.workflowArtifacts(owner, repo, latest.id) else emptyList()
                 runsJob.join()
                 val sourceFailure = sourceResult.exceptionOrNull()
                 _state.update {
@@ -144,15 +134,7 @@ class BuildsViewModel @Inject constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Throwable) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        runsLoading = false,
-                        workflowSourceLoading = false,
-                        tracking = false,
-                        error = error.message ?: "Unable to inspect the Android build workflow"
-                    )
-                }
+                _state.update { it.copy(loading = false, runsLoading = false, workflowSourceLoading = false, tracking = false, error = error.message ?: "Unable to inspect the Android build workflow") }
             }
         }
     }
@@ -164,20 +146,7 @@ class BuildsViewModel @Inject constructor(
         }
         trackingJob?.cancel()
         trackingJob = viewModelScope.launch {
-            _state.update {
-                it.copy(
-                    loading = true,
-                    runsLoading = true,
-                    creatingPullRequest = false,
-                    tracking = false,
-                    error = null,
-                    message = null,
-                    selectedRepositoryId = selected.id,
-                    run = null,
-                    jobs = emptyList(),
-                    artifacts = emptyList()
-                )
-            }
+            _state.update { it.copy(loading = true, runsLoading = true, creatingPullRequest = false, tracking = false, error = null, message = null, selectedRepositoryId = selected.id, run = null, jobs = emptyList(), artifacts = emptyList()) }
             try {
                 val owner = selected.owner.login
                 val repo = selected.name
@@ -210,9 +179,7 @@ class BuildsViewModel @Inject constructor(
             trackingJob?.cancel()
             _state.update { it.copy(loading = false, tracking = false, run = run, recentRuns = it.recentRuns.upsertRun(run), message = "Build cancelled") }
             loadRunDetails(selected, run.id)
-        }.onFailure { error ->
-            _state.update { it.copy(loading = false, error = error.message ?: "Unable to cancel the build") }
-        }
+        }.onFailure { error -> _state.update { it.copy(loading = false, error = error.message ?: "Unable to cancel the build") } }
     }
 
     fun rerunRun(selected: GitHubRepositoryModel, runId: Long) = viewModelScope.launch {
@@ -222,58 +189,25 @@ class BuildsViewModel @Inject constructor(
             repository.run(selected.owner.login, selected.name, runId)
         }.onSuccess { run ->
             _state.update { it.copy(loading = false, tracking = BuildRunTracker.isActive(run), run = run, recentRuns = it.recentRuns.upsertRun(run), message = "Build re-run requested") }
-            if (BuildRunTracker.isActive(run)) monitorRun(selected, run)
-            else loadRunDetails(selected, run.id)
-        }.onFailure { error ->
-            _state.update { it.copy(loading = false, error = error.message ?: "Unable to re-run the build") }
-        }
+            if (BuildRunTracker.isActive(run)) monitorRun(selected, run) else loadRunDetails(selected, run.id)
+        }.onFailure { error -> _state.update { it.copy(loading = false, error = error.message ?: "Unable to re-run the build") } }
     }
 
     fun loadRunDetails(selected: GitHubRepositoryModel, runId: Long) = viewModelScope.launch {
         runCatching {
             val run = repository.run(selected.owner.login, selected.name, runId)
             val jobs = repository.workflowJobs(selected.owner.login, selected.name, runId)
-            val artifacts = if (run.displayState() == WorkflowDisplayState.Success) {
-                repository.workflowArtifacts(selected.owner.login, selected.name, runId)
-            } else emptyList()
+            val artifacts = if (run.displayState() == WorkflowDisplayState.Success) repository.workflowArtifacts(selected.owner.login, selected.name, runId) else emptyList()
             Triple(run, jobs, artifacts)
         }.onSuccess { (run, jobs, artifacts) ->
-            _state.update {
-                if (it.selectedRepositoryId == null || it.selectedRepositoryId == selected.id) {
-                    it.copy(run = run, recentRuns = it.recentRuns.upsertRun(run), jobs = jobs, artifacts = artifacts, loading = false, error = null)
-                } else it
-            }
-        }.onFailure { error ->
-            if (error !is CancellationException) {
-                _state.update { it.copy(loading = false, error = error.message ?: "Unable to load build details") }
-            }
-        }
+            _state.update { if (it.selectedRepositoryId == null || it.selectedRepositoryId == selected.id) it.copy(run = run, recentRuns = it.recentRuns.upsertRun(run), jobs = jobs, artifacts = artifacts, loading = false, error = null) else it }
+        }.onFailure { error -> if (error !is CancellationException) _state.update { it.copy(loading = false, error = error.message ?: "Unable to load build details") } }
     }
 
     fun resetBuild() {
         trackingJob?.cancel()
         trackingJob = null
-        _state.update {
-            it.copy(
-                loading = false,
-                runsLoading = false,
-                creatingPullRequest = false,
-                tracking = false,
-                message = null,
-                error = null,
-                pullRequestUrl = null,
-                selectedRepositoryId = null,
-                recentRuns = emptyList(),
-                workflow = null,
-                workflowSource = null,
-                workflowSourcePath = null,
-                workflowSourceLoading = false,
-                workflowSourceError = null,
-                run = null,
-                jobs = emptyList(),
-                artifacts = emptyList()
-            )
-        }
+        _state.update { it.copy(loading = false, runsLoading = false, creatingPullRequest = false, tracking = false, message = null, error = null, pullRequestUrl = null, selectedRepositoryId = null, recentRuns = emptyList(), workflow = null, workflowSource = null, workflowSourcePath = null, workflowSourceLoading = false, workflowSourceError = null, run = null, jobs = emptyList(), artifacts = emptyList()) }
     }
 
     fun createWorkflowPullRequest(selected: GitHubRepositoryModel, featureBranch: String, yaml: String, artifact: AndroidArtifactType) = viewModelScope.launch {
@@ -283,23 +217,9 @@ class BuildsViewModel @Inject constructor(
         }
         _state.update { it.copy(loading = true, creatingPullRequest = true, error = null, message = null, pullRequestUrl = null) }
         runCatching {
-            repository.commitFileAndOpenPullRequest(
-                owner = selected.owner.login,
-                repo = selected.name,
-                path = ".github/workflows/android-build.yml",
-                content = yaml,
-                currentSha = null,
-                baseBranch = selected.defaultBranch,
-                featureBranch = featureBranch,
-                commitMessage = "Add Android build workflow",
-                pullTitle = "Add Android ${artifact.name} workflow",
-                pullBody = "Generated and reviewed in GitHub Rock. Uses GitHub-hosted runners and does not contain signing secrets."
-            )
-        }.onSuccess { pull ->
-            _state.update { it.copy(message = "Pull request #${pull.number} created", pullRequestUrl = pull.htmlUrl) }
-        }.onFailure { error ->
-            _state.update { it.copy(error = error.message ?: "Unable to create workflow pull request") }
-        }
+            repository.commitFileAndOpenPullRequest(owner = selected.owner.login, repo = selected.name, path = ".github/workflows/android-build.yml", content = yaml, currentSha = null, baseBranch = selected.defaultBranch, featureBranch = featureBranch, commitMessage = "Add Android build workflow", pullTitle = "Add Android ${artifact.name} workflow", pullBody = "Generated and reviewed in GitHub Rock. Uses GitHub-hosted runners and does not contain signing secrets.")
+        }.onSuccess { pull -> _state.update { it.copy(message = "Pull request #${pull.number} created", pullRequestUrl = pull.htmlUrl) } }
+            .onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to create workflow pull request") } }
         _state.update { it.copy(loading = false, creatingPullRequest = false) }
     }
 
@@ -320,16 +240,7 @@ class BuildsViewModel @Inject constructor(
                 current = repository.run(selected.owner.login, selected.name, current.id)
                 val jobs = repository.workflowJobs(selected.owner.login, selected.name, current.id)
                 consecutiveFailures = 0
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        tracking = BuildRunTracker.isActive(current),
-                        run = current,
-                        recentRuns = it.recentRuns.upsertRun(current),
-                        jobs = jobs,
-                        message = if (BuildRunTracker.isActive(current)) "Build ${current.displayState().name.lowercase()}" else null
-                    )
-                }
+                _state.update { it.copy(loading = false, tracking = BuildRunTracker.isActive(current), run = current, recentRuns = it.recentRuns.upsertRun(current), jobs = jobs, message = if (BuildRunTracker.isActive(current)) "Build ${current.displayState().name.lowercase()}" else null) }
                 if (!BuildRunTracker.isActive(current)) {
                     finishRun(selected, current, jobs)
                     return
@@ -357,19 +268,7 @@ class BuildsViewModel @Inject constructor(
             WorkflowDisplayState.Cancelled -> "Build was cancelled" to null
             else -> "Build finished with ${run.conclusion ?: run.status}" to null
         }
-        _state.update {
-            it.copy(
-                loading = false,
-                runsLoading = false,
-                tracking = false,
-                run = run,
-                recentRuns = it.recentRuns.upsertRun(run),
-                jobs = jobs,
-                artifacts = artifacts,
-                message = result.first,
-                error = result.second
-            )
-        }
+        _state.update { it.copy(loading = false, runsLoading = false, tracking = false, run = run, recentRuns = it.recentRuns.upsertRun(run), jobs = jobs, artifacts = artifacts, message = result.first, error = result.second) }
     }
 
     private suspend fun awaitArtifacts(selected: GitHubRepositoryModel, runId: Long): List<WorkflowArtifact> {
@@ -391,5 +290,4 @@ class BuildsViewModel @Inject constructor(
     }
 }
 
-private fun List<WorkflowRun>.upsertRun(run: WorkflowRun): List<WorkflowRun> =
-    (filterNot { it.id == run.id } + run).sortedByDescending { it.createdAt }
+private fun List<WorkflowRun>.upsertRun(run: WorkflowRun): List<WorkflowRun> = (filterNot { it.id == run.id } + run).sortedByDescending { it.createdAt }
