@@ -78,7 +78,7 @@ class BuildsViewModel @Inject constructor(
                 val sourceResult = try { Result.success(SourceFileDecoder.decode(repository.file(owner, repo, workflow.path, selected.defaultBranch))) } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) { Result.failure(error) }
                 val latest = requestedRunId?.let { repository.run(owner, repo, it) } ?: repository.runsForWorkflow(owner, repo, workflow.id).firstOrNull()
                 val jobs = latest?.let { repository.workflowJobs(owner, repo, it.id) }.orEmpty()
-                val artifacts = if (latest?.displayState() == WorkflowDisplayState.Success) repository.workflowArtifacts(owner, repo, latest.id) else emptyList()
+                val artifacts = latest?.let { repository.workflowArtifacts(owner, repo, it.id) }.orEmpty()
                 runsJob.join()
                 val sourceFailure = sourceResult.exceptionOrNull()
                 _state.update { it.copy(loading = false, runsLoading = false, workflow = workflow, workflowSource = sourceResult.getOrNull(), workflowSourcePath = workflow.path, workflowSourceLoading = false, workflowSourceError = sourceFailure?.let { failure -> "Unable to load workflow code: ${failure.message?.takeIf(String::isNotBlank) ?: "unknown source error"}" }, run = latest, jobs = jobs, artifacts = artifacts, message = if (latest == null) "Android build workflow is ready to run" else null) }
@@ -125,7 +125,7 @@ class BuildsViewModel @Inject constructor(
         runCatching {
             val run = repository.run(selected.owner.login, selected.name, runId)
             val jobs = repository.workflowJobs(selected.owner.login, selected.name, runId)
-            val artifacts = if (run.displayState() == WorkflowDisplayState.Success) repository.workflowArtifacts(selected.owner.login, selected.name, runId) else emptyList()
+            val artifacts = repository.workflowArtifacts(selected.owner.login, selected.name, runId)
             Triple(run, jobs, artifacts)
         }.onSuccess { (run, jobs, artifacts) -> _state.update { if (it.selectedRepositoryId == null || it.selectedRepositoryId == selected.id) it.copy(run = run, recentRuns = it.recentRuns.upsertRun(run), jobs = jobs, artifacts = artifacts, loading = false, error = null) else it } }
             .onFailure { error -> if (error !is CancellationException) _state.update { it.copy(loading = false, error = error.message ?: "Unable to load build details") } }
@@ -162,7 +162,7 @@ class BuildsViewModel @Inject constructor(
     }
 
     private suspend fun finishRun(selected: GitHubRepositoryModel, run: WorkflowRun, jobs: List<WorkflowJob>) {
-        val artifacts = if (run.displayState() == WorkflowDisplayState.Success) awaitArtifacts(selected, run.id) else emptyList()
+        val artifacts = awaitArtifacts(selected, run.id)
         val result = when (run.displayState()) {
             WorkflowDisplayState.Success -> if (artifacts.isNotEmpty()) {
                 "Build succeeded with ${artifacts.size} downloadable artifact${if (artifacts.size == 1) "" else "s"}" to null
