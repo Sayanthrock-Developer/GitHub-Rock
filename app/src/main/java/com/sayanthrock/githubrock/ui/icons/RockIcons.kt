@@ -9,13 +9,13 @@ import com.composables.icons.materialsymbols.rounded.Explore
 import com.composables.icons.materialsymbols.rounded.Folder
 import com.composables.icons.materialsymbols.rounded.Home
 import com.composables.icons.materialsymbols.rounded.Settings
-import com.composables.icons.materialsymbols.roundedfilled.Account_circle
-import com.composables.icons.materialsymbols.roundedfilled.Build
-import com.composables.icons.materialsymbols.roundedfilled.Download
-import com.composables.icons.materialsymbols.roundedfilled.Explore
-import com.composables.icons.materialsymbols.roundedfilled.Folder
-import com.composables.icons.materialsymbols.roundedfilled.Home
-import com.composables.icons.materialsymbols.roundedfilled.Settings
+import com.composables.icons.materialsymbols.roundedfilled.Account_circle as AccountCircleFilled
+import com.composables.icons.materialsymbols.roundedfilled.Build as BuildFilled
+import com.composables.icons.materialsymbols.roundedfilled.Download as DownloadFilled
+import com.composables.icons.materialsymbols.roundedfilled.Explore as ExploreFilled
+import com.composables.icons.materialsymbols.roundedfilled.Folder as FolderFilled
+import com.composables.icons.materialsymbols.roundedfilled.Home as HomeFilled
+import com.composables.icons.materialsymbols.roundedfilled.Settings as SettingsFilled
 
 /**
  * GitHub Rock's single source of truth for general-purpose application icons.
