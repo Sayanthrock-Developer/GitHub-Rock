@@ -16,47 +16,25 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use(::load)
 }
 
-fun quotedBuildConfig(value: String): String =
-    "\"${value.trim().trim('"').replace("\\", "\\\\").replace("\"", "\\\"")}\""
-
+fun quotedBuildConfig(value: String): String = "\"${value.trim().trim('"').replace("\\", "\\\\").replace("\"", "\\\"")}\""
 val bundledGitHubClientId = "Ov23lim8WhLjeUMqvuMj"
-val githubClientId = sequenceOf(
-    localProperties.getProperty("GITHUB_CLIENT_ID"),
-    System.getenv("GITHUB_CLIENT_ID"),
-    bundledGitHubClientId
-).firstOrNull { !it.isNullOrBlank() }.orEmpty()
-val backendBaseUrl = sequenceOf(
-    localProperties.getProperty("GITHUB_ROCK_BACKEND_URL"),
-    System.getenv("GITHUB_ROCK_BACKEND_URL"),
-    providers.gradleProperty("GITHUB_ROCK_BACKEND_URL").orNull
-).firstOrNull { !it.isNullOrBlank() }.orEmpty()
-val configuredVersionName = providers.gradleProperty("GITHUB_ROCK_VERSION_NAME").orNull
-    ?.trim()?.takeIf(String::isNotBlank) ?: "0.1.0"
-val configuredVersionCode = providers.gradleProperty("GITHUB_ROCK_VERSION_CODE").orNull
-    ?.toIntOrNull()?.takeIf { it > 0 } ?: 1
-val gitCommit = sequenceOf(
-    System.getenv("GITHUB_SHA"),
-    providers.gradleProperty("GITHUB_SHA").orNull
-).firstOrNull { !it.isNullOrBlank() } ?: "local"
-val gitRef = sequenceOf(
-    System.getenv("GITHUB_REF_NAME"),
-    providers.gradleProperty("GITHUB_REF_NAME").orNull
-).firstOrNull { !it.isNullOrBlank() } ?: "local"
-val buildTimestampUtc = System.getenv("GITHUB_RUN_STARTED_AT")
-    ?.takeIf { it.isNotBlank() }
-    ?: Instant.now().toString()
+val githubClientId = sequenceOf(localProperties.getProperty("GITHUB_CLIENT_ID"), System.getenv("GITHUB_CLIENT_ID"), bundledGitHubClientId).firstOrNull { !it.isNullOrBlank() }.orEmpty()
+val backendBaseUrl = sequenceOf(localProperties.getProperty("GITHUB_ROCK_BACKEND_URL"), System.getenv("GITHUB_ROCK_BACKEND_URL"), providers.gradleProperty("GITHUB_ROCK_BACKEND_URL").orNull).firstOrNull { !it.isNullOrBlank() }.orEmpty()
+val configuredVersionName = providers.gradleProperty("GITHUB_ROCK_VERSION_NAME").orNull?.trim()?.takeIf(String::isNotBlank) ?: "0.1.0"
+val configuredVersionCode = providers.gradleProperty("GITHUB_ROCK_VERSION_CODE").orNull?.toIntOrNull()?.takeIf { it > 0 } ?: 1
+val gitCommit = sequenceOf(System.getenv("GITHUB_SHA"), providers.gradleProperty("GITHUB_SHA").orNull).firstOrNull { !it.isNullOrBlank() } ?: "local"
+val gitRef = sequenceOf(System.getenv("GITHUB_REF_NAME"), providers.gradleProperty("GITHUB_REF_NAME").orNull).firstOrNull { !it.isNullOrBlank() } ?: "local"
+val buildTimestampUtc = System.getenv("GITHUB_RUN_STARTED_AT")?.takeIf { it.isNotBlank() } ?: Instant.now().toString()
 
 android {
     namespace = "com.sayanthrock.githubrock"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.sayanthrock.githubrock"
         minSdk = 29
         targetSdk = 36
         versionCode = configuredVersionCode
         versionName = configuredVersionName
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         buildConfigField("String", "GITHUB_CLIENT_ID", quotedBuildConfig(githubClientId))
@@ -69,59 +47,22 @@ android {
         buildConfigField("int", "ANDROID_COMPILE_SDK", "36")
         buildConfigField("int", "ANDROID_TARGET_SDK", "36")
     }
-
     buildTypes {
-        debug {
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-        }
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
+        debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
+        release { isMinifyEnabled = true; isShrinkResources = true; proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro") }
     }
-
     val keystorePath = System.getenv("GITHUB_ROCK_KEYSTORE_PATH")
     if (!keystorePath.isNullOrBlank()) {
-        signingConfigs.create("githubRelease") {
-            storeFile = file(keystorePath)
-            storePassword = System.getenv("GITHUB_ROCK_KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("GITHUB_ROCK_KEY_ALIAS")
-            keyPassword = System.getenv("GITHUB_ROCK_KEY_PASSWORD")
-        }
+        signingConfigs.create("githubRelease") { storeFile = file(keystorePath); storePassword = System.getenv("GITHUB_ROCK_KEYSTORE_PASSWORD"); keyAlias = System.getenv("GITHUB_ROCK_KEY_ALIAS"); keyPassword = System.getenv("GITHUB_ROCK_KEY_PASSWORD") }
         buildTypes.getByName("release").signingConfig = signingConfigs.getByName("githubRelease")
     }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
-
-    buildFeatures {
-        compose = true
-        buildConfig = true
-    }
-
-    packaging.resources.excludes += setOf(
-        "/META-INF/{AL2.0,LGPL2.1}",
-        "META-INF/LICENSE.md",
-        "META-INF/LICENSE-notice.md"
-    )
-
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
+    buildFeatures { compose = true; buildConfig = true }
+    packaging.resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "META-INF/LICENSE.md", "META-INF/LICENSE-notice.md")
     testOptions.unitTests.isIncludeAndroidResources = true
     lint.abortOnError = true
 }
-
 kapt { correctErrorTypes = true }
 
 dependencies {
@@ -163,6 +104,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.security)
     implementation(libs.androidx.browser)
+    implementation("androidx.documentfile:documentfile:1.0.1")
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.test.junit)
