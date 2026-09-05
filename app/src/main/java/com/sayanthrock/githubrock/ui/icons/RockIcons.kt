@@ -2,27 +2,26 @@ package com.sayanthrock.githubrock.ui.icons
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Account_circle
-import com.composables.icons.materialsymbols.rounded.Build
-import com.composables.icons.materialsymbols.rounded.Download
-import com.composables.icons.materialsymbols.rounded.Explore
-import com.composables.icons.materialsymbols.rounded.Folder
-import com.composables.icons.materialsymbols.rounded.Home
-import com.composables.icons.materialsymbols.rounded.Settings
-import com.composables.icons.materialsymbols.roundedfilled.Account_circle as AccountCircleFilled
-import com.composables.icons.materialsymbols.roundedfilled.Build as BuildFilled
-import com.composables.icons.materialsymbols.roundedfilled.Download as DownloadFilled
-import com.composables.icons.materialsymbols.roundedfilled.Explore as ExploreFilled
-import com.composables.icons.materialsymbols.roundedfilled.Folder as FolderFilled
-import com.composables.icons.materialsymbols.roundedfilled.Home as HomeFilled
-import com.composables.icons.materialsymbols.roundedfilled.Settings as SettingsFilled
+import com.composables.icons.materialsymbols.rounded.Account_circle as AccountCircleRegular
+import com.composables.icons.materialsymbols.rounded.Build as BuildRegular
+import com.composables.icons.materialsymbols.rounded.Download as DownloadRegular
+import com.composables.icons.materialsymbols.rounded.Explore as ExploreRegular
+import com.composables.icons.materialsymbols.rounded.Folder as FolderRegular
+import com.composables.icons.materialsymbols.rounded.Home as HomeRegular
+import com.composables.icons.materialsymbols.rounded.Settings as SettingsRegular
+import com.composables.icons.materialsymbols.roundedfilled.Account_circle
+import com.composables.icons.materialsymbols.roundedfilled.Build
+import com.composables.icons.materialsymbols.roundedfilled.Download
+import com.composables.icons.materialsymbols.roundedfilled.Explore
+import com.composables.icons.materialsymbols.roundedfilled.Folder
+import com.composables.icons.materialsymbols.roundedfilled.Home
+import com.composables.icons.materialsymbols.roundedfilled.Settings
 
 /**
  * GitHub Rock's single source of truth for general-purpose application icons.
  *
- * The visual system is deliberately isolated from individual screens so future
- * icon updates do not require changing every call site. GitHub-specific brand
- * marks remain outside this layer.
+ * GitHub-specific brand marks remain outside this layer. Screens should use
+ * these semantic names instead of importing icon-library symbols directly.
  */
 enum class RockIcon {
     Home,
@@ -35,11 +34,11 @@ enum class RockIcon {
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
-    RockIcon.Home -> if (selected) MaterialSymbols.RoundedFilled.Home else MaterialSymbols.Rounded.Home
-    RockIcon.Explore -> if (selected) MaterialSymbols.RoundedFilled.Explore else MaterialSymbols.Rounded.Explore
-    RockIcon.Repositories -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.Folder
-    RockIcon.Builds -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.Build
-    RockIcon.Downloads -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.Download
-    RockIcon.Profile -> if (selected) MaterialSymbols.RoundedFilled.Account_circle else MaterialSymbols.Rounded.Account_circle
-    RockIcon.Settings -> if (selected) MaterialSymbols.RoundedFilled.Settings else MaterialSymbols.Rounded.Settings
+    RockIcon.Home -> if (selected) MaterialSymbols.RoundedFilled.Home else MaterialSymbols.Rounded.HomeRegular
+    RockIcon.Explore -> if (selected) MaterialSymbols.RoundedFilled.Explore else MaterialSymbols.Rounded.ExploreRegular
+    RockIcon.Repositories -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.FolderRegular
+    RockIcon.Builds -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.BuildRegular
+    RockIcon.Downloads -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.DownloadRegular
+    RockIcon.Profile -> if (selected) MaterialSymbols.RoundedFilled.Account_circle else MaterialSymbols.Rounded.AccountCircleRegular
+    RockIcon.Settings -> if (selected) MaterialSymbols.RoundedFilled.Settings else MaterialSymbols.Rounded.SettingsRegular
 }
