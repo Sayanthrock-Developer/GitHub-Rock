@@ -70,7 +70,6 @@ class BuildsViewModel @Inject constructor(
                     error = null,
                     pullRequestUrl = null,
                     selectedRepositoryId = selected.id,
-                    // Keep existing runs while refreshing so filter/detail actions do not blank the screen.
                     recentRuns = if (previous.selectedRepositoryId == selected.id) previous.recentRuns else emptyList(),
                     workflow = null,
                     workflowSource = null,
