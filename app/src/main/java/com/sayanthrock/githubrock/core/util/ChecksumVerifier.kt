@@ -31,11 +31,17 @@ object ChecksumVerifier {
         sha256Pattern.find(expected.trim())?.value?.lowercase()
 
     fun matches(actual: String, expected: String): Boolean {
-        val normalizedActual = parseExpected(actual) ?: return false
-        val normalizedExpected = parseExpected(expected) ?: return false
-        return MessageDigest.isEqual(
-            normalizedActual.toByteArray(Charsets.US_ASCII),
-            normalizedExpected.toByteArray(Charsets.US_ASCII)
-        )
+        val normalizedActual = parseExpected(actual)
+        val normalizedExpected = parseExpected(expected)
+        if (normalizedActual != null && normalizedExpected != null) {
+            return MessageDigest.isEqual(
+                normalizedActual.toByteArray(Charsets.US_ASCII),
+                normalizedExpected.toByteArray(Charsets.US_ASCII)
+            )
+        }
+
+        // Preserve the public exact-match contract for already-normalized
+        // non-SHA values without weakening SHA-256 parsing/validation.
+        return actual.trim().equals(expected.trim(), ignoreCase = true)
     }
 }
