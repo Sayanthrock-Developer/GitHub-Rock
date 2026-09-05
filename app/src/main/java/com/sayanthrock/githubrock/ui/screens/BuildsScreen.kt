@@ -73,6 +73,7 @@ fun BuildsScreen(
     }
     var filter by remember { mutableStateOf(BuildFilter.All) }
     val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
+    val repositoryRuns = actionState.recentRuns
 
     LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
         if (mode == AppMode.Connected && selectedRepository != null) {
@@ -82,8 +83,8 @@ fun BuildsScreen(
         }
     }
 
-    val visibleRuns = remember(runs, filter) {
-        runs.filter { run ->
+    val visibleRuns = remember(repositoryRuns, filter) {
+        repositoryRuns.filter { run ->
             when (filter) {
                 BuildFilter.All -> true
                 BuildFilter.Running -> run.displayState() !in setOf(WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled)
@@ -92,11 +93,11 @@ fun BuildsScreen(
             }
         }
     }
-    val counts = remember(runs, actionState.artifacts) {
+    val counts = remember(repositoryRuns, actionState.artifacts) {
         BuildCounts(
-            running = runs.count { it.displayState() !in setOf(WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled) },
-            failed = runs.count { it.displayState() == WorkflowDisplayState.Failed },
-            success = runs.count { it.displayState() == WorkflowDisplayState.Success },
+            running = repositoryRuns.count { it.displayState() !in setOf(WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled) },
+            failed = repositoryRuns.count { it.displayState() == WorkflowDisplayState.Failed },
+            success = repositoryRuns.count { it.displayState() == WorkflowDisplayState.Success },
             artifacts = actionState.artifacts.size
         )
     }
@@ -199,7 +200,7 @@ private fun RepositoryPicker(repositories: List<GitHubRepositoryModel>, selected
             GlassCard { Text("No repositories are available in this workspace.") }
         } else {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repositories.take(8).forEach { repo ->
+                repositories.forEach { repo ->
                     FilterChip(
                         selected = selected?.id == repo.id,
                         onClick = { onSelect(repo) },
