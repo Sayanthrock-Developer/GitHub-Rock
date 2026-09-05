@@ -30,14 +30,13 @@ fun nativeProfileDestination(url: String): NativeProfileDestination? {
     if (path.isEmpty() || path.size > 2) return null
     val login = normalizedGitHubLogin(path.first()) ?: return null
 
-    // GitHub exposes profile sections both as query tabs and as canonical
-    // /followers and /following paths. Keep both forms native so profile links
-    // never unexpectedly fall back to the external browser.
+    // Only the profile's supported canonical section paths are handled natively.
+    // Other GitHub paths such as /issues, /repositories, or /settings must remain external.
     val pathSection = path.getOrNull(1)?.let { value ->
         when (value.lowercase()) {
             "followers" -> NativeProfileSection.Followers
             "following" -> NativeProfileSection.Following
-            else -> null
+            else -> return null
         }
     }
 
