@@ -27,8 +27,19 @@ fun nativeProfileDestination(url: String): NativeProfileDestination? {
     if (!uri.host.equals("github.com", ignoreCase = true)) return null
 
     val path = uri.path.orEmpty().trim('/').split('/').filter(String::isNotBlank)
-    if (path.size != 1) return null
-    val login = normalizedGitHubLogin(path.single()) ?: return null
+    if (path.isEmpty() || path.size > 2) return null
+    val login = normalizedGitHubLogin(path.first()) ?: return null
+
+    // GitHub exposes profile sections both as query tabs and as canonical
+    // /followers and /following paths. Keep both forms native so profile links
+    // never unexpectedly fall back to the external browser.
+    val pathSection = path.getOrNull(1)?.let { value ->
+        when (value.lowercase()) {
+            "followers" -> NativeProfileSection.Followers
+            "following" -> NativeProfileSection.Following
+            else -> null
+        }
+    }
 
     val tab = uri.rawQuery.orEmpty()
         .split('&')
@@ -39,11 +50,16 @@ fun nativeProfileDestination(url: String): NativeProfileDestination? {
         .firstOrNull { (key, _) -> key.equals("tab", ignoreCase = true) }
         ?.second
 
-    val section = when (tab?.lowercase()) {
+    val querySection = when (tab?.lowercase()) {
         "repositories" -> NativeProfileSection.Repositories
         "followers" -> NativeProfileSection.Followers
         "following" -> NativeProfileSection.Following
+        null -> null
         else -> return null
     }
+
+    // A canonical section path wins over a conflicting query parameter.
+    // A plain profile URL opens the native repositories section.
+    val section = pathSection ?: querySection ?: NativeProfileSection.Repositories
     return NativeProfileDestination(login, section)
 }
