@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.core.network
 
 import com.sayanthrock.githubrock.core.model.*
+import kotlinx.serialization.json.JsonObject
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -48,6 +49,11 @@ interface GitHubRestApi {
     @POST("repos/{owner}/{repo}/git/refs") suspend fun createBranch(@Path("owner") owner: String, @Path("repo") repo: String, @Body request: GitRefRequest): Response<Unit>
     @DELETE("repos/{owner}/{repo}/git/refs/heads/{branch}") suspend fun deleteBranch(@Path("owner") owner: String, @Path("repo") repo: String, @Path(value = "branch", encoded = true) branch: String): Response<Unit>
     @GET("repos/{owner}/{repo}/git/ref/heads/{branch}") suspend fun branchReference(@Path("owner") owner: String, @Path("repo") repo: String, @Path(value = "branch", encoded = true) branch: String): GitReference
+    @GET("repos/{owner}/{repo}/git/commits/{sha}") suspend fun gitCommit(@Path("owner") owner: String, @Path("repo") repo: String, @Path("sha") sha: String): JsonObject
+    @POST("repos/{owner}/{repo}/git/blobs") suspend fun createGitBlob(@Path("owner") owner: String, @Path("repo") repo: String, @Body body: JsonObject): JsonObject
+    @POST("repos/{owner}/{repo}/git/trees") suspend fun createGitTree(@Path("owner") owner: String, @Path("repo") repo: String, @Body body: JsonObject): JsonObject
+    @POST("repos/{owner}/{repo}/git/commits") suspend fun createGitCommit(@Path("owner") owner: String, @Path("repo") repo: String, @Body body: JsonObject): JsonObject
+    @PATCH("repos/{owner}/{repo}/git/refs/heads/{branch}") suspend fun updateGitBranchRef(@Path("owner") owner: String, @Path("repo") repo: String, @Path(value = "branch", encoded = true) branch: String, @Body body: JsonObject): JsonObject
     @PUT("repos/{owner}/{repo}/contents/{path}") suspend fun commitFile(@Path("owner") owner: String, @Path("repo") repo: String, @Path(value = "path", encoded = true) path: String, @Body request: FileCommitRequest): Response<ContentEntry>
     @DELETE("repos/{owner}/{repo}/contents/{path}") suspend fun deleteFile(@Path("owner") owner: String, @Path("repo") repo: String, @Path(value = "path", encoded = true) path: String, @Body request: FileDeleteRequest): Response<Unit>
     @POST("repos/{owner}/{repo}/pulls") suspend fun createPullRequest(@Path("owner") owner: String, @Path("repo") repo: String, @Body request: PullRequestRequest): PullRequest
