@@ -106,8 +106,15 @@ class KeystoreTokenStore internal constructor(
     }
 
     override fun switchAccount(accountId: String): Boolean {
+        val currentId = activeAccountId()
         if (accounts().none { it.id == accountId }) return false
-        preferences.edit().putString(KEY_ACTIVE_ID, accountId).apply()
+        preferences.edit().apply {
+            putString(KEY_ACTIVE_ID, accountId)
+            // Organization context belongs to the current account session. Never carry it across a switch.
+            currentId?.let { remove(organizationKey(it)) }
+            remove(organizationKey(accountId))
+            remove(KEY_ACTIVE_ORG_LEGACY)
+        }.apply()
         return true
     }
 
