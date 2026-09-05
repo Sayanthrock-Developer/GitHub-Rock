@@ -73,6 +73,20 @@ object AppModule {
 
     @Provides
     @Singleton
+    @Named("downloadClient")
+    fun downloadClient(): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(NetworkRetryInterceptor())
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .writeTimeout(120, TimeUnit.SECONDS)
+        .callTimeout(10, TimeUnit.MINUTES)
+        .retryOnConnectionFailure(true)
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
+
+    @Provides
+    @Singleton
     @Named("authClient")
     fun authClient(): OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
