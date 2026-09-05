@@ -22,6 +22,22 @@ class NativeProfileDestinationTest {
     }
 
     @Test
+    fun canonicalProfileLinksOpenTheCorrectNativeSection() {
+        assertEquals(
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Repositories),
+            nativeProfileDestination("https://github.com/SayanthRock")
+        )
+        assertEquals(
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Followers),
+            nativeProfileDestination("https://github.com/SayanthRock/followers")
+        )
+        assertEquals(
+            NativeProfileDestination("SayanthRock", NativeProfileSection.Following),
+            nativeProfileDestination("https://github.com/SayanthRock/following")
+        )
+    }
+
+    @Test
     fun followerAndFollowingDestinationsUseNativeRoutes() {
         assertEquals(
             "native-profile/SayanthRock/followers",
@@ -48,7 +64,8 @@ class NativeProfileDestinationTest {
     @Test
     fun unrelatedGitHubLinksRemainExplicitlyExternal() {
         assertNull(nativeProfileDestination("https://github.com/settings/security"))
-        assertNull(nativeProfileDestination("https://github.com/SayanthRock"))
+        assertNull(nativeProfileDestination("https://github.com/SayanthRock/issues"))
+        assertNull(nativeProfileDestination("https://github.com/SayanthRock/repositories"))
         assertNull(nativeProfileDestination("https://example.com/SayanthRock?tab=followers"))
         assertNull(nativeProfileDestination("https://github.com/SayanthRock?tab=issues"))
     }
