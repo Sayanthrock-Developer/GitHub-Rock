@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -33,14 +34,18 @@ class GitHubSettingsScreenTest {
         }
 
         compose.onNodeWithText("Account settings").assertIsDisplayed()
-        compose.onNodeWithText("Mobile settings experience").assertDoesNotExist()
-        compose.onNodeWithText("45 GitHub tools available in the app").assertDoesNotExist()
-        compose.onNodeWithText("Profile and repositories use native screens. Every other supported GitHub setting opens inside GitHub Rock instead of an external browser.").assertDoesNotExist()
-        compose.onNodeWithText("Password, passkey, token, session, authorization, and billing changes remain on GitHub's secure pages inside a protected in-app panel. GitHub Rock never injects your OAuth token into web content.").assertDoesNotExist()
+        assertTextDoesNotExist("Mobile settings experience")
+        assertTextDoesNotExist("45 GitHub tools available in the app")
+        assertTextDoesNotExist("Profile and repositories use native screens. Every other supported GitHub setting opens inside GitHub Rock instead of an external browser.")
+        assertTextDoesNotExist("Password, passkey, token, session, authorization, and billing changes remain on GitHub's secure pages inside a protected in-app panel. GitHub Rock never injects your OAuth token into web content.")
 
         compose.onNodeWithText("Theme & interface")
             .performScrollTo()
             .performClick()
         compose.runOnIdle { assertTrue(openedAppearance) }
+    }
+
+    private fun assertTextDoesNotExist(text: String) {
+        assertTrue(compose.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty())
     }
 }
