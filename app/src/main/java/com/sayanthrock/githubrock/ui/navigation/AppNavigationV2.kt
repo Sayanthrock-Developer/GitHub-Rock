@@ -40,6 +40,7 @@ private const val FEATURES_PREVIEW_ROUTE = "features-preview"
 private const val SETTINGS_ROUTE = "settings"
 private const val APP_CUSTOMIZATION_ROUTE = "app-customization"
 private const val APP_INFORMATION_ROUTE = "app-information"
+private const val TERMUX_ROUTE = "integrations/termux"
 private const val ACCOUNT_SWITCHER_ROUTE = "accounts-organizations"
 private const val BUILD_DETAILS_ROUTE = "build-details/{owner}/{repo}/{runId}"
 private const val BUILD_JOB_DETAILS_ROUTE = "build-details/{owner}/{repo}/{runId}/job/{jobId}"
@@ -76,12 +77,13 @@ fun MainNavigationV2(navController: NavHostController, state: MainUiState, onSea
             }
             composable(TopDestinationV2.Downloads.route) { DownloadsHubScreen() }
             composable(TopDestinationV2.Profile.route) { ProfileScreenWithMetricNavigation(mode, state.profile, state.profileExplorer, onInspectProfile, { navController.navigate(TopDestinationV2.Downloads.route) { launchSingleTop = true } }, { navController.navigate(FEATURES_PREVIEW_ROUTE) }, { navController.navigate(ACCOUNT_SWITCHER_ROUTE) }, { navController.navigate(SETTINGS_ROUTE) }, { navController.navigate(APP_INFORMATION_ROUTE) }, { url -> nativeProfileDestination(url)?.let { openNativeProfile(it.login, it.section) } ?: onOpenGitHubUrl(url) }, openRepo, onLogout, { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Repositories) } }, { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Followers) } }, { state.profile?.login?.let { openNativeProfile(it, NativeProfileSection.Following) } }) }
-            composable(TopDestinationV2.Options.route) { GitHubSettingsScreen(state.profile?.login, { navController.navigate(APP_CUSTOMIZATION_ROUTE) { launchSingleTop = true } }, onOpenGitHubUrl, { navController.navigate(TopDestinationV2.Home.route) { launchSingleTop = true } }) }
+            composable(TopDestinationV2.Options.route) { GitHubSettingsScreen(state.profile?.login, { navController.navigate(APP_CUSTOMIZATION_ROUTE) { launchSingleTop = true } }, onOpenGitHubUrl, navController::navigateUp) }
             composable(ACCOUNT_SWITCHER_ROUTE) { AccountSwitcherScreen(mode, state.profile, navController::navigateUp, openAccountProfile, onLogout) }
             composable(NATIVE_PROFILE_ROUTE, arguments = listOf(navArgument("login") { type = NavType.StringType }, navArgument("section") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://profile/{login}/{section}" })) { NativeProfileScreen(mode, state.profile?.login, navController::navigateUp, openRepo, { login -> openNativeProfile(login, NativeProfileSection.Repositories) }) }
             composable(SETTINGS_ROUTE) { GitHubSettingsScreen(state.profile?.login, { navController.navigate(APP_CUSTOMIZATION_ROUTE) { launchSingleTop = true } }, onOpenGitHubUrl, navController::navigateUp) }
             composable(APP_CUSTOMIZATION_ROUTE) { AppearanceScreen(navController::navigateUp) }
             composable(APP_INFORMATION_ROUTE) { AppInformationScreen(navController::navigateUp) }
+            composable(TERMUX_ROUTE) { TermuxCommandBridgeScreen(repository = buildRepositories.firstOrNull(), onBack = navController::navigateUp) }
             composable(FEATURES_PREVIEW_ROUTE) { FeaturePreviewScreen(state.profile?.login, onOpenGitHubUrl, navController::navigateUp) }
             composable("repo/{owner}/{repo}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" }, navDeepLink { uriPattern = "https://github.com/{owner}/{repo}" })) { e -> RepositoryHubScreen(state.repositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, navController::navigateUp) }
             composable("build/{owner}/{repo}/{runId}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("runId") { type = NavType.LongType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" })) { e -> BuildsScreen(mode, buildRepositories, state.workflowRuns, openRepo, initialRepository = buildRepositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, initialRunId = e.arguments?.getLong("runId")) }
