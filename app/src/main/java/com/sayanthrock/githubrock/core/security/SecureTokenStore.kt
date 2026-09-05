@@ -245,7 +245,7 @@ class KeystoreTokenStore internal constructor(
         const val LEGACY_ACCESS = "access_token"
         const val LEGACY_REFRESH = "refresh_token"
         const val LEGACY_ACCESS_EXPIRY = "access_expiry"
-        const val LEGACY_REFRESH_EXPIRY = "refresh_expires_at"
+        const val LEGACY_REFRESH_EXPIRY = "refresh_expiry"
         const val LEGACY_CLIENT_ID = "oauth_client_id"
     }
 }
