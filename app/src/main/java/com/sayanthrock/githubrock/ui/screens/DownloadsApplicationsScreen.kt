@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -162,21 +161,19 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
                             }
                             return@ApplicationDownloadCard
                         }
+
                         val file = item.localPath?.let(::File)
                         if (file == null || !file.isFile || file.length() <= 0L) {
                             viewModel.downloadAgain(item)
                             return@ApplicationDownloadCard
                         }
-                        val inspection = runCatching { InstalledApkStateResolver.resolve(context, file) }.getOrNull()
-                        if (inspection == null) {
-                            errorMessage = "The downloaded APK could not be read. Download it again."
-                            return@ApplicationDownloadCard
-                        }
-                        if (state?.installed == true && state.isSameOrOlderVersion) {
-                            if (!InstalledApkStateResolver.launchInstalledApp(context, state)) errorMessage = "Android could not open the installed application."
-                        } else {
-                            openApkInstaller(context, file).onFailure { errorMessage = it.message ?: "Android could not open the package installer." }
-                        }
+
+                        // Do not gate installation on PackageManager archive metadata. Some
+                        // Android builds can read a valid APK through the package installer
+                        // while getPackageArchiveInfo() returns null. The installer is the
+                        // authority for whether the package can actually be installed.
+                        InstalledApkStateResolver.launchInstaller(context, file)
+                            .onFailure { errorMessage = it.message ?: "Android could not open the package installer." }
                     },
                     onPause = { viewModel.pause(item) },
                     onResume = { viewModel.resume(item) },
@@ -348,28 +345,6 @@ private fun openNativeRepository(context: Context, owner: String, repo: String) 
     val intent = Intent(context, MainActivity::class.java).apply {
         data = Uri.parse("githubrock://repo/${Uri.encode(owner)}/${Uri.encode(repo)}")
     }
-    context.startActivity(intent)
-}
-
-private fun openApkInstaller(context: Context, file: File): Result<Unit> = runCatching {
-    require(file.isFile && file.length() > 0L) { "The downloaded APK file is no longer available. Download it again." }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
-        error("Allow GitHub Rock to install unknown apps, then try again.")
-    }
-    val archive = InstalledApkStateResolver.resolve(context, file)
-        ?: error("The downloaded file is not a readable APK. Download it again.")
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, "application/vnd.android.package-archive")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    require(intent.resolveActivity(context.packageManager) != null) { "No Android package installer is available on this device." }
-    context.grantUriPermission(
-        intent.resolveActivity(context.packageManager)?.packageName,
-        uri,
-        Intent.FLAG_GRANT_READ_URI_PERMISSION
-    )
-    archive.packageName.isNotBlank()
     context.startActivity(intent)
 }
 
