@@ -77,7 +77,7 @@ internal data class AndroidCapabilityState(
             true,
             notificationsEnabled,
             apkInstallAllowed,
-            batteryUnrestricted,
+            true,
             termuxAvailable
         ).count { it }
 }
@@ -226,9 +226,13 @@ private fun AndroidCapabilityCenterContent(
                 CapabilityCard(
                     icon = Icons.Default.BatterySaver,
                     title = "Battery & background reliability",
-                    description = "WorkManager already handles normal background scheduling. Unrestricted battery mode is optional for very large downloads.",
-                    ready = state.batteryUnrestricted,
-                    status = if (state.batteryUnrestricted) "Unrestricted" else "System managed",
+                    description = if (state.batteryUnrestricted) {
+                        "Unrestricted battery usage is enabled. This can improve reliability for very large downloads and background activity, but may use more battery."
+                    } else {
+                        "System managed. Android controls background activity to balance reliability and battery life. Unrestricted battery usage is optional for very large downloads."
+                    },
+                    ready = true,
+                    status = if (state.batteryUnrestricted) "Unrestricted (optional)" else "System managed",
                     actionLabel = "Open battery settings",
                     onAction = onOpenBatterySettings
                 )
