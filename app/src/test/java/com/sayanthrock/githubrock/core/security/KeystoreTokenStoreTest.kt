@@ -113,13 +113,22 @@ class KeystoreTokenStoreTest {
     }
 
     @Test
-    fun `organization context belongs to the active session`() {
+    fun `organization context belongs only to the current account`() {
         val prefs = FakeSharedPreferences()
         val store = KeystoreTokenStore(prefs, "configured_client")
-        store.addAccount(tokens(), login = "alice")
+        store.addAccount(tokens("one"), login = "alice")
+        store.addAccount(tokens("two"), login = "bob")
+
+        store.switchAccount("alice")
         store.setActiveOrganization("rock-org")
         assertEquals("rock-org", store.activeOrganization())
-        store.switchAccount("alice")
+
+        assertTrue(store.switchAccount("bob"))
+        assertNull(store.activeOrganization())
+
+        store.setActiveOrganization("bob-org")
+        assertEquals("bob-org", store.activeOrganization())
+        assertTrue(store.switchAccount("alice"))
         assertNull(store.activeOrganization())
     }
 
