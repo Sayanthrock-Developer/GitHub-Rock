@@ -6,6 +6,7 @@ import java.security.MessageDigest
 
 object ChecksumVerifier {
     private val sha256Pattern = Regex("(?i)(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])")
+    private val hexPattern = Regex("(?i)[0-9a-f]+")
 
     fun sha256(file: File): String = file.inputStream().use(::sha256)
 
@@ -31,11 +32,21 @@ object ChecksumVerifier {
         sha256Pattern.find(expected.trim())?.value?.lowercase()
 
     fun matches(actual: String, expected: String): Boolean {
-        val normalizedActual = parseExpected(actual) ?: return false
-        val normalizedExpected = parseExpected(expected) ?: return false
-        return MessageDigest.isEqual(
-            normalizedActual.toByteArray(Charsets.US_ASCII),
-            normalizedExpected.toByteArray(Charsets.US_ASCII)
-        )
+        val normalizedActual = parseExpected(actual)
+        val normalizedExpected = parseExpected(expected)
+        if (normalizedActual != null && normalizedExpected != null) {
+            return MessageDigest.isEqual(
+                normalizedActual.toByteArray(Charsets.US_ASCII),
+                normalizedExpected.toByteArray(Charsets.US_ASCII)
+            )
+        }
+
+        // Preserve exact, case-insensitive comparisons for non-SHA values while
+        // rejecting arbitrary malformed checksum text rather than treating it as a digest.
+        val rawActual = actual.trim()
+        val rawExpected = expected.trim()
+        if (rawActual.isEmpty() || rawExpected.isEmpty()) return false
+        if (!hexPattern.matches(rawActual) || !hexPattern.matches(rawExpected)) return false
+        return rawActual.equals(rawExpected, ignoreCase = true)
     }
 }
