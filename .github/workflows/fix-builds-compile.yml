@@ -1,0 +1,47 @@
+name: Fix Builds Compile
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: fix/builds-repository-selection
+      - name: Patch Kotlin compile errors
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/BuildsScreen.kt')
+          s = p.read_text()
+          s = s.replace('    val repositoryRuns = actionState.recentRuns\n    val repositoryRuns = actionState.recentRuns\n', '    val repositoryRuns = actionState.recentRuns\n')
+          p.write_text(s)
+
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/ProfileScreen.kt')
+          s = p.read_text()
+          s = s.replace('import androidx.compose.ui.Modifier\nimport androidx.compose.ui.clip\n', 'import androidx.compose.ui.Modifier\nimport androidx.compose.ui.draw.clip\n')
+          p.write_text(s)
+
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryFileManagerScreen.kt')
+          s = p.read_text()
+          s = s.replace('Surface(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), color =', 'Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color =')
+          s = s.replace('OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, Modifier.weight(1f))', 'OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f))')
+          s = s.replace('Button(onClick = { multiPicker.launch(arrayOf("*/*")) }, enabled = !state.loading, Modifier.weight(1f))', 'Button(onClick = { multiPicker.launch(arrayOf("*/*")) }, enabled = !state.loading, modifier = Modifier.weight(1f))')
+          s = s.replace('OutlinedButton(onClick = { folderPicker.launch(null) }, enabled = !state.loading, Modifier.fillMaxWidth())', 'OutlinedButton(onClick = { folderPicker.launch(null) }, enabled = !state.loading, modifier = Modifier.fillMaxWidth())')
+          s = s.replace('OutlinedTextField(destination, { destination = it }, enabled = !state.loading, label =', 'OutlinedTextField(value = destination, onValueChange = { destination = it }, enabled = !state.loading, label =')
+          s = s.replace('OutlinedTextField(branch, { branch = it }, enabled = !state.loading, label =', 'OutlinedTextField(value = branch, onValueChange = { branch = it }, enabled = !state.loading, label =')
+          s = s.replace('OutlinedTextField(message, { message = it }, enabled = !state.loading, label =', 'OutlinedTextField(value = message, onValueChange = { message = it }, enabled = !state.loading, label =')
+          s = s.replace('OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f))', 'OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f))')
+          s = s.replace('Surface(onClick = onClick, enabled = enabled, Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), color =', 'Surface(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color =')
+          s = s.replace('Icon(if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, null, tint =', 'Icon(imageVector = if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, contentDescription = null, tint =')
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/BuildsScreen.kt app/src/main/java/com/sayanthrock/githubrock/ui/screens/ProfileScreen.kt app/src/main/java/com/sayanthrock/githubrock/ui/screens/RepositoryFileManagerScreen.kt
+          git commit -m 'fix: resolve Kotlin compile errors' || exit 0
+          git push origin HEAD:fix/builds-repository-selection
