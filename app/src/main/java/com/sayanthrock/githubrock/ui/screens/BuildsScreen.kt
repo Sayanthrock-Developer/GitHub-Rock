@@ -74,6 +74,7 @@ fun BuildsScreen(
     var filter by remember { mutableStateOf(BuildFilter.All) }
     val requestedRunId = initialRunId.takeIf { selectedRepository?.id == initialRepository?.id }
     val repositoryRuns = actionState.recentRuns
+    val repositoryRuns = actionState.recentRuns
 
     LaunchedEffect(mode, selectedRepository?.id, requestedRunId) {
         if (mode == AppMode.Connected && selectedRepository != null) {
