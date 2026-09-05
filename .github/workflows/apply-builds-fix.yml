@@ -1,3 +1,4 @@
+# Temporary self-removing patch runner for the Builds fix branch.
 name: Apply Builds repository fix
 on:
   push:
