@@ -22,14 +22,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.awaitEachGesture
 import androidx.compose.ui.input.pointer.awaitPointerEvent
@@ -50,6 +46,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
+import kotlin.math.absoluteValue
 
 private val rockNavigationDestinations = listOf(
     TopDestinationV2.Home,
@@ -224,14 +221,16 @@ private fun Modifier.navigationSlideGesture(
 
                 if (sliding && !cancelled) {
                     val active = pressed.lastOrNull { it.id != primaryId } ?: primary
-                    val width = size.width.toFloat().coerceAtLeast(1f)
-                    val index = ((active.position.x / width) * rockNavigationDestinations.size)
+                    val barWidth = size.width.toFloat().coerceAtLeast(1f)
+                    val index = ((active.position.x / barWidth) * rockNavigationDestinations.size)
                         .toInt()
                         .coerceIn(0, rockNavigationDestinations.lastIndex)
                     onDestinationSelected(rockNavigationDestinations[index])
                 }
 
-                if (latestEvent.changes.any { it.positionChange().x.absoluteValue > width * 0.18f && it.id == primaryId && !sliding }) {
+                if (!sliding && latestEvent.changes.any {
+                        it.id == primaryId && it.positionChange().x.absoluteValue > size.width * 0.18f
+                    }) {
                     cancelled = true
                 }
             }
