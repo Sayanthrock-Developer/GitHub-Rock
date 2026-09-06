@@ -5,9 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,9 +22,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.awaitEachGesture
+import androidx.compose.ui.input.pointer.awaitPointerEvent
+import androidx.compose.ui.input.pointer.awaitPointerEventScope
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -104,7 +113,7 @@ private fun RockBottomNavigation(
 
 @Composable
 private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f), 0.55f, 18.dp, 700.dp) {
+    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f), 0.55f, 18.dp, 700.dp, onDestinationSelected) {
         NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination ->
             RockNavigationItem(destination, selectedRoute == destination.route, showLabel = selectedRoute == destination.route && !compact, modifier = Modifier.weight(1f), selectedShape = 26.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
         } }
@@ -114,7 +123,10 @@ private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, 
 @Composable
 private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
     Surface(
-        modifier = modifier.fillMaxWidth().navigationBarsPadding(),
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .navigationSlideGesture(onDestinationSelected),
         shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
@@ -129,7 +141,12 @@ private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationS
 @Composable
 private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
     Row(
-        modifier = modifier.navigationBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp).widthIn(max = 700.dp).fillMaxWidth(),
+        modifier = modifier
+            .navigationBarsPadding()
+            .padding(horizontal = 18.dp, vertical = 8.dp)
+            .widthIn(max = 700.dp)
+            .fillMaxWidth()
+            .navigationSlideGesture(onDestinationSelected),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) { rockNavigationDestinations.forEach { destination ->
@@ -139,7 +156,7 @@ private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animatio
 
 @Composable
 private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface.copy(alpha = 0.58f), 0.65f, 14.dp, 700.dp) {
+    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface.copy(alpha = 0.58f), 0.65f, 14.dp, 700.dp, onDestinationSelected) {
         NavigationRow(70.dp, 6.dp, 3.dp) { rockNavigationDestinations.forEach { destination ->
             RockNavigationItem(destination, selectedRoute == destination.route, showLabel = selectedRoute == destination.route && !compact, modifier = Modifier.weight(1f), selectedShape = 22.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
         } }
@@ -148,7 +165,7 @@ private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationS
 
 @Composable
 private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f), 0.5f, 12.dp, 500.dp) {
+    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f), 0.5f, 12.dp, 500.dp, onDestinationSelected) {
         NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination ->
             RockNavigationItem(destination, selectedRoute == destination.route, showLabel = false, modifier = Modifier.weight(1f), selectedShape = 19.dp, iconSize = 22.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
         } }
@@ -156,9 +173,13 @@ private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationS
 }
 
 @Composable
-private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, content: @Composable () -> Unit) {
+private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
     Surface(
-        modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth),
+        modifier = modifier
+            .navigationBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .widthIn(max = maxWidth)
+            .navigationSlideGesture(onDestinationSelected),
         shape = shape,
         color = color,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -176,6 +197,46 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
         verticalAlignment = Alignment.CenterVertically,
         content = content
     )
+}
+
+private fun Modifier.navigationSlideGesture(
+    onDestinationSelected: (TopDestinationV2) -> Unit
+): Modifier = pointerInput(onDestinationSelected) {
+    awaitEachGesture {
+        awaitPointerEventScope {
+            var primaryId: PointerId? = null
+            var sliding = false
+            var cancelled = false
+            var latestEvent = awaitPointerEvent(PointerEventPass.Initial)
+            val first = latestEvent.changes.firstOrNull { it.pressed }
+            if (first == null) return@awaitPointerEventScope
+            primaryId = first.id
+
+            while (true) {
+                latestEvent = awaitPointerEvent(PointerEventPass.Initial)
+                val pressed = latestEvent.changes.filter { it.pressed }
+                val primary = pressed.firstOrNull { it.id == primaryId }
+                if (primary == null) break
+
+                if (!sliding && pressed.any { it.id != primaryId }) {
+                    sliding = true
+                }
+
+                if (sliding && !cancelled) {
+                    val active = pressed.lastOrNull { it.id != primaryId } ?: primary
+                    val width = size.width.toFloat().coerceAtLeast(1f)
+                    val index = ((active.position.x / width) * rockNavigationDestinations.size)
+                        .toInt()
+                        .coerceIn(0, rockNavigationDestinations.lastIndex)
+                    onDestinationSelected(rockNavigationDestinations[index])
+                }
+
+                if (latestEvent.changes.any { it.positionChange().x.absoluteValue > width * 0.18f && it.id == primaryId && !sliding }) {
+                    cancelled = true
+                }
+            }
+        }
+    }
 }
 
 @Composable
