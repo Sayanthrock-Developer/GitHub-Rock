@@ -43,9 +43,21 @@ class AppearancePreferencesTest {
         assertEquals(FontWeightStyle.Default, FontWeightStyle.fromStored("unknown"))
         assertEquals(AppFontFamily.SystemSans, AppFontFamily.fromStored(null))
         assertEquals(LoadingStyle.Spinner, LoadingStyle.fromStored("unknown"))
+        assertEquals(LoadingStyle.Pulse, LoadingStyle.fromStored("Pulse"))
+        assertEquals(LoadingStyle.Liquid, LoadingStyle.fromStored("Liquid"))
+        assertEquals(LoadingStyle.Orbit, LoadingStyle.fromStored("Orbit"))
+        assertEquals(LoadingStyle.Shimmer, LoadingStyle.fromStored("Shimmer"))
+        assertEquals(LoadingStyle.Morph, LoadingStyle.fromStored("Morph"))
         assertEquals(CodeColorStyle.Classic, CodeColorStyle.fromStored(null))
         assertEquals(LogDisplayStyle.Terminal, LogDisplayStyle.fromStored(null))
         assertEquals(LogDisplayStyle.Dialog, LogDisplayStyle.fromStored("Dialog"))
+    }
+
+    @Test fun allExistingAndNewLoadingOptionsRemainAvailable() {
+        assertEquals(
+            listOf("Spinner", "Linear", "Pulse", "Skeleton", "Liquid", "Orbit", "Shimmer", "Morph"),
+            LoadingStyle.entries.map { it.name }
+        )
     }
 
     @Test fun nativeToolsAreAlwaysAvailableWithoutFeatureControls() {

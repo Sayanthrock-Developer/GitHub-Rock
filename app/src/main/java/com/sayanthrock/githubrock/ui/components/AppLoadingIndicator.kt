@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -116,6 +117,22 @@ fun AppLoadingIndicator(
             LoadingStyle.Skeleton -> {
                 SkeletonLoader(compact = compact, reduceMotion = reduceMotion)
             }
+
+            LoadingStyle.Liquid -> {
+                LiquidLoader(compact = compact, reduceMotion = reduceMotion)
+            }
+
+            LoadingStyle.Orbit -> {
+                OrbitLoader(compact = compact, reduceMotion = reduceMotion)
+            }
+
+            LoadingStyle.Shimmer -> {
+                ShimmerLoader(compact = compact, reduceMotion = reduceMotion)
+            }
+
+            LoadingStyle.Morph -> {
+                MorphLoader(compact = compact, reduceMotion = reduceMotion)
+            }
         }
     }
 }
@@ -179,6 +196,128 @@ private fun SkeletonBars(shimmerOffset: Float, compact: Boolean) {
             )
         }
     }
+}
+
+@Composable
+private fun LiquidLoader(compact: Boolean, reduceMotion: Boolean) {
+    if (reduceMotion) {
+        LiquidBar(offset = 0f, compact = compact)
+        return
+    }
+    val transition = rememberInfiniteTransition(label = "app-loading-liquid")
+    val offset by transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "app-loading-liquid-offset"
+    )
+    LiquidBar(offset = offset, compact = compact)
+}
+
+@Composable
+private fun LiquidBar(offset: Float, compact: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(width = if (compact) 58.dp else 82.dp, height = if (compact) 12.dp else 16.dp)
+            .graphicsLayer { translationX = offset * if (compact) 8f else 14f; scaleX = 0.88f + ((offset + 1f) * .06f) }
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+    )
+}
+
+@Composable
+private fun OrbitLoader(compact: Boolean, reduceMotion: Boolean) {
+    val size = if (compact) 22.dp else 30.dp
+    if (reduceMotion) {
+        Box(Modifier.size(size), contentAlignment = Alignment.TopCenter) {
+            Surface(Modifier.size(if (compact) 6.dp else 8.dp), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primary) {}
+        }
+        return
+    }
+    val transition = rememberInfiniteTransition(label = "app-loading-orbit")
+    val rotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(1000), repeatMode = RepeatMode.Restart),
+        label = "app-loading-orbit-rotation"
+    )
+    Box(Modifier.size(size).graphicsLayer { rotationZ = rotation }, contentAlignment = Alignment.TopCenter) {
+        Surface(Modifier.size(if (compact) 6.dp else 8.dp), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primary) {}
+    }
+}
+
+@Composable
+private fun ShimmerLoader(compact: Boolean, reduceMotion: Boolean) {
+    val base = MaterialTheme.colorScheme.surfaceVariant
+    val highlight = MaterialTheme.colorScheme.surfaceContainerHighest
+    if (reduceMotion) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = if (compact) 12.dp else 8.dp)
+                .height(if (compact) 8.dp else 10.dp)
+                .background(base, RoundedCornerShape(50))
+        )
+        return
+    }
+    val transition = rememberInfiniteTransition(label = "app-loading-shimmer")
+    val offset by transition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(1050), repeatMode = RepeatMode.Restart),
+        label = "app-loading-shimmer-offset"
+    )
+    val brush = Brush.linearGradient(
+        colors = listOf(base, highlight, base),
+        start = androidx.compose.ui.geometry.Offset(offset * 500f, 0f),
+        end = androidx.compose.ui.geometry.Offset((offset + .8f) * 500f, 0f)
+    )
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = if (compact) 12.dp else 8.dp)
+            .height(if (compact) 8.dp else 10.dp)
+            .background(brush, RoundedCornerShape(50))
+    )
+}
+
+@Composable
+private fun MorphLoader(compact: Boolean, reduceMotion: Boolean) {
+    val baseSize = if (compact) 18.dp else 24.dp
+    if (reduceMotion) {
+        Surface(Modifier.size(baseSize), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primary) {}
+        return
+    }
+    val transition = rememberInfiniteTransition(label = "app-loading-morph")
+    val scale by transition.animateFloat(
+        initialValue = .72f,
+        targetValue = 1.18f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(850),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "app-loading-morph-scale"
+    )
+    val rotation by transition.animateFloat(
+        initialValue = -8f,
+        targetValue = 8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(850),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "app-loading-morph-rotation"
+    )
+    Surface(
+        Modifier.size(baseSize).graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+            rotationZ = rotation
+        },
+        shape = RoundedCornerShape(38),
+        color = MaterialTheme.colorScheme.primary
+    ) {}
 }
 
 @Composable
