@@ -60,6 +60,7 @@ fun BuildsScreen(
     repositories: List<GitHubRepositoryModel>,
     runs: List<WorkflowRun>,
     onSelectRepository: (GitHubRepositoryModel) -> Unit,
+    onOpenRepository: (GitHubRepositoryModel) -> Unit = {},
     onOpenRun: (GitHubRepositoryModel, WorkflowRun) -> Unit = { _, _ -> },
     initialRepository: GitHubRepositoryModel? = null,
     initialRunId: Long? = null,
@@ -124,7 +125,7 @@ fun BuildsScreen(
             selectedRepo?.let { repo ->
                 item {
                     OutlinedButton(
-                        onClick = { onSelectRepository(repo) },
+                        onClick = { onOpenRepository(repo) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = preferences.repositoryManager
                     ) {
