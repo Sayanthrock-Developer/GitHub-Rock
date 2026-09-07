@@ -71,8 +71,7 @@ class DownloadWorker @AssistedInject constructor(
                 val contentType = body.contentType()?.toString()?.lowercase().orEmpty()
                 if (name.endsWith(".apk", ignoreCase = true) &&
                     (contentType.contains("text/html") || contentType.contains("text/plain") || contentType.contains("application/json"))) {
-                    error("GitHub returned a non-binary response ($contentType)
-")
+                    error("GitHub returned a non-binary response ($contentType)")
                 }
 
                 val append = existing > 0L && result.code == 206
