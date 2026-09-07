@@ -74,7 +74,11 @@ object AppModule {
     @Provides
     @Singleton
     @Named("downloadClient")
-    fun downloadClient(): OkHttpClient = OkHttpClient.Builder()
+    fun downloadClient(authInterceptor: AuthInterceptor): OkHttpClient = OkHttpClient.Builder()
+        // Release assets and Actions artifacts may be private. The initial GitHub
+        // asset request must carry the active OAuth token; GitHub then redirects
+        // to a signed CDN URL where OkHttp safely drops the cross-host credential.
+        .addInterceptor(authInterceptor)
         .addInterceptor(NetworkRetryInterceptor())
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)
