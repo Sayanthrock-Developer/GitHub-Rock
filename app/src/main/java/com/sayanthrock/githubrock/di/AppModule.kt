@@ -25,7 +25,6 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
@@ -74,7 +73,11 @@ object AppModule {
     @Provides
     @Singleton
     @Named("downloadClient")
-    fun downloadClient(): OkHttpClient = OkHttpClient.Builder()
+    fun downloadClient(authInterceptor: AuthInterceptor): OkHttpClient = OkHttpClient.Builder()
+        // Release assets and Actions artifacts may be private. The initial GitHub
+        // asset request must carry the active OAuth token; GitHub then redirects
+        // to a signed CDN URL where OkHttp safely drops the cross-host credential.
+        .addInterceptor(authInterceptor)
         .addInterceptor(NetworkRetryInterceptor())
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)
@@ -91,7 +94,6 @@ object AppModule {
     fun authClient(): OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
         .callTimeout(90, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .followRedirects(true)
