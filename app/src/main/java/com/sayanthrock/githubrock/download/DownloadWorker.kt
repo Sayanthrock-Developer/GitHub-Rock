@@ -38,7 +38,7 @@ class DownloadWorker @AssistedInject constructor(
         val id = inputData.getLong(KEY_ID, -1)
         val url = inputData.getString(KEY_URL)?.trim()?.takeIf(String::isNotBlank) ?: return Result.failure()
         val name = inputData.getString(KEY_NAME)?.safeFileName()?.takeIf(String::isNotBlank) ?: return Result.failure()
-        val expectedSha = inputData.getString(KEY_SHA256)
+        val expectedSha = inputData.getString(KEY_SHA256)?.trim()?.takeIf(String::isNotBlank)
         val expectedPackage = inputData.getString(KEY_EXPECTED_PACKAGE)?.takeIf(String::isNotBlank)
         val directory = File(applicationContext.filesDir, "downloads").apply { mkdirs() }
         val resumedPath = inputData.getString(KEY_PARTIAL_PATH)?.let(::File)
@@ -50,29 +50,32 @@ class DownloadWorker @AssistedInject constructor(
         setForeground(downloadForegroundInfo(id, name, 0L, 0L))
 
         return try {
-            val existing = partial.takeIf(File::exists)?.length() ?: 0L
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", "GitHub-Rock/1.0")
-                .header("Accept", "application/octet-stream")
-                .header("Accept-Encoding", "identity")
-                .apply {
-                    if (existing > 0) header("Range", "bytes=$existing-")
-                }
-                .build()
+            var existing = partial.takeIf(File::exists)?.length() ?: 0L
+            var response = executeDownload(url, existing)
 
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful && response.code != 206) {
-                    error("Download failed: HTTP ${response.code}")
+            // Some release/CDN endpoints reject stale or unsupported ranges with
+            // HTTP 416. A retry against the same partial would fail forever, so
+            // discard the unusable partial and restart once from byte zero.
+            if (response.code == 416 && existing > 0L) {
+                response.close()
+                partial.delete()
+                existing = 0L
+                response = executeDownload(url, 0L)
+            }
+
+            response.use { result ->
+                if (!result.isSuccessful && result.code != 206) {
+                    error("Download failed: HTTP ${result.code}")
                 }
-                val body = response.body ?: error("Empty download response")
+                val body = result.body ?: error("Empty download response")
                 val contentType = body.contentType()?.toString()?.lowercase().orEmpty()
                 if (name.endsWith(".apk", ignoreCase = true) &&
                     (contentType.contains("text/html") || contentType.contains("text/plain") || contentType.contains("application/json"))) {
-                    error("GitHub returned a non-binary response ($contentType)")
+                    error("GitHub returned a non-binary response ($contentType)
+")
                 }
 
-                val append = existing > 0 && response.code == 206
+                val append = existing > 0L && result.code == 206
                 if (!append && partial.exists()) partial.delete()
                 val startingBytes = if (append) existing else 0L
                 knownTotal = body.contentLength().takeIf { it >= 0 }?.plus(startingBytes) ?: 0L
@@ -133,6 +136,19 @@ class DownloadWorker @AssistedInject constructor(
             )
             if (willRetry) Result.retry() else Result.failure()
         }
+    }
+
+    private fun executeDownload(url: String, existing: Long): okhttp3.Response {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "GitHub-Rock/1.0")
+            .header("Accept", "application/octet-stream")
+            .header("Accept-Encoding", "identity")
+            .apply {
+                if (existing > 0L) header("Range", "bytes=$existing-")
+            }
+            .build()
+        return client.newCall(request).execute()
     }
 
     private suspend fun copyResponseWithProgress(
