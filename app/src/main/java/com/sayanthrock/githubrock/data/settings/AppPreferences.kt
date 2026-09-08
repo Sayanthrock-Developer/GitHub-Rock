@@ -18,7 +18,12 @@ private val Context.dataStore by preferencesDataStore(name = "github_rock_prefer
 
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
-enum class AccentColor { Cyan, Blue, Violet, Emerald, Rose, Coral, Amber, Orange; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan } }
+enum class AccentColor {
+    DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Custom,
+    // Legacy names are kept so existing persisted values and call sites migrate safely.
+    Violet, Emerald, Rose, Coral, Amber;
+    companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock }
+}
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
 enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }
 enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
@@ -32,7 +37,9 @@ enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compac
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
-    val accentColor: AccentColor = AccentColor.Cyan,
+    val accentColor: AccentColor = AccentColor.DefaultGitHubRock,
+    val customAccentHex: String = "",
+    val recentAccentColors: List<String> = emptyList(),
     val displaySize: DisplaySize = DisplaySize.Standard,
     val fontSize: FontSize = FontSize.Default,
     val fontWeight: FontWeightStyle = FontWeightStyle.Default,
@@ -62,6 +69,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
             themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
             accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
+            customAccentHex = preferences[CUSTOM_ACCENT_HEX].orEmpty(),
+            recentAccentColors = parseRecentAccentColors(preferences[RECENT_ACCENT_COLORS]),
             displaySize = DisplaySize.fromStored(preferences[DISPLAY_SIZE]),
             fontSize = FontSize.fromStored(preferences[FONT_SIZE]),
             fontWeight = FontWeightStyle.fromStored(preferences[FONT_WEIGHT]),
@@ -91,7 +100,33 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
-    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name }
+    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit {
+        it[ACCENT_COLOR] = color.name
+        if (color != AccentColor.Custom) it[CUSTOM_ACCENT_HEX] = it[CUSTOM_ACCENT_HEX].orEmpty()
+        it[DYNAMIC_COLOR] = false
+    }
+    suspend fun setSystemDynamicAccent() = context.dataStore.edit {
+        it[DYNAMIC_COLOR] = true
+        it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name
+    }
+    suspend fun setCustomAccentHex(hex: String): Boolean {
+        val normalized = normalizeHex(hex) ?: return false
+        context.dataStore.edit {
+            it[ACCENT_COLOR] = AccentColor.Custom.name
+            it[DYNAMIC_COLOR] = false
+            it[CUSTOM_ACCENT_HEX] = normalized
+            val current = parseRecentAccentColors(it[RECENT_ACCENT_COLORS])
+            it[RECENT_ACCENT_COLORS] = encodeRecentAccentColors(buildList {
+                add(normalized)
+                current.filterNot { existing -> existing.equals(normalized, ignoreCase = true) }.forEach(::add)
+            })
+        }
+        return true
+    }
+    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit {
+        it[DYNAMIC_COLOR] = enabled
+        if (enabled) it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name
+    }
     suspend fun setDisplaySize(size: DisplaySize) = context.dataStore.edit { it[DISPLAY_SIZE] = size.name }
     suspend fun setFontSize(size: FontSize) = context.dataStore.edit { it[FONT_SIZE] = size.name }
     suspend fun setFontWeight(weight: FontWeightStyle) = context.dataStore.edit { it[FONT_WEIGHT] = weight.name }
@@ -101,7 +136,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setCodeColorStyle(style: CodeColorStyle) = context.dataStore.edit { it[CODE_COLOR_STYLE] = style.name }
     suspend fun setLogDisplayStyle(style: LogDisplayStyle) = context.dataStore.edit { it[LOG_DISPLAY_STYLE] = style.name }
     suspend fun setNavigationBarStyle(style: NavigationBarStyle) = context.dataStore.edit { it[NAVIGATION_BAR_STYLE] = style.name }
-    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
     suspend fun setWorkflowPreview(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_PREVIEW] = enabled }
@@ -124,7 +158,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     }
     suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE)
         preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
         preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
         preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS)
@@ -146,9 +180,12 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     private companion object {
         const val HISTORY_SEPARATOR = "\u001F"
         const val MAX_SEARCH_HISTORY = 8
+        const val MAX_ACCENT_HISTORY = 8
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val THEME_STYLE = stringPreferencesKey("theme_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
+        val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex")
+        val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors")
         val DISPLAY_SIZE = stringPreferencesKey("display_size")
         val FONT_SIZE = stringPreferencesKey("font_size")
         val FONT_WEIGHT = stringPreferencesKey("font_weight")
@@ -172,5 +209,14 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
         val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
+
+        fun normalizeHex(value: String): String? {
+            val raw = value.trim().removePrefix("#")
+            if (raw.length != 6 && raw.length != 8) return null
+            if (!raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null
+            return "#${raw.uppercase()}"
+        }
+        fun parseRecentAccentColors(value: String?): List<String> = value.orEmpty().split(HISTORY_SEPARATOR).mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY)
+        fun encodeRecentAccentColors(values: List<String>): String = values.mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY).joinToString(HISTORY_SEPARATOR)
     }
 }
