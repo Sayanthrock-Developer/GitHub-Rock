@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.theme
 
+import android.graphics.Color as AndroidColor
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
@@ -57,26 +58,74 @@ private data class AccentPalette(
     val dark: Color,
     val darkContainer: Color,
     val light: Color,
-    val lightContainer: Color
+    val lightContainer: Color,
+    val onDark: Color = Color(0xFF071012),
+    val onDarkContainer: Color = dark,
+    val onLight: Color = Color.White,
+    val onLightContainer: Color = Color(0xFF102A2D)
 )
 
 private fun AccentColor.palette(): AccentPalette = when (this) {
+    AccentColor.DefaultGitHubRock -> AccentPalette(Color(0xFF52D3DC), Color(0xFF143F43), Color(0xFF007A83), Color(0xFFB7EEF1))
+    AccentColor.Red, AccentColor.Coral -> AccentPalette(Color(0xFFFF8B86), Color(0xFF5A2422), Color(0xFFB42318), Color(0xFFFFE2DE))
+    AccentColor.Orange -> AccentPalette(Color(0xFFFFA657), Color(0xFF553018), Color(0xFFBC4C00), Color(0xFFFFE2C6))
+    AccentColor.Yellow, AccentColor.Amber -> AccentPalette(Color(0xFFF2CC60), Color(0xFF4E3D0D), Color(0xFF7A5D00), Color(0xFFFFEDB0))
+    AccentColor.Green, AccentColor.Emerald -> AccentPalette(Color(0xFF56D364), Color(0xFF173D25), Color(0xFF1A7F37), Color(0xFFDAFBE1))
+    AccentColor.Teal -> AccentPalette(Color(0xFF5DD6C7), Color(0xFF123D39), Color(0xFF087F73), Color(0xFFC5F3EC))
     AccentColor.Cyan -> AccentPalette(Color(0xFF52D3DC), Color(0xFF143F43), Color(0xFF007A83), Color(0xFFB7EEF1))
     AccentColor.Blue -> AccentPalette(Color(0xFF79B8FF), Color(0xFF173B63), Color(0xFF0969DA), Color(0xFFDDF4FF))
-    AccentColor.Violet -> AccentPalette(Color(0xFFBC8CFF), Color(0xFF3C2361), Color(0xFF8250DF), Color(0xFFEFE3FF))
-    AccentColor.Emerald -> AccentPalette(Color(0xFF56D364), Color(0xFF173D25), Color(0xFF1A7F37), Color(0xFFDAFBE1))
-    AccentColor.Rose -> AccentPalette(Color(0xFFFF8FB3), Color(0xFF5A2338), Color(0xFFBF3989), Color(0xFFFFE5F1))
-    AccentColor.Coral -> AccentPalette(Color(0xFFFF9B8F), Color(0xFF5B2923), Color(0xFFB42318), Color(0xFFFFE2DE))
-    AccentColor.Amber -> AccentPalette(Color(0xFFF2CC60), Color(0xFF4E3D0D), Color(0xFF7A5D00), Color(0xFFFFEDB0))
-    AccentColor.Orange -> AccentPalette(Color(0xFFFFA657), Color(0xFF553018), Color(0xFFBC4C00), Color(0xFFFFE2C6))
+    AccentColor.Indigo, AccentColor.Violet -> AccentPalette(Color(0xFFB7A1FF), Color(0xFF34215E), Color(0xFF5E5CE6), Color(0xFFE8E5FF))
+    AccentColor.Purple -> AccentPalette(Color(0xFFD0A8FF), Color(0xFF43215F), Color(0xFF8250DF), Color(0xFFEFE3FF))
+    AccentColor.Pink, AccentColor.Rose -> AccentPalette(Color(0xFFFF9BC1), Color(0xFF5A2338), Color(0xFFBF3989), Color(0xFFFFE5F1))
+    AccentColor.Custom -> AccentPalette(Color(0xFF52D3DC), Color(0xFF143F43), Color(0xFF007A83), Color(0xFFB7EEF1))
 }
 
-private fun darkColors(accentColor: AccentColor): ColorScheme = accentColor.palette().let { accent ->
+internal fun parseAccentHex(value: String): Color? {
+    val raw = value.trim().removePrefix("#")
+    if (raw.length != 6 && raw.length != 8) return null
+    if (!raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null
+    return runCatching { Color(AndroidColor.parseColor("#$raw")) }.getOrNull()?.copy(alpha = 1f)
+}
+
+private fun customPalette(hex: String): AccentPalette? {
+    val base = parseAccentHex(hex) ?: return null
+    val rgb = floatArrayOf(base.red, base.green, base.blue)
+    val max = rgb.maxOrNull() ?: 0f
+    val min = rgb.minOrNull() ?: 0f
+    val delta = max - min
+    val luminance = 0.2126f * base.red + 0.7152f * base.green + 0.0722f * base.blue
+    val darkPrimary = if (luminance < .48f) base.copy(red = (base.red + .18f).coerceAtMost(1f), green = (base.green + .18f).coerceAtMost(1f), blue = (base.blue + .18f).coerceAtMost(1f)) else base.copy(red = (base.red * .82f).coerceAtLeast(0f), green = (base.green * .82f).coerceAtLeast(0f), blue = (base.blue * .82f).coerceAtLeast(0f))
+    val lightPrimary = if (luminance > .52f) base.copy(red = base.red * .65f, green = base.green * .65f, blue = base.blue * .65f) else base
+    val darkContainer = Color(
+        red = base.red * .30f,
+        green = base.green * .30f,
+        blue = base.blue * .30f,
+        alpha = 1f
+    )
+    val lightContainer = Color(
+        red = base.red * .16f + .84f,
+        green = base.green * .16f + .84f,
+        blue = base.blue * .16f + .84f,
+        alpha = 1f
+    )
+    val onDark = if (relativeLuminance(darkPrimary) > .55f) Color.Black else Color.White
+    val onLight = if (relativeLuminance(lightPrimary) > .55f) Color.Black else Color.White
+    val onDarkContainer = if (relativeLuminance(darkContainer) > .55f) Color.Black else Color.White
+    val onLightContainer = if (relativeLuminance(lightContainer) > .55f) Color.Black else Color(0xFF101010)
+    return AccentPalette(darkPrimary, darkContainer, lightPrimary, lightContainer, onDark, onDarkContainer, onLight, onLightContainer)
+}
+
+private fun relativeLuminance(color: Color): Float {
+    fun channel(value: Float): Float = if (value <= .03928f) value / 12.92f else ((value + .055f) / 1.055f).toDouble().pow(2.4).toFloat()
+    return .2126f * channel(color.red) + .7152f * channel(color.green) + .0722f * channel(color.blue)
+}
+
+private fun darkColors(accentColor: AccentColor, customAccentHex: String? = null): ColorScheme = (if (accentColor == AccentColor.Custom) customAccentHex?.let(::customPalette) else null ?: accentColor.palette()).let { accent ->
     darkColorScheme(
         primary = accent.dark,
-        onPrimary = Color(0xFF071012),
+        onPrimary = accent.onDark,
         primaryContainer = accent.darkContainer,
-        onPrimaryContainer = accent.dark,
+        onPrimaryContainer = accent.onDarkContainer,
         secondary = Color(0xFFB6C2CF),
         onSecondary = Color(0xFF1B242D),
         tertiary = RockGreen,
@@ -97,12 +146,12 @@ private fun darkColors(accentColor: AccentColor): ColorScheme = accentColor.pale
     )
 }
 
-private fun lightColors(accentColor: AccentColor): ColorScheme = accentColor.palette().let { accent ->
+private fun lightColors(accentColor: AccentColor, customAccentHex: String? = null): ColorScheme = (if (accentColor == AccentColor.Custom) customAccentHex?.let(::customPalette) else null ?: accentColor.palette()).let { accent ->
     lightColorScheme(
         primary = accent.light,
-        onPrimary = Color.White,
+        onPrimary = accent.onLight,
         primaryContainer = accent.lightContainer,
-        onPrimaryContainer = Color(0xFF102A2D),
+        onPrimaryContainer = accent.onLightContainer,
         secondary = Color(0xFF59636E),
         onSecondary = Color.White,
         tertiary = RockLightGreen,
@@ -135,68 +184,17 @@ private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
 
 private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): ColorScheme = when (style) {
     ThemeStyle.Clean -> this
-    ThemeStyle.LiquidGlass -> copy(
-        surface = surface.copy(alpha = .94f),
-        surfaceContainer = surfaceContainer.copy(alpha = .90f),
-        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f),
-        surfaceVariant = surfaceVariant.copy(alpha = .88f),
-        outlineVariant = primary.copy(alpha = .20f)
-    )
-    ThemeStyle.Studio -> copy(
-        background = if (darkTheme) Color(0xFF0B0E12) else Color(0xFFF6F7F9),
-        surface = if (darkTheme) Color(0xFF11161D) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF151B23) else Color(0xFFF0F2F5),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF1B222C) else Color(0xFFE7EBF0),
-        outlineVariant = if (darkTheme) Color(0xFF313A46) else Color(0xFFD4D9E0)
-    )
-    ThemeStyle.Midnight -> copy(
-        background = if (darkTheme) Color(0xFF070B14) else Color(0xFFF4F7FC),
-        surface = if (darkTheme) Color(0xFF0D1422) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF121C2D) else Color(0xFFEAF0FA),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF19263A) else Color(0xFFDDE7F5),
-        outlineVariant = primary.copy(alpha = .28f)
-    )
-    ThemeStyle.Aurora -> copy(
-        background = if (darkTheme) Color(0xFF07110F) else Color(0xFFF4FBF8),
-        surface = if (darkTheme) Color(0xFF0D1A17) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF13231F) else Color(0xFFE8F6F0),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF1A2E29) else Color(0xFFD9EEE6),
-        outlineVariant = tertiary.copy(alpha = .30f)
-    )
-    ThemeStyle.HighContrast -> copy(
-        background = if (darkTheme) Color.Black else Color.White,
-        surface = if (darkTheme) Color(0xFF050505) else Color.White,
-        surfaceContainer = if (darkTheme) Color(0xFF0D0D0D) else Color(0xFFF4F4F4),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF161616) else Color(0xFFEAEAEA),
-        outline = if (darkTheme) Color.White else Color.Black,
-        outlineVariant = if (darkTheme) Color(0xFFBDBDBD) else Color(0xFF2B2B2B),
-        onBackground = if (darkTheme) Color.White else Color.Black,
-        onSurface = if (darkTheme) Color.White else Color.Black,
-        onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222)
-    )
-    ThemeStyle.Obsidian -> copy(
-        background = if (darkTheme) Color(0xFF07080A) else Color(0xFFF5F6F8),
-        surface = if (darkTheme) Color(0xFF0D0F12) else Color(0xFFFCFCFD),
-        surfaceVariant = if (darkTheme) Color(0xFF111419) else Color(0xFFF0F2F5),
-        surfaceContainerLowest = if (darkTheme) Color(0xFF050608) else Color.White,
-        surfaceContainerLow = if (darkTheme) Color(0xFF0A0C0F) else Color(0xFFF7F8FA),
-        surfaceContainer = if (darkTheme) Color(0xFF12151A) else Color(0xFFF0F2F5),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF191D23) else Color(0xFFE7EAF0),
-        surfaceContainerHighest = if (darkTheme) Color(0xFF222730) else Color(0xFFDCE1E8),
-        outline = if (darkTheme) Color(0xFF343B45) else Color(0xFFB8C0CA),
-        outlineVariant = if (darkTheme) Color(0xFF242A32) else Color(0xFFD9DEE5),
-        onBackground = if (darkTheme) Color(0xFFF1F3F5) else Color(0xFF16191D),
-        onSurface = if (darkTheme) Color(0xFFF1F3F5) else Color(0xFF16191D),
-        onSurfaceVariant = if (darkTheme) Color(0xFFAAB2BD) else Color(0xFF59636E)
-    )
+    ThemeStyle.LiquidGlass -> copy(surface = surface.copy(alpha = .94f), surfaceContainer = surfaceContainer.copy(alpha = .90f), surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f), surfaceVariant = surfaceVariant.copy(alpha = .88f), outlineVariant = primary.copy(alpha = .20f))
+    ThemeStyle.Studio -> copy(background = if (darkTheme) Color(0xFF0B0E12) else Color(0xFFF6F7F9), surface = if (darkTheme) Color(0xFF11161D) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF151B23) else Color(0xFFF0F2F5), surfaceContainerHigh = if (darkTheme) Color(0xFF1B222C) else Color(0xFFE7EBF0), outlineVariant = if (darkTheme) Color(0xFF313A46) else Color(0xFFD4D9E0))
+    ThemeStyle.Midnight -> copy(background = if (darkTheme) Color(0xFF070B14) else Color(0xFFF4F7FC), surface = if (darkTheme) Color(0xFF0D1422) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF121C2D) else Color(0xFFEAF0FA), surfaceContainerHigh = if (darkTheme) Color(0xFF19263A) else Color(0xFFDDE7F5), outlineVariant = primary.copy(alpha = .28f))
+    ThemeStyle.Aurora -> copy(background = if (darkTheme) Color(0xFF07110F) else Color(0xFFF4FBF8), surface = if (darkTheme) Color(0xFF0D1A17) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF13231F) else Color(0xFFE8F6F0), surfaceContainerHigh = if (darkTheme) Color(0xFF1A2E29) else Color(0xFFD9EEE6), outlineVariant = tertiary.copy(alpha = .30f))
+    ThemeStyle.HighContrast -> copy(background = if (darkTheme) Color.Black else Color.White, surface = if (darkTheme) Color(0xFF050505) else Color.White, surfaceContainer = if (darkTheme) Color(0xFF0D0D0D) else Color(0xFFF4F4F4), surfaceContainerHigh = if (darkTheme) Color(0xFF161616) else Color(0xFFEAEAEA), outline = if (darkTheme) Color.White else Color.Black, outlineVariant = if (darkTheme) Color(0xFFBDBDBD) else Color(0xFF2B2B2B), onBackground = if (darkTheme) Color.White else Color.Black, onSurface = if (darkTheme) Color.White else Color.Black, onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222))
+    ThemeStyle.Obsidian -> copy(background = if (darkTheme) Color(0xFF07080A) else Color(0xFFF5F6F8), surface = if (darkTheme) Color(0xFF0D0F12) else Color(0xFFFCFCFD), surfaceVariant = if (darkTheme) Color(0xFF111419) else Color(0xFFF0F2F5), surfaceContainerLowest = if (darkTheme) Color(0xFF050608) else Color.White, surfaceContainerLow = if (darkTheme) Color(0xFF0A0C0F) else Color(0xFFF7F8FA), surfaceContainer = if (darkTheme) Color(0xFF12151A) else Color(0xFFF0F2F5), surfaceContainerHigh = if (darkTheme) Color(0xFF191D23) else Color(0xFFE7EAF0), surfaceContainerHighest = if (darkTheme) Color(0xFF222730) else Color(0xFFDCE1E8), outline = if (darkTheme) Color(0xFF343B45) else Color(0xFFB8C0CA), outlineVariant = if (darkTheme) Color(0xFF242A32) else Color(0xFFD9DEE5), onBackground = if (darkTheme) Color(0xFFF1F3F5) else Color(0xFF16191D), onSurface = if (darkTheme) Color(0xFFF1F3F5) else Color(0xFF16191D), onSurfaceVariant = if (darkTheme) Color(0xFFAAB2BD) else Color(0xFF59636E))
 }
 
 private fun ColorScheme.applyTrueBlack(darkTheme: Boolean, enabled: Boolean): ColorScheme {
     if (!darkTheme || !enabled) return this
-    return copy(
-        background = Color.Black,
-        surfaceContainerLowest = Color.Black
-    )
+    return copy(background = Color.Black, surfaceContainerLowest = Color.Black)
 }
 
 private fun codeColors(style: CodeColorStyle, darkTheme: Boolean): CodeColors = when (style) {
@@ -204,27 +202,19 @@ private fun codeColors(style: CodeColorStyle, darkTheme: Boolean): CodeColors = 
     CodeColorStyle.Ocean -> CodeColors(keyword = if (darkTheme) Color(0xFF58A6FF) else Color(0xFF0550AE), string = if (darkTheme) Color(0xFF7EE787) else Color(0xFF116329), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF57606A), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0A4A7A), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFF39C5CF) else Color(0xFF006D75))
     CodeColorStyle.Sunset -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFA40E26), string = if (darkTheme) Color(0xFFF2CC60) else Color(0xFF6F5500), comment = if (darkTheme) Color(0xFF9DA7B3) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF6639BA), property = if (darkTheme) Color(0xFFFF8FB3) else Color(0xFF9E1B59))
     CodeColorStyle.Monochrome -> CodeColors(keyword = if (darkTheme) Color.White else Color.Black, string = if (darkTheme) Color(0xFFD0D7DE) else Color(0xFF24292F), comment = if (darkTheme) Color(0xFF8C959F) else Color(0xFF57606A), number = if (darkTheme) Color(0xFFE6EDF3) else Color(0xFF24292F), type = if (darkTheme) Color.White else Color.Black, property = if (darkTheme) Color(0xFFC9D1D9) else Color(0xFF24292F))
-    CodeColorStyle.GitHub -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E), string = if (darkTheme) Color(0xFFA5D6FF) else Color(0xFF0A3069), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF6E7781), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0550AE), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800))
+    CodeColorStyle.GitHub -> CodeColors(keyword = if (darkTheme) Color(0xFFFF7B72) else Color(0xFFCF222E), string = if (darkTheme) Color(0xFFA5D6FF) else Color(0xFF0A3069), comment = if (darkTheme) Color(0xFF8B949E) else Color(0xFF6E778E), number = if (darkTheme) Color(0xFF79C0FF) else Color(0xFF0550AE), type = if (darkTheme) Color(0xFFD2A8FF) else Color(0xFF8250DF), property = if (darkTheme) Color(0xFFFFA657) else Color(0xFF953800))
 }
 
-private fun DisplaySize.scale(): Float = when (this) {
-    DisplaySize.Small -> .90f
-    DisplaySize.Standard -> 1f
-    DisplaySize.Large -> 1.12f
-}
-
-private fun FontSize.scale(): Float = when (this) {
-    FontSize.Small -> .90f
-    FontSize.Default -> 1f
-    FontSize.Large -> 1.16f
-}
+private fun DisplaySize.scale(): Float = when (this) { DisplaySize.Small -> .90f; DisplaySize.Standard -> 1f; DisplaySize.Large -> 1.12f }
+private fun FontSize.scale(): Float = when (this) { FontSize.Small -> .90f; FontSize.Default -> 1f; FontSize.Large -> 1.16f }
 
 @Composable
 fun GitHubRockTheme(
     darkTheme: Boolean = true,
     dynamicColor: Boolean = true,
     trueBlack: Boolean = true,
-    accentColor: AccentColor = AccentColor.Cyan,
+    accentColor: AccentColor = AccentColor.DefaultGitHubRock,
+    customAccentHex: String? = null,
     themeStyle: ThemeStyle = ThemeStyle.Clean,
     displaySize: DisplaySize = DisplaySize.Standard,
     fontSize: FontSize = FontSize.Default,
@@ -243,16 +233,13 @@ fun GitHubRockTheme(
     val colors = when {
         usesSystemColors && darkTheme -> dynamicDarkColorScheme(context)
         usesSystemColors -> dynamicLightColorScheme(context)
-        darkTheme -> darkColors(accentColor)
-        else -> lightColors(accentColor)
+        darkTheme -> darkColors(accentColor, customAccentHex)
+        else -> lightColors(accentColor, customAccentHex)
     }
         .applyStyle(themeStyle, darkTheme)
         .applyTrueBlack(darkTheme, trueBlack)
 
-    val scaledDensity = Density(
-        density = baseDensity.density * displaySize.scale(),
-        fontScale = baseDensity.fontScale * fontSize.scale()
-    )
+    val scaledDensity = Density(density = baseDensity.density * displaySize.scale(), fontScale = baseDensity.fontScale * fontSize.scale())
 
     CompositionLocalProvider(
         LocalRemoteImagesEnabled provides showImages,
@@ -263,11 +250,6 @@ fun GitHubRockTheme(
         LocalCodeColors provides codeColors(codeColorStyle, darkTheme),
         LocalDensity provides scaledDensity
     ) {
-        MaterialTheme(
-            colorScheme = colors,
-            typography = rockTypography(fontFamily, fontWeight),
-            shapes = shapesFor(themeStyle),
-            content = content
-        )
+        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)
     }
 }
