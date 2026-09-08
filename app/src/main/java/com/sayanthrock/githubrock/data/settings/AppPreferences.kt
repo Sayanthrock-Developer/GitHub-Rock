@@ -30,17 +30,24 @@ enum class LoadingStyle {
     WavyRing,
     SegmentedRing,
     RockPentagon,
-    PentagonOrbit,
-    // Legacy values are retained so existing persisted settings/tests and theme call sites remain source-compatible.
-    Spinner, Linear, Pulse, Skeleton, Liquid, Orbit, Shimmer, Morph;
+    PentagonOrbit;
 
     companion object {
         fun fromStored(value: String?): LoadingStyle = when (value) {
             "Spinner" -> SystemDefault
-            "Linear" -> MaterialExpressive
-            "Pulse", "Skeleton", "Liquid", "Orbit", "Shimmer", "Morph" -> MaterialExpressive
+            "Linear", "Pulse", "Skeleton", "Liquid", "Orbit", "Shimmer", "Morph" -> MaterialExpressive
             else -> entries.firstOrNull { it.name == value } ?: SystemDefault
         }
+
+        // Source-compatible aliases for older call sites/tests. They are not user-selectable settings.
+        val Spinner get() = SystemDefault
+        val Linear get() = MaterialExpressive
+        val Pulse get() = MaterialExpressive
+        val Skeleton get() = MaterialExpressive
+        val Liquid get() = MaterialExpressive
+        val Orbit get() = MaterialExpressive
+        val Shimmer get() = MaterialExpressive
+        val Morph get() = MaterialExpressive
     }
 
     val displayName: String
@@ -52,14 +59,6 @@ enum class LoadingStyle {
             SegmentedRing -> "Segmented Ring"
             RockPentagon -> "Rock Pentagon"
             PentagonOrbit -> "Pentagon Orbit"
-            Spinner -> "System Default"
-            Linear -> "Material Expressive"
-            Pulse -> "Material Expressive"
-            Skeleton -> "Material Expressive"
-            Liquid -> "Material Expressive"
-            Orbit -> "Material Expressive"
-            Shimmer -> "Material Expressive"
-            Morph -> "Material Expressive"
         }
 }
 enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
