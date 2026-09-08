@@ -16,9 +16,9 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.GitHubUrlPolicy
+import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
-import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.ui.GitHubRockRoot
 import com.sayanthrock.githubrock.ui.MainViewModel
@@ -47,7 +47,9 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.Light -> false
                 ThemeMode.Dark -> true
             }
-            val useSystemDynamicColors = appearance.themeMode == ThemeMode.System && appearance.accentColor == AccentColor.SystemDynamic
+            // Accent selection is independent from the light/dark mode. System Dynamic
+            // always uses Android's dynamic scheme, while every other accent is static.
+            val useSystemDynamicColors = appearance.accentColor == AccentColor.SystemDynamic
             val view = LocalView.current
             GitHubRockTheme(
                 darkTheme = useDarkTheme,
