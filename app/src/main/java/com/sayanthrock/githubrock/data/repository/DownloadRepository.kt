@@ -17,6 +17,7 @@ import com.sayanthrock.githubrock.data.local.state
 import com.sayanthrock.githubrock.download.DownloadWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +47,12 @@ class DownloadRepository @Inject constructor(
         fallbackUrl: String? = null
     ) {
         val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return
-        val resolvedFallbackUrl = fallbackUrl?.trim()?.takeIf { it.isNotBlank() && it != resolvedUrl }
+        val derivedFallback = if (fallbackUrl.isNullOrBlank() && assetId != null && !repositoryFullName.isNullOrBlank() && isPublicGitHubReleaseUrl(resolvedUrl)) {
+            "https://api.github.com/repos/${repositoryFullName.trim()}/releases/assets/$assetId"
+        } else {
+            fallbackUrl
+        }
+        val resolvedFallbackUrl = derivedFallback?.trim()?.takeIf { it.isNotBlank() && it != resolvedUrl }
         val queued = DownloadEntity(
             fileName = fileName,
             sourceUrl = resolvedUrl,
@@ -175,6 +181,11 @@ class DownloadRepository @Inject constructor(
     }
 
     private fun DownloadEntity.isApkDownload(): Boolean = fileName.endsWith(".apk", ignoreCase = true)
+
+    private fun isPublicGitHubReleaseUrl(url: String): Boolean = runCatching {
+        val uri = URI(url)
+        uri.host.equals("github.com", ignoreCase = true) && uri.path?.contains("/releases/download/", ignoreCase = true) == true
+    }.getOrDefault(false)
 
     companion object {
         private val ACTIVE_STATES = setOf(DownloadState.QUEUED, DownloadState.DOWNLOADING, DownloadState.RETRYING)
