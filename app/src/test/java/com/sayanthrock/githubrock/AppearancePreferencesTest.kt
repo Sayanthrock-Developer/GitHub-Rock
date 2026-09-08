@@ -35,6 +35,11 @@ class AppearancePreferencesTest {
         assertEquals(AccentColor.Purple, AccentColor.fromStored("Purple"))
         assertEquals(AccentColor.Pink, AccentColor.fromStored("Pink"))
         assertEquals(AccentColor.Custom, AccentColor.fromStored("Custom"))
+        assertEquals(AccentColor.Purple, AccentColor.fromStored("Violet"))
+        assertEquals(AccentColor.Green, AccentColor.fromStored("Emerald"))
+        assertEquals(AccentColor.Pink, AccentColor.fromStored("Rose"))
+        assertEquals(AccentColor.Red, AccentColor.fromStored("Coral"))
+        assertEquals(AccentColor.Yellow, AccentColor.fromStored("Amber"))
         assertEquals(AccentColor.DefaultGitHubRock, AccentColor.fromStored("unknown"))
         assertEquals(AccentColor.DefaultGitHubRock, AccentColor.fromStored(null))
     }
