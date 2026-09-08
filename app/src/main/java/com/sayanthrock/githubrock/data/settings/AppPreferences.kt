@@ -30,10 +30,17 @@ enum class LoadingStyle {
     WavyRing,
     SegmentedRing,
     RockPentagon,
-    PentagonOrbit;
+    PentagonOrbit,
+    // Legacy values are retained so existing persisted settings/tests and theme call sites remain source-compatible.
+    Spinner, Linear, Pulse, Skeleton, Liquid, Orbit, Shimmer, Morph;
 
     companion object {
-        fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: SystemDefault
+        fun fromStored(value: String?): LoadingStyle = when (value) {
+            "Spinner" -> SystemDefault
+            "Linear" -> MaterialExpressive
+            "Pulse", "Skeleton", "Liquid", "Orbit", "Shimmer", "Morph" -> MaterialExpressive
+            else -> entries.firstOrNull { it.name == value } ?: SystemDefault
+        }
     }
 
     val displayName: String
@@ -45,6 +52,14 @@ enum class LoadingStyle {
             SegmentedRing -> "Segmented Ring"
             RockPentagon -> "Rock Pentagon"
             PentagonOrbit -> "Pentagon Orbit"
+            Spinner -> "System Default"
+            Linear -> "Material Expressive"
+            Pulse -> "Material Expressive"
+            Skeleton -> "Material Expressive"
+            Liquid -> "Material Expressive"
+            Orbit -> "Material Expressive"
+            Shimmer -> "Material Expressive"
+            Morph -> "Material Expressive"
         }
 }
 enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
@@ -82,29 +97,7 @@ data class AppearancePreferences(
 class AppPreferences @Inject constructor(@ApplicationContext private val context: Context) {
     val appearance: Flow<AppearancePreferences> = context.dataStore.data.map { preferences ->
         AppearancePreferences(
-            themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
-            themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
-            accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
-            displaySize = DisplaySize.fromStored(preferences[DISPLAY_SIZE]),
-            fontSize = FontSize.fromStored(preferences[FONT_SIZE]),
-            fontWeight = FontWeightStyle.fromStored(preferences[FONT_WEIGHT]),
-            fontFamily = AppFontFamily.fromStored(preferences[FONT_FAMILY]),
-            loadingStyle = LoadingStyle.fromStored(preferences[LOADING_STYLE]),
-            animationStyle = AnimationStyle.fromStored(preferences[ANIMATION_STYLE]),
-            codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
-            logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
-            navigationBarStyle = NavigationBarStyle.fromStored(preferences[NAVIGATION_BAR_STYLE]),
-            dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
-            trueBlack = preferences[TRUE_BLACK] ?: false,
-            showImages = preferences[SHOW_IMAGES] ?: true,
-            workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
-            workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true,
-            statusColors = preferences[STATUS_COLORS] ?: true,
-            actionsControls = preferences[ACTIONS_CONTROLS] ?: true,
-            repositoryManager = preferences[REPOSITORY_MANAGER] ?: true,
-            fileTools = preferences[FILE_TOOLS] ?: true,
-            compactCards = preferences[COMPACT_CARDS] ?: false,
-            reduceMotion = preferences[REDUCE_MOTION] ?: false
+            themeMode = ThemeMode.fromStored(preferences[THEME_MODE]), themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]), accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]), displaySize = DisplaySize.fromStored(preferences[DISPLAY_SIZE]), fontSize = FontSize.fromStored(preferences[FONT_SIZE]), fontWeight = FontWeightStyle.fromStored(preferences[FONT_WEIGHT]), fontFamily = AppFontFamily.fromStored(preferences[FONT_FAMILY]), loadingStyle = LoadingStyle.fromStored(preferences[LOADING_STYLE]), animationStyle = AnimationStyle.fromStored(preferences[ANIMATION_STYLE]), codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]), logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]), navigationBarStyle = NavigationBarStyle.fromStored(preferences[NAVIGATION_BAR_STYLE]), dynamicColor = preferences[DYNAMIC_COLOR] ?: true, trueBlack = preferences[TRUE_BLACK] ?: false, showImages = preferences[SHOW_IMAGES] ?: true, workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true, workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true, statusColors = preferences[STATUS_COLORS] ?: true, actionsControls = preferences[ACTIONS_CONTROLS] ?: true, repositoryManager = preferences[REPOSITORY_MANAGER] ?: true, fileTools = preferences[FILE_TOOLS] ?: true, compactCards = preferences[COMPACT_CARDS] ?: false, reduceMotion = preferences[REDUCE_MOTION] ?: false
         )
     }
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
@@ -147,17 +140,12 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     }
     suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
-        preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
-        preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
-        preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS)
-        preferences.remove(REDUCE_MOTION)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE); preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE); preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES); preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS); preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
         context.dataStore.edit { preferences ->
-            val current = preferences[FAVORITE_REPOSITORIES].orEmpty().toMutableSet()
-            val existing = current.firstOrNull { it.equals(normalized, ignoreCase = true) }
+            val current = preferences[FAVORITE_REPOSITORIES].orEmpty().toMutableSet(); val existing = current.firstOrNull { it.equals(normalized, ignoreCase = true) }
             if (existing == null) current += normalized else current -= existing
             preferences[FAVORITE_REPOSITORIES] = current
         }
@@ -167,33 +155,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun clearMonitoredWorkflowRun(monitorKey: String) { context.dataStore.edit { it.remove(longPreferencesKey("workflow_monitor_$monitorKey")) } }
 
     private companion object {
-        const val HISTORY_SEPARATOR = "\u001F"
-        const val MAX_SEARCH_HISTORY = 8
-        val THEME_MODE = stringPreferencesKey("theme_mode")
-        val THEME_STYLE = stringPreferencesKey("theme_style")
-        val ACCENT_COLOR = stringPreferencesKey("accent_color")
-        val DISPLAY_SIZE = stringPreferencesKey("display_size")
-        val FONT_SIZE = stringPreferencesKey("font_size")
-        val FONT_WEIGHT = stringPreferencesKey("font_weight")
-        val FONT_FAMILY = stringPreferencesKey("font_family")
-        val LOADING_STYLE = stringPreferencesKey("loading_style")
-        val ANIMATION_STYLE = stringPreferencesKey("animation_style")
-        val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style")
-        val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style")
-        val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style")
-        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
-        val TRUE_BLACK = booleanPreferencesKey("true_black")
-        val SHOW_IMAGES = booleanPreferencesKey("show_images")
-        val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview")
-        val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details")
-        val STATUS_COLORS = booleanPreferencesKey("status_colors")
-        val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls")
-        val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager")
-        val FILE_TOOLS = booleanPreferencesKey("file_tools")
-        val COMPACT_CARDS = booleanPreferencesKey("compact_cards")
-        val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
-        val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
-        val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
-        val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
+        const val HISTORY_SEPARATOR = "\u001F"; const val MAX_SEARCH_HISTORY = 8
+        val THEME_MODE = stringPreferencesKey("theme_mode"); val THEME_STYLE = stringPreferencesKey("theme_style"); val ACCENT_COLOR = stringPreferencesKey("accent_color"); val DISPLAY_SIZE = stringPreferencesKey("display_size"); val FONT_SIZE = stringPreferencesKey("font_size"); val FONT_WEIGHT = stringPreferencesKey("font_weight"); val FONT_FAMILY = stringPreferencesKey("font_family"); val LOADING_STYLE = stringPreferencesKey("loading_style"); val ANIMATION_STYLE = stringPreferencesKey("animation_style"); val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style"); val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style"); val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style"); val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color"); val TRUE_BLACK = booleanPreferencesKey("true_black"); val SHOW_IMAGES = booleanPreferencesKey("show_images"); val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview"); val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details"); val STATUS_COLORS = booleanPreferencesKey("status_colors"); val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls"); val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager"); val FILE_TOOLS = booleanPreferencesKey("file_tools"); val COMPACT_CARDS = booleanPreferencesKey("compact_cards"); val REDUCE_MOTION = booleanPreferencesKey("reduce_motion"); val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock"); val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories"); val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
     }
 }
