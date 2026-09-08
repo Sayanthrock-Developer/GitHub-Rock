@@ -14,12 +14,14 @@ import androidx.work.WorkerParameters
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.util.ChecksumVerifier
 import com.sayanthrock.githubrock.core.util.inspectApk
+import com.sayanthrock.githubrock.data.local.DownloadState
 import com.sayanthrock.githubrock.data.repository.DownloadRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Named
+import kotlin.math.max
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -27,13 +29,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 
-/**
- * Single download engine for GitHub release assets and Actions artifacts.
- *
- * It deliberately does not use mirrors. GitHub's authenticated URL is the source
- * of truth, while this worker owns resume/restart, response validation, integrity,
- * persistence and finalization.
- */
+/** Single download engine for GitHub release assets and Actions artifacts. */
 @HiltWorker
 class DownloadWorker @AssistedInject constructor(
     @Assisted context: Context,
@@ -65,45 +61,31 @@ class DownloadWorker @AssistedInject constructor(
             while (true) {
                 response?.close()
                 response = executeDownload(url, existing)
-
                 when {
                     response.code == 416 && existing > 0L && !restarted -> {
-                        response.close()
-                        partial.delete()
-                        existing = 0L
-                        restarted = true
+                        response.close(); partial.delete(); existing = 0L; restarted = true
                     }
                     response.code == 206 && existing > 0L -> {
                         val range = response.header("Content-Range")?.let(::parseContentRange)
                         if (range == null || range.first != existing || range.third <= existing) {
-                            response.close()
-                            partial.delete()
-                            existing = 0L
+                            response.close(); partial.delete(); existing = 0L
                             if (restarted) error("Server returned an invalid byte range")
                             restarted = true
-                        } else {
-                            break
-                        }
+                        } else break
                     }
                     response.code == 200 -> {
                         if (existing > 0L) {
-                            response.close()
-                            partial.delete()
-                            existing = 0L
+                            response.close(); partial.delete(); existing = 0L
                             if (restarted) error("Download server ignored resume request")
-                            restarted = true
-                            continue
+                            restarted = true; continue
                         }
                         break
                     }
                     response.isSuccessful -> {
                         if (existing > 0L) {
-                            response.close()
-                            partial.delete()
-                            existing = 0L
+                            response.close(); partial.delete(); existing = 0L
                             if (restarted) error("Unexpected response while resuming download")
-                            restarted = true
-                            continue
+                            restarted = true; continue
                         }
                         break
                     }
@@ -122,9 +104,7 @@ class DownloadWorker @AssistedInject constructor(
 
                 val append = existing > 0L && result.code == 206
                 val range = if (append) result.header("Content-Range")?.let(::parseContentRange) else null
-                if (append && (range == null || range.first != existing)) {
-                    error("Invalid resume range")
-                }
+                if (append && (range == null || range.first != existing)) error("Invalid resume range")
                 if (!append && partial.exists()) partial.delete()
 
                 val startingBytes = if (append) existing else 0L
@@ -133,7 +113,7 @@ class DownloadWorker @AssistedInject constructor(
                     body.contentLength() >= 0L -> startingBytes + body.contentLength()
                     else -> 0L
                 }
-                repository.updateProgress(id, "downloading", startingBytes, knownTotal, partial.absolutePath, null)
+                repository.updateProgress(id, DownloadState.DOWNLOADING, startingBytes, knownTotal, partial.absolutePath, expectedSha)
                 setForeground(downloadForegroundInfo(id, name, startingBytes, knownTotal))
                 copyResponseWithProgress(id, name, body.byteStream(), partial, append, startingBytes, knownTotal)
             }
@@ -143,6 +123,7 @@ class DownloadWorker @AssistedInject constructor(
                 error("Download size mismatch: ${partial.length()} of $knownTotal bytes")
             }
 
+            repository.updateProgress(id, DownloadState.VERIFYING, partial.length(), knownTotal, partial.absolutePath, expectedSha)
             if (name.endsWith(".apk", ignoreCase = true)) {
                 val previous = expectedPackage?.let { repository.latestCompletedForPackage(it) }
                 val inspection = inspectApk(
@@ -177,7 +158,8 @@ class DownloadWorker @AssistedInject constructor(
             if (final.exists()) final.delete()
             check(partial.renameTo(final)) { "Unable to finalize download" }
             check(final.isFile && final.length() > 0L) { "Final download file is unavailable" }
-            repository.updateProgress(id, "completed", final.length(), final.length(), final.absolutePath, sha)
+            val terminalState = if (name.endsWith(".apk", ignoreCase = true)) DownloadState.INSTALLABLE else DownloadState.COMPLETED
+            repository.updateProgress(id, terminalState, final.length(), final.length(), final.absolutePath, sha, 0L, 0L, null)
             Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -186,11 +168,14 @@ class DownloadWorker @AssistedInject constructor(
             val willRetry = runAttemptCount < MAX_AUTOMATIC_RETRIES
             repository.updateProgress(
                 id,
-                if (willRetry) "retrying" else "failed",
+                if (willRetry) DownloadState.RETRYING else DownloadState.FAILED,
                 downloaded,
                 knownTotal,
                 partial.takeIf(File::exists)?.absolutePath,
-                null
+                expectedSha,
+                0L,
+                null,
+                error.message ?: "Download failed"
             )
             if (willRetry) Result.retry() else Result.failure()
         }
@@ -202,9 +187,7 @@ class DownloadWorker @AssistedInject constructor(
             .header("User-Agent", "GitHub-Rock/1.0")
             .header("Accept", "application/octet-stream")
             .header("Accept-Encoding", "identity")
-            .apply {
-                if (existing > 0L) header("Range", "bytes=$existing-")
-            }
+            .apply { if (existing > 0L) header("Range", "bytes=$existing-") }
             .build()
         return client.newCall(request).execute()
     }
@@ -220,6 +203,8 @@ class DownloadWorker @AssistedInject constructor(
     ) {
         var downloaded = startingBytes
         var lastPublished = startingBytes
+        var lastSampleBytes = startingBytes
+        var lastSampleAt = System.nanoTime()
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         FileOutputStream(target, append).buffered().use { output ->
             body.use { input ->
@@ -230,14 +215,23 @@ class DownloadWorker @AssistedInject constructor(
                     output.write(buffer, 0, count)
                     downloaded += count
                     if (downloaded - lastPublished >= PROGRESS_UPDATE_BYTES) {
-                        repository.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
+                        val now = System.nanoTime()
+                        val elapsedSeconds = (now - lastSampleAt) / 1_000_000_000.0
+                        val speed = if (elapsedSeconds > 0.0) ((downloaded - lastSampleBytes) / elapsedSeconds).toLong() else 0L
+                        val eta = if (speed > 0L && totalBytes > downloaded) (totalBytes - downloaded + speed - 1L) / speed else null
+                        repository.updateProgress(id, DownloadState.DOWNLOADING, downloaded, totalBytes, target.absolutePath, null, speed, eta, null)
                         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
                         lastPublished = downloaded
+                        lastSampleBytes = downloaded
+                        lastSampleAt = now
                     }
                 }
             }
         }
-        repository.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
+        val now = System.nanoTime()
+        val elapsedSeconds = (now - lastSampleAt) / 1_000_000_000.0
+        val speed = if (elapsedSeconds > 0.0) ((downloaded - lastSampleBytes) / max(elapsedSeconds, 0.001)).toLong() else 0L
+        repository.updateProgress(id, DownloadState.DOWNLOADING, downloaded, totalBytes, target.absolutePath, null, speed, null, null)
         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
     }
 
@@ -264,9 +258,8 @@ class DownloadWorker @AssistedInject constructor(
             .setOngoing(true)
             .setProgress(if (hasKnownTotal) 100 else 0, percent, !hasKnownTotal)
             .build()
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(notificationId(downloadId), notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else ForegroundInfo(notificationId(downloadId), notification)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ForegroundInfo(notificationId(downloadId), notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        else ForegroundInfo(notificationId(downloadId), notification)
     }
 
     private fun ensureDownloadChannel() {
