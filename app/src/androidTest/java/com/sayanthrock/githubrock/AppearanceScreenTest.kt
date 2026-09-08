@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
@@ -14,17 +15,20 @@ import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import com.sayanthrock.githubrock.ui.screens.AppearanceContent
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class AppearanceScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun visualSettingsEmitSelectionsWithoutFeatureControls() {
+    @Test fun visualSettingsAndAccentCustomizationEmitSelections() {
         var selectedMode: ThemeMode? = null
         var selectedStyle: ThemeStyle? = null
         var selectedAccent: AccentColor? = null
-        var dynamicColor = false
+        var customHex = "#E60023"
+        var savedHex: String? = null
         var trueBlack = false
         var showImages = true
         var logDisplayStyle: LogDisplayStyle? = null
@@ -35,10 +39,12 @@ class AppearanceScreenTest {
                     state = AppearancePreferences(),
                     onBack = {},
                     onThemeMode = { selectedMode = it },
-                    onThemeStyle = { selectedStyle = it },
                     onAccentColor = { selectedAccent = it },
-                    onDynamicColor = { dynamicColor = it },
+                    onCustomAccentHex = { customHex = it },
+                    onSaveCustomAccent = { savedHex = it },
+                    onDynamicColor = {},
                     onTrueBlack = { trueBlack = it },
+                    onThemeStyle = { selectedStyle = it },
                     onShowImages = { showImages = it },
                     onLogDisplayStyle = { logDisplayStyle = it }
                 )
@@ -48,28 +54,23 @@ class AppearanceScreenTest {
         compose.onNodeWithText("Customize your experience").assertIsDisplayed()
         compose.onNodeWithText("Liquid glass").performScrollTo().performClick()
         compose.onNodeWithText("Dark").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Use Violet accent").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Use Violet accent").performScrollTo().assertDoesNotExist()
+        compose.onNodeWithText("Purple").performScrollTo().performClick()
+        compose.onNodeWithText("Custom Color").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Custom accent HEX input").assertIsDisplayed().performTextInput("#FF3366")
+        compose.onNodeWithText("Apply").performClick()
         compose.onNodeWithContentDescription("Toggle Show remote images").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Toggle System dynamic color").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Toggle True black").performScrollTo().performClick()
         compose.onNodeWithText("Popup dialog").performScrollTo().performClick()
-
-        compose.onNodeWithText("Feature controls").assertDoesNotExist()
-        compose.onNodeWithText("Bulk feature controls").assertDoesNotExist()
-        compose.onNodeWithText("100 / 100").assertDoesNotExist()
-        compose.onNodeWithText("Turn all on").assertDoesNotExist()
-        compose.onNodeWithText("Turn all off").assertDoesNotExist()
-        compose.onNodeWithText("Workflow code preview").assertDoesNotExist()
-        compose.onNodeWithText("File tools").assertDoesNotExist()
 
         compose.runOnIdle {
             assertEquals(ThemeStyle.LiquidGlass, selectedStyle)
             assertEquals(ThemeMode.Dark, selectedMode)
-            assertEquals(AccentColor.Violet, selectedAccent)
+            assertEquals(AccentColor.Custom, selectedAccent)
+            assertTrue(customHex.endsWith("#FF3366"))
+            assertTrue(savedHex?.endsWith("#FF3366") == true)
             assertEquals(false, showImages)
-            assertEquals(true, dynamicColor)
-            assertEquals(true, trueBlack)
             assertEquals(LogDisplayStyle.Dialog, logDisplayStyle)
+            assertFalse(trueBlack)
         }
     }
 }
