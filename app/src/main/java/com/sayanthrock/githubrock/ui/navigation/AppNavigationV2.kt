@@ -71,9 +71,9 @@ fun MainNavigationV2(
         state.repositories.filter { it.owner.login.equals(login, ignoreCase = true) }
     }.orEmpty()
 
-    // Keep recently viewed repositories first. This is intentionally merged with
-    // the account repository list so a public repository opened from Explore/search
-    // remains selectable in Builds after returning from its detail screen.
+    // Recently viewed public repositories are merged with the signed-in account
+    // repositories so Builds can keep using a repository after it is opened from
+    // Explore/search. De-duplicate by GitHub's stable repository id.
     val buildRepositories = buildList {
         recentRepositories.forEach { recent ->
             if (none { it.id == recent.id }) add(recent)
@@ -124,7 +124,7 @@ fun MainNavigationV2(
             composable(BUILD_STATUS_ROUTE, arguments = listOf(navArgument("filter") { type = NavType.StringType })) { e ->
                 BuildStatusPage(
                     mode,
-                    state.repositories,
+                    buildRepositories,
                     state.workflowRuns,
                     e.arguments?.getString("filter").orEmpty(),
                     openRepo,
@@ -272,7 +272,7 @@ fun MainNavigationV2(
                 )
             ) { e ->
                 RepositoryHubScreen(
-                    state.repositories.firstOrNull {
+                    buildRepositories.firstOrNull {
                         it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo")
                     },
                     navController::navigateUp
@@ -286,7 +286,7 @@ fun MainNavigationV2(
                     navArgument("runId") { type = NavType.LongType }
                 ),
                 deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" })
-            ) { e ->
+            ) {
                 BuildsScreen(
                     mode,
                     buildRepositories,
@@ -308,7 +308,7 @@ fun MainNavigationV2(
                 )
             ) { e ->
                 RepositoryHubScreen(
-                    state.repositories.firstOrNull {
+                    buildRepositories.firstOrNull {
                         it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo")
                     },
                     navController::navigateUp,
