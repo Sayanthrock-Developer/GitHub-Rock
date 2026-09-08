@@ -1,6 +1,5 @@
 package com.sayanthrock.githubrock.di
 
-import android.content.Context
 import androidx.room.Room
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.sayanthrock.githubrock.BuildConfig
@@ -14,6 +13,8 @@ import com.sayanthrock.githubrock.core.security.KeystoreTokenStore
 import com.sayanthrock.githubrock.core.security.TokenStore
 import com.sayanthrock.githubrock.data.local.AppDatabase
 import com.sayanthrock.githubrock.data.local.DownloadDao
+import com.sayanthrock.githubrock.data.local.MIGRATION_1_4
+import com.sayanthrock.githubrock.data.local.MIGRATION_4_5
 import com.sayanthrock.githubrock.data.local.RepositoryDao
 import dagger.Binds
 import dagger.Module
@@ -75,9 +76,6 @@ object AppModule {
     @Singleton
     @Named("downloadClient")
     fun downloadClient(authInterceptor: AuthInterceptor): OkHttpClient = OkHttpClient.Builder()
-        // Release assets and Actions artifacts may be private. The initial GitHub
-        // asset request must carry the active OAuth token; GitHub then redirects
-        // to a signed CDN URL where OkHttp safely drops the cross-host credential.
         .addInterceptor(authInterceptor)
         .addInterceptor(NetworkRetryInterceptor())
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -144,7 +142,10 @@ object AppModule {
         context,
         AppDatabase::class.java,
         "github-rock.db"
-    ).fallbackToDestructiveMigration().build()
+    )
+        .addMigrations(MIGRATION_1_4, MIGRATION_4_5)
+        .fallbackToDestructiveMigration()
+        .build()
 
     @Provides fun repositoryDao(database: AppDatabase): RepositoryDao = database.repositoryDao()
     @Provides fun downloadDao(database: AppDatabase): DownloadDao = database.downloadDao()
