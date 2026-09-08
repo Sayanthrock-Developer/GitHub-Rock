@@ -79,7 +79,7 @@ interface DownloadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(download: DownloadEntity): Long
 
-    @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status = 'completed' ORDER BY createdAt DESC LIMIT 1")
+    @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status IN ('completed', 'installable') ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity?
 
     @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = :sha, speedBytesPerSecond = :speed, etaSeconds = :eta, errorMessage = :error WHERE id = :id")
