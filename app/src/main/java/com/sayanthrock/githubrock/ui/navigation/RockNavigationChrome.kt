@@ -5,9 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -113,15 +111,16 @@ private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, 
 
 @Composable
 private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth().navigationBarsPadding(),
-        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        tonalElevation = 2.dp
+    NavigationSurface(
+        modifier = modifier,
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
+        borderAlpha = 0.5f,
+        shadow = 12.dp,
+        maxWidth = 700.dp
     ) {
-        NavigationRow(76.dp, 6.dp, 0.dp) { rockNavigationDestinations.forEach { destination ->
-            RockNavigationItem(destination, selectedRoute == destination.route, showLabel = true, modifier = Modifier.weight(1f), selectedShape = 16.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
+        NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination ->
+            RockNavigationItem(destination, selectedRoute == destination.route, showLabel = true, modifier = Modifier.weight(1f), selectedShape = 18.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
         } }
     }
 }
