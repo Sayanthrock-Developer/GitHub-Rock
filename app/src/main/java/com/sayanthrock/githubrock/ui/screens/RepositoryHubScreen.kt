@@ -62,11 +62,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
     when (workspacePage) {
         "manager" -> {
             BackHandler { workspacePage = "overview"; nativeSection = null }
-            RepositoryDetailSectionScreen(
-                repository = displayedRepository,
-                section = nativeSection ?: RepoSection.Overview,
-                onBack = { workspacePage = "overview"; nativeSection = null }
-            )
+            RepositoryDetailSectionScreen(repository = displayedRepository, section = nativeSection ?: RepoSection.Overview, onBack = { workspacePage = "overview"; nativeSection = null })
             return
         }
         "files" -> {
@@ -106,17 +102,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            RepositoryWorkspaceTopBar(
-                repository = displayedRepository,
-                repositoryReady = repositoryReady,
-                repositoryLoading = state.loading,
-                repositoryHasError = state.error != null,
-                onBack = onBack,
-                onOpenManager = { nativeSection = RepoSection.Overview; workspacePage = "manager" },
-                onOpenFiles = { workspacePage = "files" },
-                onOpenGitHub = openGitHub,
-                applicationStatus = appState?.statusLabel
-            )
+            RepositoryWorkspaceTopBar(repository = displayedRepository, repositoryReady = repositoryReady, repositoryLoading = state.loading, repositoryHasError = state.error != null, onBack = onBack, onOpenManager = { nativeSection = RepoSection.Overview; workspacePage = "manager" }, onOpenFiles = { workspacePage = "files" }, onOpenGitHub = openGitHub, applicationStatus = appState?.statusLabel)
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -134,7 +120,12 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                 onRetry = viewModel::retry,
                 onOpenUrl = openUrl,
                 onDownload = { asset ->
-                    downloadsViewModel.enqueue(asset.downloadUrl, asset.name)
+                    val downloadUrl = if (displayedRepository?.private == true) {
+                        asset.downloadUrl
+                    } else {
+                        asset.browserDownloadUrl?.takeIf(String::isNotBlank) ?: asset.downloadUrl
+                    }
+                    downloadsViewModel.enqueue(downloadUrl, asset.name)
                     scope.launch { snackbar.showSnackbar("${asset.name} added to Downloads") }
                 },
                 modifier = Modifier.weight(1f)
@@ -142,14 +133,8 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
             appState?.let { installedApp ->
                 RepositoryAppInstallPanel(
                     state = installedApp,
-                    onInstall = {
-                        installRepositoryApk(context, installedApp)
-                            .onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open the package installer.") } }
-                    },
-                    onEnableInstallPermission = {
-                        openRepositoryInstallPermissionSettings(context)
-                            .onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open installation settings.") } }
-                    },
+                    onInstall = { installRepositoryApk(context, installedApp).onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open the package installer.") } } },
+                    onEnableInstallPermission = { openRepositoryInstallPermissionSettings(context).onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open installation settings.") } } },
                     onOpen = { openRepositoryApp(context, installedApp).onFailure { problem -> scope.launch { snackbar.showSnackbar(problem.message ?: "Android could not open this application.") } } },
                     onUninstall = { confirmUninstall = true }
                 )
@@ -171,33 +156,12 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun RepositoryWorkspaceTopBar(
-    repository: GitHubRepositoryModel?,
-    repositoryReady: Boolean,
-    repositoryLoading: Boolean,
-    repositoryHasError: Boolean,
-    onBack: () -> Unit,
-    onOpenManager: () -> Unit,
-    onOpenFiles: () -> Unit,
-    onOpenGitHub: () -> Unit = {},
-    applicationStatus: String? = null
-) {
+internal fun RepositoryWorkspaceTopBar(repository: GitHubRepositoryModel?, repositoryReady: Boolean, repositoryLoading: Boolean, repositoryHasError: Boolean, onBack: () -> Unit, onOpenManager: () -> Unit, onOpenFiles: () -> Unit, onOpenGitHub: () -> Unit = {}, applicationStatus: String? = null) {
     TopAppBar(
         title = {
             Column {
                 Text(repository?.fullName ?: "Repository", maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
-                Text(
-                    text = repository?.let { listOfNotNull(if (it.private) "Private" else "Public", it.defaultBranch, applicationStatus).joinToString(" · ") } ?: when {
-                        repositoryHasError -> "Repository unavailable"
-                        repositoryLoading -> "Loading repository"
-                        repositoryReady -> "Repository workspace"
-                        else -> "Repository unavailable"
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Text(text = repository?.let { listOfNotNull(if (it.private) "Private" else "Public", it.defaultBranch, applicationStatus).joinToString(" · ") } ?: when { repositoryHasError -> "Repository unavailable"; repositoryLoading -> "Loading repository"; repositoryReady -> "Repository workspace"; else -> "Repository unavailable" }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         },
         navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
