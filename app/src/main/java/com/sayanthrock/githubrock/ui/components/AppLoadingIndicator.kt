@@ -49,7 +49,6 @@ import kotlin.math.sin
 
 private val PentagonAngles = List(5) { index -> -PI / 2.0 + index * 2.0 * PI / 5.0 }
 
-/** Central production loading/progress API. Uses the Material3 APIs available to the app and custom variants. */
 @Composable
 fun AppLoadingIndicator(
     modifier: Modifier = Modifier,
@@ -65,24 +64,13 @@ fun AppLoadingIndicator(
         stateDescription = normalized?.let { "${(it * 100).toInt()} percent loaded" } ?: "Loading"
         contentDescription = normalized?.let { "Loading progress ${(it * 100).toInt()} percent" } ?: "Loading"
     }
-
-    Box(
-        modifier = modifier.height(if (compact) 36.dp else 52.dp).then(semantics),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = modifier.height(if (compact) 36.dp else 52.dp).then(semantics), contentAlignment = Alignment.Center) {
         when (style) {
             LoadingStyle.SystemDefault, LoadingStyle.MaterialExpressive -> {
                 if (normalized == null) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(indicatorSize.coerceAtMost(if (reduceMotion) 32.dp else indicatorSize)),
-                        strokeWidth = if (compact) 2.5.dp else 3.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(if (reduceMotion) 32.dp else indicatorSize), strokeWidth = if (compact) 2.5.dp else 3.dp)
                 } else {
-                    CircularProgressIndicator(
-                        progress = { normalized },
-                        modifier = Modifier.size(if (compact) 24.dp else 32.dp),
-                        strokeWidth = if (compact) 2.5.dp else 3.dp
-                    )
+                    CircularProgressIndicator(progress = { normalized }, modifier = Modifier.size(if (compact) 24.dp else 32.dp), strokeWidth = if (compact) 2.5.dp else 3.dp)
                 }
             }
             LoadingStyle.SmoothRing -> SmoothRing(normalized, reduceMotion, indicatorSize)
@@ -94,17 +82,14 @@ fun AppLoadingIndicator(
     }
 }
 
+/** Compatibility overload for the existing Appearance preview call site. */
 @Composable
-fun RockContainedLoadingIndicator(
-    modifier: Modifier = Modifier,
-    reduceMotion: Boolean = LocalReduceMotion.current
-) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-    ) {
+fun AppLoadingIndicator(style: LoadingStyle, reduceMotion: Boolean) =
+    AppLoadingIndicator(style = style, reduceMotion = reduceMotion, compact = false)
+
+@Composable
+fun RockContainedLoadingIndicator(modifier: Modifier = Modifier, reduceMotion: Boolean = LocalReduceMotion.current) {
+    Surface(modifier = modifier, shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
         Box(Modifier.padding(horizontal = 18.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(Modifier.size(30.dp), strokeWidth = 3.dp)
         }
@@ -112,51 +97,32 @@ fun RockContainedLoadingIndicator(
 }
 
 @Composable
-fun RockLinearProgressIndicator(
-    modifier: Modifier = Modifier,
-    progress: Float? = null,
-    reduceMotion: Boolean = LocalReduceMotion.current
-) {
+fun RockLinearProgressIndicator(modifier: Modifier = Modifier, progress: Float? = null, reduceMotion: Boolean = LocalReduceMotion.current) {
     val normalized = progress?.coerceIn(0f, 1f)
     val semantics = Modifier.clearAndSetSemantics {
         progressBarRangeInfo = normalized?.let { ProgressBarRangeInfo(it, 0f..1f) } ?: ProgressBarRangeInfo.Indeterminate
         stateDescription = normalized?.let { "${(it * 100).toInt()} percent complete" } ?: "Loading"
     }
     Box(modifier.fillMaxWidth().then(semantics)) {
-        if (normalized == null) {
-            LinearProgressIndicator(Modifier.fillMaxWidth())
-        } else {
-            LinearProgressIndicator(progress = { normalized }, Modifier.fillMaxWidth())
-        }
+        if (normalized == null) LinearProgressIndicator(Modifier.fillMaxWidth())
+        else LinearProgressIndicator(progress = { normalized }, Modifier.fillMaxWidth())
     }
 }
 
 @Composable
-fun RockCircularWavyProgressIndicator(
-    progress: Float,
-    modifier: Modifier = Modifier,
-    reduceMotion: Boolean = LocalReduceMotion.current
-) {
+fun RockCircularWavyProgressIndicator(progress: Float, modifier: Modifier = Modifier, reduceMotion: Boolean = LocalReduceMotion.current) {
     val normalized = progress.coerceIn(0f, 1f)
     val semantics = Modifier.clearAndSetSemantics {
         progressBarRangeInfo = ProgressBarRangeInfo(normalized, 0f..1f)
         stateDescription = "${(normalized * 100).toInt()} percent complete"
     }
-    Box(modifier.then(semantics), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(progress = { normalized })
-    }
+    Box(modifier.then(semantics), contentAlignment = Alignment.Center) { CircularProgressIndicator(progress = { normalized }) }
 }
 
 enum class RockLoadingState { Loading, Progress, Success, Error, Empty, Retry }
 
 @Composable
-fun RockLoadingOverlay(
-    state: RockLoadingState,
-    modifier: Modifier = Modifier,
-    progress: Float? = null,
-    message: String? = null,
-    onRetry: (() -> Unit)? = null
-) {
+fun RockLoadingOverlay(state: RockLoadingState, modifier: Modifier = Modifier, progress: Float? = null, message: String? = null, onRetry: (() -> Unit)? = null) {
     when (state) {
         RockLoadingState.Loading -> AppLoadingIndicator(modifier, progress = null)
         RockLoadingState.Progress -> progress?.let { AppLoadingIndicator(modifier, progress = it) } ?: AppLoadingIndicator(modifier)
@@ -254,5 +220,4 @@ private fun RockPentagon(progress: Float?, reduceMotion: Boolean, size: Dp, orbi
 }
 
 @Composable
-fun RockLoadingIndicator(modifier: Modifier = Modifier, progress: Float? = null) =
-    AppLoadingIndicator(modifier = modifier, progress = progress, compact = true)
+fun RockLoadingIndicator(modifier: Modifier = Modifier, progress: Float? = null) = AppLoadingIndicator(modifier = modifier, progress = progress, compact = true)
