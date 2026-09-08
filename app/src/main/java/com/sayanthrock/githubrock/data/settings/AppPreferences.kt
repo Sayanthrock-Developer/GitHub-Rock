@@ -20,7 +20,6 @@ enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(va
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
 enum class AccentColor {
     DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Custom,
-    // Legacy names are kept so existing persisted values and call sites migrate safely.
     Violet, Emerald, Rose, Coral, Amber;
     companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock }
 }
@@ -52,6 +51,7 @@ data class AppearancePreferences(
     val dynamicColor: Boolean = true,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
+    val remoteImages: RemoteImageSettings = RemoteImageSettings(),
     val workflowPreview: Boolean = true,
     val workflowStepDetails: Boolean = true,
     val statusColors: Boolean = true,
@@ -83,6 +83,19 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
+            remoteImages = RemoteImageSettings(
+                allEnabled = preferences[REMOTE_IMAGES_ALL] ?: (preferences[SHOW_IMAGES] ?: true),
+                avatarOverride = RemoteImageOverride.fromStored(preferences[REMOTE_IMAGES_AVATARS]),
+                repositoryArtworkOverride = RemoteImageOverride.fromStored(preferences[REMOTE_IMAGES_REPOSITORY_ARTWORK]),
+                profileRepositoryOverride = RemoteImageOverride.fromStored(preferences[REMOTE_IMAGES_PROFILE_REPOSITORY]),
+                networkPolicy = RemoteImageNetworkPolicy.fromStored(preferences[REMOTE_IMAGES_NETWORK]),
+                quality = RemoteImageQuality.fromStored(preferences[REMOTE_IMAGES_QUALITY]),
+                cacheImages = preferences[REMOTE_IMAGES_CACHE] ?: true,
+                shape = RemoteImageShape.fromStored(preferences[REMOTE_IMAGES_SHAPE]),
+                size = RemoteImageSize.fromStored(preferences[REMOTE_IMAGES_SIZE]),
+                placeholder = RemoteImagePlaceholder.fromStored(preferences[REMOTE_IMAGES_PLACEHOLDER]),
+                animation = RemoteImageAnimation.fromStored(preferences[REMOTE_IMAGES_ANIMATION])
+            ),
             workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
             workflowStepDetails = preferences[WORKFLOW_STEP_DETAILS] ?: true,
             statusColors = preferences[STATUS_COLORS] ?: true,
@@ -100,33 +113,14 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
-    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit {
-        it[ACCENT_COLOR] = color.name
-        if (color != AccentColor.Custom) it[CUSTOM_ACCENT_HEX] = it[CUSTOM_ACCENT_HEX].orEmpty()
-        it[DYNAMIC_COLOR] = false
-    }
-    suspend fun setSystemDynamicAccent() = context.dataStore.edit {
-        it[DYNAMIC_COLOR] = true
-        it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name
-    }
+    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name; if (color != AccentColor.Custom) it[CUSTOM_ACCENT_HEX] = it[CUSTOM_ACCENT_HEX].orEmpty(); it[DYNAMIC_COLOR] = false }
+    suspend fun setSystemDynamicAccent() = context.dataStore.edit { it[DYNAMIC_COLOR] = true; it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name }
     suspend fun setCustomAccentHex(hex: String): Boolean {
         val normalized = normalizeHex(hex) ?: return false
-        context.dataStore.edit {
-            it[ACCENT_COLOR] = AccentColor.Custom.name
-            it[DYNAMIC_COLOR] = false
-            it[CUSTOM_ACCENT_HEX] = normalized
-            val current = parseRecentAccentColors(it[RECENT_ACCENT_COLORS])
-            it[RECENT_ACCENT_COLORS] = encodeRecentAccentColors(buildList {
-                add(normalized)
-                current.filterNot { existing -> existing.equals(normalized, ignoreCase = true) }.forEach(::add)
-            })
-        }
+        context.dataStore.edit { it[ACCENT_COLOR] = AccentColor.Custom.name; it[DYNAMIC_COLOR] = false; it[CUSTOM_ACCENT_HEX] = normalized; val current = parseRecentAccentColors(it[RECENT_ACCENT_COLORS]); it[RECENT_ACCENT_COLORS] = encodeRecentAccentColors(buildList { add(normalized); current.filterNot { existing -> existing.equals(normalized, ignoreCase = true) }.forEach(::add) }) }
         return true
     }
-    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit {
-        it[DYNAMIC_COLOR] = enabled
-        if (enabled) it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name
-    }
+    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled; if (enabled) it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name }
     suspend fun setDisplaySize(size: DisplaySize) = context.dataStore.edit { it[DISPLAY_SIZE] = size.name }
     suspend fun setFontSize(size: FontSize) = context.dataStore.edit { it[FONT_SIZE] = size.name }
     suspend fun setFontWeight(weight: FontWeightStyle) = context.dataStore.edit { it[FONT_WEIGHT] = weight.name }
@@ -137,7 +131,19 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setLogDisplayStyle(style: LogDisplayStyle) = context.dataStore.edit { it[LOG_DISPLAY_STYLE] = style.name }
     suspend fun setNavigationBarStyle(style: NavigationBarStyle) = context.dataStore.edit { it[NAVIGATION_BAR_STYLE] = style.name }
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
-    suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
+    suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled; it[REMOTE_IMAGES_ALL] = enabled }
+    suspend fun setRemoteImagesEnabled(enabled: Boolean) = context.dataStore.edit { it[REMOTE_IMAGES_ALL] = enabled; it[SHOW_IMAGES] = enabled }
+    suspend fun setRemoteImageAvatarOverride(value: RemoteImageOverride) = context.dataStore.edit { it[REMOTE_IMAGES_AVATARS] = value.name }
+    suspend fun setRemoteImageRepositoryArtworkOverride(value: RemoteImageOverride) = context.dataStore.edit { it[REMOTE_IMAGES_REPOSITORY_ARTWORK] = value.name }
+    suspend fun setRemoteImageProfileRepositoryOverride(value: RemoteImageOverride) = context.dataStore.edit { it[REMOTE_IMAGES_PROFILE_REPOSITORY] = value.name }
+    suspend fun setRemoteImageNetworkPolicy(value: RemoteImageNetworkPolicy) = context.dataStore.edit { it[REMOTE_IMAGES_NETWORK] = value.name }
+    suspend fun setRemoteImageQuality(value: RemoteImageQuality) = context.dataStore.edit { it[REMOTE_IMAGES_QUALITY] = value.name }
+    suspend fun setRemoteImageCache(enabled: Boolean) = context.dataStore.edit { it[REMOTE_IMAGES_CACHE] = enabled }
+    suspend fun setRemoteImageShape(value: RemoteImageShape) = context.dataStore.edit { it[REMOTE_IMAGES_SHAPE] = value.name }
+    suspend fun setRemoteImageSize(value: RemoteImageSize) = context.dataStore.edit { it[REMOTE_IMAGES_SIZE] = value.name }
+    suspend fun setRemoteImagePlaceholder(value: RemoteImagePlaceholder) = context.dataStore.edit { it[REMOTE_IMAGES_PLACEHOLDER] = value.name }
+    suspend fun setRemoteImageAnimation(value: RemoteImageAnimation) = context.dataStore.edit { it[REMOTE_IMAGES_ANIMATION] = value.name }
+    suspend fun resetRemoteImageSettings() = context.dataStore.edit { it.remove(REMOTE_IMAGES_ALL); it.remove(REMOTE_IMAGES_AVATARS); it.remove(REMOTE_IMAGES_REPOSITORY_ARTWORK); it.remove(REMOTE_IMAGES_PROFILE_REPOSITORY); it.remove(REMOTE_IMAGES_NETWORK); it.remove(REMOTE_IMAGES_QUALITY); it.remove(REMOTE_IMAGES_CACHE); it.remove(REMOTE_IMAGES_SHAPE); it.remove(REMOTE_IMAGES_SIZE); it.remove(REMOTE_IMAGES_PLACEHOLDER); it.remove(REMOTE_IMAGES_ANIMATION) }
     suspend fun setWorkflowPreview(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_PREVIEW] = enabled }
     suspend fun setWorkflowStepDetails(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_STEP_DETAILS] = enabled }
     suspend fun setStatusColors(enabled: Boolean) = context.dataStore.edit { it[STATUS_COLORS] = enabled }
@@ -150,28 +156,15 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun addRepositorySearch(query: String) {
         val normalized = query.trim().replace(HISTORY_SEPARATOR, " ").takeIf(String::isNotBlank) ?: return
-        context.dataStore.edit { preferences ->
-            val current = preferences[REPOSITORY_SEARCH_HISTORY]?.split(HISTORY_SEPARATOR)?.filter(String::isNotBlank).orEmpty()
-            val updated = buildList { add(normalized); current.filterNot { it.equals(normalized, ignoreCase = true) }.forEach(::add) }.take(MAX_SEARCH_HISTORY)
-            preferences[REPOSITORY_SEARCH_HISTORY] = updated.joinToString(HISTORY_SEPARATOR)
-        }
+        context.dataStore.edit { preferences -> val current = preferences[REPOSITORY_SEARCH_HISTORY]?.split(HISTORY_SEPARATOR)?.filter(String::isNotBlank).orEmpty(); val updated = buildList { add(normalized); current.filterNot { it.equals(normalized, ignoreCase = true) }.forEach(::add) }.take(MAX_SEARCH_HISTORY); preferences[REPOSITORY_SEARCH_HISTORY] = updated.joinToString(HISTORY_SEPARATOR) }
     }
     suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE)
-        preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
-        preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
-        preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS)
-        preferences.remove(REDUCE_MOTION)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE); preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE); preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES); preferences.remove(REMOTE_IMAGES_ALL); preferences.remove(REMOTE_IMAGES_AVATARS); preferences.remove(REMOTE_IMAGES_REPOSITORY_ARTWORK); preferences.remove(REMOTE_IMAGES_PROFILE_REPOSITORY); preferences.remove(REMOTE_IMAGES_NETWORK); preferences.remove(REMOTE_IMAGES_QUALITY); preferences.remove(REMOTE_IMAGES_CACHE); preferences.remove(REMOTE_IMAGES_SHAPE); preferences.remove(REMOTE_IMAGES_SIZE); preferences.remove(REMOTE_IMAGES_PLACEHOLDER); preferences.remove(REMOTE_IMAGES_ANIMATION); preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS); preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
-        context.dataStore.edit { preferences ->
-            val current = preferences[FAVORITE_REPOSITORIES].orEmpty().toMutableSet()
-            val existing = current.firstOrNull { it.equals(normalized, ignoreCase = true) }
-            if (existing == null) current += normalized else current -= existing
-            preferences[FAVORITE_REPOSITORIES] = current
-        }
+        context.dataStore.edit { preferences -> val current = preferences[FAVORITE_REPOSITORIES].orEmpty().toMutableSet(); val existing = current.firstOrNull { it.equals(normalized, ignoreCase = true) }; if (existing == null) current += normalized else current -= existing; preferences[FAVORITE_REPOSITORIES] = current }
     }
     suspend fun monitoredWorkflowRun(monitorKey: String): Long? = context.dataStore.data.first()[longPreferencesKey("workflow_monitor_$monitorKey")]
     suspend fun setMonitoredWorkflowRun(monitorKey: String, runId: Long) { context.dataStore.edit { it[longPreferencesKey("workflow_monitor_$monitorKey")] = runId } }
@@ -181,41 +174,10 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         const val HISTORY_SEPARATOR = "\u001F"
         const val MAX_SEARCH_HISTORY = 8
         const val MAX_ACCENT_HISTORY = 8
-        val THEME_MODE = stringPreferencesKey("theme_mode")
-        val THEME_STYLE = stringPreferencesKey("theme_style")
-        val ACCENT_COLOR = stringPreferencesKey("accent_color")
-        val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex")
-        val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors")
-        val DISPLAY_SIZE = stringPreferencesKey("display_size")
-        val FONT_SIZE = stringPreferencesKey("font_size")
-        val FONT_WEIGHT = stringPreferencesKey("font_weight")
-        val FONT_FAMILY = stringPreferencesKey("font_family")
-        val LOADING_STYLE = stringPreferencesKey("loading_style")
-        val ANIMATION_STYLE = stringPreferencesKey("animation_style")
-        val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style")
-        val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style")
-        val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style")
-        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
-        val TRUE_BLACK = booleanPreferencesKey("true_black")
-        val SHOW_IMAGES = booleanPreferencesKey("show_images")
-        val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview")
-        val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details")
-        val STATUS_COLORS = booleanPreferencesKey("status_colors")
-        val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls")
-        val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager")
-        val FILE_TOOLS = booleanPreferencesKey("file_tools")
-        val COMPACT_CARDS = booleanPreferencesKey("compact_cards")
-        val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
-        val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
-        val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
-        val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
-
-        fun normalizeHex(value: String): String? {
-            val raw = value.trim().removePrefix("#")
-            if (raw.length != 6 && raw.length != 8) return null
-            if (!raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null
-            return "#${raw.uppercase()}"
-        }
+        val THEME_MODE = stringPreferencesKey("theme_mode"); val THEME_STYLE = stringPreferencesKey("theme_style"); val ACCENT_COLOR = stringPreferencesKey("accent_color"); val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex"); val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors"); val DISPLAY_SIZE = stringPreferencesKey("display_size"); val FONT_SIZE = stringPreferencesKey("font_size"); val FONT_WEIGHT = stringPreferencesKey("font_weight"); val FONT_FAMILY = stringPreferencesKey("font_family"); val LOADING_STYLE = stringPreferencesKey("loading_style"); val ANIMATION_STYLE = stringPreferencesKey("animation_style"); val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style"); val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style"); val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style"); val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color"); val TRUE_BLACK = booleanPreferencesKey("true_black"); val SHOW_IMAGES = booleanPreferencesKey("show_images")
+        val REMOTE_IMAGES_ALL = booleanPreferencesKey("remote_images_all"); val REMOTE_IMAGES_AVATARS = stringPreferencesKey("remote_images_avatars"); val REMOTE_IMAGES_REPOSITORY_ARTWORK = stringPreferencesKey("remote_images_repository_artwork"); val REMOTE_IMAGES_PROFILE_REPOSITORY = stringPreferencesKey("remote_images_profile_repository"); val REMOTE_IMAGES_NETWORK = stringPreferencesKey("remote_images_network"); val REMOTE_IMAGES_QUALITY = stringPreferencesKey("remote_images_quality"); val REMOTE_IMAGES_CACHE = booleanPreferencesKey("remote_images_cache"); val REMOTE_IMAGES_SHAPE = stringPreferencesKey("remote_images_shape"); val REMOTE_IMAGES_SIZE = stringPreferencesKey("remote_images_size"); val REMOTE_IMAGES_PLACEHOLDER = stringPreferencesKey("remote_images_placeholder"); val REMOTE_IMAGES_ANIMATION = stringPreferencesKey("remote_images_animation")
+        val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview"); val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details"); val STATUS_COLORS = booleanPreferencesKey("status_colors"); val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls"); val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager"); val FILE_TOOLS = booleanPreferencesKey("file_tools"); val COMPACT_CARDS = booleanPreferencesKey("compact_cards"); val REDUCE_MOTION = booleanPreferencesKey("reduce_motion"); val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock"); val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories"); val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
+        fun normalizeHex(value: String): String? { val raw = value.trim().removePrefix("#"); if (raw.length != 6 && raw.length != 8) return null; if (!raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null; return "#${raw.uppercase()}" }
         fun parseRecentAccentColors(value: String?): List<String> = value.orEmpty().split(HISTORY_SEPARATOR).mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY)
         fun encodeRecentAccentColors(values: List<String>): String = values.mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY).joinToString(HISTORY_SEPARATOR)
     }
