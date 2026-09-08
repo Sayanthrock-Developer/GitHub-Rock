@@ -39,6 +39,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
+import com.sayanthrock.githubrock.ui.motion.RockMotion
 
 private val rockNavigationDestinations = listOf(
     TopDestinationV2.Home,
@@ -124,14 +125,14 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 
 @Composable
 private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false) {
-    val duration = if (reduceMotion) 0 else when (animationStyle) {
-        AnimationStyle.Liquid -> 260
-        AnimationStyle.Spring -> 180
-        AnimationStyle.Cinematic -> 320
-        AnimationStyle.Magnetic -> 220
-        AnimationStyle.Dynamic -> 200
-    }
-    val selectedContainer by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, tween(durationMillis = duration), label = "navigation indicator color")
+    // AnimationStyle remains a user-facing preference, but navigation now uses
+    // the fast motion budget for every style instead of slow cinematic timings.
+    val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
+    val selectedContainer by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        animationSpec = tween(durationMillis = duration),
+        label = "navigation indicator color"
+    )
     Surface(modifier = modifier.clickable(role = Role.Tab, onClick = onClick).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = if (transparent) Color.Transparent else selectedContainer, contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) {
         Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize))
