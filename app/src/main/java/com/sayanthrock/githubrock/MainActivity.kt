@@ -38,29 +38,23 @@ class MainActivity : ComponentActivity() {
             return
         }
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
         setContent {
-            val appearance = appPreferences.appearance.collectAsStateWithLifecycle(
-                initialValue = AppearancePreferences(showImages = false)
-            ).value
+            val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
             val useDarkTheme = when (appearance.themeMode) {
                 ThemeMode.System -> isSystemInDarkTheme()
                 ThemeMode.Light -> false
                 ThemeMode.Dark -> true
             }
-            // Dynamic wallpaper colors belong to System mode only. Explicit Dark/Light
-            // selections remain deterministic and are never overridden by wallpaper colors.
+            // Dynamic wallpaper colors are enabled only by the explicit System Dynamic accent choice.
             val useSystemDynamicColors = appearance.themeMode == ThemeMode.System && appearance.dynamicColor
             val view = LocalView.current
             GitHubRockTheme(
                 darkTheme = useDarkTheme,
                 dynamicColor = useSystemDynamicColors,
-                // Explicit Dark mode is always true black. Keep the stored preference for
-                // backwards compatibility without allowing it to weaken the Dark contract.
                 trueBlack = useDarkTheme || appearance.trueBlack,
                 accentColor = appearance.accentColor,
+                customAccentHex = appearance.customAccentHex,
                 themeStyle = appearance.themeStyle,
                 displaySize = appearance.displaySize,
                 fontSize = appearance.fontSize,
@@ -72,15 +66,10 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = appearance.reduceMotion,
                 showImages = appearance.showImages
             ) {
-                // System bars must use the same base surface as the root window. This is
-                // especially important with Android 15 edge-to-edge, where transparent
-                // system bars reveal the window/decor background when content is inset.
                 val systemBarColor = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect {
                     window.statusBarColor = systemBarColor
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                        window.navigationBarColor = systemBarColor
-                    }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) window.navigationBarColor = systemBarColor
                     window.decorView.setBackgroundColor(systemBarColor)
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !useDarkTheme
@@ -94,19 +83,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (consumeOAuthCallback(intent)) {
-            setIntent(Intent())
-        } else if (!redirectNonRepositoryGitHubUrl(intent)) {
-            setIntent(intent)
-        }
+        if (consumeOAuthCallback(intent)) setIntent(Intent()) else if (!redirectNonRepositoryGitHubUrl(intent)) setIntent(intent)
     }
 
     private fun consumeOAuthCallback(incomingIntent: Intent): Boolean {
         val uri = incomingIntent.data ?: return false
-        if (uri.scheme.equals("githubrock", true) &&
-            uri.host.equals("oauth", true) &&
-            uri.path == "/callback"
-        ) {
+        if (uri.scheme.equals("githubrock", true) && uri.host.equals("oauth", true) && uri.path == "/callback") {
             viewModel.handleWebOAuthCallback(uri)
             incomingIntent.data = null
             return true
