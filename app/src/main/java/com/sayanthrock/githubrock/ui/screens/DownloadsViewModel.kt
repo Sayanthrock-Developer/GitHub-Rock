@@ -15,6 +15,7 @@ import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
+import com.sayanthrock.githubrock.download.DownloadState
 import com.sayanthrock.githubrock.download.DownloadWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,44 +44,49 @@ class DownloadsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             dao.observeAll().collect { items ->
-                items.forEach { reconcileDownload(it) }
+                items.forEach { download ->
+                    if (download.status == DownloadState.COMPLETED.wire && download.isApkDownload()) {
+                        val valid = download.localPath?.let(::File)?.let { file ->
+                            withContext(Dispatchers.IO) {
+                                file.isFile && runCatching { inspectApk(applicationContext, file) }.isSuccess
+                            }
+                        } == true
+                        if (!valid) {
+                            markForRecovery(download)
+                            return@forEach
+                        }
+                    }
+                    reconcileDownload(download)
+                }
             }
         }
     }
 
-    /**
-     * Creates or reuses a persistent download record. The source URL + file name
-     * form the asset identity, preventing duplicate workers for the same asset.
-     */
+    /** Creates or reuses a persistent record; source URL + file name identify an asset. */
     fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
         val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return@launch
         val safeName = fileName.trim().takeIf(String::isNotBlank) ?: return@launch
         val existing = dao.findBySourceAndName(resolvedUrl, safeName)
         if (existing != null) {
             when (existing.status) {
-                "queued", "downloading", "retrying", "paused" -> return@launch
-                "completed" -> {
-                    if (existing.localPath?.let(::File)?.isFile == true) return@launch
-                }
+                DownloadState.QUEUED.wire, DownloadState.DOWNLOADING.wire, DownloadState.RETRYING.wire, DownloadState.PAUSED.wire -> return@launch
+                DownloadState.COMPLETED.wire -> if (existing.localPath?.let(::File)?.isFile == true) return@launch
             }
+            val partial = existing.localPath?.let(::File)?.takeIf { isSafePartial(it) }
             val restart = existing.copy(
                 packageName = expectedPackage ?: existing.packageName,
-                status = "queued",
+                status = DownloadState.QUEUED.wire,
                 sha256 = null,
-                downloadedBytes = existing.localPath?.let(::File)?.takeIf { it.name.endsWith(".part") }?.length() ?: 0L,
-                totalBytes = 0L
+                downloadedBytes = partial?.length() ?: 0L,
+                totalBytes = 0L,
+                localPath = partial?.absolutePath
             )
             dao.upsert(restart)
             schedule(restart)
             return@launch
         }
 
-        val queued = DownloadEntity(
-            fileName = safeName,
-            sourceUrl = resolvedUrl,
-            status = "queued",
-            packageName = expectedPackage
-        )
+        val queued = DownloadEntity(fileName = safeName, sourceUrl = resolvedUrl, status = DownloadState.QUEUED.wire, packageName = expectedPackage)
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
     }
@@ -88,13 +94,7 @@ class DownloadsViewModel @Inject constructor(
     fun downloadAgain(download: DownloadEntity) = viewModelScope.launch {
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         deleteLocalFile(download.localPath)
-        val queued = download.copy(
-            localPath = null,
-            totalBytes = 0,
-            downloadedBytes = 0,
-            sha256 = null,
-            status = "queued"
-        )
+        val queued = download.copy(localPath = null, totalBytes = 0, downloadedBytes = 0, sha256 = null, status = DownloadState.QUEUED.wire)
         dao.upsert(queued)
         schedule(queued)
     }
@@ -102,19 +102,16 @@ class DownloadsViewModel @Inject constructor(
     fun pause(download: DownloadEntity) = viewModelScope.launch {
         if (download.status !in ACTIVE_STATUSES) return@launch
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
-        // Persist the user intent after cancellation so a late worker callback
-        // cannot turn an explicitly paused item into an automatic retry.
-        dao.updateStatus(download.id, "paused")
+        dao.updateStatus(download.id, DownloadState.PAUSED.wire)
     }
 
     fun resume(download: DownloadEntity) = viewModelScope.launch {
         if (download.status !in RESUMABLE_STATUSES) return@launch
-        val file = download.localPath?.let(::File)
-        val preservedPartial = file?.takeIf { it.parentFile?.canonicalFile == downloadsDirectory.canonicalFile && it.name.endsWith(".part") }
+        val partial = download.localPath?.let(::File)?.takeIf(::isSafePartial)
         val resumed = download.copy(
-            localPath = preservedPartial?.absolutePath,
-            downloadedBytes = preservedPartial?.length() ?: download.downloadedBytes,
-            status = "queued",
+            localPath = partial?.absolutePath,
+            downloadedBytes = partial?.length() ?: download.downloadedBytes,
+            status = DownloadState.QUEUED.wire,
             sha256 = null
         )
         dao.upsert(resumed)
@@ -122,10 +119,10 @@ class DownloadsViewModel @Inject constructor(
     }
 
     fun cancel(download: DownloadEntity) = viewModelScope.launch {
-        if (download.status !in ACTIVE_STATUSES && download.status != "paused") return@launch
+        if (download.status !in ACTIVE_STATUSES && download.status != DownloadState.PAUSED.wire) return@launch
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         deleteLocalFile(download.localPath)
-        dao.updateProgress(download.id, "cancelled", 0, 0, null, null)
+        dao.updateProgress(download.id, DownloadState.CANCELLED.wire, 0, 0, null, null)
     }
 
     fun delete(download: DownloadEntity) = viewModelScope.launch {
@@ -142,39 +139,32 @@ class DownloadsViewModel @Inject constructor(
                 runCatching {
                     val firstPass = inspectApk(applicationContext, file)
                     val previous = dao.latestCompletedForPackage(firstPass.packageName)
-                    inspectApk(
-                        applicationContext,
-                        file,
-                        expectedPackage = firstPass.packageName,
-                        previousVersionCode = previous?.versionCode,
-                        previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                        previousCertificateSha256 = previous?.certificateSha256
-                    )
+                    inspectApk(applicationContext, file, expectedPackage = firstPass.packageName, previousVersionCode = previous?.versionCode, previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(), previousCertificateSha256 = previous?.certificateSha256)
                 }
             }
             callback(result)
         }
     }
 
-    /**
-     * Reconciles persisted state with WorkManager after process death/background
-     * eviction. Paused/completed/cancelled records are intentionally not revived.
-     */
+    private suspend fun markForRecovery(download: DownloadEntity) {
+        val partial = download.localPath?.let(::File)?.takeIf(::isSafePartial)
+        if (partial != null) {
+            dao.updateProgress(download.id, DownloadState.FAILED.wire, partial.length(), download.totalBytes, partial.absolutePath, null)
+        } else {
+            dao.updateProgress(download.id, DownloadState.FAILED.wire, 0, 0, null, null)
+        }
+    }
+
     private suspend fun reconcileDownload(download: DownloadEntity) {
         val local = download.localPath?.let(::File)
-        if (download.status == "completed" && (local == null || !local.isFile)) {
-            dao.updateProgress(download.id, "failed", 0, download.totalBytes, null, null)
+        if (download.status == DownloadState.COMPLETED.wire && (local == null || !local.isFile)) {
+            dao.updateProgress(download.id, DownloadState.FAILED.wire, 0, download.totalBytes, null, null)
             return
         }
         if (download.status !in RECOVERABLE_STATUSES) return
-
-        val infos = runCatching {
-            workManager.getWorkInfosForUniqueWork(DownloadWorker.workName(download.id)).await()
-        }.getOrDefault(emptyList())
+        val infos = runCatching { workManager.getWorkInfosForUniqueWork(DownloadWorker.workName(download.id)).await() }.getOrDefault(emptyList())
         val hasActiveWork = infos.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.BLOCKED }
-        if (!hasActiveWork) {
-            schedule(download)
-        }
+        if (!hasActiveWork) schedule(download)
     }
 
     private fun schedule(download: DownloadEntity) {
@@ -184,28 +174,29 @@ class DownloadsViewModel @Inject constructor(
             .putString(DownloadWorker.KEY_NAME, download.fileName)
             .apply {
                 download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
-                download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
+                download.localPath?.takeIf { it.endsWith(".part") && isSafePartial(File(it)) }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
             }
             .build()
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(input)
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
-        // A unique work name is the final duplicate-worker guard. REPLACE is used
-        // deliberately for explicit Resume/Retry, while reconciliation only
-        // schedules when no active work exists.
         workManager.enqueueUniqueWork(DownloadWorker.workName(download.id), ExistingWorkPolicy.REPLACE, request)
     }
 
+    private fun isSafePartial(file: File): Boolean = runCatching {
+        file.canonicalFile.parentFile == downloadsDirectory.canonicalFile && file.name.endsWith(".part")
+    }.getOrDefault(false)
+
     private fun deleteLocalFile(path: String?) {
-        path?.let(::File)?.takeIf { it.parentFile?.canonicalFile == downloadsDirectory.canonicalFile }?.delete()
+        path?.let(::File)?.takeIf { runCatching { it.canonicalFile.parentFile == downloadsDirectory.canonicalFile }.getOrDefault(false) }?.delete()
     }
 
     private fun DownloadEntity.isApkDownload(): Boolean = fileName.endsWith(".apk", ignoreCase = true)
 
     companion object {
-        private val ACTIVE_STATUSES = setOf("queued", "downloading", "retrying")
-        private val RESUMABLE_STATUSES = setOf("paused", "failed", "cancelled", "retrying")
-        private val RECOVERABLE_STATUSES = setOf("queued", "downloading", "retrying")
+        private val ACTIVE_STATUSES = setOf(DownloadState.QUEUED.wire, DownloadState.DOWNLOADING.wire, DownloadState.RETRYING.wire)
+        private val RESUMABLE_STATUSES = setOf(DownloadState.PAUSED.wire, DownloadState.FAILED.wire, DownloadState.CANCELLED.wire, DownloadState.RETRYING.wire)
+        private val RECOVERABLE_STATUSES = setOf(DownloadState.QUEUED.wire, DownloadState.STARTING.wire, DownloadState.DOWNLOADING.wire, DownloadState.RETRYING.wire)
     }
 }
