@@ -94,8 +94,35 @@ private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    Row(modifier.navigationBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp).widthIn(max = 700.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-        rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, !compact && selectedRoute == destination.route, Modifier.widthIn(min = 54.dp).height(52.dp), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, transparent = true) }
+    // Minimal intentionally has no container, border, shadow, or glass treatment.
+    // The selected destination is communicated by a compact tonal icon surface and
+    // label, while unselected destinations remain quiet and icon-first.
+    Row(
+        modifier = modifier
+            .navigationBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .widthIn(max = 620.dp)
+            .fillMaxWidth()
+            .height(if (compact) 54.dp else 60.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        rockNavigationDestinations.forEach { destination ->
+            val selected = selectedRoute == destination.route
+            RockNavigationItem(
+                destination = destination,
+                selected = selected,
+                showLabel = selected && !compact,
+                modifier = Modifier.weight(1f).height(if (compact) 48.dp else 54.dp),
+                selectedShape = 18.dp,
+                animationStyle = animationStyle,
+                reduceMotion = reduceMotion,
+                onClick = { onDestinationSelected(destination) },
+                iconSize = if (selected) 22.dp else 21.dp,
+                transparent = true,
+                selectedContainerAlpha = 0.12f
+            )
+        }
     }
 }
 
@@ -109,7 +136,7 @@ private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationS
 @Composable
 private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
     NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f), 0.5f, 12.dp, 500.dp) {
-        NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, false, Modifier.weight(1f), 19.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, 22.dp) } }
+        NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, false, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, 22.dp) } }
     }
 }
 
@@ -124,16 +151,25 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 }
 
 @Composable
-private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false) {
-    // AnimationStyle remains a user-facing preference, but navigation now uses
-    // the fast motion budget for every style instead of slow cinematic timings.
+private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f) {
+    // AnimationStyle remains a user-facing preference, but navigation uses the
+    // fast motion budget for every style instead of slow cinematic timings.
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
     val selectedContainer by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent,
         animationSpec = tween(durationMillis = duration),
         label = "navigation indicator color"
     )
-    Surface(modifier = modifier.clickable(role = Role.Tab, onClick = onClick).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = if (transparent) Color.Transparent else selectedContainer, contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) {
+    Surface(
+        modifier = modifier.clickable(role = Role.Tab, onClick = onClick).semantics {
+            contentDescription = destination.accessibilityLabel
+            role = Role.Tab
+            this.selected = selected
+        },
+        shape = RoundedCornerShape(selectedShape),
+        color = if (transparent) selectedContainer else selectedContainer,
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
         Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize))
             if (showLabel) Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 6.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
