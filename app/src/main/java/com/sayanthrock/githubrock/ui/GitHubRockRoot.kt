@@ -28,7 +28,6 @@ import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
-import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -70,24 +69,24 @@ fun GitHubRockRoot(
     val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
-    // Draw the root background before applying insets so transparent Android system bars
-    // never expose the Activity's default window background. Content is still kept below
-    // the status bar by the following inset modifier.
+    // Keep the root edge-to-edge. The navigation chrome is an overlay, so the
+    // scrolling destination remains visible underneath the floating pill.
     Box(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        val navigationChromePadding = if (state.mode == null) 0.dp else navigationContentInset(appearanceState.navigationBarStyle)
         if (state.mode == null) {
             LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
+                    // Do not reserve a bottom rectangle for the floating styles.
+                    // Content draws edge-to-edge and the pill floats above it.
                     SwipeNavigationContent(
                         navController = navController,
-                        bottomContentPadding = navigationBarPadding + navigationChromePadding
+                        bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
                     ) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
@@ -101,16 +100,20 @@ fun GitHubRockRoot(
                 }
             }
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding + navigationChromePadding))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding))
     }
 }
 
-private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.ui.unit.Dp = when (style) {
-    NavigationBarStyle.FloatingCapsule -> 100.dp
-    NavigationBarStyle.Classic -> 88.dp
-    NavigationBarStyle.Minimal -> 72.dp
-    NavigationBarStyle.Glass -> 98.dp
-    NavigationBarStyle.Compact -> 68.dp
+private fun navigationContentInset(style: NavigationBarStyle, systemNavigationPadding: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = when (style) {
+    // Floating/Glass/Minimal/Compact navigation is an overlay. Scrolling content
+    // must be allowed underneath the navigation surface instead of ending at a
+    // solid rectangular inset region.
+    NavigationBarStyle.FloatingCapsule,
+    NavigationBarStyle.Glass,
+    NavigationBarStyle.Minimal,
+    NavigationBarStyle.Compact -> 0.dp
+    // Classic is intentionally a full-width bottom bar, so keep content above it.
+    NavigationBarStyle.Classic -> 88.dp + systemNavigationPadding
 }
 
 @Composable
