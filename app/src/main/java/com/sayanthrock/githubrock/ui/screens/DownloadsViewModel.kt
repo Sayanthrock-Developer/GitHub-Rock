@@ -10,7 +10,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
-import com.sayanthrock.githubrock.core.model.DownloadMirror
 import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
@@ -21,10 +20,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,11 +35,6 @@ class DownloadsViewModel @Inject constructor(
     private val applicationContext = context.applicationContext
     private val workManager = WorkManager.getInstance(applicationContext)
     private val downloadsDirectory = File(applicationContext.filesDir, "downloads")
-
-    // Kept as a compatibility state for existing Downloads UI. There is now only
-    // one real source: the official GitHub URL passed by the release/artifact API.
-    private val _selectedMirror = MutableStateFlow(DownloadMirror.Direct)
-    val selectedMirror: StateFlow<DownloadMirror> = _selectedMirror.asStateFlow()
 
     val downloads: StateFlow<List<DownloadEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -61,12 +53,6 @@ class DownloadsViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun selectMirror(@Suppress("UNUSED_PARAMETER") mirror: DownloadMirror) {
-        // Community mirrors were removed because authenticated/temporary GitHub
-        // asset URLs cannot be safely rewritten through third-party proxies.
-        _selectedMirror.value = DownloadMirror.Direct
     }
 
     fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
