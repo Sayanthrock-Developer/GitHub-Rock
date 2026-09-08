@@ -48,12 +48,12 @@ class DownloadRepository @Inject constructor(
             fileName = fileName,
             sourceUrl = resolvedUrl,
             status = DownloadState.QUEUED.wireValue,
+            expectedSha256 = expectedSha256,
             packageName = expectedPackage,
             repositoryFullName = repositoryFullName,
             releaseName = releaseName,
             releaseUrl = releaseUrl,
-            assetId = assetId,
-            sha256 = expectedSha256
+            assetId = assetId
         )
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
@@ -92,17 +92,7 @@ class DownloadRepository @Inject constructor(
         if (download.state !in ACTIVE_STATES && download.state != DownloadState.PAUSED) return
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         deleteOwnedFile(download.localPath)
-        dao.updateProgress(
-            download.id,
-            DownloadState.CANCELLED.wireValue,
-            0,
-            0,
-            null,
-            null,
-            0,
-            null,
-            null
-        )
+        dao.updateProgress(download.id, DownloadState.CANCELLED.wireValue, 0, 0, null, null, 0, null, null)
     }
 
     suspend fun delete(download: DownloadEntity) {
@@ -115,19 +105,15 @@ class DownloadRepository @Inject constructor(
         runCatching {
             val firstPass = inspectApk(applicationContext, file)
             val previous = dao.latestCompletedForPackage(firstPass.packageName)
-            inspectApk(
-                applicationContext,
-                file,
-                expectedPackage = firstPass.packageName,
+            inspectApk(applicationContext, file, expectedPackage = firstPass.packageName,
                 previousVersionCode = previous?.versionCode,
                 previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                previousCertificateSha256 = previous?.certificateSha256
-            )
+                previousCertificateSha256 = previous?.certificateSha256)
         }
     }
 
     suspend fun recoverInvalidCompletedDownloads(items: List<DownloadEntity>) {
-        items.filter { it.state == DownloadState.COMPLETED && it.isApkDownload() }.forEach { download ->
+        items.filter { it.state in setOf(DownloadState.COMPLETED, DownloadState.INSTALLABLE) && it.isApkDownload() }.forEach { download ->
             val valid = download.localPath?.let(::File)?.takeIf(File::isFile)?.let { file ->
                 withContext(Dispatchers.IO) { runCatching { inspectApk(applicationContext, file) }.isSuccess }
             } == true
@@ -145,26 +131,15 @@ class DownloadRepository @Inject constructor(
         speedBytesPerSecond: Long = 0,
         etaSeconds: Long? = null,
         errorMessage: String? = null
-    ) = dao.updateProgress(
-        id,
-        state.wireValue,
-        downloaded,
-        total,
-        path,
-        sha,
-        speedBytesPerSecond.coerceAtLeast(0),
-        etaSeconds?.coerceAtLeast(0),
-        errorMessage
-    )
+    ) = dao.updateProgress(id, state.wireValue, downloaded, total, path, sha,
+        speedBytesPerSecond.coerceAtLeast(0), etaSeconds?.coerceAtLeast(0), errorMessage)
 
     suspend fun updateSecurity(
         id: Long, packageName: String, versionCode: Long, versionName: String?, minSdk: Int, targetSdk: Int,
         permissions: String, certificateSha256: String?, signatureSchemes: String, architectures: String,
         securityRisk: String, securityReasons: String
-    ) = dao.updateSecurity(
-        id, packageName, versionCode, versionName, minSdk, targetSdk, permissions,
-        certificateSha256, signatureSchemes, architectures, securityRisk, securityReasons
-    )
+    ) = dao.updateSecurity(id, packageName, versionCode, versionName, minSdk, targetSdk, permissions,
+        certificateSha256, signatureSchemes, architectures, securityRisk, securityReasons)
 
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity? = dao.latestCompletedForPackage(packageName)
 
@@ -178,7 +153,7 @@ class DownloadRepository @Inject constructor(
             .putString(DownloadWorker.KEY_URL, download.sourceUrl)
             .putString(DownloadWorker.KEY_NAME, download.fileName)
             .apply {
-                download.sha256?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_SHA256, it) }
+                download.expectedSha256?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_SHA256, it) }
                 download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
                 download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
             }
