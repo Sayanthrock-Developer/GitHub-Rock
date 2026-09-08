@@ -30,6 +30,8 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -49,18 +51,12 @@ data class ProfileLibraryUiState(
 )
 
 @HiltViewModel
-class ProfileLibraryViewModel @Inject constructor(
-    private val repository: ProfileLibraryRepository
-) : ViewModel() {
+class ProfileLibraryViewModel @Inject constructor(private val repository: ProfileLibraryRepository) : ViewModel() {
     private val _state = MutableStateFlow(ProfileLibraryUiState())
     val state: StateFlow<ProfileLibraryUiState> = _state.asStateFlow()
     private var loadedSection: ProfileLibrarySection? = null
 
-    init {
-        viewModelScope.launch {
-            repository.favouriteKeys.collect { keys -> _state.update { it.copy(favouriteKeys = keys) } }
-        }
-    }
+    init { viewModelScope.launch { repository.favouriteKeys.collect { keys -> _state.update { it.copy(favouriteKeys = keys) } } } }
 
     fun open(section: ProfileLibrarySection) {
         if (loadedSection == section) return
@@ -73,20 +69,15 @@ class ProfileLibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             runCatchingPreservingCancellation { loadRepositories(section) }
-                .onSuccess { repositories ->
-                    loadedSection = section
-                    _state.update { it.copy(repositories = repositories, loading = false, error = null) }
-                }
-                .onFailure { problem ->
-                    _state.update { it.copy(loading = false, error = problem.libraryMessage()) }
-                }
+                .onSuccess { repositories -> loadedSection = section; _state.update { it.copy(repositories = repositories, loading = false, error = null) } }
+                .onFailure { problem -> _state.update { it.copy(loading = false, error = problem.libraryMessage()) } }
         }
     }
 
     fun toggleFavourite(repositoryModel: GitHubRepositoryModel) {
         viewModelScope.launch { repository.toggleFavourite(repositoryModel.fullName) }
         if (_state.value.section == ProfileLibrarySection.Favourites) {
-            _state.update { state -> state.copy(repositories = state.repositories.filterNot { it.profileLibraryKey() == repositoryModel.profileLibraryKey() }) }
+            _state.update { it.copy(repositories = it.repositories.filterNot { repo -> repo.profileLibraryKey() == repositoryModel.profileLibraryKey() }) }
         }
     }
 
@@ -103,33 +94,17 @@ class ProfileLibraryViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileLibraryScreen(
-    section: ProfileLibrarySection,
-    onBack: () -> Unit,
-    onOpenRepository: (GitHubRepositoryModel) -> Unit,
-    viewModel: ProfileLibraryViewModel = hiltViewModel()
-) {
+fun ProfileLibraryScreen(section: ProfileLibrarySection, onBack: () -> Unit, onOpenRepository: (GitHubRepositoryModel) -> Unit, viewModel: ProfileLibraryViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable(section.route) { mutableStateOf("") }
     LaunchedEffect(section) { viewModel.open(section) }
     val visibleRepositories = remember(state.repositories, query) {
         val normalized = query.trim()
-        if (normalized.isBlank()) state.repositories else state.repositories.filter {
-            it.name.contains(normalized, true) || it.fullName.contains(normalized, true) ||
-                it.description.orEmpty().contains(normalized, true) || it.language.orEmpty().contains(normalized, true)
-        }
+        if (normalized.isBlank()) state.repositories else state.repositories.filter { it.name.contains(normalized, true) || it.fullName.contains(normalized, true) || it.description.orEmpty().contains(normalized, true) || it.language.orEmpty().contains(normalized, true) }
     }
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
-                actions = { IconButton(onClick = viewModel::refresh) { Icon(Icons.Default.Refresh, "Refresh ${section.title}") } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
-    ) { padding ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
+        TopAppBar(title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }, actions = { IconButton(onClick = viewModel::refresh) { Icon(Icons.Default.Refresh, "Refresh ${section.title}") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
+    }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { ProfileLibrarySummary(section.icon, section.title, section.subtitle, state.repositories.size) }
             item { OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Search ${section.title.lowercase()}") }) }
@@ -137,9 +112,7 @@ fun ProfileLibraryScreen(
                 state.loading -> item { Box(Modifier.fillMaxWidth().padding(vertical = 56.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
                 state.error != null -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(state.error!!, color = MaterialTheme.colorScheme.error); OutlinedButton(onClick = viewModel::refresh) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Retry") } } } }
                 visibleRepositories.isEmpty() -> item { ProfileLibraryEmpty(section, query.isNotBlank()) }
-                else -> items(visibleRepositories, key = GitHubRepositoryModel::id) { repo ->
-                    ProfileLibraryRepositoryCard(repo, repo.profileLibraryKey() in state.favouriteKeys, { viewModel.toggleFavourite(repo) }) { onOpenRepository(repo) }
-                }
+                else -> items(visibleRepositories, key = GitHubRepositoryModel::id) { repo -> ProfileLibraryRepositoryCard(repo, repo.profileLibraryKey() in state.favouriteKeys, { viewModel.toggleFavourite(repo) }) { onOpenRepository(repo) } }
             }
         }
     }
@@ -158,17 +131,15 @@ private fun ProfileLibrarySummary(icon: ImageVector, title: String, subtitle: St
 
 @Composable
 private fun ProfileLibraryRepositoryCard(repository: GitHubRepositoryModel, isFavourite: Boolean, onToggleFavourite: () -> Unit, onClick: () -> Unit) {
-    GlassCard(onClick = onClick) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text(repository.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(repository.owner.login, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                Text(repository.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) { Text("★ ${repository.stars}", style = MaterialTheme.typography.labelMedium); Text("Forks ${repository.forks}", style = MaterialTheme.typography.labelMedium); Text(repository.language ?: "Repository", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-            }
-            IconButton(onClick = onToggleFavourite) { Icon(if (isFavourite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, if (isFavourite) "Remove from favourites" else "Add to favourites", tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
+    GlassCard(onClick = onClick) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(repository.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(repository.owner.login, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text(repository.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) { Text("★ ${repository.stars}", style = MaterialTheme.typography.labelMedium); Text("Forks ${repository.forks}", style = MaterialTheme.typography.labelMedium); Text(repository.language ?: "Repository", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
-    }
+        IconButton(onClick = onToggleFavourite) { Icon(if (isFavourite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, if (isFavourite) "Remove from favourites" else "Add to favourites", tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
+    } }
 }
 
 @Composable
