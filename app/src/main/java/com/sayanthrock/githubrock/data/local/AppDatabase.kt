@@ -71,6 +71,9 @@ interface DownloadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(download: DownloadEntity): Long
 
+    @Query("SELECT * FROM downloads WHERE sourceUrl = :sourceUrl AND fileName = :fileName ORDER BY createdAt DESC LIMIT 1")
+    suspend fun findBySourceAndName(sourceUrl: String, fileName: String): DownloadEntity?
+
     @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status = 'completed' ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity?
 
