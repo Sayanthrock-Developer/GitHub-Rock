@@ -254,7 +254,12 @@ fun RepositoryDetailScreen(
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(asset.name, style = MaterialTheme.typography.bodySmall)
                                 TextButton(onClick = {
-                                    downloadsViewModel.enqueue(asset.downloadUrl, asset.name)
+                                    val downloadUrl = if (repository?.private == true) {
+                                        asset.downloadUrl
+                                    } else {
+                                        asset.browserDownloadUrl?.takeIf(String::isNotBlank) ?: asset.downloadUrl
+                                    }
+                                    downloadsViewModel.enqueue(downloadUrl, asset.name)
                                 }) { Text("Download") }
                             }
                         }
