@@ -15,13 +15,14 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
@@ -29,10 +30,14 @@ import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.displayState
+import com.sayanthrock.githubrock.core.model.formatRunTime
+import com.sayanthrock.githubrock.core.model.runTime
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
+import java.time.Instant
+import kotlinx.coroutines.delay
 
 @Composable
 fun BuildDetailsScreen(mode: AppMode, repository: GitHubRepositoryModel, runId: Long, onBack: () -> Unit, onOpenJob: (Long, Long) -> Unit = { _, _ -> }, onOpenArtifact: (Long, Long) -> Unit = { _, _ -> }, viewModel: BuildsViewModel = hiltViewModel(), appearanceViewModel: AppearanceViewModel = hiltViewModel()) {
@@ -45,12 +50,49 @@ fun BuildDetailsScreen(mode: AppMode, repository: GitHubRepositoryModel, runId: 
             item { BuildRunHeader(run, state.workflow?.name, preferences) }
             item { BuildActionRow(run, !state.loading, { viewModel.loadAndroidBuild(repository, run.id) }, { viewModel.cancelRun(repository, run.id) }, { viewModel.rerunRun(repository, run.id) }) }
             item { BuildMetadata(run) }
+            item { RunUsageCard(run) }
         } ?: item { GlassCard { Text(if (state.loading) "Loading build details…" else "Build run details are unavailable.") } }
         if (state.tracking) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         item { Text("Jobs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.jobs.isEmpty()) item { GlassCard { Text("No job details returned yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) } } else items(state.jobs, key = { it.id }) { job -> JobDetailsCard(job, preferences) { onOpenJob(runId, job.id) } }
         item { Text("Artifacts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.artifacts.isEmpty()) item { GlassCard { Text("No downloadable artifacts were published for this run.", color = MaterialTheme.colorScheme.onSurfaceVariant) } } else items(state.artifacts, key = { it.id }) { artifact -> OutlinedButton(onClick = { onOpenArtifact(runId, artifact.id) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Archive, null); Spacer(Modifier.width(8.dp)); Text(if (artifact.expired) "${artifact.name} expired" else artifact.name) } }
+    }
+}
+
+@Composable
+private fun RunUsageCard(run: WorkflowRun) {
+    val running = run.displayState() == WorkflowDisplayState.Running || run.displayState() == WorkflowDisplayState.Queued
+    var now by remember(run.id) { mutableStateOf(Instant.now()) }
+    LaunchedEffect(run.id, running) {
+        if (running) {
+            while (true) {
+                now = Instant.now()
+                delay(1000)
+            }
+        }
+    }
+    val duration = run.runTime(now)
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Default.Timer, null, tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text("Usage", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Run details", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Default.Timer, null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f)) {
+                        Text("Run time", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(duration?.formatRunTime() ?: if (run.displayState() == WorkflowDisplayState.Queued) "Not started" else "Unavailable", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    }
+                    if (running && duration != null) Text("Live", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     }
 }
 
