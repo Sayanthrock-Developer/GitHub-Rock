@@ -6,8 +6,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sayanthrock.githubrock.core.model.DownloadMirror
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -39,12 +36,10 @@ import java.util.Locale
 @Composable
 fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
-    val selectedMirror by viewModel.selectedMirror.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var actionTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deleteTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var cancelTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var showMirrors by rememberSaveable { mutableStateOf(false) }
     var actionError by remember { mutableStateOf<String?>(null) }
 
     val actionTarget = actionTargetId?.let { id -> downloads.firstOrNull { it.id == id } }
@@ -57,7 +52,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item { StandardScreenHeader("Downloads", "Transfers, completed files, and download history") }
-        item { DownloadCommandBar(selectedMirror, onChangeMirror = { showMirrors = true }) }
+        item { OfficialGitHubDownloadCard() }
         if (downloads.isEmpty()) item { EmptyDownloadsCard() }
         items(downloads, key = { it.id }) { item ->
             DownloadCard(
@@ -68,14 +63,6 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
                 onOpenActions = { actionTargetId = item.id }
             )
         }
-    }
-
-    if (showMirrors) {
-        DownloadMirrorDialog(
-            selected = selectedMirror,
-            onSelect = viewModel::selectMirror,
-            onDismiss = { showMirrors = false }
-        )
     }
 
     actionTarget?.let { item ->
@@ -134,22 +121,35 @@ fun DownloadsScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
 }
 
 @Composable
-internal fun DownloadCommandBar(selectedMirror: DownloadMirror, onChangeMirror: () -> Unit) {
+private fun OfficialGitHubDownloadCard() {
     Surface(
-        onClick = onChangeMirror,
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Icon(Icons.Default.CloudDownload, null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
                 Text("Download source", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(selectedMirror.label, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Official GitHub", fontWeight = FontWeight.Bold)
             }
-            Text("Change", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-            Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.primary)
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+            ) {
+                Text(
+                    "Official",
+                    Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -230,30 +230,6 @@ private fun SheetAction(icon: ImageVector, title: String, detail: String, onClic
             Icon(Icons.Default.ChevronRight, null, tint = tint)
         }
     }
-}
-
-@Composable
-private fun DownloadMirrorDialog(selected: DownloadMirror, onSelect: (DownloadMirror) -> Unit, onDismiss: () -> Unit) {
-    var pending by remember(selected) { mutableStateOf(selected) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Download source") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Official GitHub is the default. Community endpoints are third-party services.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                DownloadMirror.entries.forEach { mirror ->
-                    Surface(onClick = { pending = mirror }, color = Color.Transparent) {
-                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) { Text(mirror.label, fontWeight = FontWeight.SemiBold); Text(if (mirror.community) "Community endpoint" else "Official GitHub endpoint", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            RadioButton(selected = pending == mirror, onClick = { pending = mirror })
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { Button(onClick = { onSelect(pending); onDismiss() }) { Text("Use selected") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
 }
 
 private enum class DownloadControl { Pause, Resume, Retry, Cancel }
