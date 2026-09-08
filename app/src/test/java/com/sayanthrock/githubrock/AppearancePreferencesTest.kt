@@ -31,11 +31,42 @@ class AppearancePreferencesTest {
         assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored(null))
     }
 
-    @Test fun storedAccentValuesFallBackToCleanCyan() {
+    @Test fun storedAccentValuesSupportCompletePaletteAndSafeFallback() {
+        assertEquals(AccentColor.DefaultGitHubRock, AccentColor.fromStored("DefaultGitHubRock"))
+        assertEquals(AccentColor.Red, AccentColor.fromStored("Red"))
+        assertEquals(AccentColor.Orange, AccentColor.fromStored("Orange"))
+        assertEquals(AccentColor.Yellow, AccentColor.fromStored("Yellow"))
+        assertEquals(AccentColor.Green, AccentColor.fromStored("Green"))
+        assertEquals(AccentColor.Teal, AccentColor.fromStored("Teal"))
+        assertEquals(AccentColor.Cyan, AccentColor.fromStored("Cyan"))
+        assertEquals(AccentColor.Blue, AccentColor.fromStored("Blue"))
+        assertEquals(AccentColor.Indigo, AccentColor.fromStored("Indigo"))
+        assertEquals(AccentColor.Purple, AccentColor.fromStored("Purple"))
+        assertEquals(AccentColor.Pink, AccentColor.fromStored("Pink"))
+        assertEquals(AccentColor.Custom, AccentColor.fromStored("Custom"))
         assertEquals(AccentColor.Violet, AccentColor.fromStored("Violet"))
-        assertEquals(AccentColor.Emerald, AccentColor.fromStored("Emerald"))
         assertEquals(AccentColor.Cyan, AccentColor.fromStored("unknown"))
         assertEquals(AccentColor.Cyan, AccentColor.fromStored(null))
+    }
+
+    @Test fun appearanceDefaultsUseDefaultGitHubRockAccent() {
+        val preferences = AppearancePreferences()
+        assertEquals(AccentColor.DefaultGitHubRock, preferences.accentColor)
+        assertEquals("", preferences.customAccentHex)
+        assertTrue(preferences.recentAccentColors.isEmpty())
+        assertTrue(preferences.dynamicColor)
+    }
+
+    @Test fun accentHexValidationAcceptsSixAndEightDigitHex() {
+        fun valid(value: String): Boolean {
+            val raw = value.trim().removePrefix("#")
+            return (raw.length == 6 || raw.length == 8) && raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
+        }
+        assertTrue(valid("#52D3DC"))
+        assertTrue(valid("#FF52D3DC"))
+        assertFalse(valid("#52D3D"))
+        assertFalse(valid("#GGGGGG"))
+        assertFalse(valid("#123456789"))
     }
 
     @Test fun displayAndTypographyValuesUseStandardFallbacks() {
@@ -63,7 +94,6 @@ class AppearancePreferencesTest {
 
     @Test fun nativeToolsAreAlwaysAvailableWithoutFeatureControls() {
         val preferences = AppearancePreferences()
-
         assertEquals(ThemeStyle.Clean, preferences.themeStyle)
         assertEquals(DisplaySize.Standard, preferences.displaySize)
         assertEquals(FontSize.Default, preferences.fontSize)
