@@ -13,6 +13,7 @@ import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.data.local.DownloadState
+import com.sayanthrock.githubrock.data.local.state
 import com.sayanthrock.githubrock.download.DownloadWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
