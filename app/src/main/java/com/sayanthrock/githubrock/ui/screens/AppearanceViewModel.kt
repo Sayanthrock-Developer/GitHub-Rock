@@ -24,18 +24,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class AppearanceViewModel @Inject constructor(
-    private val preferences: AppPreferences
-) : ViewModel() {
-    val state: StateFlow<AppearancePreferences> = preferences.appearance.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = AppearancePreferences()
-    )
-
+class AppearanceViewModel @Inject constructor(private val preferences: AppPreferences) : ViewModel() {
+    val state: StateFlow<AppearancePreferences> = preferences.appearance.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppearancePreferences())
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
     fun setAccentColor(color: AccentColor) = viewModelScope.launch { preferences.setAccentColor(color) }
+    fun setCustomAccentHex(hex: String) = viewModelScope.launch { preferences.setCustomAccentHex(hex) }
+    fun saveCustomAccent(hex: String) = viewModelScope.launch { preferences.setCustomAccentHex(hex); preferences.addRecentCustomColor(hex); preferences.setAccentColor(AccentColor.Custom) }
+    fun clearRecentCustomColors() = viewModelScope.launch { preferences.clearRecentCustomColors() }
     fun setDisplaySize(size: DisplaySize) = viewModelScope.launch { preferences.setDisplaySize(size) }
     fun setFontSize(size: FontSize) = viewModelScope.launch { preferences.setFontSize(size) }
     fun setFontWeight(weight: FontWeightStyle) = viewModelScope.launch { preferences.setFontWeight(weight) }
