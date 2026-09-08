@@ -3,6 +3,8 @@ package com.sayanthrock.githubrock.core.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import java.time.Duration
+import java.time.Instant
 
 @Serializable
 data class GitHubUser(
@@ -92,14 +94,48 @@ data class PullRequestDetail(
 
 @Serializable data class Workflow(val id: Long, val name: String, val path: String, val state: String)
 @Serializable data class WorkflowList(@SerialName("total_count") val totalCount: Int, val workflows: List<Workflow>)
-@Serializable data class WorkflowRun(val id: Long, val name: String? = null, @SerialName("display_title") val displayTitle: String = "", val status: String, val conclusion: String? = null, val event: String = "", @SerialName("head_branch") val headBranch: String? = null, @SerialName("html_url") val htmlUrl: String = "", @SerialName("created_at") val createdAt: String = "")
+@Serializable data class WorkflowRun(
+    val id: Long,
+    val name: String? = null,
+    @SerialName("display_title") val displayTitle: String = "",
+    val status: String,
+    val conclusion: String? = null,
+    val event: String = "",
+    @SerialName("head_branch") val headBranch: String? = null,
+    @SerialName("html_url") val htmlUrl: String = "",
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("run_started_at") val runStartedAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+fun WorkflowRun.runTime(now: Instant = Instant.now()): Duration? {
+    val started = runStartedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
+    val finished = when {
+        displayState() == WorkflowDisplayState.Running || displayState() == WorkflowDisplayState.Queued -> now
+        else -> updatedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: now
+    }
+    return Duration.ofSeconds((finished.epochSecond - started.epochSecond).coerceAtLeast(0))
+}
+
+fun Duration.formatRunTime(): String {
+    val totalSeconds = seconds
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return when {
+        hours > 0 -> "${hours}h ${minutes}m ${seconds}s"
+        minutes > 0 -> "${minutes}m ${seconds}s"
+        else -> "${seconds}s"
+    }
+}
+
 @Serializable data class WorkflowRuns(@SerialName("total_count") val totalCount: Int, @SerialName("workflow_runs") val runs: List<WorkflowRun>)
 @Serializable data class Release(val id: Long, @SerialName("tag_name") val tagName: String, val name: String? = null, val body: String? = null, val draft: Boolean = false, val prerelease: Boolean = false, @SerialName("published_at") val publishedAt: String? = null, val assets: List<ReleaseAsset> = emptyList())
 @Serializable data class ReleaseAsset(val id: Long, val name: String, val size: Long, @SerialName("browser_download_url") val downloadUrl: String)
 @Serializable data class RateLimitResponse(val rate: RateLimit)
 @Serializable data class RateLimit(val limit: Int, val remaining: Int, val reset: Long)
 @Serializable data class DeviceCodeResponse(@SerialName("device_code") val deviceCode: String, @SerialName("user_code") val userCode: String, @SerialName("verification_uri") val verificationUri: String, @SerialName("expires_in") val expiresIn: Int, val interval: Int = 5)
-@Serializable data class DeviceTokenResponse(@SerialName("access_token") val accessToken: String? = null, @SerialName("token_type") val tokenType: String? = null, val scope: String? = null, @SerialName("expires_in") val expiresIn: Long? = null, @SerialName("refresh_token") val refreshToken: String? = null, @SerialName("refresh_token_expires_in") val refreshTokenExpiresIn: Long? = null, val error: String? = null, @SerialName("error_description") val errorDescription: String? = null)
+@Serializable data class DeviceTokenResponse(@SerialName("access_token") val accessToken: String? = null, @SerialName("token_type") val tokenType: String? = null, val scope: String? = null, @SerialName("expires_in") val expiresIn: Long? = null, @SerialName("refresh_token") val refreshToken: String? = null, @SerialName("refresh_token_expires_in") val refreshTokenExpiresIn: Long? = null, val error: String? = null, val errorDescription: String? = null)
 @Serializable data class CreateIssueRequest(val title: String, val body: String? = null)
 @Serializable data class UpdateIssueRequest(val state: String? = null, val title: String? = null, val body: String? = null, val labels: List<String>? = null, val assignees: List<String>? = null, val milestone: Int? = null)
 @Serializable data class IssueReactionRequest(val content: String)
