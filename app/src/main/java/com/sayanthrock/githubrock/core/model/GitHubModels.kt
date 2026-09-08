@@ -61,7 +61,7 @@ data class DashboardPayload(
 @Serializable data class Milestone(val number: Int, val title: String, val state: String = "open")
 @Serializable data class IssueReactionSummary(@SerialName("+1") val plusOne: Int = 0, @SerialName("-1") val minusOne: Int = 0, val laugh: Int = 0, val hooray: Int = 0, val confused: Int = 0, val heart: Int = 0, val rocket: Int = 0, val eyes: Int = 0)
 @Serializable data class IssueReaction(val id: Long = 0, val content: String = "")
-@Serializable data class PullRequestSummary(val id: Long, val number: Int, val title: String, val state: String, val draft: Boolean = false, val user: Owner, val merged: Boolean? = null, @SerialName("updated_at") val updatedAt: String = "")
+@Serializable data class PullRequestSummary(val id: Long, val number: Int, val title: String, val state: String, val draft: Boolean = false, val user: Owner, val merged: Boolean? = null, val updatedAt: String = "")
 
 @Serializable
 data class PullRequestDetail(
@@ -84,10 +84,7 @@ data class PullRequestDetail(
     @SerialName("html_url") val htmlUrl: String = "", @SerialName("created_at") val createdAt: String = "",
     @SerialName("run_started_at") val runStartedAt: String? = null, @SerialName("updated_at") val updatedAt: String? = null
 )
-
 fun WorkflowRun.runTime(now: Instant = Instant.now()): Duration? {
-    // A queued/waiting/pending run has not started executing, regardless of any
-    // timestamp GitHub may expose. Never display a fabricated live duration.
     if (displayState() == WorkflowDisplayState.Queued) return null
     val started = runStartedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
     val finished = when (displayState()) {
@@ -96,7 +93,6 @@ fun WorkflowRun.runTime(now: Instant = Instant.now()): Duration? {
     }
     return Duration.ofSeconds((finished.epochSecond - started.epochSecond).coerceAtLeast(0))
 }
-
 fun Duration.formatRunTime(): String {
     val totalSeconds = seconds
     val hours = totalSeconds / 3600
@@ -108,12 +104,18 @@ fun Duration.formatRunTime(): String {
         else -> "${seconds}s"
     }
 }
-
 @Serializable data class WorkflowRuns(@SerialName("total_count") val totalCount: Int, @SerialName("workflow_runs") val runs: List<WorkflowRun>)
 @Serializable data class Release(val id: Long, @SerialName("tag_name") val tagName: String, val name: String? = null, val body: String? = null, val draft: Boolean = false, val prerelease: Boolean = false, @SerialName("published_at") val publishedAt: String? = null, val assets: List<ReleaseAsset> = emptyList())
-// Use GitHub's API asset URL for downloads. browser_download_url is a web/CDN URL
-// and is not the reliable authenticated endpoint for private release assets.
-@Serializable data class ReleaseAsset(val id: Long, val name: String, val size: Long, @SerialName("url") val downloadUrl: String)
+// The API asset URL is required for authenticated/private releases. Keep the browser URL too:
+// public releases can fall back to GitHub's normal download endpoint if an API asset redirect
+// is rejected by a network/provider while the same file is known to be publicly downloadable.
+@Serializable data class ReleaseAsset(
+    val id: Long,
+    val name: String,
+    val size: Long,
+    @SerialName("url") val downloadUrl: String,
+    @SerialName("browser_download_url") val browserDownloadUrl: String? = null
+)
 @Serializable data class RateLimitResponse(val rate: RateLimit)
 @Serializable data class RateLimit(val limit: Int, val remaining: Int, val reset: Long)
 @Serializable data class DeviceCodeResponse(@SerialName("device_code") val deviceCode: String, @SerialName("user_code") val userCode: String, @SerialName("verification_uri") val verificationUri: String, @SerialName("expires_in") val expiresIn: Int, val interval: Int = 5)
