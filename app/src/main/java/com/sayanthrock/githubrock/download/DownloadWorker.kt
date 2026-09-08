@@ -115,7 +115,7 @@ class DownloadWorker @AssistedInject constructor(
                 }
                 repository.updateProgress(id, DownloadState.DOWNLOADING, startingBytes, knownTotal, partial.absolutePath, expectedSha)
                 setForeground(downloadForegroundInfo(id, name, startingBytes, knownTotal))
-                copyResponseWithProgress(id, name, body.byteStream(), partial, append, startingBytes, knownTotal)
+                copyResponseWithProgress(id, name, body.byteStream(), partial, append, startingBytes, knownTotal, expectedSha)
             }
 
             currentCoroutineContext().ensureActive()
@@ -199,7 +199,8 @@ class DownloadWorker @AssistedInject constructor(
         target: File,
         append: Boolean,
         startingBytes: Long,
-        totalBytes: Long
+        totalBytes: Long,
+        expectedSha: String?
     ) {
         var downloaded = startingBytes
         var lastPublished = startingBytes
@@ -219,7 +220,7 @@ class DownloadWorker @AssistedInject constructor(
                         val elapsedSeconds = (now - lastSampleAt) / 1_000_000_000.0
                         val speed = if (elapsedSeconds > 0.0) ((downloaded - lastSampleBytes) / elapsedSeconds).toLong() else 0L
                         val eta = if (speed > 0L && totalBytes > downloaded) (totalBytes - downloaded + speed - 1L) / speed else null
-                        repository.updateProgress(id, DownloadState.DOWNLOADING, downloaded, totalBytes, target.absolutePath, null, speed, eta, null)
+                        repository.updateProgress(id, DownloadState.DOWNLOADING, downloaded, totalBytes, target.absolutePath, expectedSha, speed, eta, null)
                         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
                         lastPublished = downloaded
                         lastSampleBytes = downloaded
@@ -231,7 +232,7 @@ class DownloadWorker @AssistedInject constructor(
         val now = System.nanoTime()
         val elapsedSeconds = (now - lastSampleAt) / 1_000_000_000.0
         val speed = if (elapsedSeconds > 0.0) ((downloaded - lastSampleBytes) / max(elapsedSeconds, 0.001)).toLong() else 0L
-        repository.updateProgress(id, DownloadState.DOWNLOADING, downloaded, totalBytes, target.absolutePath, null, speed, null, null)
+        repository.updateProgress(id, DownloadState.DOWNLOADING, downloaded, totalBytes, target.absolutePath, expectedSha, speed, null, null)
         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
     }
 
