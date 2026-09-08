@@ -1,57 +1,43 @@
 package com.sayanthrock.githubrock.data.settings
 
 /** Categories of remote images whose behavior can be overridden independently. */
-enum class RemoteImageCategory {
-    Avatars,
-    RepositoryArtwork,
-    ProfileRepository
-}
+enum class RemoteImageCategory { Avatars, RepositoryArtwork, ProfileRepository }
 
-/** Category override. Inherit keeps the global "All" setting as the default. */
 enum class RemoteImageOverride {
-    Inherit,
-    Enabled,
-    Disabled
+    Inherit, Enabled, Disabled;
+    companion object { fun fromStored(value: String?): RemoteImageOverride = entries.firstOrNull { it.name == value } ?: Inherit }
 }
 
 enum class RemoteImageNetworkPolicy {
-    AnyNetwork,
-    WifiOnly
+    AnyNetwork, WifiOnly;
+    companion object { fun fromStored(value: String?): RemoteImageNetworkPolicy = entries.firstOrNull { it.name == value } ?: AnyNetwork }
 }
 
 enum class RemoteImageQuality {
-    Low,
-    Balanced,
-    High
+    Low, Balanced, High;
+    companion object { fun fromStored(value: String?): RemoteImageQuality = entries.firstOrNull { it.name == value } ?: Balanced }
 }
 
 enum class RemoteImageShape {
-    Rounded,
-    Square,
-    Adaptive
+    Rounded, Square, Adaptive;
+    companion object { fun fromStored(value: String?): RemoteImageShape = entries.firstOrNull { it.name == value } ?: Rounded }
 }
 
 enum class RemoteImagePlaceholder {
-    Initials,
-    Icon,
-    None
+    Initials, Icon, None;
+    companion object { fun fromStored(value: String?): RemoteImagePlaceholder = entries.firstOrNull { it.name == value } ?: Initials }
 }
 
 enum class RemoteImageSize {
-    Small,
-    Medium,
-    Large
+    Small, Medium, Large;
+    companion object { fun fromStored(value: String?): RemoteImageSize = entries.firstOrNull { it.name == value } ?: Medium }
 }
 
 enum class RemoteImageAnimation {
-    Allow,
-    Block
+    Allow, Block;
+    companion object { fun fromStored(value: String?): RemoteImageAnimation = entries.firstOrNull { it.name == value } ?: Allow }
 }
 
-/**
- * Central policy for remote images. The global setting is the default for every category;
- * explicit category overrides always win.
- */
 data class RemoteImageSettings(
     val allEnabled: Boolean = true,
     val avatarOverride: RemoteImageOverride = RemoteImageOverride.Inherit,
@@ -70,7 +56,6 @@ data class RemoteImageSettings(
         RemoteImageCategory.RepositoryArtwork -> repositoryArtworkOverride.resolve(allEnabled)
         RemoteImageCategory.ProfileRepository -> profileRepositoryOverride.resolve(allEnabled)
     }
-
     private fun RemoteImageOverride.resolve(global: Boolean): Boolean = when (this) {
         RemoteImageOverride.Inherit -> global
         RemoteImageOverride.Enabled -> true
