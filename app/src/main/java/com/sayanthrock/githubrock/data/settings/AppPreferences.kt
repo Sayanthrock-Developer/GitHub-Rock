@@ -19,11 +19,17 @@ private val Context.dataStore by preferencesDataStore(name = "github_rock_prefer
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
 enum class AccentColor {
-    DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink,
-    // Kept for migration compatibility with existing installations.
-    Violet, Emerald, Rose, Coral, Amber;
+    DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink;
+
     companion object {
-        fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock
+        fun fromStored(value: String?): AccentColor = when (value) {
+            "Violet" -> Purple
+            "Emerald" -> Green
+            "Rose" -> Pink
+            "Coral" -> Red
+            "Amber" -> Yellow
+            else -> entries.firstOrNull { it.name == value } ?: DefaultGitHubRock
+        }
     }
 }
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
@@ -102,7 +108,11 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
-    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name; if (color != AccentColor.DefaultGitHubRock || color != AccentColor.DefaultGitHubRock) it[DYNAMIC_COLOR] = false }
+    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit {
+        it[ACCENT_COLOR] = color.name
+        it[CUSTOM_ACCENT_HEX] = ""
+        it[DYNAMIC_COLOR] = false
+    }
     suspend fun setCustomAccentHex(hex: String) = context.dataStore.edit { preferences ->
         val normalized = normalizeHex(hex) ?: return@edit
         preferences[CUSTOM_ACCENT_HEX] = normalized
@@ -113,7 +123,10 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         current.add(0, normalized)
         preferences[RECENT_ACCENT_COLORS] = current.take(MAX_RECENT_ACCENTS).toSet()
     }
-    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
+    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { preferences ->
+        preferences[DYNAMIC_COLOR] = enabled
+        if (enabled) preferences[CUSTOM_ACCENT_HEX] = ""
+    }
     suspend fun clearCustomAccent() = context.dataStore.edit { it[CUSTOM_ACCENT_HEX] = "" }
     suspend fun setDisplaySize(size: DisplaySize) = context.dataStore.edit { it[DISPLAY_SIZE] = size.name }
     suspend fun setFontSize(size: FontSize) = context.dataStore.edit { it[FONT_SIZE] = size.name }
