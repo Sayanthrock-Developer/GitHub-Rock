@@ -123,7 +123,7 @@ fun AppearanceContent(
             item { StandardScreenHeader("Customize your experience", "Choose the visual system, scale, typography, loading style, animation, and code presentation.") }
             item { StandardSectionHeader("Theme") }
             item { ThemePreview(state) }
-            item { ChoiceCard("Design style", "Six complete surface and shape systems", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
+            item { ChoiceCard("Design style", "Seven complete surface and shape systems", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
             item { AccentPicker(state.accentColor, !state.dynamicColor, onAccentColor) }
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
             item { StandardSectionHeader("Navigation") }
@@ -212,7 +212,7 @@ private fun AnimationStyleControl(selected: AnimationStyle, reduceMotion: Boolea
 @Composable private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) { StandardSettingsRow(icon, title, subtitle) { Switch(checked, onCheckedChange, Modifier.semantics { contentDescription = "Toggle $title" }) } }
 
 private val AnimationStyle.displayName: String get() = when (this) { AnimationStyle.Liquid -> "Liquid"; AnimationStyle.Spring -> "Spring"; AnimationStyle.Cinematic -> "Cinematic"; AnimationStyle.Magnetic -> "Magnetic"; AnimationStyle.Dynamic -> "Dynamic" }
-private val ThemeStyle.displayName: String get() = when (this) { ThemeStyle.Clean -> "Clean"; ThemeStyle.LiquidGlass -> "Liquid glass"; ThemeStyle.Studio -> "Studio"; ThemeStyle.Midnight -> "Midnight"; ThemeStyle.Aurora -> "Aurora"; ThemeStyle.HighContrast -> "High contrast" }
+private val ThemeStyle.displayName: String get() = when (this) { ThemeStyle.Clean -> "Clean"; ThemeStyle.LiquidGlass -> "Liquid glass"; ThemeStyle.Studio -> "Studio"; ThemeStyle.Midnight -> "Midnight"; ThemeStyle.Aurora -> "Aurora"; ThemeStyle.HighContrast -> "High contrast"; ThemeStyle.Obsidian -> "Obsidian" }
 private val AppFontFamily.displayName: String get() = when (this) { AppFontFamily.SystemSans -> "System sans"; AppFontFamily.Serif -> "Serif"; AppFontFamily.Monospace -> "Monospace" }
 private val CodeColorStyle.displayName: String get() = when (this) { CodeColorStyle.Classic -> "Classic"; CodeColorStyle.Ocean -> "Ocean"; CodeColorStyle.Sunset -> "Sunset"; CodeColorStyle.Monochrome -> "Mono"; CodeColorStyle.GitHub -> "GitHub" }
 private val NavigationBarStyle.displayName: String get() = when (this) { NavigationBarStyle.FloatingCapsule -> "Floating Capsule"; NavigationBarStyle.Classic -> "Classic"; NavigationBarStyle.Minimal -> "Minimal"; NavigationBarStyle.Glass -> "Glass"; NavigationBarStyle.Compact -> "Compact" }

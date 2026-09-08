@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore by preferencesDataStore(name = "github_rock_preferences")
 
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
-enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
+enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
 enum class AccentColor { Cyan, Blue, Violet, Emerald, Rose, Coral, Amber, Orange; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan } }
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
 enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }

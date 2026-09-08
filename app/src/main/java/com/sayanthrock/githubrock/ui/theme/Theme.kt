@@ -130,6 +130,7 @@ private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
     ThemeStyle.Midnight -> Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
     ThemeStyle.Aurora -> Shapes(extraSmall = RoundedCornerShape(10.dp), small = RoundedCornerShape(14.dp), medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(32.dp))
     ThemeStyle.HighContrast -> Shapes(extraSmall = RoundedCornerShape(2.dp), small = RoundedCornerShape(4.dp), medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp), extraLarge = RoundedCornerShape(12.dp))
+    ThemeStyle.Obsidian -> Shapes(extraSmall = RoundedCornerShape(7.dp), small = RoundedCornerShape(11.dp), medium = RoundedCornerShape(15.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
 }
 
 private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): ColorScheme = when (style) {
@@ -172,6 +173,21 @@ private fun ColorScheme.applyStyle(style: ThemeStyle, darkTheme: Boolean): Color
         onBackground = if (darkTheme) Color.White else Color.Black,
         onSurface = if (darkTheme) Color.White else Color.Black,
         onSurfaceVariant = if (darkTheme) Color(0xFFE3E3E3) else Color(0xFF222222)
+    )
+    ThemeStyle.Obsidian -> copy(
+        background = if (darkTheme) Color(0xFF07080A) else Color(0xFFF5F6F8),
+        surface = if (darkTheme) Color(0xFF0D0F12) else Color(0xFFFCFCFD),
+        surfaceVariant = if (darkTheme) Color(0xFF111419) else Color(0xFFF0F2F5),
+        surfaceContainerLowest = if (darkTheme) Color(0xFF050608) else Color.White,
+        surfaceContainerLow = if (darkTheme) Color(0xFF0A0C0F) else Color(0xFFF7F8FA),
+        surfaceContainer = if (darkTheme) Color(0xFF12151A) else Color(0xFFF0F2F5),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF191D23) else Color(0xFFE7EAF0),
+        surfaceContainerHighest = if (darkTheme) Color(0xFF222730) else Color(0xFFDCE1E8),
+        outline = if (darkTheme) Color(0xFF343B45) else Color(0xFFB8C0CA),
+        outlineVariant = if (darkTheme) Color(0xFF242A32) else Color(0xFFD9DEE5),
+        onBackground = if (darkTheme) Color(0xFFF1F3F5) else Color(0xFF16191D),
+        onSurface = if (darkTheme) Color(0xFFF1F3F5) else Color(0xFF16191D),
+        onSurfaceVariant = if (darkTheme) Color(0xFFAAB2BD) else Color(0xFF59636E)
     )
 }
 

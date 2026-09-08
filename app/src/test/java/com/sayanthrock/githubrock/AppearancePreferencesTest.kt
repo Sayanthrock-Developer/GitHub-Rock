@@ -26,6 +26,7 @@ class AppearancePreferencesTest {
     @Test fun storedStyleValuesFallBackToClean() {
         assertEquals(ThemeStyle.LiquidGlass, ThemeStyle.fromStored("LiquidGlass"))
         assertEquals(ThemeStyle.Midnight, ThemeStyle.fromStored("Midnight"))
+        assertEquals(ThemeStyle.Obsidian, ThemeStyle.fromStored("Obsidian"))
         assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored("unknown"))
         assertEquals(ThemeStyle.Clean, ThemeStyle.fromStored(null))
     }
