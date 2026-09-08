@@ -98,13 +98,8 @@ fun BuildsScreen(
             }
         }
     }
-    val counts = remember(repositoryRuns, actionState.artifacts) {
-        BuildCounts(
-            running = repositoryRuns.count { it.displayState() !in setOf(WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled) },
-            failed = repositoryRuns.count { it.displayState() == WorkflowDisplayState.Failed },
-            success = repositoryRuns.count { it.displayState() == WorkflowDisplayState.Success },
-            artifacts = actionState.artifacts.size
-        )
+    val health = remember(repositoryRuns, actionState.artifacts) {
+        buildHealthSummary(repositoryRuns, actionState.artifacts.size)
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -114,7 +109,7 @@ fun BuildsScreen(
             verticalArrangement = Arrangement.spacedBy(if (preferences.compactCards) 10.dp else 14.dp)
         ) {
             item { StandardScreenHeader(title = "Builds", subtitle = "Understand workflow runs, code, jobs, steps and artifacts in one native view") }
-            item { BuildSummary(counts, preferences) }
+            item { BuildSummary(health, preferences) }
             item { BuildFilterRow(filter) { filter = it } }
             item {
                 RepositoryPicker(repositories, selectedRepository) {
@@ -182,20 +177,87 @@ fun BuildsScreen(
 }
 
 private enum class BuildFilter(val label: String) { All("All"), Running("Running"), Failed("Failed"), Success("Success") }
-private data class BuildCounts(val running: Int, val failed: Int, val success: Int, val artifacts: Int)
+private data class BuildHealthSummary(
+    val running: Int,
+    val failed: Int,
+    val successful: Int,
+    val cancelled: Int,
+    val artifacts: Int,
+    val successRate: Int?,
+    val status: String,
+    val recentBuilds: String,
+    val lastBuild: String,
+    val ciChecks: String
+)
+
+private fun buildHealthSummary(runs: List<WorkflowRun>, artifactCount: Int): BuildHealthSummary {
+    val states = runs.map { it.displayState() }
+    val running = states.count { it !in setOf(WorkflowDisplayState.Success, WorkflowDisplayState.Failed, WorkflowDisplayState.Cancelled) }
+    val failed = states.count { it == WorkflowDisplayState.Failed }
+    val successful = states.count { it == WorkflowDisplayState.Success }
+    val cancelled = states.count { it == WorkflowDisplayState.Cancelled }
+    val completed = successful + failed + cancelled
+    val successRate = completed.takeIf { it > 0 }?.let { successful * 100 / it }
+    val latest = runs.maxByOrNull { it.id }
+    val latestState = latest?.displayState()
+    val status = when {
+        failed > 0 -> "Needs attention"
+        running > 0 -> "In progress"
+        successful > 0 -> "Healthy"
+        else -> "No data"
+    }
+    val recentBuilds = when {
+        runs.isEmpty() -> "No recent builds"
+        failed > 0 -> "Failures detected"
+        running > 0 -> "Builds in progress"
+        cancelled > 0 -> "Passing with cancellations"
+        else -> "All passing"
+    }
+    val lastBuild = when (latestState) {
+        WorkflowDisplayState.Success -> "Passed"
+        WorkflowDisplayState.Failed -> "Failed"
+        WorkflowDisplayState.Cancelled -> "Cancelled"
+        null -> "No recent build"
+        else -> latestState.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
+    }
+    val ciChecks = when (latestState) {
+        WorkflowDisplayState.Success -> "Passing"
+        WorkflowDisplayState.Failed -> "Failing"
+        WorkflowDisplayState.Cancelled -> "Cancelled"
+        null -> "No data"
+        else -> "Running"
+    }
+    return BuildHealthSummary(running, failed, successful, cancelled, artifactCount, successRate, status, recentBuilds, lastBuild, ciChecks)
+}
 
 @Composable
-private fun BuildSummary(counts: BuildCounts, preferences: AppearancePreferences) {
+private fun BuildSummary(health: BuildHealthSummary, preferences: AppearancePreferences) {
+    val statusAccent = when {
+        health.failed > 0 -> MaterialTheme.colorScheme.error
+        health.running > 0 -> MaterialTheme.colorScheme.primary
+        health.successful > 0 -> statusColor(false, true, preferences)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Build health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Surface(Modifier.size(9.dp), shape = RoundedCornerShape(50), color = statusAccent) {}
+                Text("Build health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text("Small", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(health.status, color = statusAccent, fontWeight = FontWeight.SemiBold)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SummaryMetric("Running", counts.running.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                SummaryMetric("Failed", counts.failed.toString(), MaterialTheme.colorScheme.error, Modifier.weight(1f))
+                SummaryMetric("Success rate", health.successRate?.let { "$it%" } ?: "—", statusAccent, Modifier.weight(1f))
+                SummaryMetric("Failed builds", health.failed.toString(), if (health.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SummaryMetric("Successful", counts.success.toString(), statusColor(false, true, preferences), Modifier.weight(1f))
-                SummaryMetric("Artifacts", counts.artifacts.toString(), MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
+                SummaryMetric("Recent builds", health.recentBuilds, statusAccent, Modifier.weight(1f))
+                SummaryMetric("Last build", health.lastBuild, statusAccent, Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SummaryMetric("CI checks", health.ciChecks, statusAccent, Modifier.weight(1f))
+                SummaryMetric("Artifacts", if (health.artifacts > 0) "Available" else "None", if (health.artifacts > 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
             }
         }
     }
@@ -205,7 +267,7 @@ private fun BuildSummary(counts: BuildCounts, preferences: AppearancePreferences
 private fun SummaryMetric(label: String, value: String, accent: Color, modifier: Modifier = Modifier) {
     Surface(modifier, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f)) {
         Column(Modifier.padding(12.dp)) {
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = accent)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
