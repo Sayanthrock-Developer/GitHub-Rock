@@ -8,7 +8,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
-import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
@@ -35,12 +34,7 @@ class DownloadRepository @Inject constructor(
 
     suspend fun enqueue(url: String, fileName: String, expectedPackage: String? = null) {
         val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return
-        val queued = DownloadEntity(
-            fileName = fileName,
-            sourceUrl = resolvedUrl,
-            status = "queued",
-            packageName = expectedPackage
-        )
+        val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued", packageName = expectedPackage)
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
     }
@@ -48,13 +42,7 @@ class DownloadRepository @Inject constructor(
     suspend fun downloadAgain(download: DownloadEntity) {
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         deleteOwnedFile(download.localPath)
-        val queued = download.copy(
-            localPath = null,
-            totalBytes = 0,
-            downloadedBytes = 0,
-            sha256 = null,
-            status = "queued"
-        )
+        val queued = download.copy(localPath = null, totalBytes = 0, downloadedBytes = 0, sha256 = null, status = "queued")
         dao.upsert(queued)
         schedule(queued)
     }
@@ -88,14 +76,10 @@ class DownloadRepository @Inject constructor(
         runCatching {
             val firstPass = inspectApk(applicationContext, file)
             val previous = dao.latestCompletedForPackage(firstPass.packageName)
-            inspectApk(
-                applicationContext,
-                file,
-                expectedPackage = firstPass.packageName,
+            inspectApk(applicationContext, file, expectedPackage = firstPass.packageName,
                 previousVersionCode = previous?.versionCode,
                 previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                previousCertificateSha256 = previous?.certificateSha256
-            )
+                previousCertificateSha256 = previous?.certificateSha256)
         }
     }
 
@@ -108,26 +92,17 @@ class DownloadRepository @Inject constructor(
         }
     }
 
-    suspend fun latestCompletedForPackage(packageName: String): DownloadEntity? =
-        dao.latestCompletedForPackage(packageName)
-
     suspend fun updateProgress(id: Long, status: String, downloaded: Long, total: Long, path: String?, sha: String?) =
         dao.updateProgress(id, status, downloaded, total, path, sha)
 
     suspend fun updateSecurity(
-        id: Long,
-        packageName: String,
-        versionCode: Long,
-        versionName: String?,
-        minSdk: Int,
-        targetSdk: Int,
-        permissions: String,
-        certificateSha256: String?,
-        signatureSchemes: String,
-        architectures: String,
-        securityRisk: String,
-        securityReasons: String
-    ) = dao.updateSecurity(id, packageName, versionCode, versionName, minSdk, targetSdk, permissions, certificateSha256, signatureSchemes, architectures, securityRisk, securityReasons)
+        id: Long, packageName: String, versionCode: Long, versionName: String?, minSdk: Int, targetSdk: Int,
+        permissions: String, certificateSha256: String?, signatureSchemes: String, architectures: String,
+        securityRisk: String, securityReasons: String
+    ) = dao.updateSecurity(id, packageName, versionCode, versionName, minSdk, targetSdk, permissions,
+        certificateSha256, signatureSchemes, architectures, securityRisk, securityReasons)
+
+    suspend fun latestCompletedForPackage(packageName: String): DownloadEntity? = dao.latestCompletedForPackage(packageName)
 
     fun schedule(download: DownloadEntity) {
         val input = Data.Builder()
