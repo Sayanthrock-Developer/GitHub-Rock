@@ -38,10 +38,12 @@ class DownloadsViewModel @Inject constructor(
     private val applicationContext = context.applicationContext
     private val workManager = WorkManager.getInstance(applicationContext)
     private val downloadsDirectory = File(applicationContext.filesDir, "downloads")
-    private val preferences = applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-    private val _selectedMirror = MutableStateFlow(DownloadMirror.fromId(preferences.getString(KEY_DOWNLOAD_MIRROR, null)))
 
+    // Kept as a compatibility state for existing Downloads UI. There is now only
+    // one real source: the official GitHub URL passed by the release/artifact API.
+    private val _selectedMirror = MutableStateFlow(DownloadMirror.Direct)
     val selectedMirror: StateFlow<DownloadMirror> = _selectedMirror.asStateFlow()
+
     val downloads: StateFlow<List<DownloadEntity>> = dao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -61,21 +63,20 @@ class DownloadsViewModel @Inject constructor(
         }
     }
 
-    fun selectMirror(mirror: DownloadMirror) {
-        _selectedMirror.value = mirror
-        preferences.edit().putString(KEY_DOWNLOAD_MIRROR, mirror.id).apply()
+    fun selectMirror(@Suppress("UNUSED_PARAMETER") mirror: DownloadMirror) {
+        // Community mirrors were removed because authenticated/temporary GitHub
+        // asset URLs cannot be safely rewritten through third-party proxies.
+        _selectedMirror.value = DownloadMirror.Direct
     }
 
     fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
-        // APKs must always come from the official GitHub asset URL. Community mirrors
-        // are useful for generic files, but they can return HTML/proxy responses that
-        // Android cannot install. This keeps the application download path reliable.
-        val resolvedUrl = if (fileName.endsWith(".apk", ignoreCase = true)) {
-            DownloadMirror.Direct.resolve(url)
-        } else {
-            runCatching { _selectedMirror.value.resolve(url) }.getOrElse { url }
-        }
-        val queued = DownloadEntity(fileName = fileName, sourceUrl = resolvedUrl, status = "queued", packageName = expectedPackage)
+        val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return@launch
+        val queued = DownloadEntity(
+            fileName = fileName,
+            sourceUrl = resolvedUrl,
+            status = "queued",
+            packageName = expectedPackage
+        )
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
     }
@@ -161,8 +162,6 @@ class DownloadsViewModel @Inject constructor(
     private fun DownloadEntity.isApkDownload(): Boolean = fileName.endsWith(".apk", ignoreCase = true)
 
     companion object {
-        private const val PREFERENCES_NAME = "github_rock_downloads"
-        private const val KEY_DOWNLOAD_MIRROR = "download_mirror"
         private val ACTIVE_STATUSES = setOf("queued", "downloading", "retrying")
     }
 }
