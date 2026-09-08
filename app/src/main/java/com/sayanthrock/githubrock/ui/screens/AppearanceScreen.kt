@@ -2,6 +2,8 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,10 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -52,14 +54,18 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -169,18 +175,65 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
     val hsv = remember(initialHex) { FloatArray(3).also { android.graphics.Color.colorToHSV(initial.toArgb(), it) } }
     var hue by remember(initialHex) { mutableFloatStateOf(hsv[0]) }
     var saturation by remember(initialHex) { mutableFloatStateOf(hsv[1]) }
-    var value by remember(initialHex) { mutableFloatStateOf(hsv[2]) }
+    var brightness by remember(initialHex) { mutableFloatStateOf(hsv[2]) }
     var hexText by remember(initialHex) { mutableStateOf(initialHex.uppercase()) }
-    val selected = Color.hsv(hue, saturation, value)
+    var pickerWidth by remember { mutableIntStateOf(0) }
+    var pickerHeight by remember { mutableIntStateOf(0) }
+    val selected = Color.hsv(hue, saturation, brightness)
     val hueColor = Color.hsv(hue, 1f, 1f)
     val valid = parseAccentHex(hexText) != null
+
+    fun updateFromPoint(point: Offset) {
+        if (pickerWidth <= 0 || pickerHeight <= 0) return
+        saturation = (point.x / pickerWidth.toFloat()).coerceIn(0f, 1f)
+        brightness = (1f - point.y / pickerHeight.toFloat()).coerceIn(0f, 1f)
+        hexText = selectedHex(hue, saturation, brightness)
+    }
+
+    fun updateFromHex(text: String) {
+        val normalized = text.take(9).uppercase()
+        hexText = normalized
+        val color = parseAccentHex(normalized) ?: return
+        val next = FloatArray(3)
+        android.graphics.Color.colorToHSV(color.toArgb(), next)
+        hue = next[0]
+        saturation = next[1]
+        brightness = next[2]
+    }
+
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Custom accent color") }, text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Canvas(Modifier.fillMaxWidth().height(180.dp).semantics { contentDescription = "Saturation and brightness color picker" }) { drawRect(Brush.horizontalGradient(listOf(Color.White, hueColor))); drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))); val x = saturation.coerceIn(0f, 1f) * size.width; val y = (1f - value.coerceIn(0f, 1f)) * size.height; drawCircle(Color.White, 9.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y)) }
-        Slider(value = hue, onValueChange = { hue = it }, valueRange = 0f..360f, modifier = Modifier.semantics { contentDescription = "Hue slider" })
-        TextField(value = hexText, onValueChange = { hexText = it.take(9).uppercase() }, label = { Text("HEX") }, singleLine = true, supportingText = { Text("Use #RRGGBB or #AARRGGBB") }, isError = hexText.isNotBlank() && !valid, modifier = Modifier.fillMaxWidth())
+        Canvas(
+            Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .onSizeChanged { pickerWidth = it.width; pickerHeight = it.height }
+                .pointerInput(hueColor, pickerWidth, pickerHeight) {
+                    detectTapGestures { point -> updateFromPoint(point) }
+                }
+                .pointerInput(hueColor, pickerWidth, pickerHeight) {
+                    detectDragGestures(
+                        onDragStart = { point -> updateFromPoint(point) },
+                        onDrag = { change, _ -> updateFromPoint(change.position); change.consume() }
+                    )
+                }
+                .semantics { contentDescription = "Saturation and brightness color picker" }
+        ) {
+            drawRect(Brush.horizontalGradient(listOf(Color.White, hueColor)))
+            drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black)))
+            val x = saturation.coerceIn(0f, 1f) * size.width
+            val y = (1f - brightness.coerceIn(0f, 1f)) * size.height
+            drawCircle(Color.White, 9.dp.toPx(), center = Offset(x, y))
+        }
+        Slider(value = hue, onValueChange = { hue = it; hexText = selectedHex(it, saturation, brightness) }, valueRange = 0f..360f, modifier = Modifier.semantics { contentDescription = "Hue slider" })
+        TextField(value = hexText, onValueChange = ::updateFromHex, label = { Text("HEX") }, singleLine = true, supportingText = { Text("Use #RRGGBB or #AARRGGBB") }, isError = hexText.isNotBlank() && !valid, modifier = Modifier.fillMaxWidth())
         Surface(Modifier.fillMaxWidth().height(52.dp), color = selected, shape = MaterialTheme.shapes.medium) {}
-        if (recentColors.isNotEmpty()) { Text("Recent", style = MaterialTheme.typography.labelLarge); Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { recentColors.forEach { recent -> val color = parseAccentHex(recent) ?: return@forEach; Surface(Modifier.size(34.dp).selectable(false, true, Role.Button) { hexText = recent }, shape = CircleShape, color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {} } } }
+        if (recentColors.isNotEmpty()) { Text("Recent", style = MaterialTheme.typography.labelLarge); Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { recentColors.forEach { recent -> val color = parseAccentHex(recent) ?: return@forEach; Surface(Modifier.size(34.dp).selectable(false, true, Role.Button) { updateFromHex(recent) }, shape = CircleShape, color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {} } } }
     } }, confirmButton = { Button(onClick = { if (valid) onApply(hexText) }, enabled = valid) { Text("Apply") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+}
+
+private fun selectedHex(hue: Float, saturation: Float, brightness: Float): String {
+    val color = Color.hsv(hue, saturation, brightness)
+    return "#%02X%02X%02X".format((color.red * 255f).toInt().coerceIn(0, 255), (color.green * 255f).toInt().coerceIn(0, 255), (color.blue * 255f).toInt().coerceIn(0, 255))
 }
 
 @Composable private fun ThemeControls(state: AppearancePreferences, onThemeMode: (ThemeMode) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onShowImages: (Boolean) -> Unit) = StandardSettingsGroup {
