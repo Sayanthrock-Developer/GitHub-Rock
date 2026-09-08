@@ -5,7 +5,6 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
@@ -34,17 +33,20 @@ import kotlin.math.abs
 @Composable
 fun GitHubRockRoot(
     viewModel: MainViewModel = hiltViewModel(),
-    appearanceViewModel: AppearanceViewModel = hiltViewModel()
+    appearanceViewModel: AppearanceViewModel = hiltViewModel(),
+    setupViewModel: GitHubRockSetupViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val appearanceState by appearanceViewModel.state.collectAsStateWithLifecycle()
+    val setupComplete by setupViewModel.setupComplete.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val setupPreferences = remember(context) { context.getSharedPreferences("github_rock_setup", android.content.Context.MODE_PRIVATE) }
-    var setupComplete by rememberSaveable { mutableStateOf(setupPreferences.getBoolean("setup_complete", false)) }
-    if (!setupComplete) { SetupGuardScreen(onSetupComplete = { setupPreferences.edit().putBoolean("setup_complete", true).apply(); setupComplete = true }); return }
+    if (!setupComplete) {
+        SetupGuardScreen(onSetupComplete = setupViewModel::completeSetup)
+        return
+    }
     val verificationUri = state.auth.code?.verificationUri
     val authorizationUrl = state.auth.authorizationUrl
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
@@ -101,9 +103,6 @@ fun GitHubRockRoot(
 }
 
 private fun navigationContentInset(style: NavigationBarStyle, systemNavigationPadding: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = when (style) {
-    // Every navigation style is rendered as an overlay. Scrolling content should
-    // remain visible beneath the navigation surface instead of ending at a solid
-    // rectangular bottom inset.
     NavigationBarStyle.FloatingCapsule,
     NavigationBarStyle.Classic,
     NavigationBarStyle.Glass,
