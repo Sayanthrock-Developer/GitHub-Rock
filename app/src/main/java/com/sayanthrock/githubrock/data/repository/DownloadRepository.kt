@@ -114,12 +114,21 @@ class DownloadRepository @Inject constructor(
     }
 
     suspend fun recoverInvalidCompletedDownloads(items: List<DownloadEntity>) {
-        items.filter { it.state in setOf(DownloadState.COMPLETED, DownloadState.INSTALLABLE) && it.isApkDownload() }.forEach { download ->
-            val valid = download.localPath?.let(::File)?.takeIf(File::isFile)?.let { file ->
-                withContext(Dispatchers.IO) { runCatching { inspectApk(applicationContext, file) }.isSuccess }
-            } == true
-            if (!valid) downloadAgain(download)
-        }
+        items.filter { it.state == DownloadState.COMPLETED || it.state == DownloadState.INSTALLABLE }
+            .forEach { download ->
+                val file = download.localPath?.let(::File)
+                val valid = file?.takeIf(File::isFile)?.let { candidate ->
+                    if (download.isApkDownload()) {
+                        withContext(Dispatchers.IO) {
+                            runCatching { inspectApk(applicationContext, candidate) }.isSuccess
+                        }
+                    } else {
+                        candidate.length() > 0L
+                    }
+                } == true
+
+                if (!valid) downloadAgain(download)
+            }
     }
 
     suspend fun updateProgress(
