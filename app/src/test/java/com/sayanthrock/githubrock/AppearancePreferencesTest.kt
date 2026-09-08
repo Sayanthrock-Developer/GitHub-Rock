@@ -45,8 +45,8 @@ class AppearancePreferencesTest {
         assertEquals(AccentColor.Pink, AccentColor.fromStored("Pink"))
         assertEquals(AccentColor.Custom, AccentColor.fromStored("Custom"))
         assertEquals(AccentColor.Violet, AccentColor.fromStored("Violet"))
-        assertEquals(AccentColor.Cyan, AccentColor.fromStored("unknown"))
-        assertEquals(AccentColor.Cyan, AccentColor.fromStored(null))
+        assertEquals(AccentColor.DefaultGitHubRock, AccentColor.fromStored("unknown"))
+        assertEquals(AccentColor.DefaultGitHubRock, AccentColor.fromStored(null))
     }
 
     @Test fun appearanceDefaultsUseDefaultGitHubRockAccent() {
