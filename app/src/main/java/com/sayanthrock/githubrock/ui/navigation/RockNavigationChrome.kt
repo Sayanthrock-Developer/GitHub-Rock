@@ -2,7 +2,6 @@ package com.sayanthrock.githubrock.ui.navigation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -111,17 +110,33 @@ private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, 
 
 @Composable
 private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(
-        modifier = modifier,
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
-        borderAlpha = 0.5f,
-        shadow = 12.dp,
-        maxWidth = 700.dp
+    // Classic keeps the familiar five-item layout and always-visible labels, but
+    // deliberately has no enclosing Surface. The old enclosing Surface created a
+    // solid rectangular bottom region behind the navigation items, especially when
+    // Android's edge-to-edge system navigation area was visible. Keep only the
+    // selected-item indicator opaque and let the page remain visible underneath.
+    Row(
+        modifier = modifier
+            .navigationBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .widthIn(max = 700.dp)
+            .fillMaxWidth()
+            .height(72.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination ->
-            RockNavigationItem(destination, selectedRoute == destination.route, showLabel = true, modifier = Modifier.weight(1f), selectedShape = 18.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) })
-        } }
+        rockNavigationDestinations.forEach { destination ->
+            RockNavigationItem(
+                destination = destination,
+                selected = selectedRoute == destination.route,
+                showLabel = true,
+                modifier = Modifier.weight(1f),
+                selectedShape = 18.dp,
+                animationStyle = animationStyle,
+                reduceMotion = reduceMotion,
+                onClick = { onDestinationSelected(destination) }
+            )
+        }
     }
 }
 
@@ -161,7 +176,6 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
         shape = shape,
         color = color,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
         tonalElevation = 2.dp,
         shadowElevation = shadow
     ) { content() }
