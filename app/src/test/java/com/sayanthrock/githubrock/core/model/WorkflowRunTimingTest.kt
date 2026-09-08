@@ -37,4 +37,16 @@ class WorkflowRunTimingTest {
 
         assertEquals(null, run.runTime(Instant.parse("2026-09-08T04:01:30Z")))
     }
+
+    @Test
+    fun queuedRun_withTimestamp_stillReportsNotStarted() {
+        val run = WorkflowRun(
+            id = 244L,
+            status = "queued",
+            runStartedAt = "2026-09-08T04:00:00Z",
+            updatedAt = "2026-09-08T04:00:20Z"
+        )
+
+        assertEquals(null, run.runTime(Instant.parse("2026-09-08T04:01:30Z")))
+    }
 }
