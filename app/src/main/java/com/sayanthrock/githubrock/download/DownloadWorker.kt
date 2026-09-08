@@ -25,7 +25,15 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 
+/**
+ * Single download engine for GitHub release assets and Actions artifacts.
+ *
+ * It deliberately does not use mirrors. GitHub's authenticated URL is the source
+ * of truth, while this worker owns resume/restart, response validation, integrity,
+ * persistence and finalization.
+ */
 @HiltWorker
 class DownloadWorker @AssistedInject constructor(
     @Assisted context: Context,
@@ -51,22 +59,62 @@ class DownloadWorker @AssistedInject constructor(
 
         return try {
             var existing = partial.takeIf(File::exists)?.length() ?: 0L
-            var response = executeDownload(url, existing)
+            var response: Response? = null
+            var restarted = false
 
-            // Some release/CDN endpoints reject stale or unsupported ranges with
-            // HTTP 416. A retry against the same partial would fail forever, so
-            // discard the unusable partial and restart once from byte zero.
-            if (response.code == 416 && existing > 0L) {
-                response.close()
-                partial.delete()
-                existing = 0L
-                response = executeDownload(url, 0L)
+            while (true) {
+                response?.close()
+                response = executeDownload(url, existing)
+
+                when {
+                    response.code == 416 && existing > 0L && !restarted -> {
+                        response.close()
+                        partial.delete()
+                        existing = 0L
+                        restarted = true
+                    }
+                    response.code == 206 && existing > 0L -> {
+                        val range = response.header("Content-Range")?.let(::parseContentRange)
+                        if (range == null || range.first != existing || range.third <= existing) {
+                            response.close()
+                            partial.delete()
+                            existing = 0L
+                            if (restarted) error("Server returned an invalid byte range")
+                            restarted = true
+                        } else {
+                            break
+                        }
+                    }
+                    response.code == 200 -> {
+                        // A server/CDN ignored Range. Never append a complete body to
+                        // an existing .part file; that would silently corrupt the file.
+                        if (existing > 0L) {
+                            response.close()
+                            partial.delete()
+                            existing = 0L
+                            if (restarted) error("Download server ignored resume request")
+                            restarted = true
+                            continue
+                        }
+                        break
+                    }
+                    response.isSuccessful -> {
+                        if (existing > 0L) {
+                            response.close()
+                            partial.delete()
+                            existing = 0L
+                            if (restarted) error("Unexpected response while resuming download")
+                            restarted = true
+                            continue
+                        }
+                        break
+                    }
+                    else -> break
+                }
             }
 
-            response.use { result ->
-                if (!result.isSuccessful && result.code != 206) {
-                    error("Download failed: HTTP ${result.code}")
-                }
+            response!!.use { result ->
+                if (!result.isSuccessful) error("Download failed: HTTP ${result.code}")
                 val body = result.body ?: error("Empty download response")
                 val contentType = body.contentType()?.toString()?.lowercase().orEmpty()
                 if (name.endsWith(".apk", ignoreCase = true) &&
@@ -75,15 +123,28 @@ class DownloadWorker @AssistedInject constructor(
                 }
 
                 val append = existing > 0L && result.code == 206
+                val range = if (append) result.header("Content-Range")?.let(::parseContentRange) else null
+                if (append && (range == null || range.first != existing)) {
+                    error("Invalid resume range")
+                }
                 if (!append && partial.exists()) partial.delete()
+
                 val startingBytes = if (append) existing else 0L
-                knownTotal = body.contentLength().takeIf { it >= 0 }?.plus(startingBytes) ?: 0L
+                knownTotal = when {
+                    range != null -> range.third
+                    body.contentLength() >= 0L -> startingBytes + body.contentLength()
+                    else -> 0L
+                }
                 dao.updateProgress(id, "downloading", startingBytes, knownTotal, partial.absolutePath, null)
                 setForeground(downloadForegroundInfo(id, name, startingBytes, knownTotal))
                 copyResponseWithProgress(id, name, body.byteStream(), partial, append, startingBytes, knownTotal)
             }
 
             currentCoroutineContext().ensureActive()
+            if (knownTotal > 0L && partial.length() != knownTotal) {
+                error("Download size mismatch: ${partial.length()} of $knownTotal bytes")
+            }
+
             if (name.endsWith(".apk", ignoreCase = true)) {
                 val previous = expectedPackage?.let { dao.latestCompletedForPackage(it) }
                 val inspection = inspectApk(
@@ -137,7 +198,7 @@ class DownloadWorker @AssistedInject constructor(
         }
     }
 
-    private fun executeDownload(url: String, existing: Long): okhttp3.Response {
+    private fun executeDownload(url: String, existing: Long): Response {
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", "GitHub-Rock/1.0")
@@ -180,6 +241,15 @@ class DownloadWorker @AssistedInject constructor(
         }
         dao.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
+    }
+
+    private fun parseContentRange(value: String): Triple<Long, Long, Long>? {
+        val match = Regex("^bytes\\s+(\\d+)-(\\d+)/(\\d+)$", RegexOption.IGNORE_CASE).matchEntire(value.trim()) ?: return null
+        val start = match.groupValues[1].toLongOrNull() ?: return null
+        val end = match.groupValues[2].toLongOrNull() ?: return null
+        val total = match.groupValues[3].toLongOrNull() ?: return null
+        if (end < start || total <= end) return null
+        return Triple(start, end, total)
     }
 
     private fun downloadForegroundInfo(downloadId: Long, fileName: String, downloadedBytes: Long, totalBytes: Long): ForegroundInfo {
