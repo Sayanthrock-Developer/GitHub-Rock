@@ -52,7 +52,8 @@ class MainActivity : ComponentActivity() {
             GitHubRockTheme(
                 darkTheme = useDarkTheme,
                 dynamicColor = useSystemDynamicColors,
-                trueBlack = useDarkTheme || appearance.trueBlack,
+                // True black is an explicit appearance preference. Do not force it for every dark theme.
+                trueBlack = appearance.trueBlack,
                 accentColor = appearance.accentColor,
                 customAccentHex = appearance.customAccentHex,
                 themeStyle = appearance.themeStyle,
