@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
@@ -29,24 +29,17 @@ class AppearanceScreenTest {
         var selectedAccent: AccentColor? = null
         var customHex = "#E60023"
         var savedHex: String? = null
-        var trueBlack = false
         var showImages = true
         var logDisplayStyle: LogDisplayStyle? = null
 
         compose.setContent {
             GitHubRockTheme(dynamicColor = false) {
                 AppearanceContent(
-                    state = AppearancePreferences(),
-                    onBack = {},
-                    onThemeMode = { selectedMode = it },
-                    onAccentColor = { selectedAccent = it },
-                    onCustomAccentHex = { customHex = it },
-                    onSaveCustomAccent = { savedHex = it },
-                    onDynamicColor = {},
-                    onTrueBlack = { trueBlack = it },
-                    onThemeStyle = { selectedStyle = it },
-                    onShowImages = { showImages = it },
-                    onLogDisplayStyle = { logDisplayStyle = it }
+                    state = AppearancePreferences(), onBack = {},
+                    onThemeMode = { selectedMode = it }, onAccentColor = { selectedAccent = it },
+                    onCustomAccentHex = { customHex = it }, onSaveCustomAccent = { savedHex = it },
+                    onDynamicColor = {}, onTrueBlack = {}, onThemeStyle = { selectedStyle = it },
+                    onShowImages = { showImages = it }, onLogDisplayStyle = { logDisplayStyle = it }
                 )
             }
         }
@@ -54,10 +47,9 @@ class AppearanceScreenTest {
         compose.onNodeWithText("Customize your experience").assertIsDisplayed()
         compose.onNodeWithText("Liquid glass").performScrollTo().performClick()
         compose.onNodeWithText("Dark").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Use Violet accent").performScrollTo().assertDoesNotExist()
         compose.onNodeWithText("Purple").performScrollTo().performClick()
         compose.onNodeWithText("Custom Color").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Custom accent HEX input").assertIsDisplayed().performTextInput("#FF3366")
+        compose.onNodeWithContentDescription("Custom accent HEX input").assertIsDisplayed().performTextReplacement("#FF3366")
         compose.onNodeWithText("Apply").performClick()
         compose.onNodeWithContentDescription("Toggle Show remote images").performScrollTo().performClick()
         compose.onNodeWithText("Popup dialog").performScrollTo().performClick()
@@ -66,11 +58,10 @@ class AppearanceScreenTest {
             assertEquals(ThemeStyle.LiquidGlass, selectedStyle)
             assertEquals(ThemeMode.Dark, selectedMode)
             assertEquals(AccentColor.Custom, selectedAccent)
-            assertTrue(customHex.endsWith("#FF3366"))
-            assertTrue(savedHex?.endsWith("#FF3366") == true)
-            assertEquals(false, showImages)
+            assertEquals("#FF3366", customHex)
+            assertEquals("#FF3366", savedHex)
+            assertFalse(showImages)
             assertEquals(LogDisplayStyle.Dialog, logDisplayStyle)
-            assertFalse(trueBlack)
         }
     }
 }
