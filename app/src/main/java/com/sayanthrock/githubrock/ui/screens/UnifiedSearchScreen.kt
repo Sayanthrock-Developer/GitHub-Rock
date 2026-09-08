@@ -29,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,19 +41,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.GitHubUser
-import com.sayanthrock.githubrock.core.network.GitHubRestApi
+import com.sayanthrock.githubrock.data.repository.GitHubSearchRepository
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private enum class SearchKind(val label: String) { All("All"), Repositories("Repositories"), Owners("Owners"), Topics("Topics") }
 
@@ -74,10 +71,10 @@ data class UnifiedSearchState(
 
 @HiltViewModel
 class UnifiedSearchViewModel @Inject constructor(
-    private val api: GitHubRestApi,
+    private val repository: GitHubSearchRepository,
     private val preferences: AppPreferences
 ) : ViewModel() {
-    private val _state = kotlinx.coroutines.flow.MutableStateFlow(UnifiedSearchState())
+    private val _state = MutableStateFlow(UnifiedSearchState())
     val state: StateFlow<UnifiedSearchState> = _state
     val history = preferences.repositorySearchHistory.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     private var searchJob: Job? = null
@@ -141,32 +138,29 @@ class UnifiedSearchViewModel @Inject constructor(
     }
 
     private suspend fun searchRepositories(query: String, targetPage: Int): UnifiedSearchState {
-        val response = api.searchRepositories(query, perPage = 30, page = targetPage)
-        return _state.value.copy(repositories = response.items, owners = emptyList(), topics = emptyList(), loading = false, loadingMore = false, hasMore = response.items.size == 30)
+        val response = repository.repositories(query, targetPage)
+        return _state.value.copy(repositories = response.repositories, owners = emptyList(), topics = emptyList(), loading = false, loadingMore = false, hasMore = response.hasMore)
     }
 
     private suspend fun searchOwners(query: String, targetPage: Int): UnifiedSearchState {
-        val response = api.searchUsers(query, perPage = 30, page = targetPage)
-        return _state.value.copy(owners = response.items, repositories = emptyList(), topics = emptyList(), loading = false, loadingMore = false, hasMore = response.items.size == 30)
+        val response = repository.owners(query, targetPage)
+        return _state.value.copy(owners = response.owners, repositories = emptyList(), topics = emptyList(), loading = false, loadingMore = false, hasMore = response.hasMore)
     }
 
     private suspend fun searchTopics(query: String, targetPage: Int): UnifiedSearchState {
-        val response = api.searchRepositories("topic:$query", perPage = 30, page = targetPage)
-        val grouped = response.items.flatMap { it.topics }.filter { it.contains(query, true) }.distinctBy { it.lowercase() }.map { topic ->
-            UnifiedTopicResult(topic, response.items.filter { repo -> repo.topics.any { it.equals(topic, true) } })
+        val response = repository.topics(query, targetPage)
+        val grouped = response.repositories.flatMap { it.topics }.filter { it.contains(query, true) }.distinctBy { it.lowercase() }.map { topic ->
+            UnifiedTopicResult(topic, response.repositories.filter { repo -> repo.topics.any { it.equals(topic, true) } })
         }
-        return _state.value.copy(topics = grouped, repositories = emptyList(), owners = emptyList(), loading = false, loadingMore = false, hasMore = response.items.size == 30)
+        return _state.value.copy(topics = grouped, repositories = emptyList(), owners = emptyList(), loading = false, loadingMore = false, hasMore = response.hasMore)
     }
 
-    private suspend fun searchAll(query: String, targetPage: Int): UnifiedSearchState = coroutineScope {
-        val repositories = async { api.searchRepositories(query, perPage = 30, page = targetPage) }
-        val owners = async { api.searchUsers(query, perPage = 30, page = targetPage) }
-        val repoResponse = repositories.await()
-        val ownerResponse = owners.await()
-        val topics = repoResponse.items.flatMap { it.topics }.filter { it.contains(query, true) }.distinctBy { it.lowercase() }.map { topic ->
-            UnifiedTopicResult(topic, repoResponse.items.filter { repo -> repo.topics.any { it.equals(topic, true) } })
+    private suspend fun searchAll(query: String, targetPage: Int): UnifiedSearchState {
+        val (repositories, owners) = repository.all(query, targetPage)
+        val topics = repositories.repositories.flatMap { it.topics }.filter { it.contains(query, true) }.distinctBy { it.lowercase() }.map { topic ->
+            UnifiedTopicResult(topic, repositories.repositories.filter { repo -> repo.topics.any { it.equals(topic, true) } })
         }
-        _state.value.copy(repositories = repoResponse.items, owners = ownerResponse.items, topics = topics, loading = false, loadingMore = false, hasMore = repoResponse.items.size == 30 || ownerResponse.items.size == 30)
+        return _state.value.copy(repositories = repositories.repositories, owners = owners.owners, topics = topics, loading = false, loadingMore = false, hasMore = repositories.hasMore || owners.hasMore)
     }
 
     private fun merge(next: UnifiedSearchState): UnifiedSearchState {

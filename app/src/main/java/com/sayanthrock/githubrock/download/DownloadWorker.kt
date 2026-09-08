@@ -14,7 +14,7 @@ import androidx.work.WorkerParameters
 import com.sayanthrock.githubrock.R
 import com.sayanthrock.githubrock.core.util.ChecksumVerifier
 import com.sayanthrock.githubrock.core.util.inspectApk
-import com.sayanthrock.githubrock.data.local.DownloadDao
+import com.sayanthrock.githubrock.data.repository.DownloadRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.io.File
@@ -39,7 +39,7 @@ class DownloadWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     @Named("downloadClient") private val client: OkHttpClient,
-    private val dao: DownloadDao
+    private val repository: DownloadRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -86,8 +86,6 @@ class DownloadWorker @AssistedInject constructor(
                         }
                     }
                     response.code == 200 -> {
-                        // A server/CDN ignored Range. Never append a complete body to
-                        // an existing .part file; that would silently corrupt the file.
                         if (existing > 0L) {
                             response.close()
                             partial.delete()
@@ -135,7 +133,7 @@ class DownloadWorker @AssistedInject constructor(
                     body.contentLength() >= 0L -> startingBytes + body.contentLength()
                     else -> 0L
                 }
-                dao.updateProgress(id, "downloading", startingBytes, knownTotal, partial.absolutePath, null)
+                repository.updateProgress(id, "downloading", startingBytes, knownTotal, partial.absolutePath, null)
                 setForeground(downloadForegroundInfo(id, name, startingBytes, knownTotal))
                 copyResponseWithProgress(id, name, body.byteStream(), partial, append, startingBytes, knownTotal)
             }
@@ -146,7 +144,7 @@ class DownloadWorker @AssistedInject constructor(
             }
 
             if (name.endsWith(".apk", ignoreCase = true)) {
-                val previous = expectedPackage?.let { dao.latestCompletedForPackage(it) }
+                val previous = expectedPackage?.let { repository.latestCompletedForPackage(it) }
                 val inspection = inspectApk(
                     context = applicationContext,
                     file = partial,
@@ -155,7 +153,7 @@ class DownloadWorker @AssistedInject constructor(
                     previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
                     previousCertificateSha256 = previous?.certificateSha256
                 )
-                dao.updateSecurity(
+                repository.updateSecurity(
                     id = id,
                     packageName = inspection.packageName,
                     versionCode = inspection.versionCode,
@@ -179,14 +177,14 @@ class DownloadWorker @AssistedInject constructor(
             if (final.exists()) final.delete()
             check(partial.renameTo(final)) { "Unable to finalize download" }
             check(final.isFile && final.length() > 0L) { "Final download file is unavailable" }
-            dao.updateProgress(id, "completed", final.length(), final.length(), final.absolutePath, sha)
+            repository.updateProgress(id, "completed", final.length(), final.length(), final.absolutePath, sha)
             Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
             val downloaded = partial.takeIf(File::exists)?.length() ?: 0L
             val willRetry = runAttemptCount < MAX_AUTOMATIC_RETRIES
-            dao.updateProgress(
+            repository.updateProgress(
                 id,
                 if (willRetry) "retrying" else "failed",
                 downloaded,
@@ -232,14 +230,14 @@ class DownloadWorker @AssistedInject constructor(
                     output.write(buffer, 0, count)
                     downloaded += count
                     if (downloaded - lastPublished >= PROGRESS_UPDATE_BYTES) {
-                        dao.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
+                        repository.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
                         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
                         lastPublished = downloaded
                     }
                 }
             }
         }
-        dao.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
+        repository.updateProgress(id, "downloading", downloaded, totalBytes, target.absolutePath, null)
         setForeground(downloadForegroundInfo(id, fileName, downloaded, totalBytes))
     }
 

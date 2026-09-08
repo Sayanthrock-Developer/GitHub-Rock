@@ -1,153 +1,63 @@
 package com.sayanthrock.githubrock.ui.screens
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
-import androidx.work.Data
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.await
 import com.sayanthrock.githubrock.core.util.ApkInspection
-import com.sayanthrock.githubrock.core.util.inspectApk
-import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
-import com.sayanthrock.githubrock.download.DownloadWorker
+import com.sayanthrock.githubrock.data.repository.DownloadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
-    private val dao: DownloadDao,
-    @ApplicationContext context: Context
+    private val repository: DownloadRepository
 ) : ViewModel() {
-    private val applicationContext = context.applicationContext
-    private val workManager = WorkManager.getInstance(applicationContext)
-    private val downloadsDirectory = File(applicationContext.filesDir, "downloads")
-
-    val downloads: StateFlow<List<DownloadEntity>> = dao.observeAll()
+    val downloads: StateFlow<List<DownloadEntity>> = repository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
         viewModelScope.launch {
-            dao.observeAll().collect { items ->
-                items.filter { it.status == "completed" && it.isApkDownload() }.forEach { download ->
-                    val file = download.localPath?.let(::File)
-                    val valid = file?.let { apk ->
-                        withContext(Dispatchers.IO) {
-                            runCatching { inspectApk(applicationContext, apk) }.isSuccess
-                        }
-                    } == true
-                    if (!valid) downloadAgain(download)
-                }
+            repository.observeAll().collect { items ->
+                repository.recoverInvalidCompletedDownloads(items)
             }
         }
     }
 
     fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
-        val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return@launch
-        val queued = DownloadEntity(
-            fileName = fileName,
-            sourceUrl = resolvedUrl,
-            status = "queued",
-            packageName = expectedPackage
-        )
-        val id = dao.upsert(queued)
-        schedule(queued.copy(id = id))
+        repository.enqueue(url, fileName, expectedPackage)
     }
 
     fun downloadAgain(download: DownloadEntity) = viewModelScope.launch {
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
-        download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
-        val queued = download.copy(
-            localPath = null,
-            totalBytes = 0,
-            downloadedBytes = 0,
-            sha256 = null,
-            status = "queued"
-        )
-        dao.upsert(queued)
-        schedule(queued)
+        repository.downloadAgain(download)
     }
 
     fun pause(download: DownloadEntity) = viewModelScope.launch {
-        if (download.status !in ACTIVE_STATUSES) return@launch
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
-        dao.updateStatus(download.id, "paused")
+        repository.pause(download)
     }
 
     fun resume(download: DownloadEntity) = viewModelScope.launch {
-        if (download.status !in setOf("paused", "failed", "cancelled")) return@launch
-        dao.updateStatus(download.id, "queued")
-        schedule(download.copy(status = "queued"))
+        repository.resume(download)
     }
 
     fun cancel(download: DownloadEntity) = viewModelScope.launch {
-        if (download.status !in ACTIVE_STATUSES && download.status != "paused") return@launch
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
-        download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
-        dao.updateProgress(download.id, "cancelled", 0, 0, null, null)
+        repository.cancel(download)
     }
 
     fun delete(download: DownloadEntity) = viewModelScope.launch {
-        workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
-        download.localPath?.let(::File)?.takeIf { it.parentFile == downloadsDirectory }?.delete()
-        dao.delete(download.id)
+        repository.delete(download)
     }
 
     fun retry(download: DownloadEntity) = resume(download)
 
     fun inspectApk(file: File, callback: (Result<ApkInspection>) -> Unit) {
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                runCatching {
-                    val firstPass = inspectApk(applicationContext, file)
-                    val previous = dao.latestCompletedForPackage(firstPass.packageName)
-                    inspectApk(
-                        applicationContext,
-                        file,
-                        expectedPackage = firstPass.packageName,
-                        previousVersionCode = previous?.versionCode,
-                        previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                        previousCertificateSha256 = previous?.certificateSha256
-                    )
-                }
-            }
-            callback(result)
+            callback(repository.inspectApk(file))
         }
-    }
-
-    private fun schedule(download: DownloadEntity) {
-        val input = Data.Builder()
-            .putLong(DownloadWorker.KEY_ID, download.id)
-            .putString(DownloadWorker.KEY_URL, download.sourceUrl)
-            .putString(DownloadWorker.KEY_NAME, download.fileName)
-            .apply {
-                download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
-                download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
-            }
-            .build()
-        val request = OneTimeWorkRequestBuilder<DownloadWorker>()
-            .setInputData(input)
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        workManager.enqueueUniqueWork(DownloadWorker.workName(download.id), ExistingWorkPolicy.REPLACE, request)
-    }
-
-    private fun DownloadEntity.isApkDownload(): Boolean = fileName.endsWith(".apk", ignoreCase = true)
-
-    companion object {
-        private val ACTIVE_STATUSES = setOf("queued", "downloading", "retrying")
     }
 }

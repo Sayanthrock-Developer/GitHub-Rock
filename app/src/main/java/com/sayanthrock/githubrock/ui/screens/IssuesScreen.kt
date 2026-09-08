@@ -40,7 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubIssue
 import com.sayanthrock.githubrock.core.model.IssueComment
-import com.sayanthrock.githubrock.core.network.GitHubRestApi
+import com.sayanthrock.githubrock.data.repository.GitHubIssuesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,7 +62,7 @@ data class IssuesUiState(
 
 @HiltViewModel
 class IssuesViewModel @Inject constructor(
-    private val api: GitHubRestApi,
+    private val repository: GitHubIssuesRepository,
     private val savedStateHandle: androidx.lifecycle.SavedStateHandle
 ) : ViewModel() {
     private val owner = checkNotNull(savedStateHandle.get<String>("owner"))
@@ -80,7 +80,7 @@ class IssuesViewModel @Inject constructor(
     fun open(issue: GitHubIssue) {
         _state.update { it.copy(selectedIssue = issue, comments = emptyList(), commentsLoading = true, error = null) }
         viewModelScope.launch {
-            runCatching { api.issueComments(owner, repo, issue.number) }
+            runCatching { repository.comments(owner, repo, issue.number) }
                 .onSuccess { comments -> _state.update { it.copy(comments = comments, commentsLoading = false) } }
                 .onFailure { error -> _state.update { it.copy(commentsLoading = false, error = error.message ?: "Unable to load issue comments") } }
         }
@@ -92,10 +92,8 @@ class IssuesViewModel @Inject constructor(
     private fun load(state: IssueListState) {
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
-            runCatching {
-                api.issues(owner, repo, state = if (state == IssueListState.OPEN) "open" else "closed", perPage = 100)
-                    .filter { it.pullRequest == null }
-            }.onSuccess { issues -> _state.update { it.copy(issues = issues, loading = false) } }
+            runCatching { repository.issues(owner, repo, if (state == IssueListState.OPEN) "open" else "closed") }
+                .onSuccess { issues -> _state.update { it.copy(issues = issues, loading = false) } }
                 .onFailure { error -> _state.update { it.copy(issues = emptyList(), loading = false, error = error.message ?: "Unable to load issues") } }
         }
     }

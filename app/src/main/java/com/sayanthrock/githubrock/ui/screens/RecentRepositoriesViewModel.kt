@@ -3,12 +3,10 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
-import com.sayanthrock.githubrock.core.model.Owner
-import com.sayanthrock.githubrock.data.local.RepositoryDao
+import com.sayanthrock.githubrock.data.repository.RecentRepositoriesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -19,25 +17,10 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class RecentRepositoriesViewModel @Inject constructor(
-    repositoryDao: RepositoryDao
+    repository: RecentRepositoriesRepository
 ) : ViewModel() {
-    val repositories: StateFlow<List<GitHubRepositoryModel>> = repositoryDao
-        .observeRecent(limit = MAX_RECENT)
-        .map { entities ->
-            entities.map { entity ->
-                GitHubRepositoryModel(
-                    id = entity.id,
-                    name = entity.name,
-                    fullName = entity.fullName,
-                    owner = Owner(login = entity.owner),
-                    description = entity.description,
-                    private = entity.isPrivate,
-                    updatedAt = entity.updatedAt,
-                    language = entity.language,
-                    stars = entity.stars
-                )
-            }
-        }
+    val repositories: StateFlow<List<GitHubRepositoryModel>> = repository
+        .observeRecent(MAX_RECENT)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private companion object {
