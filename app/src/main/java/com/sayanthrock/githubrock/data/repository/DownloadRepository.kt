@@ -42,12 +42,15 @@ class DownloadRepository @Inject constructor(
         releaseName: String? = null,
         releaseUrl: String? = null,
         assetId: Long? = null,
-        expectedSha256: String? = null
+        expectedSha256: String? = null,
+        fallbackUrl: String? = null
     ) {
         val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return
+        val resolvedFallbackUrl = fallbackUrl?.trim()?.takeIf { it.isNotBlank() && it != resolvedUrl }
         val queued = DownloadEntity(
             fileName = fileName,
             sourceUrl = resolvedUrl,
+            fallbackUrl = resolvedFallbackUrl,
             status = DownloadState.QUEUED.wireValue,
             expectedSha256 = expectedSha256,
             packageName = expectedPackage,
@@ -154,6 +157,7 @@ class DownloadRepository @Inject constructor(
             .putString(DownloadWorker.KEY_URL, download.sourceUrl)
             .putString(DownloadWorker.KEY_NAME, download.fileName)
             .apply {
+                download.fallbackUrl?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_FALLBACK_URL, it) }
                 download.expectedSha256?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_SHA256, it) }
                 download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
                 download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
