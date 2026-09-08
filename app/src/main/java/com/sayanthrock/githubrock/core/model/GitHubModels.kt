@@ -65,53 +65,33 @@ data class DashboardPayload(
 
 @Serializable
 data class PullRequestDetail(
-    val id: Long,
-    val number: Int,
-    val title: String,
-    val state: String,
-    val body: String? = null,
-    val draft: Boolean = false,
-    val merged: Boolean = false,
-    @SerialName("mergeable") val mergeable: Boolean? = null,
-    @SerialName("mergeable_state") val mergeableState: String? = null,
-    @SerialName("html_url") val htmlUrl: String = "",
-    @SerialName("created_at") val createdAt: String = "",
-    @SerialName("updated_at") val updatedAt: String = "",
-    @SerialName("closed_at") val closedAt: String? = null,
-    val user: Owner,
-    val assignees: List<Owner> = emptyList(),
-    val requestedReviewers: List<Owner> = emptyList(),
-    val labels: List<GitHubLabel> = emptyList(),
-    val head: PullRequestBranch,
-    val base: PullRequestBranch,
-    @SerialName("commits") val commitCount: Int = 0,
-    @SerialName("changed_files") val changedFiles: Int = 0,
-    @SerialName("additions") val additions: Int = 0,
+    val id: Long, val number: Int, val title: String, val state: String, val body: String? = null,
+    val draft: Boolean = false, val merged: Boolean = false, @SerialName("mergeable") val mergeable: Boolean? = null,
+    @SerialName("mergeable_state") val mergeableState: String? = null, @SerialName("html_url") val htmlUrl: String = "",
+    @SerialName("created_at") val createdAt: String = "", @SerialName("updated_at") val updatedAt: String = "",
+    @SerialName("closed_at") val closedAt: String? = null, val user: Owner, val assignees: List<Owner> = emptyList(),
+    val requestedReviewers: List<Owner> = emptyList(), val labels: List<GitHubLabel> = emptyList(),
+    val head: PullRequestBranch, val base: PullRequestBranch, @SerialName("commits") val commitCount: Int = 0,
+    @SerialName("changed_files") val changedFiles: Int = 0, @SerialName("additions") val additions: Int = 0,
     @SerialName("deletions") val deletions: Int = 0
 )
-
 @Serializable data class PullRequestBranch(val label: String = "", val ref: String = "", val sha: String = "", val repo: GitHubRepositoryModel? = null)
-
 @Serializable data class Workflow(val id: Long, val name: String, val path: String, val state: String)
 @Serializable data class WorkflowList(@SerialName("total_count") val totalCount: Int, val workflows: List<Workflow>)
 @Serializable data class WorkflowRun(
-    val id: Long,
-    val name: String? = null,
-    @SerialName("display_title") val displayTitle: String = "",
-    val status: String,
-    val conclusion: String? = null,
-    val event: String = "",
-    @SerialName("head_branch") val headBranch: String? = null,
-    @SerialName("html_url") val htmlUrl: String = "",
-    @SerialName("created_at") val createdAt: String = "",
-    @SerialName("run_started_at") val runStartedAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null
+    val id: Long, val name: String? = null, @SerialName("display_title") val displayTitle: String = "",
+    val status: String, val conclusion: String? = null, val event: String = "", @SerialName("head_branch") val headBranch: String? = null,
+    @SerialName("html_url") val htmlUrl: String = "", @SerialName("created_at") val createdAt: String = "",
+    @SerialName("run_started_at") val runStartedAt: String? = null, @SerialName("updated_at") val updatedAt: String? = null
 )
 
 fun WorkflowRun.runTime(now: Instant = Instant.now()): Duration? {
+    // A queued/waiting/pending run has not started executing, regardless of any
+    // timestamp GitHub may expose. Never display a fabricated live duration.
+    if (displayState() == WorkflowDisplayState.Queued) return null
     val started = runStartedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
-    val finished = when {
-        displayState() == WorkflowDisplayState.Running || displayState() == WorkflowDisplayState.Queued -> now
+    val finished = when (displayState()) {
+        WorkflowDisplayState.Running -> now
         else -> updatedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: now
     }
     return Duration.ofSeconds((finished.epochSecond - started.epochSecond).coerceAtLeast(0))
