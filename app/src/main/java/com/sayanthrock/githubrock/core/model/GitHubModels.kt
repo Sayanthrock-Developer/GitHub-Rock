@@ -111,7 +111,9 @@ fun Duration.formatRunTime(): String {
 
 @Serializable data class WorkflowRuns(@SerialName("total_count") val totalCount: Int, @SerialName("workflow_runs") val runs: List<WorkflowRun>)
 @Serializable data class Release(val id: Long, @SerialName("tag_name") val tagName: String, val name: String? = null, val body: String? = null, val draft: Boolean = false, val prerelease: Boolean = false, @SerialName("published_at") val publishedAt: String? = null, val assets: List<ReleaseAsset> = emptyList())
-@Serializable data class ReleaseAsset(val id: Long, val name: String, val size: Long, @SerialName("browser_download_url") val downloadUrl: String)
+// Use GitHub's API asset URL for downloads. browser_download_url is a web/CDN URL
+// and is not the reliable authenticated endpoint for private release assets.
+@Serializable data class ReleaseAsset(val id: Long, val name: String, val size: Long, @SerialName("url") val downloadUrl: String)
 @Serializable data class RateLimitResponse(val rate: RateLimit)
 @Serializable data class RateLimit(val limit: Int, val remaining: Int, val reset: Long)
 @Serializable data class DeviceCodeResponse(@SerialName("device_code") val deviceCode: String, @SerialName("user_code") val userCode: String, @SerialName("verification_uri") val verificationUri: String, @SerialName("expires_in") val expiresIn: Int, val interval: Int = 5)
