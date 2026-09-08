@@ -33,6 +33,7 @@ data class DownloadEntity(
     val totalBytes: Long = 0,
     val downloadedBytes: Long = 0,
     val sha256: String? = null,
+    /** Storage representation. Use [state] everywhere outside the persistence boundary. */
     val status: String,
     val createdAt: Long = System.currentTimeMillis(),
     val packageName: String? = null,
@@ -45,7 +46,14 @@ data class DownloadEntity(
     val signatureSchemes: String? = null,
     val architectures: String? = null,
     val securityRisk: String? = null,
-    val securityReasons: String? = null
+    val securityReasons: String? = null,
+    val repositoryFullName: String? = null,
+    val releaseName: String? = null,
+    val releaseUrl: String? = null,
+    val assetId: Long? = null,
+    val speedBytesPerSecond: Long = 0,
+    val etaSeconds: Long? = null,
+    val errorMessage: String? = null
 )
 
 @Dao
@@ -74,8 +82,18 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status = 'completed' ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity?
 
-    @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = :sha WHERE id = :id")
-    suspend fun updateProgress(id: Long, status: String, downloaded: Long, total: Long, path: String?, sha: String?)
+    @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = :sha, speedBytesPerSecond = :speed, etaSeconds = :eta, errorMessage = :error WHERE id = :id")
+    suspend fun updateProgress(
+        id: Long,
+        status: String,
+        downloaded: Long,
+        total: Long,
+        path: String?,
+        sha: String?,
+        speed: Long,
+        eta: Long?,
+        error: String?
+    )
 
     @Query("UPDATE downloads SET packageName = :packageName, versionCode = :versionCode, versionName = :versionName, minSdk = :minSdk, targetSdk = :targetSdk, permissions = :permissions, certificateSha256 = :certificateSha256, signatureSchemes = :signatureSchemes, architectures = :architectures, securityRisk = :securityRisk, securityReasons = :securityReasons WHERE id = :id")
     suspend fun updateSecurity(
@@ -93,8 +111,8 @@ interface DownloadDao {
         securityReasons: String
     )
 
-    @Query("UPDATE downloads SET status = :status WHERE id = :id")
-    suspend fun updateStatus(id: Long, status: String)
+    @Query("UPDATE downloads SET status = :status, errorMessage = :error WHERE id = :id")
+    suspend fun updateStatus(id: Long, status: String, error: String?)
 
     @Query("DELETE FROM downloads WHERE id = :id")
     suspend fun delete(id: Long)
@@ -102,7 +120,7 @@ interface DownloadDao {
 
 @Database(
     entities = [RepositoryEntity::class, DownloadEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
