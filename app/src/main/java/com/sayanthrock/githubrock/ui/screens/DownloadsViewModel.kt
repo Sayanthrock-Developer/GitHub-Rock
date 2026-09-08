@@ -35,9 +35,10 @@ class DownloadsViewModel @Inject constructor(
         releaseName: String? = null,
         releaseUrl: String? = null,
         assetId: Long? = null,
-        expectedSha256: String? = null
+        expectedSha256: String? = null,
+        fallbackUrl: String? = null
     ) = viewModelScope.launch {
-        repository.enqueue(url, fileName, expectedPackage, repositoryFullName, releaseName, releaseUrl, assetId, expectedSha256)
+        repository.enqueue(url, fileName, expectedPackage, repositoryFullName, releaseName, releaseUrl, assetId, expectedSha256, fallbackUrl)
     }
 
     fun downloadAgain(download: DownloadEntity) = viewModelScope.launch { repository.downloadAgain(download) }

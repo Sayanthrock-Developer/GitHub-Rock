@@ -20,6 +20,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import javax.inject.Named
 import kotlin.math.max
 import kotlinx.coroutines.CancellationException
@@ -41,6 +42,7 @@ class DownloadWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val id = inputData.getLong(KEY_ID, -1)
         val url = inputData.getString(KEY_URL)?.trim()?.takeIf(String::isNotBlank) ?: return Result.failure()
+        val fallbackUrl = inputData.getString(KEY_FALLBACK_URL)?.trim()?.takeIf(String::isNotBlank)
         val name = inputData.getString(KEY_NAME)?.safeFileName()?.takeIf(String::isNotBlank) ?: return Result.failure()
         val expectedSha = inputData.getString(KEY_SHA256)?.trim()?.takeIf(String::isNotBlank)
         val expectedPackage = inputData.getString(KEY_EXPECTED_PACKAGE)?.takeIf(String::isNotBlank)
@@ -60,7 +62,7 @@ class DownloadWorker @AssistedInject constructor(
 
             while (true) {
                 response?.close()
-                response = executeDownload(url, existing)
+                response = executeDownloadWithFallback(url, fallbackUrl, existing)
                 when {
                     response.code == 416 && existing > 0L && !restarted -> {
                         response.close(); partial.delete(); existing = 0L; restarted = true
@@ -97,9 +99,11 @@ class DownloadWorker @AssistedInject constructor(
                 if (!result.isSuccessful) error("Download failed: HTTP ${result.code}")
                 val body = result.body ?: error("Empty download response")
                 val contentType = body.contentType()?.toString()?.lowercase().orEmpty()
-                if (name.endsWith(".apk", ignoreCase = true) &&
-                    (contentType.contains("text/html") || contentType.contains("text/plain") || contentType.contains("application/json"))) {
+                if (contentType.contains("text/html") || contentType.contains("application/json")) {
                     error("GitHub returned a non-binary response ($contentType)")
+                }
+                if (name.endsWith(".apk", ignoreCase = true) && contentType.contains("text/plain")) {
+                    error("GitHub returned text instead of the APK binary")
                 }
 
                 val append = existing > 0L && result.code == 206
@@ -179,6 +183,17 @@ class DownloadWorker @AssistedInject constructor(
             )
             if (willRetry) Result.retry() else Result.failure()
         }
+    }
+
+    private fun executeDownloadWithFallback(primaryUrl: String, fallbackUrl: String?, existing: Long): Response {
+        try {
+            val primary = executeDownload(primaryUrl, existing)
+            if (primary.isSuccessful || fallbackUrl.isNullOrBlank() || fallbackUrl == primaryUrl) return primary
+            primary.close()
+        } catch (primaryError: IOException) {
+            if (fallbackUrl.isNullOrBlank() || fallbackUrl == primaryUrl) throw primaryError
+        }
+        return executeDownload(fallbackUrl!!, existing)
     }
 
     private fun executeDownload(url: String, existing: Long): Response {
@@ -278,6 +293,7 @@ class DownloadWorker @AssistedInject constructor(
     companion object {
         const val KEY_ID = "download_id"
         const val KEY_URL = "download_url"
+        const val KEY_FALLBACK_URL = "download_fallback_url"
         const val KEY_NAME = "download_name"
         const val KEY_SHA256 = "download_sha256"
         const val KEY_PARTIAL_PATH = "download_partial_path"

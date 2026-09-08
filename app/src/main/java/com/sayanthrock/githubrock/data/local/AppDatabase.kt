@@ -8,6 +8,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "recent_repositories")
@@ -53,7 +55,8 @@ data class DownloadEntity(
     val assetId: Long? = null,
     val speedBytesPerSecond: Long = 0,
     val etaSeconds: Long? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val fallbackUrl: String? = null
 )
 
 @Dao
@@ -82,7 +85,37 @@ interface DownloadDao {
     @Query("DELETE FROM downloads WHERE id = :id") suspend fun delete(id: Long)
 }
 
-@Database(entities = [RepositoryEntity::class, DownloadEntity::class], version = 4, exportSchema = false)
+val MIGRATION_1_4 = object : Migration(1, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE downloads ADD COLUMN expectedSha256 TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN packageName TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN versionCode INTEGER")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN versionName TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN minSdk INTEGER")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN targetSdk INTEGER")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN permissions TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN certificateSha256 TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN signatureSchemes TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN architectures TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN securityRisk TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN securityReasons TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN repositoryFullName TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN releaseName TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN releaseUrl TEXT")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN assetId INTEGER")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN speedBytesPerSecond INTEGER NOT NULL DEFAULT 0")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN etaSeconds INTEGER")
+        database.execSQL("ALTER TABLE downloads ADD COLUMN errorMessage TEXT")
+    }
+}
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE downloads ADD COLUMN fallbackUrl TEXT")
+    }
+}
+
+@Database(entities = [RepositoryEntity::class, DownloadEntity::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun repositoryDao(): RepositoryDao
     abstract fun downloadDao(): DownloadDao
