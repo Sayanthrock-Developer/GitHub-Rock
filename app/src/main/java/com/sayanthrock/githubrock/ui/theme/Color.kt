@@ -2,13 +2,14 @@ package com.sayanthrock.githubrock.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// GitHub Rock dark foundation: true black, never #323232 or other dark-gray backgrounds.
-val RockDarkBackground = Color.Black
-val RockDarkSurface = Color.Black
-val RockDarkSurfaceHigh = Color.Black
+// GitHub Rock dark foundation: layered near-black surfaces for readable dark mode.
+// Pure black remains available only through the explicit True black appearance option.
+val RockDarkBackground = Color(0xFF0B0D10)
+val RockDarkSurface = Color(0xFF111418)
+val RockDarkSurfaceHigh = Color(0xFF191D22)
 val RockDarkText = Color(0xFFF0F3F6)
 val RockDarkMuted = Color(0xFF8B949E)
-val RockDarkBorder = Color(0xFF3D444D)
+val RockDarkBorder = Color(0xFF30363D)
 
 // GitHub Rock light foundation: true white for the app canvas and surfaces.
 val RockLightBackground = Color.White
