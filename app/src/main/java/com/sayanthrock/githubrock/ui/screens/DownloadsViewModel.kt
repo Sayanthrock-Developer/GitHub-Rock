@@ -23,41 +23,31 @@ class DownloadsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            repository.observeAll().collect { items ->
-                repository.recoverInvalidCompletedDownloads(items)
-            }
+            repository.observeAll().collect { items -> repository.recoverInvalidCompletedDownloads(items) }
         }
     }
 
-    fun enqueue(url: String, fileName: String, expectedPackage: String? = null) = viewModelScope.launch {
-        repository.enqueue(url, fileName, expectedPackage)
+    fun enqueue(
+        url: String,
+        fileName: String,
+        expectedPackage: String? = null,
+        repositoryFullName: String? = null,
+        releaseName: String? = null,
+        releaseUrl: String? = null,
+        assetId: Long? = null,
+        expectedSha256: String? = null
+    ) = viewModelScope.launch {
+        repository.enqueue(url, fileName, expectedPackage, repositoryFullName, releaseName, releaseUrl, assetId, expectedSha256)
     }
 
-    fun downloadAgain(download: DownloadEntity) = viewModelScope.launch {
-        repository.downloadAgain(download)
-    }
-
-    fun pause(download: DownloadEntity) = viewModelScope.launch {
-        repository.pause(download)
-    }
-
-    fun resume(download: DownloadEntity) = viewModelScope.launch {
-        repository.resume(download)
-    }
-
-    fun cancel(download: DownloadEntity) = viewModelScope.launch {
-        repository.cancel(download)
-    }
-
-    fun delete(download: DownloadEntity) = viewModelScope.launch {
-        repository.delete(download)
-    }
-
-    fun retry(download: DownloadEntity) = resume(download)
+    fun downloadAgain(download: DownloadEntity) = viewModelScope.launch { repository.downloadAgain(download) }
+    fun pause(download: DownloadEntity) = viewModelScope.launch { repository.pause(download) }
+    fun resume(download: DownloadEntity) = viewModelScope.launch { repository.resume(download) }
+    fun cancel(download: DownloadEntity) = viewModelScope.launch { repository.cancel(download) }
+    fun delete(download: DownloadEntity) = viewModelScope.launch { repository.delete(download) }
+    fun retry(download: DownloadEntity) = viewModelScope.launch { repository.downloadAgain(download) }
 
     fun inspectApk(file: File, callback: (Result<ApkInspection>) -> Unit) {
-        viewModelScope.launch {
-            callback(repository.inspectApk(file))
-        }
+        viewModelScope.launch { callback(repository.inspectApk(file)) }
     }
 }
