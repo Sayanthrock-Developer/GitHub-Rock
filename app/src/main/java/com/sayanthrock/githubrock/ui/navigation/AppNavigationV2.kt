@@ -128,7 +128,13 @@ fun MainNavigationV2(
                 { navController.navigate(TopDestinationV2.Downloads.route) { launchSingleTop = true } }, { navController.navigate(APP_INFORMATION_ROUTE) { launchSingleTop = true } }, onOpenGitHubUrl, navController::navigateUp) }
             composable(ACCOUNT_SWITCHER_ROUTE) { AccountSwitcherScreen(mode, state.profile, navController::navigateUp, openAccountProfile, onLogout, onLogout, onOpenGitHubUrl) }
             composable(NATIVE_PROFILE_ROUTE, arguments = listOf(navArgument("login") { type = NavType.StringType }, navArgument("section") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://profile/{login}/{section}" })) {
-                NativeProfileScreen(mode, state.profile?.login, navController::navigateUp, openRepo) { login -> openNativeProfile(login, NativeProfileSection.Repositories) }
+                NativeProfileScreen(
+                    mode = mode,
+                    ownLogin = state.profile?.login,
+                    onBack = navController::navigateUp,
+                    onOpenRepository = openRepo,
+                    onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) }
+                )
             }
             composable(SETTINGS_ROUTE) { GitHubSettingsScreen(state.profile, { login -> openNativeProfile(login, NativeProfileSection.Repositories) },
                 { navController.navigate(ACCOUNT_SWITCHER_ROUTE) { launchSingleTop = true } }, { navController.navigate(APP_CUSTOMIZATION_ROUTE) { launchSingleTop = true } },
