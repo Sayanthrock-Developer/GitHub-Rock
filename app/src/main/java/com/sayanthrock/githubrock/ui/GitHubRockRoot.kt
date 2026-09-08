@@ -69,8 +69,6 @@ fun GitHubRockRoot(
     val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
 
-    // Keep the root edge-to-edge. The navigation chrome is an overlay, so the
-    // scrolling destination remains visible underneath the floating pill.
     Box(
         Modifier
             .fillMaxSize()
@@ -82,8 +80,6 @@ fun GitHubRockRoot(
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
-                    // Do not reserve a bottom rectangle for the floating styles.
-                    // Content draws edge-to-edge and the pill floats above it.
                     SwipeNavigationContent(
                         navController = navController,
                         bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
@@ -105,15 +101,14 @@ fun GitHubRockRoot(
 }
 
 private fun navigationContentInset(style: NavigationBarStyle, systemNavigationPadding: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = when (style) {
-    // Floating/Glass/Minimal/Compact navigation is an overlay. Scrolling content
-    // must be allowed underneath the navigation surface instead of ending at a
-    // solid rectangular inset region.
+    // Every navigation style is rendered as an overlay. Scrolling content should
+    // remain visible beneath the navigation surface instead of ending at a solid
+    // rectangular bottom inset.
     NavigationBarStyle.FloatingCapsule,
+    NavigationBarStyle.Classic,
     NavigationBarStyle.Glass,
     NavigationBarStyle.Minimal,
     NavigationBarStyle.Compact -> 0.dp
-    // Classic is intentionally a full-width bottom bar, so keep content above it.
-    NavigationBarStyle.Classic -> 88.dp + systemNavigationPadding
 }
 
 @Composable
