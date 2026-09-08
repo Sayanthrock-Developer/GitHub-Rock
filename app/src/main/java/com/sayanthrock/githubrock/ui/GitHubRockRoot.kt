@@ -20,7 +20,6 @@ import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
 import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
-import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.navigation.MainNavigationV2
 import com.sayanthrock.githubrock.ui.navigation.RockNavigationChrome
@@ -28,6 +27,7 @@ import com.sayanthrock.githubrock.ui.navigation.TopDestinationV2
 import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
+import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -89,10 +89,68 @@ fun GitHubRockRoot(
                     ) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
-                    RockNavigationChrome(navController, appearanceState.navigationBarStyle, state)
+                    RockNavigationChrome(
+                        navController = navController,
+                        style = appearanceState.navigationBarStyle,
+                        animationStyle = appearanceState.animationStyle,
+                        reduceMotion = appearanceState.reduceMotion,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
-        SnackbarHost(HostState = snackbar)
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = navigationBarPadding))
     }
+}
+
+private fun navigationContentInset(style: NavigationBarStyle, systemNavigationPadding: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = when (style) {
+    NavigationBarStyle.FloatingCapsule,
+    NavigationBarStyle.Classic,
+    NavigationBarStyle.Glass,
+    NavigationBarStyle.Minimal,
+    NavigationBarStyle.Compact -> 0.dp
+}
+
+@Composable
+private fun SwipeNavigationContent(
+    navController: androidx.navigation.NavHostController,
+    bottomContentPadding: androidx.compose.ui.unit.Dp,
+    content: @Composable () -> Unit
+) {
+    val entry by navController.currentBackStackEntryAsState()
+    val selectedRoute = entry?.destination?.route
+    val destinations = listOf(
+        TopDestinationV2.Home,
+        TopDestinationV2.Repositories,
+        TopDestinationV2.Builds,
+        TopDestinationV2.Downloads,
+        TopDestinationV2.Profile
+    )
+    val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(bottom = bottomContentPadding)
+            .pointerInput(selectedRoute) {
+                var totalDragX = 0f
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount },
+                    onDragEnd = {
+                        if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
+                            val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
+                            destinations.getOrNull(nextIndex)?.let { destination ->
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        }
+                        totalDragX = 0f
+                    },
+                    onDragCancel = { totalDragX = 0f }
+                )
+            }
+    ) { content() }
 }
