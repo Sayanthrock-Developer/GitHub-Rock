@@ -32,11 +32,8 @@ data class DownloadEntity(
     val localPath: String? = null,
     val totalBytes: Long = 0,
     val downloadedBytes: Long = 0,
-    /** Expected release checksum, when GitHub exposes one. */
     val expectedSha256: String? = null,
-    /** Actual checksum calculated after verification. */
     val sha256: String? = null,
-    /** Storage representation. Use [state] outside the persistence boundary. */
     val status: String,
     val createdAt: Long = System.currentTimeMillis(),
     val packageName: String? = null,
@@ -76,7 +73,7 @@ interface DownloadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(download: DownloadEntity): Long
     @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status IN ('completed', 'installable') ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity?
-    @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = :sha, speedBytesPerSecond = :speed, etaSeconds = :eta, errorMessage = :error WHERE id = :id")
+    @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = CASE WHEN :status IN ('completed', 'installable') THEN :sha ELSE sha256 END, speedBytesPerSecond = :speed, etaSeconds = :eta, errorMessage = :error WHERE id = :id")
     suspend fun updateProgress(id: Long, status: String, downloaded: Long, total: Long, path: String?, sha: String?, speed: Long, eta: Long?, error: String?)
     @Query("UPDATE downloads SET packageName = :packageName, versionCode = :versionCode, versionName = :versionName, minSdk = :minSdk, targetSdk = :targetSdk, permissions = :permissions, certificateSha256 = :certificateSha256, signatureSchemes = :signatureSchemes, architectures = :architectures, securityRisk = :securityRisk, securityReasons = :securityReasons WHERE id = :id")
     suspend fun updateSecurity(id: Long, packageName: String, versionCode: Long, versionName: String?, minSdk: Int, targetSdk: Int, permissions: String, certificateSha256: String?, signatureSchemes: String, architectures: String, securityRisk: String, securityReasons: String)
