@@ -23,7 +23,30 @@ enum class DisplaySize { Small, Standard, Large; companion object { fun fromStor
 enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }
 enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
 enum class AppFontFamily { SystemSans, Serif, Monospace; companion object { fun fromStored(value: String?): AppFontFamily = entries.firstOrNull { it.name == value } ?: SystemSans } }
-enum class LoadingStyle { Spinner, Linear, Pulse, Skeleton, Liquid, Orbit, Shimmer, Morph; companion object { fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: Spinner } }
+enum class LoadingStyle {
+    SystemDefault,
+    MaterialExpressive,
+    SmoothRing,
+    WavyRing,
+    SegmentedRing,
+    RockPentagon,
+    PentagonOrbit;
+
+    companion object {
+        fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: SystemDefault
+    }
+
+    val displayName: String
+        get() = when (this) {
+            SystemDefault -> "System Default"
+            MaterialExpressive -> "Material Expressive"
+            SmoothRing -> "Smooth Ring"
+            WavyRing -> "Wavy Ring"
+            SegmentedRing -> "Segmented Ring"
+            RockPentagon -> "Rock Pentagon"
+            PentagonOrbit -> "Pentagon Orbit"
+        }
+}
 enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
 enum class CodeColorStyle { Classic, Ocean, Sunset, Monochrome, GitHub; companion object { fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic } }
 enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal } }
@@ -37,7 +60,7 @@ data class AppearancePreferences(
     val fontSize: FontSize = FontSize.Default,
     val fontWeight: FontWeightStyle = FontWeightStyle.Default,
     val fontFamily: AppFontFamily = AppFontFamily.SystemSans,
-    val loadingStyle: LoadingStyle = LoadingStyle.Spinner,
+    val loadingStyle: LoadingStyle = LoadingStyle.SystemDefault,
     val animationStyle: AnimationStyle = AnimationStyle.Spring,
     val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
     val logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
