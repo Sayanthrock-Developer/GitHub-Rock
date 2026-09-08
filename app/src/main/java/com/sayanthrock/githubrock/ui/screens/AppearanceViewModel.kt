@@ -36,6 +36,8 @@ class AppearanceViewModel @Inject constructor(
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
     fun setAccentColor(color: AccentColor) = viewModelScope.launch { preferences.setAccentColor(color) }
+    fun setSystemDynamicAccent() = viewModelScope.launch { preferences.setSystemDynamicAccent() }
+    fun setCustomAccentHex(hex: String) = viewModelScope.launch { preferences.setCustomAccentHex(hex) }
     fun setDisplaySize(size: DisplaySize) = viewModelScope.launch { preferences.setDisplaySize(size) }
     fun setFontSize(size: FontSize) = viewModelScope.launch { preferences.setFontSize(size) }
     fun setFontWeight(weight: FontWeightStyle) = viewModelScope.launch { preferences.setFontWeight(weight) }
