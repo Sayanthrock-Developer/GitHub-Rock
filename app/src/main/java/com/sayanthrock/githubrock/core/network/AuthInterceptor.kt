@@ -26,8 +26,15 @@ class AuthInterceptor @Inject constructor(
 
         val request = original.newBuilder()
             .url(scopedUrl)
-            .header("Accept", "application/vnd.github+json")
-            .header("X-GitHub-Api-Version", BuildConfig.GITHUB_API_VERSION)
+            // Preserve endpoint-specific media types. DownloadWorker requests
+            // application/octet-stream; replacing it with GitHub's JSON media
+            // type can make binary download endpoints return metadata instead.
+            .apply {
+                if (original.header("Accept") == null) {
+                    header("Accept", "application/vnd.github+json")
+                }
+            }
+            .header("X-GitHub-API-Version", BuildConfig.GITHUB_API_VERSION)
             .apply {
                 tokenStore.read()?.accessToken?.takeIf(String::isNotBlank)?.let {
                     header("Authorization", "Bearer $it")
