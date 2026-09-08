@@ -18,7 +18,10 @@ private val Context.dataStore by preferencesDataStore(name = "github_rock_prefer
 
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
-enum class AccentColor { Cyan, Blue, Violet, Emerald, Rose, Coral, Amber, Orange; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: Cyan } }
+enum class AccentColor {
+    SystemDynamic, DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Custom;
+    companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock }
+}
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
 enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }
 enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
@@ -32,7 +35,9 @@ enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compac
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
-    val accentColor: AccentColor = AccentColor.Cyan,
+    val accentColor: AccentColor = AccentColor.DefaultGitHubRock,
+    val customAccentHex: String = "#E60023",
+    val recentCustomColors: List<String> = emptyList(),
     val displaySize: DisplaySize = DisplaySize.Standard,
     val fontSize: FontSize = FontSize.Default,
     val fontWeight: FontWeightStyle = FontWeightStyle.Default,
@@ -42,7 +47,7 @@ data class AppearancePreferences(
     val codeColorStyle: CodeColorStyle = CodeColorStyle.Classic,
     val logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal,
     val navigationBarStyle: NavigationBarStyle = NavigationBarStyle.FloatingCapsule,
-    val dynamicColor: Boolean = true,
+    val dynamicColor: Boolean = false,
     val trueBlack: Boolean = false,
     val showImages: Boolean = true,
     val workflowPreview: Boolean = true,
@@ -58,10 +63,18 @@ data class AppearancePreferences(
 @Singleton
 class AppPreferences @Inject constructor(@ApplicationContext private val context: Context) {
     val appearance: Flow<AppearancePreferences> = context.dataStore.data.map { preferences ->
+        val storedAccent = preferences[ACCENT_COLOR]
+        val legacyDynamic = preferences[DYNAMIC_COLOR] ?: false
+        val accent = when {
+            storedAccent == null && legacyDynamic -> AccentColor.SystemDynamic
+            else -> AccentColor.fromStored(storedAccent)
+        }
         AppearancePreferences(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
             themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
-            accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
+            accentColor = accent,
+            customAccentHex = normalizeHex(preferences[CUSTOM_ACCENT_HEX]) ?: "#E60023",
+            recentCustomColors = sanitizeRecentColors(preferences[RECENT_CUSTOM_COLORS].orEmpty()),
             displaySize = DisplaySize.fromStored(preferences[DISPLAY_SIZE]),
             fontSize = FontSize.fromStored(preferences[FONT_SIZE]),
             fontWeight = FontWeightStyle.fromStored(preferences[FONT_WEIGHT]),
@@ -71,7 +84,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             codeColorStyle = CodeColorStyle.fromStored(preferences[CODE_COLOR_STYLE]),
             logDisplayStyle = LogDisplayStyle.fromStored(preferences[LOG_DISPLAY_STYLE]),
             navigationBarStyle = NavigationBarStyle.fromStored(preferences[NAVIGATION_BAR_STYLE]),
-            dynamicColor = preferences[DYNAMIC_COLOR] ?: true,
+            dynamicColor = accent == AccentColor.SystemDynamic,
             trueBlack = preferences[TRUE_BLACK] ?: false,
             showImages = preferences[SHOW_IMAGES] ?: true,
             workflowPreview = preferences[WORKFLOW_PREVIEW] ?: true,
@@ -91,7 +104,22 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
-    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name }
+    suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name; if (color != AccentColor.SystemDynamic) it[DYNAMIC_COLOR] = false else it[DYNAMIC_COLOR] = true }
+    suspend fun setCustomAccentHex(hex: String) {
+        val normalized = normalizeHex(hex) ?: return
+        context.dataStore.edit { it[CUSTOM_ACCENT_HEX] = normalized }
+    }
+    suspend fun addRecentCustomColor(hex: String) {
+        val normalized = normalizeHex(hex) ?: return
+        context.dataStore.edit { preferences ->
+            val updated = buildList {
+                add(normalized)
+                sanitizeRecentColors(preferences[RECENT_CUSTOM_COLORS].orEmpty()).filterNot { it.equals(normalized, true) }.forEach(::add)
+            }.take(MAX_RECENT_CUSTOM_COLORS)
+            preferences[RECENT_CUSTOM_COLORS] = updated.toSet()
+        }
+    }
+    suspend fun clearRecentCustomColors() = context.dataStore.edit { it.remove(RECENT_CUSTOM_COLORS) }
     suspend fun setDisplaySize(size: DisplaySize) = context.dataStore.edit { it[DISPLAY_SIZE] = size.name }
     suspend fun setFontSize(size: FontSize) = context.dataStore.edit { it[FONT_SIZE] = size.name }
     suspend fun setFontWeight(weight: FontWeightStyle) = context.dataStore.edit { it[FONT_WEIGHT] = weight.name }
@@ -101,7 +129,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setCodeColorStyle(style: CodeColorStyle) = context.dataStore.edit { it[CODE_COLOR_STYLE] = style.name }
     suspend fun setLogDisplayStyle(style: LogDisplayStyle) = context.dataStore.edit { it[LOG_DISPLAY_STYLE] = style.name }
     suspend fun setNavigationBarStyle(style: NavigationBarStyle) = context.dataStore.edit { it[NAVIGATION_BAR_STYLE] = style.name }
-    suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
+    suspend fun setDynamicColor(enabled: Boolean) = setAccentColor(if (enabled) AccentColor.SystemDynamic else AccentColor.DefaultGitHubRock)
     suspend fun setTrueBlack(enabled: Boolean) = context.dataStore.edit { it[TRUE_BLACK] = enabled }
     suspend fun setShowImages(enabled: Boolean) = context.dataStore.edit { it[SHOW_IMAGES] = enabled }
     suspend fun setWorkflowPreview(enabled: Boolean) = context.dataStore.edit { it[WORKFLOW_PREVIEW] = enabled }
@@ -124,7 +152,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     }
     suspend fun clearRepositorySearchHistory() = context.dataStore.edit { it.remove(REPOSITORY_SEARCH_HISTORY) }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(DISPLAY_SIZE)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_CUSTOM_COLORS); preferences.remove(DISPLAY_SIZE)
         preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE)
         preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES)
         preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS)
@@ -146,9 +174,12 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     private companion object {
         const val HISTORY_SEPARATOR = "\u001F"
         const val MAX_SEARCH_HISTORY = 8
+        const val MAX_RECENT_CUSTOM_COLORS = 8
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val THEME_STYLE = stringPreferencesKey("theme_style")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
+        val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex")
+        val RECENT_CUSTOM_COLORS = stringSetPreferencesKey("recent_custom_colors")
         val DISPLAY_SIZE = stringPreferencesKey("display_size")
         val FONT_SIZE = stringPreferencesKey("font_size")
         val FONT_WEIGHT = stringPreferencesKey("font_weight")
@@ -172,5 +203,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories")
         val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
+
+        fun normalizeHex(value: String?): String? {
+            val raw = value?.trim()?.uppercase() ?: return null
+            val candidate = if (raw.startsWith("#")) raw else "#$raw"
+            return candidate.takeIf { it.matches(Regex("^#[0-9A-F]{6}([0-9A-F]{2})?$")) }
+        }
+
+        fun sanitizeRecentColors(values: Set<String>): List<String> = values.mapNotNull(::normalizeHex).distinct().take(MAX_RECENT_CUSTOM_COLORS)
     }
 }
