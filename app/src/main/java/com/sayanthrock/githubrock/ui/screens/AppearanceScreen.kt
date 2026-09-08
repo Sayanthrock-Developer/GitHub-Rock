@@ -1,10 +1,12 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,14 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,10 +71,10 @@ fun AppearanceContent(state:AppearancePreferences,onBack:()->Unit,onThemeMode:(T
   Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){Icon(Icons.Default.ColorLens,null,tint=MaterialTheme.colorScheme.primary);Column{Text("Accent color",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold);Text(if(state.dynamicColor)"System Dynamic is active" else "Customize the app highlight",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)}}
   Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp),verticalAlignment=Alignment.CenterVertically){
    FilterChip(selected=state.dynamicColor,onClick={onDynamic(true)},label={Text("System Dynamic")},leadingIcon={Icon(Icons.Default.AutoAwesome,null,Modifier.size(18.dp))})
-   AccentColor.entries.forEach{accent->val selected=!state.dynamicColor&&state.accentColor==accent&&state.customAccentHex.isBlank();Surface(Modifier.size(44.dp).selectable(selected,!state.dynamicColor,Role.RadioButton){onSelected(accent)}.semantics{contentDescription="Use ${accentLabel(accent)} accent"},shape=CircleShape,color=accent.seedColor(),border=BorderStroke(if(selected)3.dp else 1.dp,if(selected)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)){if(selected)Box(contentAlignment=Alignment.Center){Icon(Icons.Default.Check,null,tint=readableOn(accent.seedColor()))}}}
+   AccentColor.entries.forEach{accent->val selected=!state.dynamicColor&&state.accentColor==accent&&state.customAccentHex.isBlank();Surface(onClick={onSelected(accent)},selected=selected,enabled=!state.dynamicColor,modifier=Modifier.size(44.dp).semantics{contentDescription="Use ${accentLabel(accent)} accent"},shape=CircleShape,color=accent.seedColor(),border=BorderStroke(if(selected)3.dp else 1.dp,if(selected)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)){if(selected)Box(contentAlignment=Alignment.Center){Icon(Icons.Default.Check,null,tint=readableOn(accent.seedColor()))}}}
   }
-  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button(onClick={dialog=true}){Icon(Icons.Default.Colorize,null);Spacer(Modifier.width(6.dp));Text("Custom Color")};if(state.customAccentHex.isNotBlank())Text(state.customAccentHex,Modifier.align(Alignment.CenterVertically),style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.primary)}
-  if(state.recentAccentColors.isNotEmpty()){Text("Recent Colors",style=MaterialTheme.typography.labelLarge);Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){state.recentAccentColors.forEach{hex->val color=parseAccentHex(hex)?:return@forEach;Surface(Modifier.size(38.dp).selectable(true,true){onCustom(hex)}.semantics{contentDescription="Use recent color $hex"},shape=CircleShape,color=color,border=BorderStroke(1.dp,MaterialTheme.colorScheme.outline))}}}
+  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button(onClick={dialog=true}){Icon(Icons.Default.ColorLens,null);Spacer(Modifier.width(6.dp));Text("Custom Color")};if(state.customAccentHex.isNotBlank())Text(state.customAccentHex,Modifier.align(Alignment.CenterVertically),style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.primary)}
+  if(state.recentAccentColors.isNotEmpty()){Text("Recent Colors",style=MaterialTheme.typography.labelLarge);Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){state.recentAccentColors.forEach{hex->val color=parseAccentHex(hex)?:return@forEach;Surface(onClick={onCustom(hex)},modifier=Modifier.size(38.dp).semantics{contentDescription="Use recent color $hex"},shape=CircleShape,color=color,border=BorderStroke(1.dp,MaterialTheme.colorScheme.outline)){}}}}
   Text("Static accents override Android wallpaper colors. System Dynamic is used only when Color mode is System.",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
  }}
  if(dialog)CustomAccentDialog(state.customAccentHex,onCustom){dialog=false}
@@ -105,8 +106,7 @@ private val AppFontFamily.displayName:String get()=when(this){AppFontFamily.Syst
 private val CodeColorStyle.displayName:String get()=when(this){CodeColorStyle.Classic->"Classic";CodeColorStyle.Ocean->"Ocean";CodeColorStyle.Sunset->"Sunset";CodeColorStyle.Monochrome->"Mono";CodeColorStyle.GitHub->"GitHub"}
 private val NavigationBarStyle.displayName:String get()=when(this){NavigationBarStyle.FloatingCapsule->"Floating Capsule";NavigationBarStyle.Classic->"Classic";NavigationBarStyle.Minimal->"Minimal";NavigationBarStyle.Glass->"Glass";NavigationBarStyle.Compact->"Compact"}
 private fun accentLabel(a:AccentColor)=when(a){AccentColor.DefaultGitHubRock->"Default GitHub Rock";AccentColor.Red->"Red";AccentColor.Orange->"Orange";AccentColor.Yellow->"Yellow";AccentColor.Green->"Green";AccentColor.Teal->"Teal";AccentColor.Cyan->"Cyan";AccentColor.Blue->"Blue";AccentColor.Indigo->"Indigo";AccentColor.Purple->"Purple";AccentColor.Pink->"Pink"}
-
-private fun Color.toHex():String="#%02X%02X%02X".format((red*255).roundToInt(),(green*255).roundToInt(),(blue*255).roundToInt())
+private fun Color.toHex()="#%02X%02X%02X".format((red*255).roundToInt(),(green*255).roundToInt(),(blue*255).roundToInt())
 private fun hslColor(h:Float,s:Float,l:Float):Color{val c=(1-kotlin.math.abs(2*l-1))*s;val x=c*(1-kotlin.math.abs((h*6)%2-1));val m=l-c/2;val q=when((h*6).toInt()){0->Triple(c,x,0f);1->Triple(x,c,0f);2->Triple(0f,c,x);3->Triple(0f,x,c);4->Triple(x,0f,c);else->Triple(c,0f,x)};return Color(q.first+m,q.second+m,q.third+m)}
 private fun rgbHue(c:Color):Float{val max=maxOf(c.red,c.green,c.blue);val min=minOf(c.red,c.green,c.blue);val d=max-min;if(d==0f)return 0f;return (((when(max){c.red->(c.green-c.blue)/d;c.green->(c.blue-c.red)/d+2;else->(c.red-c.green)/d+4})/6f)%1f+1f)%1f}
 private fun rgbSat(c:Color):Float{val max=maxOf(c.red,c.green,c.blue);val min=minOf(c.red,c.green,c.blue);val l=(max+min)/2;return if(max==min)0f else (max-min)/(1-kotlin.math.abs(2*l-1))}
