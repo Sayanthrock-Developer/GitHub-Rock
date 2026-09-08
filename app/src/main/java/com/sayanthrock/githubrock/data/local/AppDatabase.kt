@@ -32,8 +32,11 @@ data class DownloadEntity(
     val localPath: String? = null,
     val totalBytes: Long = 0,
     val downloadedBytes: Long = 0,
+    /** Expected release checksum, when GitHub exposes one. */
+    val expectedSha256: String? = null,
+    /** Actual checksum calculated after verification. */
     val sha256: String? = null,
-    /** Storage representation. Use [state] everywhere outside the persistence boundary. */
+    /** Storage representation. Use [state] outside the persistence boundary. */
     val status: String,
     val createdAt: Long = System.currentTimeMillis(),
     val packageName: String? = null,
@@ -60,69 +63,29 @@ data class DownloadEntity(
 interface RepositoryDao {
     @Query("SELECT * FROM recent_repositories ORDER BY openedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int = 10): Flow<List<RepositoryEntity>>
-
     @Query("SELECT * FROM recent_repositories ORDER BY openedAt DESC LIMIT :limit")
     suspend fun recent(limit: Int = 100): List<RepositoryEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(repository: RepositoryEntity)
-
-    @Query("DELETE FROM recent_repositories")
-    suspend fun clear()
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(repository: RepositoryEntity)
+    @Query("DELETE FROM recent_repositories") suspend fun clear()
 }
 
 @Dao
 interface DownloadDao {
     @Query("SELECT * FROM downloads ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<DownloadEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(download: DownloadEntity): Long
-
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(download: DownloadEntity): Long
     @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status IN ('completed', 'installable') ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity?
-
     @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = :sha, speedBytesPerSecond = :speed, etaSeconds = :eta, errorMessage = :error WHERE id = :id")
-    suspend fun updateProgress(
-        id: Long,
-        status: String,
-        downloaded: Long,
-        total: Long,
-        path: String?,
-        sha: String?,
-        speed: Long,
-        eta: Long?,
-        error: String?
-    )
-
+    suspend fun updateProgress(id: Long, status: String, downloaded: Long, total: Long, path: String?, sha: String?, speed: Long, eta: Long?, error: String?)
     @Query("UPDATE downloads SET packageName = :packageName, versionCode = :versionCode, versionName = :versionName, minSdk = :minSdk, targetSdk = :targetSdk, permissions = :permissions, certificateSha256 = :certificateSha256, signatureSchemes = :signatureSchemes, architectures = :architectures, securityRisk = :securityRisk, securityReasons = :securityReasons WHERE id = :id")
-    suspend fun updateSecurity(
-        id: Long,
-        packageName: String,
-        versionCode: Long,
-        versionName: String?,
-        minSdk: Int,
-        targetSdk: Int,
-        permissions: String,
-        certificateSha256: String?,
-        signatureSchemes: String,
-        architectures: String,
-        securityRisk: String,
-        securityReasons: String
-    )
-
+    suspend fun updateSecurity(id: Long, packageName: String, versionCode: Long, versionName: String?, minSdk: Int, targetSdk: Int, permissions: String, certificateSha256: String?, signatureSchemes: String, architectures: String, securityRisk: String, securityReasons: String)
     @Query("UPDATE downloads SET status = :status, errorMessage = :error WHERE id = :id")
     suspend fun updateStatus(id: Long, status: String, error: String?)
-
-    @Query("DELETE FROM downloads WHERE id = :id")
-    suspend fun delete(id: Long)
+    @Query("DELETE FROM downloads WHERE id = :id") suspend fun delete(id: Long)
 }
 
-@Database(
-    entities = [RepositoryEntity::class, DownloadEntity::class],
-    version = 3,
-    exportSchema = false
-)
+@Database(entities = [RepositoryEntity::class, DownloadEntity::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun repositoryDao(): RepositoryDao
     abstract fun downloadDao(): DownloadDao
