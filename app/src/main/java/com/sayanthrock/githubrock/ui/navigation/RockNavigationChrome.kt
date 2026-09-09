@@ -1,9 +1,11 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -25,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -94,9 +97,6 @@ private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    // Minimal intentionally has no container, border, shadow, or glass treatment.
-    // The selected destination is communicated by a compact tonal icon surface and
-    // label, while unselected destinations remain quiet and icon-first.
     Row(
         modifier = modifier
             .navigationBarsPadding()
@@ -152,22 +152,36 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 
 @Composable
 private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f) {
-    // AnimationStyle remains a user-facing preference, but navigation uses the
-    // fast motion budget for every style instead of slow cinematic timings.
+    val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
     val selectedContainer by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent,
         animationSpec = tween(durationMillis = duration),
         label = "navigation indicator color"
     )
+    val pressScale by animateFloatAsState(
+        targetValue = if (selected) 1f else 1f,
+        animationSpec = tween(durationMillis = 120),
+        label = "navigation press scale"
+    )
     Surface(
-        modifier = modifier.clickable(role = Role.Tab, onClick = onClick).semantics {
-            contentDescription = destination.accessibilityLabel
-            role = Role.Tab
-            this.selected = selected
-        },
+        modifier = modifier
+            .then(Modifier)
+            .combinedClickable(
+                role = Role.Tab,
+                onClick = onClick,
+                onLongClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onClick()
+                }
+            )
+            .semantics {
+                contentDescription = destination.accessibilityLabel
+                role = Role.Tab
+                this.selected = selected
+            },
         shape = RoundedCornerShape(selectedShape),
-        color = if (transparent) selectedContainer else selectedContainer,
+        color = selectedContainer,
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
