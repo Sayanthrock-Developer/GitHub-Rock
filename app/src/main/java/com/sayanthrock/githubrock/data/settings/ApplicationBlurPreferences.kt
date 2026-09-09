@@ -12,6 +12,7 @@ import com.sayanthrock.githubrock.ui.blur.ApplicationBlurProfile
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurShadow
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurTint
+import com.sayanthrock.githubrock.ui.blur.toSettings
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
