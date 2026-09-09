@@ -16,6 +16,7 @@ import com.sayanthrock.githubrock.data.local.AppDatabase
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.MIGRATION_1_4
 import com.sayanthrock.githubrock.data.local.MIGRATION_4_5
+import com.sayanthrock.githubrock.data.local.MIGRATION_5_6
 import com.sayanthrock.githubrock.data.local.RepositoryDao
 import dagger.Binds
 import dagger.Module
@@ -144,7 +145,7 @@ object AppModule {
         AppDatabase::class.java,
         "github-rock.db"
     )
-        .addMigrations(MIGRATION_1_4, MIGRATION_4_5)
+        .addMigrations(MIGRATION_1_4, MIGRATION_4_5, MIGRATION_5_6)
         .fallbackToDestructiveMigration()
         .build()
 
