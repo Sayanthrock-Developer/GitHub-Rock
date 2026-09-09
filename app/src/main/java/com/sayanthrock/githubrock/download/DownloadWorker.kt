@@ -43,8 +43,9 @@ class DownloadWorker @AssistedInject constructor(
         val id = inputData.getLong(KEY_ID, -1)
         val url = inputData.getString(KEY_URL)?.trim()?.takeIf(String::isNotBlank) ?: return Result.failure()
         val fallbackUrl = inputData.getString(KEY_FALLBACK_URL)?.trim()?.takeIf(String::isNotBlank)
+        val checksumUrl = inputData.getString(KEY_CHECKSUM_URL)?.trim()?.takeIf(String::isNotBlank)
         val name = inputData.getString(KEY_NAME)?.safeFileName()?.takeIf(String::isNotBlank) ?: return Result.failure()
-        val expectedSha = inputData.getString(KEY_SHA256)?.trim()?.takeIf(String::isNotBlank)
+        var expectedSha = inputData.getString(KEY_SHA256)?.trim()?.takeIf(String::isNotBlank)
         val expectedPackage = inputData.getString(KEY_EXPECTED_PACKAGE)?.takeIf(String::isNotBlank)
         val directory = File(applicationContext.filesDir, "downloads").apply { mkdirs() }
         val resumedPath = inputData.getString(KEY_PARTIAL_PATH)?.let(::File)
@@ -56,6 +57,10 @@ class DownloadWorker @AssistedInject constructor(
         setForeground(downloadForegroundInfo(id, name, 0L, 0L))
 
         return try {
+            if (expectedSha == null && checksumUrl != null && isPackageAsset(name)) {
+                expectedSha = fetchExpectedSha256(checksumUrl, name)
+            }
+
             var existing = partial.takeIf(File::exists)?.length() ?: 0L
             var response: Response? = null
             var restarted = false
@@ -184,6 +189,34 @@ class DownloadWorker @AssistedInject constructor(
             if (willRetry) Result.retry() else Result.failure()
         }
     }
+
+    private fun fetchExpectedSha256(checksumUrl: String, targetName: String): String {
+        val request = Request.Builder()
+            .url(checksumUrl)
+            .header("User-Agent", "GitHub-Rock/1.0")
+            .header("Accept", "text/plain, */*")
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("Checksum download failed: HTTP ${response.code}")
+            val text = response.body?.string()?.takeIf { it.isNotBlank() }
+                ?: error("Checksum file is empty")
+            return parseSha256(text, targetName)
+                ?: error("No SHA-256 entry found for $targetName")
+        }
+    }
+
+    private fun parseSha256(text: String, targetName: String): String? {
+        val normalizedTarget = targetName.trim()
+        val lines = text.lineSequence().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
+        val entries = lines.mapNotNull { line ->
+            val match = Regex("^([A-Fa-f0-9]{64})\\s+(?:\\*|)(.+)$").matchEntire(line) ?: return@mapNotNull null
+            match.groupValues[1].lowercase() to match.groupValues[2].trim().removePrefix("*")
+        }.toList()
+        entries.firstOrNull { it.second == normalizedTarget || it.second.substringAfterLast('/') == normalizedTarget }?.let { return it.first }
+        return if (entries.size == 1) entries.first().first else null
+    }
+
+    private fun isPackageAsset(name: String): Boolean = name.endsWith(".apk", true) || name.endsWith(".aab", true)
 
     private fun executeDownloadWithFallback(primaryUrl: String, fallbackUrl: String?, existing: Long): Response {
         val candidates = buildList {
@@ -318,6 +351,7 @@ class DownloadWorker @AssistedInject constructor(
         const val KEY_FALLBACK_URL = "download_fallback_url"
         const val KEY_NAME = "download_name"
         const val KEY_SHA256 = "download_sha256"
+        const val KEY_CHECKSUM_URL = "download_checksum_url"
         const val KEY_PARTIAL_PATH = "download_partial_path"
         const val KEY_EXPECTED_PACKAGE = "download_expected_package"
         private const val DOWNLOAD_CHANNEL_ID = "github_rock_downloads"
