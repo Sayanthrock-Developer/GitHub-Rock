@@ -56,28 +56,25 @@ class DownloadRepository @Inject constructor(
         checksumUrl: String? = null
     ) {
         val requestedUrl = url.trim().takeIf(String::isNotBlank) ?: return
-        val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryFullName, assetId)
+        val repositoryName = repositoryFullName?.trim()?.takeIf(String::isNotBlank)
+        val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryName, assetId)
         val publicRelease = isPublicGitHubReleaseUrl(requestedUrl)
         val browserUrl = resolvedAsset?.browserDownloadUrl?.trim()?.takeIf(String::isNotBlank)
         val apiAssetUrl = resolvedAsset?.downloadUrl?.trim()?.takeIf(String::isNotBlank)
-            ?: assetId?.takeIf { !repositoryFullName.isNullOrBlank() }?.let { id ->
-                "https://api.github.com/repos/${repositoryFullName.trim()}/releases/assets/$id"
+            ?: assetId?.takeIf { repositoryName != null }?.let { id ->
+                "https://api.github.com/repos/$repositoryName/releases/assets/$id"
             }
-
-        // Public release assets use GitHub's normal browser/CDN URL first. The API asset
-        // endpoint is retained as a real fallback. For an API URL supplied by a caller,
-        // keep it primary (important for private releases) and use browser_download_url
-        // as the first fallback when GitHub exposes one.
         val resolvedUrl = if (publicRelease && browserUrl != null) browserUrl else requestedUrl
+        val suppliedFallback = fallbackUrl?.trim()?.takeIf(String::isNotBlank)
         val derivedFallback = when {
-            !fallbackUrl.isNullOrBlank() && fallbackUrl.trim() != resolvedUrl -> fallbackUrl.trim()
+            suppliedFallback != null && suppliedFallback != resolvedUrl -> suppliedFallback
             resolvedUrl != browserUrl && browserUrl != null -> browserUrl
             apiAssetUrl != null && apiAssetUrl != resolvedUrl -> apiAssetUrl
             else -> null
         }
         val resolvedFallbackUrl = derivedFallback?.takeIf { it.isNotBlank() && it != resolvedUrl }
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
-            ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryFullName, assetId)
+            ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, assetId)
         val queued = DownloadEntity(
             fileName = fileName,
             sourceUrl = resolvedUrl,
@@ -86,7 +83,7 @@ class DownloadRepository @Inject constructor(
             status = DownloadState.QUEUED.wireValue,
             expectedSha256 = expectedSha256,
             packageName = expectedPackage,
-            repositoryFullName = repositoryFullName,
+            repositoryFullName = repositoryName,
             releaseName = releaseName,
             releaseUrl = releaseUrl,
             assetId = assetId
@@ -113,19 +110,22 @@ class DownloadRepository @Inject constructor(
     }
 
     suspend fun pause(download: DownloadEntity) {
-        if (download.state !in ACTIVE_STATES) return
+        if (download.status !in ACTIVE_STATES) return
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
-        transition(download.id, DownloadState.PAUSED)
+        dao.updateProgress(download.id, DownloadState.PAUSED.wireValue, download.downloadedBytes,
+            download.totalBytes, download.localPath, download.sha256, download.speedBytesPerSecond,
+            download.etaSeconds, null)
     }
 
     suspend fun resume(download: DownloadEntity) {
-        if (download.state !in RESUMABLE_STATES) return
-        transition(download.id, DownloadState.QUEUED)
-        schedule(download.copy(status = DownloadState.QUEUED.wireValue, errorMessage = null))
+        if (download.status !in RESUMABLE_STATES) return
+        val queued = download.copy(status = DownloadState.QUEUED.wireValue, errorMessage = null)
+        dao.upsert(queued)
+        schedule(queued)
     }
 
     suspend fun cancel(download: DownloadEntity) {
-        if (download.state !in ACTIVE_STATES && download.state != DownloadState.PAUSED) return
+        if (download.status !in ACTIVE_STATES && download.status != DownloadState.PAUSED.wireValue) return
         workManager.cancelUniqueWork(DownloadWorker.workName(download.id)).await()
         deleteOwnedFile(download.localPath)
         dao.updateProgress(download.id, DownloadState.CANCELLED.wireValue, 0, 0, null, null, 0, null, null)
@@ -149,7 +149,7 @@ class DownloadRepository @Inject constructor(
     }
 
     suspend fun recoverInvalidCompletedDownloads(items: List<DownloadEntity>) {
-        items.filter { it.state == DownloadState.COMPLETED || it.state == DownloadState.INSTALLABLE }
+        items.filter { it.status == DownloadState.COMPLETED.wireValue || it.status == DownloadState.INSTALLABLE.wireValue }
             .forEach { download ->
                 val file = download.localPath?.let(::File)
                 val valid = file?.takeIf(File::isFile)?.let { candidate ->
@@ -161,7 +161,6 @@ class DownloadRepository @Inject constructor(
                         candidate.length() > 0L
                     }
                 } == true
-
                 if (!valid) downloadAgain(download)
             }
     }
@@ -213,7 +212,9 @@ class DownloadRepository @Inject constructor(
     ): String? = withContext(Dispatchers.IO) {
         runCatching {
             val release = releaseFromDownloadUrl(sourceUrl, repositoryFullName, assetId) ?: return@runCatching null
-            val target = release.assets.firstOrNull { it.id == assetId || it.name == fileName || it.downloadUrl == sourceUrl || it.browserDownloadUrl == sourceUrl } ?: return@runCatching null
+            val target = release.assets.firstOrNull {
+                it.id == assetId || it.name == fileName || it.downloadUrl == sourceUrl || it.browserDownloadUrl == sourceUrl
+            } ?: return@runCatching null
             if (!target.name.endsWith(".apk", true) && !target.name.endsWith(".aab", true)) return@runCatching null
             val checksum = ReleaseChecksumResolver.findFor(target, release.assets) ?: return@runCatching null
             val publicUrl = checksum.browserDownloadUrl?.takeIf(String::isNotBlank)
@@ -226,28 +227,29 @@ class DownloadRepository @Inject constructor(
         val path = uri.path.orEmpty()
         val segments = path.split('/').filter(String::isNotBlank)
         val repoIndex = segments.indexOf("repos")
+        val repositoryName = repositoryFullName?.trim()?.takeIf(String::isNotBlank)
         val owner = when {
             repoIndex >= 0 && segments.size > repoIndex + 2 -> segments[repoIndex + 1]
-            !repositoryFullName.isNullOrBlank() -> repositoryFullName.substringBefore('/')
+            repositoryName != null -> repositoryName.substringBefore('/')
             else -> null
         }
         val repo = when {
             repoIndex >= 0 && segments.size > repoIndex + 2 -> segments[repoIndex + 2]
-            !repositoryFullName.isNullOrBlank() -> repositoryFullName.substringAfter('/', "")
+            repositoryName != null -> repositoryName.substringAfter('/', "")
             else -> null
         }
         if (owner.isNullOrBlank() || repo.isNullOrBlank()) return null
-
         val tagIndex = segments.indexOf("download")
         if (tagIndex >= 0 && segments.size > tagIndex + 1) {
-            val tag = segments[tagIndex + 1]
+            val tag = tagIndex.let { segments[it + 1] }
             val encodedTag = java.net.URLEncoder.encode(tag, Charsets.UTF_8.name()).replace("+", "%20")
             return fetchRelease("https://api.github.com/repos/$owner/$repo/releases/tags/$encodedTag")
         }
-
         if (assetId != null || path.contains("/releases/assets/")) {
             val releasesUrl = "https://api.github.com/repos/$owner/$repo/releases?per_page=100"
-            val request = Request.Builder().url(releasesUrl).header("Accept", "application/vnd.github+json").header("User-Agent", "GitHub-Rock/1.0").build()
+            val request = Request.Builder().url(releasesUrl)
+                .header("Accept", "application/vnd.github+json")
+                .header("User-Agent", "GitHub-Rock/1.0").build()
             downloadClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return null
                 val body = response.body?.string() ?: return null
@@ -259,7 +261,9 @@ class DownloadRepository @Inject constructor(
     }
 
     private fun fetchRelease(url: String): Release? {
-        val request = Request.Builder().url(url).header("Accept", "application/vnd.github+json").header("User-Agent", "GitHub-Rock/1.0").build()
+        val request = Request.Builder().url(url)
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "GitHub-Rock/1.0").build()
         downloadClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return null
             val body = response.body?.string() ?: return null
@@ -278,8 +282,7 @@ class DownloadRepository @Inject constructor(
                 download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
                 download.checksumUrl?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_CHECKSUM_URL, it) }
                 download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
-            }
-            .build()
+            }.build()
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(input)
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
@@ -299,7 +302,15 @@ class DownloadRepository @Inject constructor(
     }.getOrDefault(false)
 
     companion object {
-        private val ACTIVE_STATES = setOf(DownloadState.QUEUED, DownloadState.DOWNLOADING, DownloadState.RETRYING)
-        private val RESUMABLE_STATES = setOf(DownloadState.PAUSED, DownloadState.FAILED, DownloadState.CANCELLED)
+        private val ACTIVE_STATES = setOf(
+            DownloadState.QUEUED.wireValue,
+            DownloadState.DOWNLOADING.wireValue,
+            DownloadState.RETRYING.wireValue
+        )
+        private val RESUMABLE_STATES = setOf(
+            DownloadState.PAUSED.wireValue,
+            DownloadState.FAILED.wireValue,
+            DownloadState.CANCELLED.wireValue
+        )
     }
 }
