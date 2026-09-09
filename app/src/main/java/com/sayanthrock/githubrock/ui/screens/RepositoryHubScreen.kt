@@ -125,7 +125,15 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                     } else {
                         asset.browserDownloadUrl?.takeIf(String::isNotBlank) ?: asset.downloadUrl
                     }
-                    downloadsViewModel.enqueue(downloadUrl, asset.name)
+                    val release = state.releases.firstOrNull { candidate -> candidate.assets.any { it.id == asset.id } }
+                    downloadsViewModel.enqueue(
+                        url = downloadUrl,
+                        fileName = asset.name,
+                        repositoryFullName = displayedRepository?.fullName,
+                        releaseName = release?.name ?: release?.tagName,
+                        releaseUrl = displayedRepository?.htmlUrl?.trimEnd('/')?.plus("/releases/tag/${release?.tagName}")?.takeIf { release != null },
+                        assetId = asset.id
+                    )
                     scope.launch { snackbar.showSnackbar("${asset.name} added to Downloads") }
                 },
                 modifier = Modifier.weight(1f)
