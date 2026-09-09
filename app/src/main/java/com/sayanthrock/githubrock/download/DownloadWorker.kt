@@ -57,10 +57,9 @@ class DownloadWorker @AssistedInject constructor(
         setForeground(downloadForegroundInfo(id, name, 0L, 0L))
 
         return try {
-            if (expectedSha == null && checksumUrl != null && isPackageAsset(name)) {
-                expectedSha = fetchExpectedSha256(checksumUrl, name)
-            }
-
+            // Do not fetch the checksum before opening the binary stream. A slow,
+            // unavailable, or malformed checksum endpoint must never block a valid
+            // release APK/AAB from starting or completing its download.
             var existing = partial.takeIf(File::exists)?.length() ?: 0L
             var response: Response? = null
             var restarted = false
@@ -132,7 +131,22 @@ class DownloadWorker @AssistedInject constructor(
                 error("Download size mismatch: ${partial.length()} of $knownTotal bytes")
             }
 
+            // Checksum acquisition is deliberately post-download and best-effort.
+            // If it cannot be obtained, preserve the valid binary and complete it as
+            // unverified; never restart the binary download just because verification
+            // metadata is unavailable. If a checksum is obtained, verification below
+            // remains mandatory and a mismatch still fails the download.
+            if (expectedSha == null && checksumUrl != null && isPackageAsset(name)) {
+                expectedSha = tryFetchExpectedSha256(checksumUrl, name)
+            }
+
             repository.updateProgress(id, DownloadState.VERIFYING, partial.length(), knownTotal, partial.absolutePath, expectedSha)
+            val sha = ChecksumVerifier.sha256(partial)
+            if (expectedSha != null && !ChecksumVerifier.matches(sha, expectedSha)) {
+                partial.delete()
+                error("SHA-256 verification failed")
+            }
+
             if (name.endsWith(".apk", ignoreCase = true)) {
                 val previous = expectedPackage?.let { repository.latestCompletedForPackage(it) }
                 val inspection = inspectApk(
@@ -159,11 +173,6 @@ class DownloadWorker @AssistedInject constructor(
                 )
             }
 
-            val sha = ChecksumVerifier.sha256(partial)
-            if (expectedSha != null && !ChecksumVerifier.matches(sha, expectedSha)) {
-                partial.delete()
-                error("SHA-256 verification failed")
-            }
             if (final.exists()) final.delete()
             check(partial.renameTo(final)) { "Unable to finalize download" }
             check(final.isFile && final.length() > 0L) { "Final download file is unavailable" }
@@ -189,6 +198,9 @@ class DownloadWorker @AssistedInject constructor(
             if (willRetry) Result.retry() else Result.failure()
         }
     }
+
+    private fun tryFetchExpectedSha256(checksumUrl: String, targetName: String): String? =
+        runCatching { fetchExpectedSha256(checksumUrl, targetName) }.getOrNull()
 
     private fun fetchExpectedSha256(checksumUrl: String, targetName: String): String {
         val request = Request.Builder()
