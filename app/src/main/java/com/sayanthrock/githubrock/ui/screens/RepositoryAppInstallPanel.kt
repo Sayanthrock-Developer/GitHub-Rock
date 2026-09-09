@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
@@ -250,17 +251,17 @@ internal fun installRepositoryApk(context: Context, state: RepositoryAppPackageS
     InstalledApkStateResolver.launchInstaller(context, File(state.apkPath))
 
 internal fun openRepositoryInstallPermissionSettings(context: Context): Result<Unit> = runCatching {
-    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 internal fun openRepositoryApp(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
     val launchIntent = requireNotNull(context.packageManager.getLaunchIntentForPackage(state.packageName)) { "This application does not expose a launcher activity." }
-    context.startActivity(launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+    context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 internal fun requestRepositoryAppUninstall(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
     context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${state.packageName}")).apply {
         putExtra(Intent.EXTRA_RETURN_RESULT, false)
-        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     })
 }
