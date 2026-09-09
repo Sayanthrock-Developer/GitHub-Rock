@@ -136,7 +136,7 @@ class DownloadWorker @AssistedInject constructor(
                     expectedPackage = expectedPackage,
                     previousVersionCode = previous?.versionCode,
                     previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                    previousCertificateSha256 = previous?.certificateCertificateSha256
+                    previousCertificateSha256 = previous?.certificateSha256
                 )
                 repository.updateSecurity(
                     id = id,
