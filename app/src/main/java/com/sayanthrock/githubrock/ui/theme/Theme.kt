@@ -96,7 +96,22 @@ private fun ColorScheme.applyStyle(style: ThemeStyle, dark: Boolean): ColorSchem
     ThemeStyle.HighContrast -> copy(background = if (dark) Color.Black else Color.White, surface = if (dark) Color(0xFF050505) else Color.White, surfaceContainer = if (dark) Color(0xFF0D0D0D) else Color(0xFFF4F4F4), surfaceContainerHigh = if (dark) Color(0xFF161616) else Color(0xFFEAEAEA), outline = if (dark) Color.White else Color.Black, outlineVariant = if (dark) Color(0xFFBDBDBD) else Color(0xFF2B2B2B), onBackground = if (dark) Color.White else Color.Black, onSurface = if (dark) Color.White else Color.Black, onSurfaceVariant = if (dark) Color(0xFFE3E3E3) else Color(0xFF222222))
     ThemeStyle.Obsidian -> copy(background = if (dark) Color(0xFF07080A) else Color(0xFFF5F6F8), surface = if (dark) Color(0xFF0D0F12) else Color(0xFFFCFCFD), surfaceVariant = if (dark) Color(0xFF111419) else Color(0xFFF0F2F5), surfaceContainerLowest = if (dark) Color(0xFF050608) else Color.White, surfaceContainerLow = if (dark) Color(0xFF0A0C0F) else Color(0xFFF7F8FA), surfaceContainer = if (dark) Color(0xFF12151A) else Color(0xFFF0F2F5), surfaceContainerHigh = if (dark) Color(0xFF191D23) else Color(0xFFE7EAF0), surfaceContainerHighest = if (dark) Color(0xFF222730) else Color(0xFFDCE1E8), outline = if (dark) Color(0xFF343B45) else Color(0xFFB8C0CA), outlineVariant = if (dark) Color(0xFF242A32) else Color(0xFFD9DEE5), onBackground = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D), onSurface = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D), onSurfaceVariant = if (dark) Color(0xFFAAB2BD) else Color(0xFF59636E))
 }
-private fun ColorScheme.applyTrueBlack(dark: Boolean, enabled: Boolean) = if (!dark || !enabled) this else copy(background = Color.Black, surfaceContainerLowest = Color.Black)
+
+private fun ColorScheme.applyTrueBlack(dark: Boolean, enabled: Boolean): ColorScheme = if (!dark || !enabled) this else copy(
+    background = Color.Black,
+    surface = Color.Black,
+    surfaceVariant = Color.Black,
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color.Black,
+    surfaceContainer = Color.Black,
+    surfaceContainerHigh = Color.Black,
+    surfaceContainerHighest = Color.Black,
+    inverseSurface = Color.White,
+    onInverseSurface = Color.Black,
+    outline = outline,
+    outlineVariant = outlineVariant
+)
+
 private fun codeColors(style: CodeColorStyle, dark: Boolean) = when (style) {
     CodeColorStyle.Classic -> CodeColors(if (dark) Color(0xFF79B8FF) else Color(0xFF0550AE), if (dark) Color(0xFF85E89D) else Color(0xFF116329), if (dark) Color(0xFF8B949E) else Color(0xFF57606A), if (dark) Color(0xFFFFAB70) else Color(0xFF953800), if (dark) Color(0xFFBC8CFF) else Color(0xFF8250DF), if (dark) Color(0xFFFF7B72) else Color(0xFFCF222E))
     CodeColorStyle.Ocean -> CodeColors(if (dark) Color(0xFF58A6FF) else Color(0xFF0550AE), if (dark) Color(0xFF7EE787) else Color(0xFF116329), if (dark) Color(0xFF8B949E) else Color(0xFF57606A), if (dark) Color(0xFF79C0FF) else Color(0xFF0A4A7A), if (dark) Color(0xFFD2A8FF) else Color(0xFF6639BA), if (dark) Color(0xFF39C5CF) else Color(0xFF006D75))
