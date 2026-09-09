@@ -46,7 +46,9 @@ class DownloadsViewModel @Inject constructor(
     fun resume(download: DownloadEntity) = viewModelScope.launch { repository.resume(download) }
     fun cancel(download: DownloadEntity) = viewModelScope.launch { repository.cancel(download) }
     fun delete(download: DownloadEntity) = viewModelScope.launch { repository.delete(download) }
-    fun retry(download: DownloadEntity) = viewModelScope.launch { repository.downloadAgain(download) }
+
+    /** Retry a failed/cancelled transfer without discarding a valid partial file. */
+    fun retry(download: DownloadEntity) = viewModelScope.launch { repository.resume(download) }
 
     fun inspectApk(file: File, callback: (Result<ApkInspection>) -> Unit) {
         viewModelScope.launch { callback(repository.inspectApk(file)) }
