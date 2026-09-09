@@ -1,7 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
@@ -242,33 +241,26 @@ internal fun RepositoryAppInstallPanel(
     }
 }
 
-internal fun installRepositoryApk(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
-    val file = File(state.apkPath)
-    require(file.isFile) { "The downloaded APK is no longer available. Download it again." }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
-        error("APK installation permission is disabled for GitHub Rock.")
-    }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, "application/vnd.android.package-archive")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    require(intent.resolveActivity(context.packageManager) != null) { "No Android package installer is available on this device." }
-    context.startActivity(intent)
-}
+/**
+ * Uses the single validated installer path shared with the Downloads/Library state resolver.
+ * Keeping the handoff in one implementation prevents this UI from drifting back to a weaker
+ * ACTION_VIEW/FileProvider flow.
+ */
+internal fun installRepositoryApk(context: Context, state: RepositoryAppPackageState): Result<Unit> =
+    InstalledApkStateResolver.launchInstaller(context, File(state.apkPath))
 
 internal fun openRepositoryInstallPermissionSettings(context: Context): Result<Unit> = runCatching {
-    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    context.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 internal fun openRepositoryApp(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
     val launchIntent = requireNotNull(context.packageManager.getLaunchIntentForPackage(state.packageName)) { "This application does not expose a launcher activity." }
-    context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    context.startActivity(launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 internal fun requestRepositoryAppUninstall(context: Context, state: RepositoryAppPackageState): Result<Unit> = runCatching {
     context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${state.packageName}")).apply {
         putExtra(Intent.EXTRA_RETURN_RESULT, false)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
     })
 }
