@@ -107,7 +107,6 @@ private fun ColorScheme.applyTrueBlack(dark: Boolean, enabled: Boolean): ColorSc
     surfaceContainerHigh = Color.Black,
     surfaceContainerHighest = Color.Black,
     inverseSurface = Color.White,
-    onInverseSurface = Color.Black,
     outline = outline,
     outlineVariant = outlineVariant
 )
