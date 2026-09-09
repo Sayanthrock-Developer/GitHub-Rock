@@ -56,7 +56,8 @@ data class DownloadEntity(
     val speedBytesPerSecond: Long = 0,
     val etaSeconds: Long? = null,
     val errorMessage: String? = null,
-    val fallbackUrl: String? = null
+    val fallbackUrl: String? = null,
+    val checksumUrl: String? = null
 )
 
 @Dao
@@ -115,7 +116,13 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
-@Database(entities = [RepositoryEntity::class, DownloadEntity::class], version = 5, exportSchema = false)
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE downloads ADD COLUMN checksumUrl TEXT")
+    }
+}
+
+@Database(entities = [RepositoryEntity::class, DownloadEntity::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun repositoryDao(): RepositoryDao
     abstract fun downloadDao(): DownloadDao
