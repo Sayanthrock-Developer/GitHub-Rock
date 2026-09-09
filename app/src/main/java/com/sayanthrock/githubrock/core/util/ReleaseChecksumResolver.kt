@@ -2,25 +2,21 @@ package com.sayanthrock.githubrock.core.util
 
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
 
-/** Finds a release checksum asset that can verify a package asset. */
+/** Finds a release checksum asset that can provide a SHA-256 value for a package asset. */
 object ReleaseChecksumResolver {
     fun findFor(target: ReleaseAsset, assets: List<ReleaseAsset>): ReleaseAsset? {
-        val candidates = assets.filter { it.id != target.id && isChecksumAsset(it.name) }
+        val candidates = assets.filter { it.id != target.id && isSha256Asset(it.name) }
         if (candidates.isEmpty()) return null
         val targetBase = target.name.substringBeforeLast('.', target.name).lowercase()
         return candidates.minByOrNull { score(it.name, targetBase) }
     }
 
-    fun isChecksumAsset(name: String): Boolean {
+    fun isSha256Asset(name: String): Boolean {
         val normalized = name.trim().lowercase()
         return normalized.endsWith(".sha256") ||
             normalized.endsWith(".sha256sum") ||
             normalized.endsWith(".sha256sums") ||
             normalized.endsWith(".sha256.txt") ||
-            normalized.endsWith(".sha512") ||
-            normalized.endsWith(".sha512sum") ||
-            normalized.endsWith(".sha512sums") ||
-            normalized.endsWith(".sha512.txt") ||
             normalized.endsWith(".checksum") ||
             normalized.endsWith(".checksums")
     }
