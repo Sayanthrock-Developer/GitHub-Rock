@@ -67,7 +67,7 @@ object MarkdownRenderer {
         fun splitTableRow(line: String): List<String> = line.trim()
             .removePrefix("|")
             .removeSuffix("|")
-            .replace("\\\\|", "\u0000")
+            .replace("\\|", "\u0000")
             .split('|')
             .map { it.trim().replace("\u0000", "|") }
 
@@ -189,8 +189,7 @@ object MarkdownRenderer {
                     if (alert != null) {
                         blocks += MarkdownBlock(
                             kind = MarkdownBlockKind.Alert,
-                            text = alert.groupValues[2].ifBlank { alert.groupValues[1].uppercase() },
-                            level = alert.groupValues[1].uppercase().hashCode()
+                            text = alert.groupValues[2].ifBlank { alert.groupValues[1].uppercase() }
                         )
                     } else {
                         blocks += MarkdownBlock(MarkdownBlockKind.Quote, quote.groupValues[1])
