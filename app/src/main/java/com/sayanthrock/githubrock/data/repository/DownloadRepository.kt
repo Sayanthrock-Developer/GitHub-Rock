@@ -83,11 +83,11 @@ class DownloadRepository @Inject constructor(
             val existingFile = existing.localPath?.let(::File)
             val fileAvailable = existingFile?.isFile == true && existingFile.length() > 0L
             when {
-                existing.status in ACTIVE_STATES -> return
                 existing.status == DownloadState.PAUSED.wireValue -> {
                     resume(existing)
                     return
                 }
+                existing.status in ACTIVE_STATES -> return
                 existing.status in COMPLETED_STATES && fileAvailable -> return
                 existing.status in COMPLETED_STATES && !fileAvailable -> {
                     downloadAgain(existing)
@@ -262,7 +262,7 @@ class DownloadRepository @Inject constructor(
         if (owner.isNullOrBlank() || repo.isNullOrBlank()) return null
         val tagIndex = segments.indexOf("download")
         if (tagIndex >= 0 && segments.size > tagIndex + 1) {
-            val tag = tagIndex.let { segments[it + 1] }
+            val tag = segments[tagIndex + 1]
             val encodedTag = java.net.URLEncoder.encode(tag, Charsets.UTF_8.name()).replace("+", "%20")
             return fetchRelease("https://api.github.com/repos/$owner/$repo/releases/tags/$encodedTag")
         }
@@ -323,11 +323,12 @@ class DownloadRepository @Inject constructor(
     }.getOrDefault(false)
 
     companion object {
+        // Paused is intentionally excluded: enqueue() must be able to detect it
+        // and call resume() rather than treating it as already active.
         private val ACTIVE_STATES = setOf(
             DownloadState.QUEUED.wireValue,
             DownloadState.DOWNLOADING.wireValue,
-            DownloadState.RETRYING.wireValue,
-            DownloadState.PAUSED.wireValue
+            DownloadState.RETRYING.wireValue
         )
         private val COMPLETED_STATES = setOf(
             DownloadState.COMPLETED.wireValue,
