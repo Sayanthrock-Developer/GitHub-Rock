@@ -13,7 +13,11 @@ object ReleaseChecksumResolver {
 
     fun isSha256Asset(name: String): Boolean {
         val normalized = name.trim().lowercase()
-        return normalized.endsWith(".sha256") ||
+        return normalized == "sha256.txt" ||
+            normalized == "sha256sum.txt" ||
+            normalized == "sha256sums.txt" ||
+            normalized == "sha256sums" ||
+            normalized.endsWith(".sha256") ||
             normalized.endsWith(".sha256sum") ||
             normalized.endsWith(".sha256sums") ||
             normalized.endsWith(".sha256.txt") ||
