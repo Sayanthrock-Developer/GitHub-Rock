@@ -1,5 +1,10 @@
 package com.sayanthrock.githubrock.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -52,6 +57,37 @@ private const val BUILD_ARTIFACT_DETAILS_ROUTE = "build-details/{owner}/{repo}/{
 private const val BUILD_STATUS_ROUTE = "builds/status/{filter}"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
+private const val TOP_LEVEL_SLIDE_DURATION_MS = 280
+
+private val TopLevelSlideEasing = FastOutSlowInEasing
+
+private fun topLevelEnterTransition(): EnterTransition = EnterTransition.None
+private fun topLevelExitTransition(): ExitTransition = ExitTransition.None
+
+private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelForwardEnter(): EnterTransition =
+    slideIntoContainer(
+        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+    )
+
+private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelForwardExit(): ExitTransition =
+    slideOutOfContainer(
+        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+    )
+
+private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelBackEnter(): EnterTransition =
+    slideIntoContainer(
+        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+    )
+
+private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelBackExit(): ExitTransition =
+    slideOutOfContainer(
+        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+    )
+
 @Composable
 fun MainNavigationV2(
     navController: NavHostController,
@@ -86,10 +122,28 @@ fun MainNavigationV2(
 
     Box(Modifier.fillMaxSize()) {
         NavHost(navController, TopDestinationV2.Home.route, Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
-            composable(TopDestinationV2.Home.route) { HomeScreen(state.repositories, openRepo, state.isLoading, state.isRefreshing, onRefresh) }
+            composable(
+                TopDestinationV2.Home.route,
+                enterTransition = { topLevelForwardEnter() },
+                exitTransition = { topLevelForwardExit() },
+                popEnterTransition = { topLevelBackEnter() },
+                popExitTransition = { topLevelBackExit() }
+            ) { HomeScreen(state.repositories, openRepo, state.isLoading, state.isRefreshing, onRefresh) }
             composable(TopDestinationV2.Explore.route) { ExploreScreen(onOpenRepo = openRepo, onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) }) }
-            composable(TopDestinationV2.Repositories.route) { RepositoriesScreen(state.repositories, state.isLoading, onSearch, mode == AppMode.Connected, openRepo, state.profile?.login) }
-            composable(TopDestinationV2.Builds.route) {
+            composable(
+                TopDestinationV2.Repositories.route,
+                enterTransition = { topLevelForwardEnter() },
+                exitTransition = { topLevelForwardExit() },
+                popEnterTransition = { topLevelBackEnter() },
+                popExitTransition = { topLevelBackExit() }
+            ) { RepositoriesScreen(state.repositories, state.isLoading, onSearch, mode == AppMode.Connected, openRepo, state.profile?.login) }
+            composable(
+                TopDestinationV2.Builds.route,
+                enterTransition = { topLevelForwardEnter() },
+                exitTransition = { topLevelForwardExit() },
+                popEnterTransition = { topLevelBackEnter() },
+                popExitTransition = { topLevelBackExit() }
+            ) {
                 BuildsScreen(mode, buildRepositories, state.workflowRuns, selectBuildRepository, onOpenRepository = openRepo,
                     onOpenRun = { repo, run -> navController.navigate("build-details/${repo.owner.login}/${repo.name}/${run.id}") })
             }
@@ -113,8 +167,20 @@ fun MainNavigationV2(
                 val owner = e.arguments?.getString("owner").orEmpty(); val repo = e.arguments?.getString("repo").orEmpty(); val runId = e.arguments?.getLong("runId") ?: 0L; val artifactId = e.arguments?.getLong("artifactId") ?: 0L
                 buildRepositories.firstOrNull { it.owner.login.equals(owner, true) && it.name == repo }?.let { BuildArtifactDetailsScreen(it, runId, artifactId, navController::navigateUp) } ?: Text("Repository unavailable")
             }
-            composable(TopDestinationV2.Downloads.route) { DownloadsHubScreen() }
-            composable(TopDestinationV2.Profile.route) {
+            composable(
+                TopDestinationV2.Downloads.route,
+                enterTransition = { topLevelForwardEnter() },
+                exitTransition = { topLevelForwardExit() },
+                popEnterTransition = { topLevelBackEnter() },
+                popExitTransition = { topLevelBackExit() }
+            ) { DownloadsHubScreen() }
+            composable(
+                TopDestinationV2.Profile.route,
+                enterTransition = { topLevelForwardEnter() },
+                exitTransition = { topLevelForwardExit() },
+                popEnterTransition = { topLevelBackEnter() },
+                popExitTransition = { topLevelBackExit() }
+            ) {
                 ProfileScreenWithMetricNavigation(mode, state.profile, state.profileExplorer, onInspectProfile,
                     { navController.navigate(TopDestinationV2.Downloads.route) { launchSingleTop = true } }, { navController.navigate(FEATURES_PREVIEW_ROUTE) },
                     { navController.navigate(ACCOUNT_SWITCHER_ROUTE) }, openSettings, { navController.navigate(APP_INFORMATION_ROUTE) },
