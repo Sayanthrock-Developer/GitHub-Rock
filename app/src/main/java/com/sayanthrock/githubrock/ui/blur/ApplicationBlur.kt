@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock.ui.blur
 
 import android.os.Build
+import androidx.annotation.DoNotInline
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -124,9 +126,7 @@ fun ApplicationBlurSurface(
                 .clip(shape)
                 .then(
                     if (radius > 0) Modifier.graphicsLayer {
-                        renderEffect = android.graphics.RenderEffect.createBlurEffect(
-                            radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP
-                        ).asComposeRenderEffect()
+                        renderEffect = createBlurRenderEffect(radius.toFloat())
                     } else Modifier
                 )
         ) {
@@ -145,6 +145,12 @@ fun ApplicationBlurSurface(
         }
     }
 }
+
+@RequiresApi(Build.VERSION_CODES.S)
+@DoNotInline
+private fun createBlurRenderEffect(radius: Float) = android.graphics.RenderEffect.createBlurEffect(
+    radius, radius, android.graphics.Shader.TileMode.CLAMP
+).asComposeRenderEffect()
 
 fun ApplicationBlurPreset.toSettings(): ApplicationBlurSettings = when (this) {
     ApplicationBlurPreset.None -> ApplicationBlurSettings(
