@@ -76,18 +76,20 @@ class DownloadRepository @Inject constructor(
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
             ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, assetId)
 
-        // Do not create a second database row/work request when the same release
-        // asset is already downloading or has already completed successfully.
+        // A repeated tap for the same release asset must reuse its existing
+        // persistent download instead of creating another row/work request.
         val existing = dao.findExisting(resolvedUrl, assetId)
         if (existing != null) {
             val existingFile = existing.localPath?.let(::File)
             val fileAvailable = existingFile?.isFile == true && existingFile.length() > 0L
             when {
                 existing.status in ACTIVE_STATES -> return
+                existing.status == DownloadState.PAUSED.wireValue -> {
+                    resume(existing)
+                    return
+                }
                 existing.status in COMPLETED_STATES && fileAvailable -> return
                 existing.status in COMPLETED_STATES && !fileAvailable -> {
-                    // The database says complete but the owned file disappeared.
-                    // Reuse the record instead of creating a duplicate download.
                     downloadAgain(existing)
                     return
                 }
