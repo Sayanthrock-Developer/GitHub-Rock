@@ -56,6 +56,14 @@ android {
         signingConfigs.create("githubRelease") { storeFile = file(keystorePath); storePassword = System.getenv("GITHUB_ROCK_KEYSTORE_PASSWORD"); keyAlias = System.getenv("GITHUB_ROCK_KEY_ALIAS"); keyPassword = System.getenv("GITHUB_ROCK_KEY_PASSWORD") }
         buildTypes.getByName("release").signingConfig = signingConfigs.getByName("githubRelease")
     }
+    // GitHub Rock distributes one installable APK rather than ABI-specific APKs.
+    // Keep ABI splitting explicitly disabled so future Gradle/AGP changes cannot
+    // silently turn the release into arm/x86 split artifacts.
+    splits {
+        abi {
+            isEnable = false
+        }
+    }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
     buildFeatures { compose = true; buildConfig = true }
