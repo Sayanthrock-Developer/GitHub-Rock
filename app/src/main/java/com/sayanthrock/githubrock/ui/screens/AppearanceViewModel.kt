@@ -29,6 +29,7 @@ import com.sayanthrock.githubrock.ui.blur.ApplicationBlurMode
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurPreset
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurProfile
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
+import com.sayanthrock.githubrock.ui.blur.toSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
