@@ -27,7 +27,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.Response
 
 /** Single download engine for GitHub release assets and Actions artifacts. */
@@ -57,9 +56,8 @@ class DownloadWorker @AssistedInject constructor(
         setForeground(downloadForegroundInfo(id, name, 0L, 0L))
 
         return try {
-            // Do not fetch the checksum before opening the binary stream. A slow,
-            // unavailable, or malformed checksum endpoint must never block a valid
-            // release APK/AAB from starting or completing its download.
+            // Checksum lookup must never gate the binary transfer. A valid release
+            // APK/AAB starts downloading immediately using the selected asset URL.
             var existing = partial.takeIf(File::exists)?.length() ?: 0L
             var response: Response? = null
             var restarted = false
@@ -131,13 +129,10 @@ class DownloadWorker @AssistedInject constructor(
                 error("Download size mismatch: ${partial.length()} of $knownTotal bytes")
             }
 
-            // Checksum acquisition is deliberately post-download and best-effort.
-            // If it cannot be obtained, preserve the valid binary and complete it as
-            // unverified; never restart the binary download just because verification
-            // metadata is unavailable. If a checksum is obtained, verification below
-            // remains mandatory and a mismatch still fails the download.
+            // Fetch optional verification metadata only after the binary is safely
+            // present. Failure here leaves the downloaded file intact and unverified.
             if (expectedSha == null && checksumUrl != null && isPackageAsset(name)) {
-                expectedSha = tryFetchExpectedSha256(checksumUrl, name)
+                expectedSha = ReleaseChecksumFetcher.tryFetch(client, checksumUrl, name)
             }
 
             repository.updateProgress(id, DownloadState.VERIFYING, partial.length(), knownTotal, partial.absolutePath, expectedSha)
@@ -199,35 +194,6 @@ class DownloadWorker @AssistedInject constructor(
         }
     }
 
-    private fun tryFetchExpectedSha256(checksumUrl: String, targetName: String): String? =
-        runCatching { fetchExpectedSha256(checksumUrl, targetName) }.getOrNull()
-
-    private fun fetchExpectedSha256(checksumUrl: String, targetName: String): String {
-        val request = Request.Builder()
-            .url(checksumUrl)
-            .header("User-Agent", "GitHub-Rock/1.0")
-            .header("Accept", "text/plain, */*")
-            .build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("Checksum download failed: HTTP ${response.code}")
-            val text = response.body?.string()?.takeIf { it.isNotBlank() }
-                ?: error("Checksum file is empty")
-            return parseSha256(text, targetName)
-                ?: error("No SHA-256 entry found for $targetName")
-        }
-    }
-
-    private fun parseSha256(text: String, targetName: String): String? {
-        val normalizedTarget = targetName.trim()
-        val lines = text.lineSequence().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
-        val entries = lines.mapNotNull { line ->
-            val match = Regex("^([A-Fa-f0-9]{64})\\s+(?:\\*|)(.+)$").matchEntire(line) ?: return@mapNotNull null
-            match.groupValues[1].lowercase() to match.groupValues[2].trim().removePrefix("*")
-        }.toList()
-        entries.firstOrNull { it.second == normalizedTarget || it.second.substringAfterLast('/') == normalizedTarget }?.let { return it.first }
-        return if (entries.size == 1) entries.first().first else null
-    }
-
     private fun isPackageAsset(name: String): Boolean = name.endsWith(".apk", true) || name.endsWith(".aab", true)
 
     private fun executeDownloadWithFallback(primaryUrl: String, fallbackUrl: String?, existing: Long): Response {
@@ -264,7 +230,7 @@ class DownloadWorker @AssistedInject constructor(
     }
 
     private fun executeDownload(url: String, existing: Long): Response {
-        val request = Request.Builder()
+        val request = okhttp3.Request.Builder()
             .url(url)
             .header("User-Agent", "GitHub-Rock/1.0")
             .header("Accept", "application/octet-stream")
