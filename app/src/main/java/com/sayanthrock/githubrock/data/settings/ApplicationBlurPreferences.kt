@@ -15,6 +15,7 @@ import com.sayanthrock.githubrock.ui.blur.ApplicationBlurTint
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.applicationBlurDataStore by preferencesDataStore(name = "github_rock_blur_preferences")
@@ -59,12 +60,7 @@ class ApplicationBlurPreferences @Inject constructor(private val context: Contex
     suspend fun reset() = setSettings(ApplicationBlurPreset.Clean.toSettings())
 
     private suspend fun update(transform: (ApplicationBlurSettings) -> ApplicationBlurSettings) {
-        val current = settings.map(transform).let { flow ->
-            var result: ApplicationBlurSettings? = null
-            flow.collect { result = it; kotlinx.coroutines.coroutineContext.ensureActive(); throw StopCollection }
-            result ?: ApplicationBlurPreset.Clean.toSettings()
-        }
-        setSettings(current)
+        setSettings(transform(settings.first()))
     }
 
     private companion object {
@@ -95,5 +91,3 @@ class ApplicationBlurPreferences @Inject constructor(private val context: Contex
         }.getOrNull()
     }
 }
-
-private object StopCollection : Throwable()
