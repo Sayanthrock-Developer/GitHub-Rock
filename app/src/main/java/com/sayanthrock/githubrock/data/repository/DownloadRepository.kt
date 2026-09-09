@@ -44,7 +44,8 @@ class DownloadRepository @Inject constructor(
         releaseUrl: String? = null,
         assetId: Long? = null,
         expectedSha256: String? = null,
-        fallbackUrl: String? = null
+        fallbackUrl: String? = null,
+        checksumUrl: String? = null
     ) {
         val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return
         val derivedFallback = if (fallbackUrl.isNullOrBlank() && assetId != null && !repositoryFullName.isNullOrBlank() && isPublicGitHubReleaseUrl(resolvedUrl)) {
@@ -57,6 +58,7 @@ class DownloadRepository @Inject constructor(
             fileName = fileName,
             sourceUrl = resolvedUrl,
             fallbackUrl = resolvedFallbackUrl,
+            checksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank),
             status = DownloadState.QUEUED.wireValue,
             expectedSha256 = expectedSha256,
             packageName = expectedPackage,
@@ -175,6 +177,7 @@ class DownloadRepository @Inject constructor(
                 download.fallbackUrl?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_FALLBACK_URL, it) }
                 download.expectedSha256?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_SHA256, it) }
                 download.packageName?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_EXPECTED_PACKAGE, it) }
+                download.checksumUrl?.takeIf(String::isNotBlank)?.let { putString(DownloadWorker.KEY_CHECKSUM_URL, it) }
                 download.localPath?.takeIf { it.endsWith(".part") }?.let { putString(DownloadWorker.KEY_PARTIAL_PATH, it) }
             }
             .build()
