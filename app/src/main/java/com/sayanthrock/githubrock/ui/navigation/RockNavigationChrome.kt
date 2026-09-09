@@ -109,19 +109,7 @@ private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animatio
     ) {
         rockNavigationDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
-            RockNavigationItem(
-                destination = destination,
-                selected = selected,
-                showLabel = selected && !compact,
-                modifier = Modifier.weight(1f).height(if (compact) 48.dp else 54.dp),
-                selectedShape = 18.dp,
-                animationStyle = animationStyle,
-                reduceMotion = reduceMotion,
-                onClick = { onDestinationSelected(destination) },
-                iconSize = if (selected) 22.dp else 21.dp,
-                transparent = true,
-                selectedContainerAlpha = 0.12f
-            )
+            RockNavigationItem(destination, selected, selected && !compact, Modifier.weight(1f).height(if (compact) 48.dp else 54.dp), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, if (selected) 22.dp else 21.dp, true, 0.12f)
         }
     }
 }
@@ -160,19 +148,19 @@ private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected:
         label = "navigation indicator color"
     )
     val pressScale by animateFloatAsState(
-        targetValue = if (selected) 1f else 1f,
+        targetValue = 1f,
         animationSpec = tween(durationMillis = 120),
         label = "navigation press scale"
     )
     Surface(
         modifier = modifier
-            .then(Modifier)
             .combinedClickable(
                 role = Role.Tab,
                 onClick = onClick,
                 onLongClick = {
+                    // Long press is reserved for preview/actions in Navigation Bar 2.0.
+                    // Never navigate a second time from a long press.
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    onClick()
                 }
             )
             .semantics {
