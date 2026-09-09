@@ -25,6 +25,8 @@ import javax.inject.Named
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -40,6 +42,7 @@ class DownloadRepository @Inject constructor(
     private val applicationContext = context.applicationContext
     private val workManager = WorkManager.getInstance(applicationContext)
     private val downloadsDirectory = File(applicationContext.filesDir, "downloads")
+    private val enqueueMutex = Mutex()
 
     fun observeAll(): Flow<List<DownloadEntity>> = dao.observeAll()
 
@@ -54,8 +57,8 @@ class DownloadRepository @Inject constructor(
         expectedSha256: String? = null,
         fallbackUrl: String? = null,
         checksumUrl: String? = null
-    ) {
-        val requestedUrl = url.trim().takeIf(String::isNotBlank) ?: return
+    ) = enqueueMutex.withLock {
+        val requestedUrl = url.trim().takeIf(String::isNotBlank) ?: return@withLock
         val repositoryName = repositoryFullName?.trim()?.takeIf(String::isNotBlank)
         val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryName, assetId)
         val publicRelease = isPublicGitHubReleaseUrl(requestedUrl)
@@ -76,24 +79,30 @@ class DownloadRepository @Inject constructor(
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
             ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, assetId)
 
-        // A repeated tap for the same release asset must reuse its existing
-        // persistent download instead of creating another row/work request.
-        val existing = dao.findExisting(resolvedUrl, assetId)
+        val existing = assetId?.let { dao.findByAssetId(it) } ?: dao.findBySourceUrl(resolvedUrl)
         if (existing != null) {
+            if (existing.status in ACTIVE_STATES) return@withLock
             val existingFile = existing.localPath?.let(::File)
-            val fileAvailable = existingFile?.isFile == true && existingFile.length() > 0L
-            when {
-                existing.status == DownloadState.PAUSED.wireValue -> {
-                    resume(existing)
-                    return
-                }
-                existing.status in ACTIVE_STATES -> return
-                existing.status in COMPLETED_STATES && fileAvailable -> return
-                existing.status in COMPLETED_STATES && !fileAvailable -> {
-                    downloadAgain(existing)
-                    return
-                }
-            }
+            val existingFileIsUsable = existingFile?.isFile == true && existingFile.length() > 0L
+            if (existing.status in TERMINAL_STATES && existingFileIsUsable) return@withLock
+
+            val resumed = existing.copy(
+                fileName = fileName,
+                sourceUrl = resolvedUrl,
+                fallbackUrl = resolvedFallbackUrl,
+                checksumUrl = resolvedChecksumUrl,
+                status = DownloadState.QUEUED.wireValue,
+                expectedSha256 = expectedSha256 ?: existing.expectedSha256,
+                packageName = expectedPackage ?: existing.packageName,
+                repositoryFullName = repositoryName ?: existing.repositoryFullName,
+                releaseName = releaseName ?: existing.releaseName,
+                releaseUrl = releaseUrl ?: existing.releaseUrl,
+                assetId = assetId ?: existing.assetId,
+                errorMessage = null
+            )
+            dao.upsert(resumed)
+            schedule(resumed)
+            return@withLock
         }
 
         val queued = DownloadEntity(
@@ -308,7 +317,7 @@ class DownloadRepository @Inject constructor(
             .setInputData(input)
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
-        workManager.enqueueUniqueWork(DownloadWorker.workName(download.id), ExistingWorkPolicy.REPLACE, request)
+        workManager.enqueueUniqueWork(DownloadWorker.workName(download.id), ExistingWorkPolicy.KEEP, request)
     }
 
     private fun deleteOwnedFile(path: String?) {
@@ -323,21 +332,19 @@ class DownloadRepository @Inject constructor(
     }.getOrDefault(false)
 
     companion object {
-        // Paused is intentionally excluded: enqueue() must be able to detect it
-        // and call resume() rather than treating it as already active.
         private val ACTIVE_STATES = setOf(
             DownloadState.QUEUED.wireValue,
             DownloadState.DOWNLOADING.wireValue,
             DownloadState.RETRYING.wireValue
         )
-        private val COMPLETED_STATES = setOf(
-            DownloadState.COMPLETED.wireValue,
-            DownloadState.INSTALLABLE.wireValue
-        )
         private val RESUMABLE_STATES = setOf(
             DownloadState.PAUSED.wireValue,
             DownloadState.FAILED.wireValue,
             DownloadState.CANCELLED.wireValue
+        )
+        private val TERMINAL_STATES = setOf(
+            DownloadState.COMPLETED.wireValue,
+            DownloadState.INSTALLABLE.wireValue
         )
     }
 }

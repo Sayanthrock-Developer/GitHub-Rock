@@ -75,8 +75,10 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<DownloadEntity>>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(download: DownloadEntity): Long
-    @Query("SELECT * FROM downloads WHERE ((:assetId IS NOT NULL AND assetId = :assetId) OR (:assetId IS NULL AND sourceUrl = :sourceUrl)) AND status IN ('queued', 'downloading', 'retrying', 'paused', 'completed', 'installable') ORDER BY createdAt DESC LIMIT 1")
-    suspend fun findExisting(sourceUrl: String, assetId: Long?): DownloadEntity?
+    @Query("SELECT * FROM downloads WHERE assetId = :assetId ORDER BY createdAt DESC LIMIT 1")
+    suspend fun findByAssetId(assetId: Long): DownloadEntity?
+    @Query("SELECT * FROM downloads WHERE sourceUrl = :sourceUrl ORDER BY createdAt DESC LIMIT 1")
+    suspend fun findBySourceUrl(sourceUrl: String): DownloadEntity?
     @Query("SELECT * FROM downloads WHERE packageName = :packageName AND status IN ('completed', 'installable') ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity?
     @Query("UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, localPath = :path, sha256 = CASE WHEN :status IN ('completed', 'installable') THEN :sha ELSE sha256 END, speedBytesPerSecond = :speed, etaSeconds = :eta, errorMessage = :error WHERE id = :id")
