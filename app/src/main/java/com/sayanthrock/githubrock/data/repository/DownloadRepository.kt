@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
 import com.sayanthrock.githubrock.core.model.Release
+import com.sayanthrock.githubrock.core.model.ReleaseAsset
 import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.core.util.ReleaseChecksumResolver
 import com.sayanthrock.githubrock.core.util.inspectApk
@@ -56,19 +57,21 @@ class DownloadRepository @Inject constructor(
     ) {
         val requestedUrl = url.trim().takeIf(String::isNotBlank) ?: return
         val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryFullName, assetId)
-        val publicRelease = isPublicGitHubReleaseUrl(requestedUrl) || resolvedAsset != null
+        val publicRelease = isPublicGitHubReleaseUrl(requestedUrl)
         val browserUrl = resolvedAsset?.browserDownloadUrl?.trim()?.takeIf(String::isNotBlank)
         val apiAssetUrl = resolvedAsset?.downloadUrl?.trim()?.takeIf(String::isNotBlank)
             ?: assetId?.takeIf { !repositoryFullName.isNullOrBlank() }?.let { id ->
                 "https://api.github.com/repos/${repositoryFullName.trim()}/releases/assets/$id"
             }
 
-        // Public release assets must use GitHub's browser/CDN URL as the primary source.
-        // The authenticated API asset endpoint remains a real fallback for cases where the
-        // browser URL is unavailable or GitHub/CDN returns an unusable response.
+        // Public release assets use GitHub's normal browser/CDN URL first. The API asset
+        // endpoint is retained as a real fallback. For an API URL supplied by a caller,
+        // keep it primary (important for private releases) and use browser_download_url
+        // as the first fallback when GitHub exposes one.
         val resolvedUrl = if (publicRelease && browserUrl != null) browserUrl else requestedUrl
         val derivedFallback = when {
             !fallbackUrl.isNullOrBlank() && fallbackUrl.trim() != resolvedUrl -> fallbackUrl.trim()
+            resolvedUrl != browserUrl && browserUrl != null -> browserUrl
             apiAssetUrl != null && apiAssetUrl != resolvedUrl -> apiAssetUrl
             else -> null
         }
@@ -190,7 +193,7 @@ class DownloadRepository @Inject constructor(
         fileName: String,
         repositoryFullName: String?,
         assetId: Long?
-    ): com.sayanthrock.githubrock.core.model.ReleaseAsset? = withContext(Dispatchers.IO) {
+    ): ReleaseAsset? = withContext(Dispatchers.IO) {
         runCatching {
             val release = releaseFromDownloadUrl(sourceUrl, repositoryFullName, assetId) ?: return@runCatching null
             release.assets.firstOrNull { asset ->
