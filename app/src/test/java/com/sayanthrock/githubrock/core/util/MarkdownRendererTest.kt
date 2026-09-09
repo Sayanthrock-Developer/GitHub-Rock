@@ -8,7 +8,7 @@ class MarkdownRendererTest {
     @Test fun `render heading blocks`() {
         val result = MarkdownRenderer.render("# Heading 1\n## Heading 2\n###### Heading 6")
         assertEquals(3, result.size)
-        assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 1", 1), result[0])
+        assertEquals(MarkdownBlock("Heading".let { MarkdownBlockKind.Heading }, "Heading 1", 1), result[0])
         assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 2", 2), result[1])
         assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 6", 6), result[2])
     }
@@ -40,6 +40,24 @@ class MarkdownRendererTest {
         assertEquals(MarkdownBlockKind.Code, result[0].kind)
         assertEquals("fun main() {\n    println(\"Hello\")\n}", result[0].text)
         assertEquals(MarkdownBlockKind.Divider, result[1].kind)
+    }
+
+    @Test fun `render common GitHub task and alert blocks`() {
+        val result = MarkdownRenderer.render("- [x] Done\n- [ ] Todo\n> [!WARNING] Check this first")
+        assertEquals(MarkdownBlockKind.Task, result[0].kind)
+        assertTrue(result[0].checked)
+        assertEquals(MarkdownBlockKind.Task, result[1].kind)
+        assertTrue(!result[1].checked)
+        assertEquals(MarkdownBlockKind.Alert, result[2].kind)
+        assertEquals("Check this first", result[2].text)
+    }
+
+    @Test fun `preserve fenced code language and whitespace`() {
+        val result = MarkdownRenderer.render("```kotlin\n  first\n    second\nvery-long-line\n```")
+        assertEquals(1, result.size)
+        assertEquals(MarkdownBlockKind.Code, result[0].kind)
+        assertEquals("kotlin", result[0].codeLanguage)
+        assertEquals("  first\n    second\nvery-long-line", result[0].text)
     }
 
     @Test fun `preserve inline markdown for native renderer`() {
