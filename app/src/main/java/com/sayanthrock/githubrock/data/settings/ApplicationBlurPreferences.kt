@@ -13,6 +13,7 @@ import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurShadow
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurTint
 import com.sayanthrock.githubrock.ui.blur.toSettings
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +23,9 @@ import kotlinx.coroutines.flow.map
 private val Context.applicationBlurDataStore by preferencesDataStore(name = "github_rock_blur_preferences")
 
 @Singleton
-class ApplicationBlurPreferences @Inject constructor(private val context: Context) {
+class ApplicationBlurPreferences @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
     val settings: Flow<ApplicationBlurSettings> = context.applicationBlurDataStore.data.map { preferences ->
         val mode = ApplicationBlurMode.fromStored(preferences[MODE])
         val preset = ApplicationBlurPreset.fromStored(preferences[PRESET])
