@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -80,6 +81,7 @@ data class ApplicationBlurSettings(
 fun ApplicationBlurSettings.effectiveRadius(component: ApplicationBlurComponent? = null): Int {
     if (mode == ApplicationBlurMode.Off) return 0
     val selected = (component?.let(::profileFor) ?: profile).sanitized()
+    if (!selected.enabled) return 0
     val modeRadius = when (mode) {
         ApplicationBlurMode.Off -> 0
         ApplicationBlurMode.Automatic -> selected.radius
@@ -100,7 +102,7 @@ fun ApplicationBlurSurface(
     settings: ApplicationBlurSettings,
     component: ApplicationBlurComponent,
     modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = RoundedCornerShape(settings.profileFor(component).cornerRadius.dp),
+    shape: RoundedCornerShape = RoundedCornerShape(settings.profileFor(component).sanitized().cornerRadius.dp),
     background: @Composable BoxScope.() -> Unit = {},
     content: @Composable BoxScope.() -> Unit
 ) {
