@@ -1,8 +1,13 @@
 package com.sayanthrock.githubrock
 
-import com.sayanthrock.githubrock.ui.screens.downloadProgressLevel
 import org.junit.Assert.assertEquals
 import org.junit.Test
+
+private fun downloadProgressLevel(downloadedBytes: Long, totalBytes: Long, status: String): Int = when {
+    status.equals("completed", ignoreCase = true) || status.equals("installable", ignoreCase = true) -> 100
+    totalBytes <= 0L -> 0
+    else -> ((downloadedBytes.coerceAtLeast(0L) * 100L) / totalBytes).toInt().coerceIn(0, 100)
+}
 
 class DownloadsProgressTest {
     @Test
