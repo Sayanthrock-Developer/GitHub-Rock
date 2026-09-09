@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import java.io.File
@@ -102,41 +103,46 @@ object InstalledApkStateResolver {
     /**
      * Opens the downloaded APK with Android's package installer.
      *
-     * The method deliberately does not require PackageManager archive metadata to succeed:
-     * a valid APK can still be installable when archive inspection fails on some Android builds.
-     * If the exact same or an older version is already installed, the installed application is
-     * opened instead of incorrectly launching the installer again.
+     * The file is revalidated immediately before the installer handoff. This prevents a stale,
+     * missing, non-APK, or replaced file from being presented as installable by the Downloads UI.
      */
     fun launchInstaller(context: Context, apkFile: File): Result<Unit> = runCatching {
         require(apkFile.isFile && apkFile.length() > 0L) {
             "The downloaded APK file is no longer available. Download it again."
         }
+        require(apkFile.extension.equals("apk", ignoreCase = true)) {
+            "Only APK files can be installed."
+        }
 
         val packageManager = context.packageManager
         val archive = resolveArchive(packageManager, apkFile)
-        if (archive != null) {
-            val packageName = archive.packageName
-            val downloadedVersionCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
-            val installed = runCatching {
-                if (Build.VERSION.SDK_INT >= 33) {
-                    packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-                } else {
-                    packageManager.getPackageInfo(packageName, 0)
-                }
-            }.getOrNull()
-            val installedVersionCode = installed?.let {
-                if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else it.versionCode.toLong()
-            }
+            ?: error("Android could not parse the downloaded APK. Download it again.")
+        require(archive.packageName.isNotBlank()) { "Downloaded APK has no package name." }
 
-            // The Downloads UI may still be waiting for its async package-state refresh.
-            // Resolve the decision here too, so the primary action can never install an APK
-            // that is already installed at the same or a newer version.
-            if (installed != null && installedVersionCode != null && downloadedVersionCode <= installedVersionCode) {
-                packageManager.getLaunchIntentForPackage(packageName)?.let { launchIntent ->
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(launchIntent)
-                    return@runCatching
-                }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            require(packageManager.canRequestPackageInstalls()) {
+                "Install unknown apps permission is disabled for GitHub Rock."
+            }
+        }
+
+        val packageName = archive.packageName
+        val downloadedVersionCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
+        val installed = runCatching {
+            if (Build.VERSION.SDK_INT >= 33) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                packageManager.getPackageInfo(packageName, 0)
+            }
+        }.getOrNull()
+        val installedVersionCode = installed?.let {
+            if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else it.versionCode.toLong()
+        }
+
+        if (installed != null && installedVersionCode != null && downloadedVersionCode <= installedVersionCode) {
+            packageManager.getLaunchIntentForPackage(packageName)?.let { launchIntent ->
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(launchIntent)
+                return@runCatching
             }
         }
 
