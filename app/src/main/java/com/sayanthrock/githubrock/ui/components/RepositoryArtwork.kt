@@ -29,7 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
@@ -37,11 +38,11 @@ import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 val LocalOpenGitHubProfile = staticCompositionLocalOf<((String) -> Unit)?> { null }
 
 /**
- * Branded repository artwork with a privacy-aware image fallback.
+ * Branded repository artwork with resilient remote-image loading and deterministic fallbacks.
  *
- * Full-size heroes intentionally separate the large preview from the project icon and owner identity.
- * The lower identity rail reserves space for the project icon rendered by the parent hero, preventing
- * the previous banner/avatar/icon overlap.
+ * The preview uses the same URL resolver as repository cards: an explicit HTTPS preview first,
+ * followed by GitHub's generated Open Graph artwork. If that image fails, the owner's avatar is
+ * used before falling back to the native GitHub Rock artwork treatment.
  */
 @Composable
 fun RepositoryArtwork(
@@ -55,11 +56,8 @@ fun RepositoryArtwork(
     val identityHeight = if (compact) 40.dp else 52.dp
     val artworkHeight = previewHeight + identityHeight
     val previewDescription = "${repository.fullName} repository preview image"
-    val ownerFallbackPainter = if (showImages) {
-        repository.owner.avatarUrl.takeIf(String::isNotBlank)?.let { rememberAsyncImagePainter(it) }
-    } else {
-        null
-    }
+    val ownerAvatar = repository.owner.avatarUrl.trim().takeIf { it.startsWith("https://") }
+    val previewUrl = repository.repositoryPreviewImageUrl()
 
     Column(
         modifier = modifier
@@ -80,22 +78,40 @@ fun RepositoryArtwork(
                 .fillMaxWidth()
                 .height(previewHeight)
         ) {
-            when {
-                showImages && !repository.previewImageUrl.isNullOrBlank() -> AsyncImage(
-                    model = repository.previewImageUrl,
-                    contentDescription = previewDescription,
-                    placeholder = ownerFallbackPainter,
-                    error = ownerFallbackPainter,
-                    fallback = ownerFallbackPainter,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                showImages && repository.owner.avatarUrl.isNotBlank() -> AsyncImage(
-                    model = repository.owner.avatarUrl,
+            if (showImages) {
+                SubcomposeAsyncImage(
+                    model = previewUrl,
                     contentDescription = previewDescription,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().alpha(.22f)
+                    modifier = Modifier.fillMaxSize(),
+                    loading = {
+                        if (ownerAvatar != null) {
+                            AsyncImage(
+                                model = ownerAvatar,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().alpha(.22f)
+                            )
+                        } else {
+                            RepositoryArtworkFallback(repository)
+                        }
+                    },
+                    error = {
+                        if (ownerAvatar != null) {
+                            AsyncImage(
+                                model = ownerAvatar,
+                                contentDescription = previewDescription,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().alpha(.28f)
+                            )
+                        } else {
+                            RepositoryArtworkFallback(repository)
+                        }
+                    },
+                    success = { SubcomposeAsyncImageContent() }
                 )
+            } else {
+                RepositoryArtworkFallback(repository)
             }
 
             Box(
@@ -142,10 +158,7 @@ fun RepositoryArtwork(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        start = if (compact) 14.dp else 108.dp,
-                        end = 14.dp
-                    ),
+                    .padding(start = if (compact) 14.dp else 108.dp, end = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -160,11 +173,7 @@ fun RepositoryArtwork(
                     Text(
                         "@${repository.owner.login}",
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = if (compact) {
-                            MaterialTheme.typography.labelMedium
-                        } else {
-                            MaterialTheme.typography.labelLarge
-                        },
+                        style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -181,6 +190,23 @@ fun RepositoryArtwork(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RepositoryArtworkFallback(repository: GitHubRepositoryModel) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = .08f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            repository.name,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
