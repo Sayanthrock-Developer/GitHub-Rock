@@ -171,8 +171,31 @@ class DownloadWorker @AssistedInject constructor(
             if (final.exists()) final.delete()
             check(partial.renameTo(final)) { "Unable to finalize download" }
             check(final.isFile && final.length() > 0L) { "Final download file is unavailable" }
+
+            // The installable state is granted only after the exact finalized file is
+            // re-read and validated. This catches stale/replaced/corrupt output between
+            // the download verification and the installer handoff.
+            val finalizedSha = ChecksumVerifier.sha256(final)
+            check(finalizedSha.equals(sha, ignoreCase = true)) {
+                "Final APK bytes changed after download verification"
+            }
+            if (expectedSha != null) {
+                check(ChecksumVerifier.matches(finalizedSha, expectedSha)) {
+                    "Final APK SHA-256 verification failed"
+                }
+            }
+            if (name.endsWith(".apk", ignoreCase = true)) {
+                val finalInspection = inspectApk(
+                    context = applicationContext,
+                    file = final,
+                    expectedPackage = expectedPackage
+                )
+                check(finalInspection.packageName.isNotBlank()) { "Final APK package name is missing" }
+                check(finalInspection.versionCode >= 0L) { "Final APK version is invalid" }
+            }
+
             val terminalState = if (name.endsWith(".apk", ignoreCase = true)) DownloadState.INSTALLABLE else DownloadState.COMPLETED
-            repository.updateProgress(id, terminalState, final.length(), final.length(), final.absolutePath, sha, 0L, 0L, null)
+            repository.updateProgress(id, terminalState, final.length(), final.length(), final.absolutePath, finalizedSha, 0L, 0L, null)
             Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
