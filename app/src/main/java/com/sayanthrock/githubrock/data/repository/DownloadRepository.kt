@@ -61,10 +61,11 @@ class DownloadRepository @Inject constructor(
         val requestedUrl = url.trim().takeIf(String::isNotBlank) ?: return@withLock
         val repositoryName = repositoryFullName?.trim()?.takeIf(String::isNotBlank)
         val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryName, assetId)
+        val resolvedAssetId = assetId ?: resolvedAsset?.id
         val publicRelease = isPublicGitHubReleaseUrl(requestedUrl)
         val browserUrl = resolvedAsset?.browserDownloadUrl?.trim()?.takeIf(String::isNotBlank)
         val apiAssetUrl = resolvedAsset?.downloadUrl?.trim()?.takeIf(String::isNotBlank)
-            ?: assetId?.takeIf { repositoryName != null }?.let { id ->
+            ?: resolvedAssetId?.takeIf { repositoryName != null }?.let { id ->
                 "https://api.github.com/repos/$repositoryName/releases/assets/$id"
             }
         val resolvedUrl = if (publicRelease && browserUrl != null) browserUrl else requestedUrl
@@ -77,9 +78,9 @@ class DownloadRepository @Inject constructor(
         }
         val resolvedFallbackUrl = derivedFallback?.takeIf { it.isNotBlank() && it != resolvedUrl }
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
-            ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, assetId)
+            ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, resolvedAssetId)
 
-        val existing = assetId?.let { dao.findByAssetId(it) } ?: dao.findBySourceUrl(resolvedUrl)
+        val existing = findExistingDownload(dao, resolvedAssetId, resolvedUrl)
         if (existing != null) {
             if (existing.status in ACTIVE_STATES) return@withLock
             val existingFile = existing.localPath?.let(::File)
@@ -97,7 +98,7 @@ class DownloadRepository @Inject constructor(
                 repositoryFullName = repositoryName ?: existing.repositoryFullName,
                 releaseName = releaseName ?: existing.releaseName,
                 releaseUrl = releaseUrl ?: existing.releaseUrl,
-                assetId = assetId ?: existing.assetId,
+                assetId = resolvedAssetId ?: existing.assetId,
                 errorMessage = null
             )
             dao.upsert(resumed)
@@ -116,7 +117,7 @@ class DownloadRepository @Inject constructor(
             repositoryFullName = repositoryName,
             releaseName = releaseName,
             releaseUrl = releaseUrl,
-            assetId = assetId
+            assetId = resolvedAssetId
         )
         val id = dao.upsert(queued)
         schedule(queued.copy(id = id))
@@ -348,3 +349,10 @@ class DownloadRepository @Inject constructor(
         )
     }
 }
+
+internal suspend fun findExistingDownload(
+    dao: DownloadDao,
+    resolvedAssetId: Long?,
+    resolvedUrl: String
+): DownloadEntity? = resolvedAssetId?.let { dao.findByAssetId(it) }
+    ?: dao.findBySourceUrl(resolvedUrl)

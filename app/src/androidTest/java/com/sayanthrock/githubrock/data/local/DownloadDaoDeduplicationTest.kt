@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sayanthrock.githubrock.data.repository.findExistingDownload
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -54,5 +55,27 @@ class DownloadDaoDeduplicationTest {
 
         assertEquals(id, existing?.id)
         assertEquals(browserUrl, existing?.sourceUrl)
+    }
+
+    @Test
+    fun canonicalAssetIdPreventsDuplicateWhenUrlChanges() = runBlocking {
+        val originalUrl = "https://github.com/example/repo/releases/download/v1/app.apk"
+        val alternateUrl = "https://api.github.com/repos/example/repo/releases/assets/123"
+        val download = DownloadEntity(
+            fileName = "app.apk",
+            sourceUrl = originalUrl,
+            status = DownloadState.DOWNLOADING.wireValue,
+            repositoryFullName = "example/repo",
+            releaseName = "v1",
+            releaseUrl = "https://github.com/example/repo/releases/tag/v1",
+            assetId = 123L
+        )
+        val id = dao.upsert(download)
+
+        val existing = findExistingDownload(dao, resolvedAssetId = 123L, resolvedUrl = alternateUrl)
+
+        assertEquals(id, existing?.id)
+        assertEquals(123L, existing?.assetId)
+        assertEquals(originalUrl, existing?.sourceUrl)
     }
 }
