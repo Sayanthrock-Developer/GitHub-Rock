@@ -136,7 +136,7 @@ class DownloadWorker @AssistedInject constructor(
                     expectedPackage = expectedPackage,
                     previousVersionCode = previous?.versionCode,
                     previousPermissions = previous?.permissions?.split("\n")?.filter(String::isNotBlank).orEmpty(),
-                    previousCertificateSha256 = previous?.certificateSha256
+                    previousCertificateSha256 = previous?.certificateCertificateSha256
                 )
                 repository.updateSecurity(
                     id = id,
@@ -186,14 +186,36 @@ class DownloadWorker @AssistedInject constructor(
     }
 
     private fun executeDownloadWithFallback(primaryUrl: String, fallbackUrl: String?, existing: Long): Response {
-        try {
-            val primary = executeDownload(primaryUrl, existing)
-            if (primary.isSuccessful || fallbackUrl.isNullOrBlank() || fallbackUrl == primaryUrl) return primary
-            primary.close()
-        } catch (primaryError: IOException) {
-            if (fallbackUrl.isNullOrBlank() || fallbackUrl == primaryUrl) throw primaryError
+        val candidates = buildList {
+            add(primaryUrl)
+            fallbackUrl?.takeIf { it.isNotBlank() && it != primaryUrl }?.let(::add)
         }
-        return executeDownload(fallbackUrl!!, existing)
+        var lastResponse: Response? = null
+        var lastError: IOException? = null
+
+        for ((index, candidate) in candidates.withIndex()) {
+            try {
+                val response = executeDownload(candidate, existing)
+                lastResponse?.close()
+                lastResponse = response
+                val hasUsableBinaryHeaders = response.isSuccessful && response.body != null && !response.isNonBinaryResponse()
+                if (hasUsableBinaryHeaders || index == candidates.lastIndex) return response
+                response.close()
+                lastResponse = null
+            } catch (error: IOException) {
+                lastError = error
+                if (index == candidates.lastIndex) throw error
+            }
+        }
+
+        lastResponse?.let { return it }
+        throw lastError ?: IOException("Download failed")
+    }
+
+    private fun Response.isNonBinaryResponse(): Boolean {
+        val type = body?.contentType()?.toString()?.lowercase().orEmpty()
+        return type.contains("text/html") || type.contains("application/json") ||
+            (inputData.getString(KEY_NAME)?.endsWith(".apk", ignoreCase = true) == true && type.contains("text/plain"))
     }
 
     private fun executeDownload(url: String, existing: Long): Response {
