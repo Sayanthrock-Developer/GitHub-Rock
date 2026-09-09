@@ -8,7 +8,9 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.await
+import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.util.ApkInspection
+import com.sayanthrock.githubrock.core.util.ReleaseChecksumResolver
 import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
@@ -19,15 +21,21 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.net.URI
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 @Singleton
 class DownloadRepository @Inject constructor(
     private val dao: DownloadDao,
-    @ApplicationContext context: Context
+    @ApplicationContext context: Context,
+    @Named("downloadClient") private val downloadClient: OkHttpClient,
+    private val json: Json
 ) {
     private val applicationContext = context.applicationContext
     private val workManager = WorkManager.getInstance(applicationContext)
@@ -54,11 +62,13 @@ class DownloadRepository @Inject constructor(
             fallbackUrl
         }
         val resolvedFallbackUrl = derivedFallback?.trim()?.takeIf { it.isNotBlank() && it != resolvedUrl }
+        val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
+            ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryFullName, assetId)
         val queued = DownloadEntity(
             fileName = fileName,
             sourceUrl = resolvedUrl,
             fallbackUrl = resolvedFallbackUrl,
-            checksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank),
+            checksumUrl = resolvedChecksumUrl,
             status = DownloadState.QUEUED.wireValue,
             expectedSha256 = expectedSha256,
             packageName = expectedPackage,
@@ -164,8 +174,67 @@ class DownloadRepository @Inject constructor(
 
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity? = dao.latestCompletedForPackage(packageName)
 
-    private suspend fun transition(id: Long, state: DownloadState, errorMessage: String? = null) {
-        dao.updateStatus(id, state.wireValue, errorMessage)
+    private suspend fun resolveReleaseChecksumUrl(
+        sourceUrl: String,
+        fileName: String,
+        repositoryFullName: String?,
+        assetId: Long?
+    ): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val release = releaseFromDownloadUrl(sourceUrl, repositoryFullName, assetId) ?: return@runCatching null
+            val target = release.assets.firstOrNull { it.id == assetId || it.name == fileName } ?: return@runCatching null
+            if (!target.name.endsWith(".apk", true) && !target.name.endsWith(".aab", true)) return@runCatching null
+            val checksum = ReleaseChecksumResolver.findFor(target, release.assets) ?: return@runCatching null
+            val publicUrl = checksum.browserDownloadUrl?.takeIf(String::isNotBlank)
+            if (isPublicGitHubReleaseUrl(sourceUrl)) publicUrl ?: checksum.downloadUrl else checksum.downloadUrl
+        }.getOrNull()
+    }
+
+    private fun releaseFromDownloadUrl(sourceUrl: String, repositoryFullName: String?, assetId: Long?): Release? {
+        val uri = URI(sourceUrl)
+        val path = uri.path.orEmpty()
+        val segments = path.split('/').filter(String::isNotBlank)
+        val apiIndex = segments.indexOf("api.github.com")
+        val repoIndex = segments.indexOf("repos")
+        val owner = when {
+            repoIndex >= 0 && segments.size > repoIndex + 2 -> segments[repoIndex + 1]
+            !repositoryFullName.isNullOrBlank() -> repositoryFullName.substringBefore('/')
+            else -> null
+        }
+        val repo = when {
+            repoIndex >= 0 && segments.size > repoIndex + 2 -> segments[repoIndex + 2]
+            !repositoryFullName.isNullOrBlank() -> repositoryFullName.substringAfter('/', "")
+            else -> null
+        }
+        if (owner.isNullOrBlank() || repo.isNullOrBlank()) return null
+
+        val tagIndex = segments.indexOf("download")
+        if (tagIndex >= 0 && segments.size > tagIndex + 1) {
+            val tag = segments[tagIndex + 1]
+            val url = "https://api.github.com/repos/$owner/$repo/releases/tags/${java.net.URLEncoder.encode(tag, Charsets.UTF_8.name())}"
+            return fetchRelease(url)
+        }
+
+        if (assetId != null || path.contains("/releases/assets/")) {
+            val releasesUrl = "https://api.github.com/repos/$owner/$repo/releases?per_page=100"
+            val request = Request.Builder().url(releasesUrl).header("Accept", "application/vnd.github+json").header("User-Agent", "GitHub-Rock/1.0").build()
+            downloadClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return null
+                val body = response.body?.string() ?: return null
+                val releases = json.decodeFromString<List<Release>>(body)
+                return releases.firstOrNull { release -> release.assets.any { it.id == assetId || it.name == sourceUrl.substringAfterLast('/') } }
+            }
+        }
+        return null
+    }
+
+    private fun fetchRelease(url: String): Release? {
+        val request = Request.Builder().url(url).header("Accept", "application/vnd.github+json").header("User-Agent", "GitHub-Rock/1.0").build()
+        downloadClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val body = response.body?.string() ?: return null
+            return json.decodeFromString<Release>(body)
+        }
     }
 
     fun schedule(download: DownloadEntity) {
