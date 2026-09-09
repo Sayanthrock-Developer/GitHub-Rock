@@ -182,7 +182,7 @@ class DownloadRepository @Inject constructor(
     ): String? = withContext(Dispatchers.IO) {
         runCatching {
             val release = releaseFromDownloadUrl(sourceUrl, repositoryFullName, assetId) ?: return@runCatching null
-            val target = release.assets.firstOrNull { it.id == assetId || it.name == fileName } ?: return@runCatching null
+            val target = release.assets.firstOrNull { it.id == assetId || it.name == fileName || it.downloadUrl == sourceUrl } ?: return@runCatching null
             if (!target.name.endsWith(".apk", true) && !target.name.endsWith(".aab", true)) return@runCatching null
             val checksum = ReleaseChecksumResolver.findFor(target, release.assets) ?: return@runCatching null
             val publicUrl = checksum.browserDownloadUrl?.takeIf(String::isNotBlank)
@@ -194,7 +194,6 @@ class DownloadRepository @Inject constructor(
         val uri = URI(sourceUrl)
         val path = uri.path.orEmpty()
         val segments = path.split('/').filter(String::isNotBlank)
-        val apiIndex = segments.indexOf("api.github.com")
         val repoIndex = segments.indexOf("repos")
         val owner = when {
             repoIndex >= 0 && segments.size > repoIndex + 2 -> segments[repoIndex + 1]
@@ -211,8 +210,8 @@ class DownloadRepository @Inject constructor(
         val tagIndex = segments.indexOf("download")
         if (tagIndex >= 0 && segments.size > tagIndex + 1) {
             val tag = segments[tagIndex + 1]
-            val url = "https://api.github.com/repos/$owner/$repo/releases/tags/${java.net.URLEncoder.encode(tag, Charsets.UTF_8.name())}"
-            return fetchRelease(url)
+            val encodedTag = java.net.URLEncoder.encode(tag, Charsets.UTF_8.name()).replace("+", "%20")
+            return fetchRelease("https://api.github.com/repos/$owner/$repo/releases/tags/$encodedTag")
         }
 
         if (assetId != null || path.contains("/releases/assets/")) {
@@ -222,7 +221,7 @@ class DownloadRepository @Inject constructor(
                 if (!response.isSuccessful) return null
                 val body = response.body?.string() ?: return null
                 val releases = json.decodeFromString<List<Release>>(body)
-                return releases.firstOrNull { release -> release.assets.any { it.id == assetId || it.name == sourceUrl.substringAfterLast('/') } }
+                return releases.firstOrNull { release -> release.assets.any { it.id == assetId || it.downloadUrl == sourceUrl } }
             }
         }
         return null
