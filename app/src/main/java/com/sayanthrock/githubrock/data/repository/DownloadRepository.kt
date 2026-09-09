@@ -80,7 +80,7 @@ class DownloadRepository @Inject constructor(
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
             ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, resolvedAssetId)
 
-        val existing = resolvedAssetId?.let { dao.findByAssetId(it) } ?: dao.findBySourceUrl(resolvedUrl)
+        val existing = findExistingDownload(dao, resolvedAssetId, resolvedUrl)
         if (existing != null) {
             if (existing.status in ACTIVE_STATES) return@withLock
             val existingFile = existing.localPath?.let(::File)
@@ -349,3 +349,10 @@ class DownloadRepository @Inject constructor(
         )
     }
 }
+
+internal suspend fun findExistingDownload(
+    dao: DownloadDao,
+    resolvedAssetId: Long?,
+    resolvedUrl: String
+): DownloadEntity? = resolvedAssetId?.let { dao.findByAssetId(it) }
+    ?: dao.findBySourceUrl(resolvedUrl)
