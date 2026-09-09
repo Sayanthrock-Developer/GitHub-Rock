@@ -40,11 +40,15 @@ fun inspectApk(
     previousCertificateSha256: String? = null
 ): ApkInspection {
     require(file.isFile) { "The downloaded APK file is no longer available." }
-    require(file.extension.equals("apk", ignoreCase = true)) { "This file is not an APK." }
+    require(file.length() > 0L) { "The downloaded APK file is empty." }
+
+    // Do not trust the filename extension. GitHub release assets can arrive with a
+    // sanitized/derived local name, while the bytes are still a valid APK. Android's
+    // package parser is the source of truth for APK identity and validity.
     val flags = PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA or
         if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES
     val packageInfo = context.packageManager.getPackageArchiveInfo(file.absolutePath, flags)
-        ?: error("Android could not read this APK.")
+        ?: error("Android could not read this file as an APK.")
     val packageName = packageInfo.packageName
     require(expectedPackage == null || expectedPackage == packageName) {
         "APK package mismatch: expected $expectedPackage, found $packageName"
