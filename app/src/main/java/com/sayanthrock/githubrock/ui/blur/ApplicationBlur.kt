@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -40,18 +39,8 @@ enum class ApplicationBlurTint {
 }
 
 enum class ApplicationBlurComponent {
-    NavigationBar,
-    Dialogs,
-    BottomSheets,
-    DropdownMenus,
-    Popups,
-    TopBars,
-    FloatingButtons,
-    Cards,
-    RepositoryOverlays,
-    ImagePreviews,
-    Notifications,
-    LoadingOverlays
+    NavigationBar, Dialogs, BottomSheets, DropdownMenus, Popups, TopBars,
+    FloatingButtons, Cards, RepositoryOverlays, ImagePreviews, Notifications, LoadingOverlays
 }
 
 data class ApplicationBlurProfile(
@@ -70,14 +59,10 @@ data class ApplicationBlurProfile(
     val tintOpacity: Int = 10
 ) {
     fun sanitized(): ApplicationBlurProfile = copy(
-        intensity = intensity.coerceIn(0, 100),
-        radius = radius.coerceIn(0, 64),
-        backgroundDim = backgroundDim.coerceIn(0, 100),
-        glassOpacity = glassOpacity.coerceIn(0, 100),
-        saturation = saturation.coerceIn(0, 200),
-        brightness = brightness.coerceIn(0, 200),
-        cornerRadius = cornerRadius.coerceIn(0, 64),
-        borderOpacity = borderOpacity.coerceIn(0, 100),
+        intensity = intensity.coerceIn(0, 100), radius = radius.coerceIn(0, 64),
+        backgroundDim = backgroundDim.coerceIn(0, 100), glassOpacity = glassOpacity.coerceIn(0, 100),
+        saturation = saturation.coerceIn(0, 200), brightness = brightness.coerceIn(0, 200),
+        cornerRadius = cornerRadius.coerceIn(0, 64), borderOpacity = borderOpacity.coerceIn(0, 100),
         tintOpacity = tintOpacity.coerceIn(0, 100)
     )
 }
@@ -106,10 +91,9 @@ fun ApplicationBlurSettings.effectiveRadius(component: ApplicationBlurComponent?
 }
 
 /**
- * Bounded glass surface. The foreground remains sharp. For true backdrop blur,
- * callers should supply the background as a separate layer behind the sharp
- * foreground; applying Modifier.blur() to the whole surface is intentionally
- * avoided because it would blur text and icons too.
+ * Glass surface with a separate background layer. The RenderEffect is applied
+ * only to [background], so text, icons and controls in [content] remain sharp.
+ * Android 10/11 safely fall back to translucency because RenderEffect requires 12+.
  */
 @Composable
 fun ApplicationBlurSurface(
@@ -117,12 +101,13 @@ fun ApplicationBlurSurface(
     component: ApplicationBlurComponent,
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(settings.profileFor(component).cornerRadius.dp),
+    background: @Composable BoxScope.() -> Unit = {},
     content: @Composable BoxScope.() -> Unit
 ) {
     val profile = settings.profileFor(component).sanitized()
     val radius = settings.effectiveRadius(component)
-    val alpha = profile.glassOpacity / 100f
     val dim = profile.backgroundDim / 100f
+    val glassAlpha = profile.glassOpacity / 100f
     val borderAlpha = profile.borderOpacity / 100f
     val borderWidth = when (profile.border) {
         ApplicationBlurBorder.Off -> 0.dp
@@ -130,45 +115,51 @@ fun ApplicationBlurSurface(
         ApplicationBlurBorder.Strong -> 1.dp
     }
 
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .then(
-                if (radius > 0) Modifier.graphicsLayer {
-                    renderEffect = android.graphics.RenderEffect.createBlurEffect(
-                        radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP
-                    ).asComposeRenderEffect()
-                } else Modifier
-            )
-            .background(Color.Black.copy(alpha = dim * 0.35f))
-            .background(Color.White.copy(alpha = alpha * 0.12f))
-            .border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape)
-    ) {
-        content()
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+                .then(
+                    if (radius > 0) Modifier.graphicsLayer {
+                        renderEffect = android.graphics.RenderEffect.createBlurEffect(
+                            radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP
+                        ).asComposeRenderEffect()
+                    } else Modifier
+                )
+        ) {
+            background()
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+                .background(Color.Black.copy(alpha = dim * 0.35f))
+                .background(Color.White.copy(alpha = glassAlpha * 0.12f))
+                .border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape)
+        )
+        Box(modifier = Modifier.matchParentSize()) {
+            content()
+        }
     }
 }
 
 fun ApplicationBlurPreset.toSettings(): ApplicationBlurSettings = when (this) {
     ApplicationBlurPreset.None -> ApplicationBlurSettings(
-        mode = ApplicationBlurMode.Off,
-        preset = this,
+        mode = ApplicationBlurMode.Off, preset = this,
         profile = ApplicationBlurProfile(enabled = false, intensity = 0, radius = 0, glassOpacity = 100)
     )
     ApplicationBlurPreset.Clean -> ApplicationBlurSettings(
-        preset = this,
-        profile = ApplicationBlurProfile(intensity = 25, radius = 10, backgroundDim = 6, glassOpacity = 82)
+        preset = this, profile = ApplicationBlurProfile(intensity = 25, radius = 10, backgroundDim = 6, glassOpacity = 82)
     )
     ApplicationBlurPreset.LiquidGlass -> ApplicationBlurSettings(
-        preset = this,
-        profile = ApplicationBlurProfile(intensity = 60, radius = 24, backgroundDim = 10, glassOpacity = 68, saturation = 115, brightness = 105)
+        preset = this, profile = ApplicationBlurProfile(intensity = 60, radius = 24, backgroundDim = 10, glassOpacity = 68, saturation = 115, brightness = 105)
     )
     ApplicationBlurPreset.Frosted -> ApplicationBlurSettings(
-        preset = this,
-        profile = ApplicationBlurProfile(intensity = 75, radius = 32, backgroundDim = 16, glassOpacity = 76, saturation = 92)
+        preset = this, profile = ApplicationBlurProfile(intensity = 75, radius = 32, backgroundDim = 16, glassOpacity = 76, saturation = 92)
     )
     ApplicationBlurPreset.DeepGlass -> ApplicationBlurSettings(
-        preset = this,
-        profile = ApplicationBlurProfile(intensity = 90, radius = 48, backgroundDim = 30, glassOpacity = 56, saturation = 105, brightness = 92, shadow = ApplicationBlurShadow.Strong)
+        preset = this, profile = ApplicationBlurProfile(intensity = 90, radius = 48, backgroundDim = 30, glassOpacity = 56, saturation = 105, brightness = 92, shadow = ApplicationBlurShadow.Strong)
     )
     ApplicationBlurPreset.Custom -> ApplicationBlurSettings(preset = this)
 }
