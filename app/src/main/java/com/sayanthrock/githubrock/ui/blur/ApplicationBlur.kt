@@ -10,75 +10,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * Central model for GitHub Rock's application blur system.
- *
- * The model is deliberately UI-agnostic so Appearance settings can persist it
- * without coupling the preference layer to Compose. Keep the foreground sharp:
- * blur is applied only to a supplied background layer.
- */
 enum class ApplicationBlurMode {
-    Off,
-    Automatic,
-    Subtle,
-    Medium,
-    Strong;
-
-    companion object {
-        fun fromStored(value: String?): ApplicationBlurMode =
-            entries.firstOrNull { it.name == value } ?: Automatic
-    }
+    Off, Automatic, Subtle, Medium, Strong;
+    companion object { fun fromStored(value: String?): ApplicationBlurMode = entries.firstOrNull { it.name == value } ?: Automatic }
 }
 
 enum class ApplicationBlurPreset {
-    None,
-    Clean,
-    LiquidGlass,
-    Frosted,
-    DeepGlass,
-    Custom;
-
-    companion object {
-        fun fromStored(value: String?): ApplicationBlurPreset =
-            entries.firstOrNull { it.name == value } ?: Clean
-    }
+    None, Clean, LiquidGlass, Frosted, DeepGlass, Custom;
+    companion object { fun fromStored(value: String?): ApplicationBlurPreset = entries.firstOrNull { it.name == value } ?: Clean }
 }
 
 enum class ApplicationBlurBorder {
-    Off,
-    Subtle,
-    Strong;
-
-    companion object {
-        fun fromStored(value: String?): ApplicationBlurBorder =
-            entries.firstOrNull { it.name == value } ?: Subtle
-    }
+    Off, Subtle, Strong;
+    companion object { fun fromStored(value: String?): ApplicationBlurBorder = entries.firstOrNull { it.name == value } ?: Subtle }
 }
 
 enum class ApplicationBlurShadow {
-    Off,
-    Soft,
-    Strong;
-
-    companion object {
-        fun fromStored(value: String?): ApplicationBlurShadow =
-            entries.firstOrNull { it.name == value } ?: Soft
-    }
+    Off, Soft, Strong;
+    companion object { fun fromStored(value: String?): ApplicationBlurShadow = entries.firstOrNull { it.name == value } ?: Soft }
 }
 
 enum class ApplicationBlurTint {
-    System,
-    Theme,
-    Custom;
-
-    companion object {
-        fun fromStored(value: String?): ApplicationBlurTint =
-            entries.firstOrNull { it.name == value } ?: Theme
-    }
+    System, Theme, Custom;
+    companion object { fun fromStored(value: String?): ApplicationBlurTint = entries.firstOrNull { it.name == value } ?: Theme }
 }
 
 enum class ApplicationBlurComponent {
@@ -131,18 +89,10 @@ data class ApplicationBlurSettings(
     val customTintHex: String = "",
     val components: Map<ApplicationBlurComponent, ApplicationBlurProfile> = emptyMap()
 ) {
-    fun profileFor(component: ApplicationBlurComponent): ApplicationBlurProfile =
-        components[component] ?: profile
+    fun profileFor(component: ApplicationBlurComponent): ApplicationBlurProfile = components[component] ?: profile
 }
 
-/**
- * Returns the effective radius for the current device and selected mode.
- * Android 12+ can use platform RenderEffect; older supported versions safely
- * fall back to the translucent glass treatment instead of crashing.
- */
-fun ApplicationBlurSettings.effectiveRadius(
-    component: ApplicationBlurComponent? = null
-): Int {
+fun ApplicationBlurSettings.effectiveRadius(component: ApplicationBlurComponent? = null): Int {
     if (mode == ApplicationBlurMode.Off) return 0
     val selected = (component?.let(::profileFor) ?: profile).sanitized()
     val modeRadius = when (mode) {
@@ -156,11 +106,10 @@ fun ApplicationBlurSettings.effectiveRadius(
 }
 
 /**
- * A bounded glass surface. The background is the only layer blurred; content
- * supplied to [content] remains sharp and readable.
- *
- * This intentionally does not call Modifier.blur() on the whole surface,
- * because that would blur text/icons in the foreground as well.
+ * Bounded glass surface. The foreground remains sharp. For true backdrop blur,
+ * callers should supply the background as a separate layer behind the sharp
+ * foreground; applying Modifier.blur() to the whole surface is intentionally
+ * avoided because it would blur text and icons too.
  */
 @Composable
 fun ApplicationBlurSurface(
@@ -185,14 +134,10 @@ fun ApplicationBlurSurface(
         modifier = modifier
             .clip(shape)
             .then(
-                if (radius > 0) {
-                    Modifier.graphicsLayer {
-                        renderEffect = android.graphics.RenderEffect.createBlurEffect(
-                            radius.toFloat(),
-                            radius.toFloat(),
-                            android.graphics.Shader.TileMode.CLAMP
-                        )
-                    }
+                if (radius > 0) Modifier.graphicsLayer {
+                    renderEffect = android.graphics.RenderEffect.createBlurEffect(
+                        radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP
+                    ).asComposeRenderEffect()
                 } else Modifier
             )
             .background(Color.Black.copy(alpha = dim * 0.35f))
@@ -203,10 +148,6 @@ fun ApplicationBlurSurface(
     }
 }
 
-/**
- * Presets are pure data transformations. Persistence belongs in the existing
- * AppPreferences/DataStore layer so changing blur never resets other settings.
- */
 fun ApplicationBlurPreset.toSettings(): ApplicationBlurSettings = when (this) {
     ApplicationBlurPreset.None -> ApplicationBlurSettings(
         mode = ApplicationBlurMode.Off,
