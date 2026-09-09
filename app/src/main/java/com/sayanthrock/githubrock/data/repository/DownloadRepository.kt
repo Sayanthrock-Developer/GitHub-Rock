@@ -15,7 +15,6 @@ import com.sayanthrock.githubrock.core.util.inspectApk
 import com.sayanthrock.githubrock.data.local.DownloadDao
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.data.local.DownloadState
-import com.sayanthrock.githubrock.data.local.state
 import com.sayanthrock.githubrock.download.DownloadWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -55,13 +54,25 @@ class DownloadRepository @Inject constructor(
         fallbackUrl: String? = null,
         checksumUrl: String? = null
     ) {
-        val resolvedUrl = url.trim().takeIf(String::isNotBlank) ?: return
-        val derivedFallback = if (fallbackUrl.isNullOrBlank() && assetId != null && !repositoryFullName.isNullOrBlank() && isPublicGitHubReleaseUrl(resolvedUrl)) {
-            "https://api.github.com/repos/${repositoryFullName.trim()}/releases/assets/$assetId"
-        } else {
-            fallbackUrl
+        val requestedUrl = url.trim().takeIf(String::isNotBlank) ?: return
+        val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryFullName, assetId)
+        val publicRelease = isPublicGitHubReleaseUrl(requestedUrl) || resolvedAsset != null
+        val browserUrl = resolvedAsset?.browserDownloadUrl?.trim()?.takeIf(String::isNotBlank)
+        val apiAssetUrl = resolvedAsset?.downloadUrl?.trim()?.takeIf(String::isNotBlank)
+            ?: assetId?.takeIf { !repositoryFullName.isNullOrBlank() }?.let { id ->
+                "https://api.github.com/repos/${repositoryFullName.trim()}/releases/assets/$id"
+            }
+
+        // Public release assets must use GitHub's browser/CDN URL as the primary source.
+        // The authenticated API asset endpoint remains a real fallback for cases where the
+        // browser URL is unavailable or GitHub/CDN returns an unusable response.
+        val resolvedUrl = if (publicRelease && browserUrl != null) browserUrl else requestedUrl
+        val derivedFallback = when {
+            !fallbackUrl.isNullOrBlank() && fallbackUrl.trim() != resolvedUrl -> fallbackUrl.trim()
+            apiAssetUrl != null && apiAssetUrl != resolvedUrl -> apiAssetUrl
+            else -> null
         }
-        val resolvedFallbackUrl = derivedFallback?.trim()?.takeIf { it.isNotBlank() && it != resolvedUrl }
+        val resolvedFallbackUrl = derivedFallback?.takeIf { it.isNotBlank() && it != resolvedUrl }
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
             ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryFullName, assetId)
         val queued = DownloadEntity(
@@ -174,6 +185,23 @@ class DownloadRepository @Inject constructor(
 
     suspend fun latestCompletedForPackage(packageName: String): DownloadEntity? = dao.latestCompletedForPackage(packageName)
 
+    private suspend fun resolveReleaseAsset(
+        sourceUrl: String,
+        fileName: String,
+        repositoryFullName: String?,
+        assetId: Long?
+    ): com.sayanthrock.githubrock.core.model.ReleaseAsset? = withContext(Dispatchers.IO) {
+        runCatching {
+            val release = releaseFromDownloadUrl(sourceUrl, repositoryFullName, assetId) ?: return@runCatching null
+            release.assets.firstOrNull { asset ->
+                (assetId != null && asset.id == assetId) ||
+                    asset.name == fileName ||
+                    asset.downloadUrl == sourceUrl ||
+                    asset.browserDownloadUrl == sourceUrl
+            }
+        }.getOrNull()
+    }
+
     private suspend fun resolveReleaseChecksumUrl(
         sourceUrl: String,
         fileName: String,
@@ -182,7 +210,7 @@ class DownloadRepository @Inject constructor(
     ): String? = withContext(Dispatchers.IO) {
         runCatching {
             val release = releaseFromDownloadUrl(sourceUrl, repositoryFullName, assetId) ?: return@runCatching null
-            val target = release.assets.firstOrNull { it.id == assetId || it.name == fileName || it.downloadUrl == sourceUrl } ?: return@runCatching null
+            val target = release.assets.firstOrNull { it.id == assetId || it.name == fileName || it.downloadUrl == sourceUrl || it.browserDownloadUrl == sourceUrl } ?: return@runCatching null
             if (!target.name.endsWith(".apk", true) && !target.name.endsWith(".aab", true)) return@runCatching null
             val checksum = ReleaseChecksumResolver.findFor(target, release.assets) ?: return@runCatching null
             val publicUrl = checksum.browserDownloadUrl?.takeIf(String::isNotBlank)
