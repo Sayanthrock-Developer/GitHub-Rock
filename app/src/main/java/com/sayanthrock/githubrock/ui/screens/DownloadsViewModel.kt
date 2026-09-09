@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.util.ApkInspection
 import com.sayanthrock.githubrock.data.local.DownloadEntity
+import com.sayanthrock.githubrock.data.local.DownloadState
 import com.sayanthrock.githubrock.data.repository.DownloadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
@@ -11,6 +12,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,7 +20,24 @@ import kotlinx.coroutines.launch
 class DownloadsViewModel @Inject constructor(
     private val repository: DownloadRepository
 ) : ViewModel() {
+    /**
+     * The worker persists validated APKs as INSTALLABLE. The application-download UI historically
+     * treated only COMPLETED as a terminal/ready state, which made a successfully verified APK
+     * appear to still be active and caused the primary action to pause it instead of installing it.
+     *
+     * Keep INSTALLABLE as the durable domain state, but expose it as COMPLETED to this legacy UI
+     * surface. This is presentation-only; the repository/database retain the stronger state.
+     */
     val downloads: StateFlow<List<DownloadEntity>> = repository.observeAll()
+        .map { items ->
+            items.map { item ->
+                if (item.status == DownloadState.INSTALLABLE.wireValue) {
+                    item.copy(status = DownloadState.COMPLETED.wireValue)
+                } else {
+                    item
+                }
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
