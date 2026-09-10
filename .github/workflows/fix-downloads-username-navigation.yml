@@ -1,0 +1,153 @@
+name: Fix Downloads username navigation
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply Downloads navigation fix
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          screen = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignScreen.kt'
+          hub = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsHubScreen.kt'
+          nav = root / 'app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigationV2.kt'
+          test = root / 'app/src/test/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignTest.kt'
+
+          s = screen.read_text()
+          if 'import androidx.compose.foundation.clickable' not in s:
+              s = s.replace('import androidx.compose.foundation.BorderStroke\n', 'import androidx.compose.foundation.BorderStroke\nimport androidx.compose.foundation.clickable\n')
+
+          s = s.replace(
+              'fun DownloadsRedesignScreen(viewModel: DownloadsViewModel = hiltViewModel()) {',
+              'fun DownloadsRedesignScreen(\n    viewModel: DownloadsViewModel = hiltViewModel(),\n    onOpenProfile: (String) -> Unit\n) {'
+          )
+          s = s.replace(
+              '        onOpenActions = { actionTargetId = it.id }\n    )',
+              '        onOpenActions = { actionTargetId = it.id },\n        onOpenProfile = onOpenProfile\n    )'
+          )
+          s = s.replace(
+              '    onPrimaryAction: (DownloadEntity) -> Unit,\n    onOpenActions: (DownloadEntity) -> Unit\n)',
+              '    onPrimaryAction: (DownloadEntity) -> Unit,\n    onOpenActions: (DownloadEntity) -> Unit,\n    onOpenProfile: (String) -> Unit\n)'
+          )
+          s = s.replace(
+              'DownloadListCard(item, { onPrimaryAction(item) }, { onOpenActions(item) })',
+              'DownloadListCard(item, { onPrimaryAction(item) }, { onOpenActions(item) }, { onOpenProfile(it) })'
+          )
+          s = s.replace(
+              'private fun DownloadListCard(item: DownloadEntity, onPrimaryAction: () -> Unit, onOpenActions: () -> Unit) {',
+              'private fun DownloadListCard(\n    item: DownloadEntity,\n    onPrimaryAction: () -> Unit,\n    onOpenActions: () -> Unit,\n    onOpenProfile: (String) -> Unit\n) {'
+          )
+          old = '''                    item.repositoryFullName?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }'''
+          new = '''                    item.repositoryFullName?.takeIf { it.isNotBlank() }?.let { fullName ->
+                        val owner = downloadRepositoryOwner(fullName)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (owner != null) {
+                                Text(
+                                    text = owner,
+                                    modifier = Modifier.clickable { onOpenProfile(owner) },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (fullName.length > owner.length) {
+                                    Text(
+                                        text = fullName.removePrefix(owner),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = fullName,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }'''
+          if old not in s:
+              raise SystemExit('DownloadsRedesignScreen repository text block not found')
+          s = s.replace(old, new, 1)
+
+          marker = 'internal fun preferredApplicationName(fileName: String, extractedLabel: String?): String ='
+          helper = '''internal fun downloadRepositoryOwner(repositoryFullName: String): String? =
+    repositoryFullName.substringBefore('/', missingDelimiterValue = "")
+        .trim()
+        .takeIf { it.isNotBlank() }
+
+'''
+          if 'internal fun downloadRepositoryOwner(' not in s:
+              s = s.replace(marker, helper + marker, 1)
+          screen.write_text(s)
+
+          h = hub.read_text()
+          h = h.replace(
+              'fun DownloadsHubScreen(viewModel: DownloadsViewModel = hiltViewModel()) {\n    DownloadsRedesignScreen(viewModel = viewModel)\n}',
+              'fun DownloadsHubScreen(\n    viewModel: DownloadsViewModel = hiltViewModel(),\n    onOpenProfile: (String) -> Unit\n) {\n    DownloadsRedesignScreen(viewModel = viewModel, onOpenProfile = onOpenProfile)\n}'
+          )
+          hub.write_text(h)
+
+          n = nav.read_text()
+          old_nav = ') { DownloadsHubScreen() }'
+          new_nav = ') {\n                DownloadsHubScreen(\n                    onOpenProfile = { login ->\n                        openNativeProfile(login, NativeProfileSection.Repositories)\n                    }\n                )\n            }'
+          if old_nav not in n:
+              raise SystemExit('DownloadsHubScreen navigation call not found')
+          n = n.replace(old_nav, new_nav, 1)
+          nav.write_text(n)
+
+          t = test.read_text()
+          test_case = '''
+    @Test
+    fun downloadRepositoryOwnerExtractsGitHubLogin() {
+        assertEquals("Sayanthrock-Developer", downloadRepositoryOwner("Sayanthrock-Developer/GitHub-Rock"))
+        assertEquals("example", downloadRepositoryOwner("example/project"))
+        assertEquals(null, downloadRepositoryOwner(""))
+        assertEquals(null, downloadRepositoryOwner("/project"))
+    }
+'''
+          if 'downloadRepositoryOwnerExtractsGitHubLogin' not in t:
+              t = t.replace('\n}', test_case + '}')
+          test.write_text(t)
+
+      - name: Run Downloads unit tests
+        run: ./gradlew testDebugUnitTest --tests com.sayanthrock.githubrock.ui.screens.DownloadsRedesignTest
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignScreen.kt app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsHubScreen.kt app/src/main/java/com/sayanthrock/githubrock/ui/navigation/AppNavigationV2.kt app/src/test/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignTest.kt
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: make Downloads usernames open native repositories"
+          git push origin main
+
+      - name: Remove temporary fixer
+        if: success()
+        shell: bash
+        run: |
+          git rm .github/workflows/fix-downloads-username-navigation.yml
+          git commit -m "chore: remove temporary Downloads fixer"
+          git push origin main
