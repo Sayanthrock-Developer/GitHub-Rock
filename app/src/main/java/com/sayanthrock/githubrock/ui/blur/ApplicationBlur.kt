@@ -45,18 +45,77 @@ private fun parseCustomTint(hex: String): Color? = runCatching { val normalized 
 
 @Composable private fun tintColor(profile: ApplicationBlurProfile, customTintHex: String): Color? = when (profile.tint) { ApplicationBlurTint.System -> null; ApplicationBlurTint.Theme -> MaterialTheme.colorScheme.primary; ApplicationBlurTint.Custom -> parseCustomTint(customTintHex) }
 
+/**
+ * Reusable glass surface. The [background] slot is deliberately separate from [content]:
+ * only the background layer is rendered through RenderEffect, so foreground controls stay crisp.
+ *
+ * Android's RenderEffect is a layer/content effect, not a backdrop-filter API. Callers that
+ * need true backdrop blur must provide the visual background in [background]; this component
+ * never pretends that blurring an empty layer is a backdrop blur.
+ */
 @TargetApi(Build.VERSION_CODES.S)
 @Composable
 fun ApplicationBlurSurface(settings: ApplicationBlurSettings, component: ApplicationBlurComponent, modifier: Modifier = Modifier, shape: RoundedCornerShape = RoundedCornerShape(settings.profileFor(component).sanitized().cornerRadius.dp), background: @Composable BoxScope.() -> Unit = {}, content: @Composable BoxScope.() -> Unit) {
-    val profile = settings.profileFor(component).sanitized(); val radius = settings.effectiveRadius(component)
-    if (settings.mode == ApplicationBlurMode.Off || !profile.enabled || profile.intensity == 0) { Box(modifier = modifier) { content() }; return }
-    val dim = profile.backgroundDim / 100f; val glassAlpha = profile.glassOpacity / 100f; val borderAlpha = profile.borderOpacity / 100f
+    val profile = settings.profileFor(component).sanitized()
+    val radius = settings.effectiveRadius(component)
+    if (settings.mode == ApplicationBlurMode.Off || !profile.enabled || profile.intensity == 0) {
+        Box(modifier = modifier) { content() }
+        return
+    }
+
+    val dim = profile.backgroundDim / 100f
+    val glassAlpha = profile.glassOpacity / 100f
+    val borderAlpha = profile.borderOpacity / 100f
     val borderWidth = when (profile.border) { ApplicationBlurBorder.Off -> 0.dp; ApplicationBlurBorder.Subtle -> 0.5.dp; ApplicationBlurBorder.Strong -> 1.dp }
     val shadowElevation = when (profile.shadow) { ApplicationBlurShadow.Off -> 0.dp; ApplicationBlurShadow.Soft -> 10.dp; ApplicationBlurShadow.Strong -> 20.dp }
-    val tint = tintColor(profile, settings.customTintHex); val tintAlpha = profile.tintOpacity / 100f; val brightnessDelta = (profile.brightness - 100) / 100f; val saturation = profile.saturation / 100f
+    val tint = tintColor(profile, settings.customTintHex)
+    val tintAlpha = profile.tintOpacity / 100f
+    val brightnessDelta = (profile.brightness - 100) / 100f
+    val saturation = profile.saturation / 100f
+
     Box(modifier = modifier.shadow(shadowElevation, shape, clip = false)) {
-        Box(modifier = Modifier.matchParentSize().clip(shape).then(if (radius > 0) Modifier.graphicsLayer { var effect: android.graphics.RenderEffect = android.graphics.RenderEffect.createBlurEffect(radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP); if (saturation != 1f || brightnessDelta != 0f) { val matrix = ColorMatrix().apply { setSaturation(saturation); if (brightnessDelta != 0f) { val d = brightnessDelta * 255f; postConcat(ColorMatrix(floatArrayOf(1f,0f,0f,0f,d,0f,1f,0f,0f,d,0f,0f,1f,0f,d,0f,0f,0f,1f,0f))) } }; val filterEffect = android.graphics.RenderEffect.createColorFilterEffect(android.graphics.ColorMatrixColorFilter(matrix)); effect = android.graphics.RenderEffect.createChainEffect(filterEffect, effect) }; renderEffect = effect.asComposeRenderEffect() } else Modifier)) { background() }
-        Box(modifier = Modifier.matchParentSize().clip(shape).background(Color.Black.copy(alpha = dim * 0.35f)).background(Color.White.copy(alpha = glassAlpha * 0.12f)).then(if (tint != null && tintAlpha > 0f) Modifier.background(tint.copy(alpha = tintAlpha)) else Modifier).border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape))
+        // This is the only layer receiving the expensive RenderEffect. Keeping foreground
+        // content outside this layer prevents text/icons/buttons from becoming soft.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+                .then(
+                    if (radius > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Modifier.graphicsLayer {
+                            var effect: android.graphics.RenderEffect = android.graphics.RenderEffect.createBlurEffect(
+                                radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP
+                            )
+                            if (saturation != 1f || brightnessDelta != 0f) {
+                                val matrix = ColorMatrix().apply {
+                                    setSaturation(saturation)
+                                    if (brightnessDelta != 0f) {
+                                        val d = brightnessDelta * 255f
+                                        postConcat(ColorMatrix(floatArrayOf(1f, 0f, 0f, 0f, d, 0f, 1f, 0f, 0f, d, 0f, 0f, 1f, 0f, d, 0f, 0f, 0f, 1f, 0f)))
+                                    }
+                                }
+                                val filterEffect = android.graphics.RenderEffect.createColorFilterEffect(android.graphics.ColorMatrixColorFilter(matrix))
+                                effect = android.graphics.RenderEffect.createChainEffect(filterEffect, effect)
+                            }
+                            renderEffect = effect.asComposeRenderEffect()
+                        }
+                    } else Modifier
+                )
+        ) { background() }
+
+        // Glass treatment is independent from the blurred layer so user-configured opacity,
+        // tint and dimming remain visible on API 29/30 as a safe non-blur fallback.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+                .background(Color.Black.copy(alpha = dim * 0.35f))
+                .background(Color.White.copy(alpha = glassAlpha * 0.12f))
+                .then(if (tint != null && tintAlpha > 0f) Modifier.background(tint.copy(alpha = tintAlpha)) else Modifier)
+                .border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape)
+        )
+
+        // Foreground remains sharp and interactive.
         Box(modifier = Modifier.matchParentSize()) { content() }
     }
 }
