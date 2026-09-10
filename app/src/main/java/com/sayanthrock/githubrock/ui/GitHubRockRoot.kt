@@ -69,7 +69,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
-                    SwipeNavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)) {
+                    SwipeNavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle)) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
                     RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, blurSettings = blurState, modifier = Modifier.fillMaxSize())
@@ -80,8 +80,17 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     }
 }
 
-private fun navigationContentInset(style: NavigationBarStyle, systemNavigationPadding: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = when (style) {
-    NavigationBarStyle.FloatingCapsule, NavigationBarStyle.Classic, NavigationBarStyle.Glass, NavigationBarStyle.Minimal, NavigationBarStyle.Compact -> 0.dp
+/**
+ * The navigation chrome is drawn as an overlay, so the content must reserve the
+ * same vertical space. Previously every style returned 0.dp, allowing the last
+ * list/card rows to sit underneath the navigation bar.
+ */
+private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.ui.unit.Dp = when (style) {
+    NavigationBarStyle.FloatingCapsule -> 102.dp
+    NavigationBarStyle.Classic -> 102.dp
+    NavigationBarStyle.Glass -> 100.dp
+    NavigationBarStyle.Minimal -> 72.dp
+    NavigationBarStyle.Compact -> 74.dp
 }
 
 @Composable
