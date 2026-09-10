@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +75,7 @@ fun LogoutConfirmationSheet(
                         modifier = Modifier.size(72.dp).clip(CircleShape)
                     )
                 } else {
-                    Icon(Icons.Default.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(20.dp))
+                    Icon(RockIcon.Logout.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(20.dp))
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -103,7 +102,7 @@ fun LogoutConfirmationSheet(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(RockIcon.Logout.vector(), contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(8.dp))
                     Text(if (connected) "Log Out" else "Exit")
                 }
