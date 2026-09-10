@@ -126,6 +126,7 @@ private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
+    val view = LocalView.current
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
     val swipeModifier = Modifier.pointerInput(Unit) {
