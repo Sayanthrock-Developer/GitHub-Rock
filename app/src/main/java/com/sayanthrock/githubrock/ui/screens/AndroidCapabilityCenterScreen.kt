@@ -23,17 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.BatterySaver
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.InstallMobile
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -65,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 internal data class AndroidCapabilityState(
     val notificationsEnabled: Boolean,
@@ -136,7 +126,7 @@ private fun AndroidCapabilityCenterContent(
                 title = { Text("Android capabilities") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(RockIcon.Back.vector(), contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -169,7 +159,7 @@ private fun AndroidCapabilityCenterContent(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
                         ) {
                             Icon(
-                                Icons.Default.Security,
+                                RockIcon.Security.vector(),
                                 contentDescription = null,
                                 modifier = Modifier.padding(15.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -193,7 +183,7 @@ private fun AndroidCapabilityCenterContent(
             item { StandardSectionHeader("Core capabilities") }
             item {
                 CapabilityCard(
-                    icon = Icons.Default.Download,
+                    icon = RockIcon.Download.vector(),
                     title = "Downloads & background work",
                     description = "Network access, wake lock, foreground data-sync service, resumable WorkManager jobs, and reboot recovery.",
                     ready = true,
@@ -202,7 +192,7 @@ private fun AndroidCapabilityCenterContent(
             }
             item {
                 CapabilityCard(
-                    icon = Icons.Default.Notifications,
+                    icon = RockIcon.Notifications.vector(),
                     title = "Download notifications",
                     description = "Shows live APK, artifact, image, and release-download progress.",
                     ready = state.notificationsEnabled,
@@ -213,7 +203,7 @@ private fun AndroidCapabilityCenterContent(
             }
             item {
                 CapabilityCard(
-                    icon = Icons.Default.InstallMobile,
+                    icon = RockIcon.InstallMobile.vector(),
                     title = "Install downloaded APKs",
                     description = "Opens Android's package installer. Android still requires confirmation for every installation.",
                     ready = state.apkInstallAllowed,
@@ -224,7 +214,7 @@ private fun AndroidCapabilityCenterContent(
             }
             item {
                 CapabilityCard(
-                    icon = Icons.Default.BatterySaver,
+                    icon = RockIcon.BatterySaver.vector(),
                     title = "Battery & background reliability",
                     description = if (state.batteryUnrestricted) {
                         "Unrestricted battery usage is enabled. This can improve reliability for very large downloads and background activity, but may use more battery."
@@ -239,7 +229,7 @@ private fun AndroidCapabilityCenterContent(
             }
             item {
                 CapabilityCard(
-                    icon = Icons.Default.Terminal,
+                    icon = RockIcon.Terminal.vector(),
                     title = "Termux command bridge",
                     description = "Optional command execution through the existing targeted Termux integration.",
                     ready = state.termuxAvailable,
@@ -268,7 +258,7 @@ private fun AndroidCapabilityCenterContent(
                     onClick = onOpenAppSettings,
                     modifier = Modifier.fillMaxWidth().height(52.dp)
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Icon(RockIcon.Settings.vector(), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Open Android app settings", fontWeight = FontWeight.Bold)
                 }
@@ -318,7 +308,7 @@ private fun CapabilityCard(
                     )
                 }
                 Icon(
-                    if (ready) Icons.Default.CheckCircle else Icons.Default.WarningAmber,
+                    if (ready) RockIcon.Check.vector() else RockIcon.Error.vector(),
                     contentDescription = status,
                     tint = if (ready) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
@@ -337,7 +327,7 @@ private fun CapabilityCard(
 private fun ProtectedAction(text: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(
-            Icons.Default.Security,
+            RockIcon.Security.vector(),
             contentDescription = null,
             modifier = Modifier.size(19.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
