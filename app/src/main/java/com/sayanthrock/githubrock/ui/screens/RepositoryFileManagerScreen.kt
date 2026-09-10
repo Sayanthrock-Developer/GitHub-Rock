@@ -19,16 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -67,6 +57,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.ContentEntry
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.vector
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -114,31 +106,31 @@ fun RepositoryFileManagerScreen(repository: GitHubRepositoryModel?, onBack: () -
         scope.launch { runCatching { readFolderFiles(uri, context) }.onSuccess(::showUpload).onFailure { viewModel.reportError(it.message ?: "Unable to read selected folder") } }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Column { Text("Repository files", fontWeight = FontWeight.Bold); Text(repository?.fullName ?: "GitHub repository", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Column { Text("Repository files", fontWeight = FontWeight.Bold); Text(repository?.fullName ?: "GitHub repository", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } }, navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") } }) }) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { OperationStatus(state.loading, state.operationLabel, state.error != null) }
-            state.error?.let { item { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.errorContainer) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.ErrorOutline, null); Spacer(Modifier.size(8.dp)); Text(it, Modifier.weight(1f)); TextButton(onClick = viewModel::dismissError) { Text("Dismiss") } } } } }
-            state.message?.let { item { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) { Column(Modifier.padding(12.dp)) { Text(it, fontWeight = FontWeight.Bold); state.pullRequestUrl?.let { url -> TextButton(onClick = { openUrl(url) }) { Text("Open pull request"); Icon(Icons.Default.OpenInNew, null) } } } } } }
+            state.error?.let { item { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.errorContainer) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(RockIcon.Error.vector(), null); Spacer(Modifier.size(8.dp)); Text(it, Modifier.weight(1f)); TextButton(onClick = viewModel::dismissError) { Text("Dismiss") } } } } }
+            state.message?.let { item { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) { Column(Modifier.padding(12.dp)) { Text(it, fontWeight = FontWeight.Bold); state.pullRequestUrl?.let { url -> TextButton(onClick = { openUrl(url) }) { Text("Open pull request"); Icon(RockIcon.OpenInNew.vector(), null) } } } } } }
             item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(state.currentPath.ifBlank { "Repository root" }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("Upload multiple files or an entire folder. All uploads stay on a review branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f)) { Icon(Icons.Default.FolderOpen, null); Spacer(Modifier.size(5.dp)); Text("Up") }
-                    Button(onClick = { multiPicker.launch(arrayOf("*/*")) }, enabled = !state.loading, modifier = Modifier.weight(1f)) { Icon(Icons.Default.UploadFile, null); Spacer(Modifier.size(5.dp)); Text("Add files") }
+                    OutlinedButton(onClick = viewModel::goUp, enabled = state.currentPath.isNotBlank() && !state.loading, modifier = Modifier.weight(1f)) { Icon(RockIcon.FolderOpen.vector(), null); Spacer(Modifier.size(5.dp)); Text("Up") }
+                    Button(onClick = { multiPicker.launch(arrayOf("*/*")) }, enabled = !state.loading, modifier = Modifier.weight(1f)) { Icon(RockIcon.UploadFile.vector(), null); Spacer(Modifier.size(5.dp)); Text("Add files") }
                 }
-                OutlinedButton(onClick = { folderPicker.launch(null) }, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Folder, null); Spacer(Modifier.size(5.dp)); Text("Add folder") }
+                OutlinedButton(onClick = { folderPicker.launch(null) }, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) { Icon(RockIcon.Folder.vector(), null); Spacer(Modifier.size(5.dp)); Text("Add folder") }
             } } }
             if (state.uploadQueue.isNotEmpty()) item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Upload queue", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 state.uploadQueue.forEach { file ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (file.status == UploadFileStatus.UPLOADED) Icons.Default.CheckCircle else if (file.status == UploadFileStatus.FAILED) Icons.Default.ErrorOutline else Icons.Default.UploadFile, null, tint = if (file.status == UploadFileStatus.FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                        Icon(if (file.status == UploadFileStatus.UPLOADED) RockIcon.Check.vector() else if (file.status == UploadFileStatus.FAILED) RockIcon.Error.vector() else RockIcon.UploadFile.vector(), null, tint = if (file.status == UploadFileStatus.FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.size(8.dp)); Column(Modifier.weight(1f)) { Text(file.path, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(file.error ?: file.status.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
                 if (state.uploadQueue.any { it.status == UploadFileStatus.FAILED }) OutlinedButton(onClick = viewModel::retryFailed, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) { Text("Retry failed files only") }
             } } }
-            state.selectedFile?.let { file -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(file.path, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold); TextButton(onClick = viewModel::closeFile) { Text("Close") } }; if (file.content != null) { OutlinedButton(onClick = { clipboard.setText(AnnotatedString(file.content)) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.ContentCopy, null); Text("Copy file") }; SelectionContainer { Text(file.content, modifier = Modifier.fillMaxWidth(), fontFamily = FontFamily.Monospace, maxLines = 32, overflow = TextOverflow.Ellipsis) } }; file.rawUrl?.let { url -> TextButton(onClick = { openUrl(url) }) { Text("Open raw file"); Icon(Icons.Default.OpenInNew, null) } } } } } }
+            state.selectedFile?.let { file -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(file.path, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold); TextButton(onClick = viewModel::closeFile) { Text("Close") } }; if (file.content != null) { OutlinedButton(onClick = { clipboard.setText(AnnotatedString(file.content)) }, modifier = Modifier.fillMaxWidth()) { Icon(RockIcon.Copy.vector(), null); Text("Copy file") }; SelectionContainer { Text(file.content, modifier = Modifier.fillMaxWidth(), fontFamily = FontFamily.Monospace, maxLines = 32, overflow = TextOverflow.Ellipsis) } }; file.rawUrl?.let { url -> TextButton(onClick = { openUrl(url) }) { Text("Open raw file"); Icon(RockIcon.OpenInNew.vector(), null) } } } } } }
             items(state.entries, key = { it.path }) { entry -> FileEntryCard(entry, !state.loading, { if (entry.type == "dir") viewModel.loadDirectory(entry.path) else viewModel.openFile(entry) }, entry.downloadUrl?.let { url -> { openUrl(url) } }) }
         }
     }
@@ -193,6 +185,6 @@ private fun readLimited(input: java.io.InputStream): ByteArray {
 }
 private fun sanitizePath(value: String): String = value.replace("/", "_").replace("\\", "_").trim().ifBlank { "uploaded-file" }
 
-@Composable private fun OperationStatus(loading: Boolean, label: String, error: Boolean) { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .10f), border = BorderStroke(1.dp, (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .3f))) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) else Icon(if (error) Icons.Default.ErrorOutline else Icons.Default.CheckCircle, null); Spacer(Modifier.size(10.dp)); Text(label, fontWeight = FontWeight.Bold) } } }
+@Composable private fun OperationStatus(loading: Boolean, label: String, error: Boolean) { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .10f), border = BorderStroke(1.dp, (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .3f))) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) else Icon(if (error) RockIcon.Error.vector() else RockIcon.Check.vector(), null); Spacer(Modifier.size(10.dp)); Text(label, fontWeight = FontWeight.Bold) } } }
 
-@Composable private fun FileEntryCard(entry: ContentEntry, enabled: Boolean, onClick: () -> Unit, onRaw: (() -> Unit)?) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(imageVector = if (entry.type == "dir") Icons.Default.Folder else Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.size(10.dp)); Column(Modifier.weight(1f)) { Text(entry.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(if (entry.type == "dir") "Folder" else "${entry.size} bytes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }; if (onRaw != null) IconButton(onClick = onRaw, enabled = enabled) { Icon(Icons.Default.OpenInNew, "Open raw") } } } }
+@Composable private fun FileEntryCard(entry: ContentEntry, enabled: Boolean, onClick: () -> Unit, onRaw: (() -> Unit)?) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(imageVector = if (entry.type == "dir") RockIcon.Folder.vector() else RockIcon.Description.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.size(10.dp)); Column(Modifier.weight(1f)) { Text(entry.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(if (entry.type == "dir") "Folder" else "${entry.size} bytes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }; if (onRaw != null) IconButton(onClick = onRaw, enabled = enabled) { Icon(RockIcon.OpenInNew.vector(), "Open raw") } } } }
