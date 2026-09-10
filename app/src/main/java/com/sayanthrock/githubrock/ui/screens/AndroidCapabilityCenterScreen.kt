@@ -59,16 +59,14 @@ import com.sayanthrock.githubrock.ui.icons.RockIcon
 internal data class AndroidCapabilityState(
     val notificationsEnabled: Boolean,
     val apkInstallAllowed: Boolean,
-    val batteryUnrestricted: Boolean,
-    val termuxAvailable: Boolean
+    val batteryUnrestricted: Boolean
 ) {
     val readyCount: Int
         get() = listOf(
             true,
             notificationsEnabled,
             apkInstallAllowed,
-            batteryUnrestricted,
-            termuxAvailable
+            batteryUnrestricted
         ).count { it }
 }
 
@@ -167,7 +165,7 @@ private fun AndroidCapabilityCenterContent(
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text(
-                                "${state.readyCount} of 5 ready",
+                                "${state.readyCount} of 4 ready",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Black
                             )
@@ -225,15 +223,6 @@ private fun AndroidCapabilityCenterContent(
                     status = if (state.batteryUnrestricted) "Unrestricted (optional)" else "System managed",
                     actionLabel = "Open battery settings",
                     onAction = onOpenBatterySettings
-                )
-            }
-            item {
-                CapabilityCard(
-                    icon = RockIcon.Terminal.vector(),
-                    title = "Termux command bridge",
-                    description = "Optional command execution through the existing targeted Termux integration.",
-                    ready = state.termuxAvailable,
-                    status = if (state.termuxAvailable) "Termux available" else "Termux not installed"
                 )
             }
 
@@ -347,15 +336,11 @@ internal fun readAndroidCapabilityState(context: Context): AndroidCapabilityStat
         context.packageManager.canRequestPackageInstalls()
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     val batteryUnrestricted = powerManager.isIgnoringBatteryOptimizations(context.packageName)
-    val termuxAvailable = runCatching {
-        context.packageManager.getPackageInfo("com.termux", 0)
-    }.isSuccess
 
     return AndroidCapabilityState(
         notificationsEnabled = notificationsEnabled,
         apkInstallAllowed = apkInstallAllowed,
-        batteryUnrestricted = batteryUnrestricted,
-        termuxAvailable = termuxAvailable
+        batteryUnrestricted = batteryUnrestricted
     )
 }
 
