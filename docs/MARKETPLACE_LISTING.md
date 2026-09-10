@@ -70,7 +70,7 @@ Select that option only when it accurately describes the owner and project. Obta
 | --- | --- |
 | Privacy Policy URL | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/PRIVACY.md` |
 | Terms of Service URL | `https://github.com/Sayanthrock-Developer/GitHub-Rock/blob/main/TERMS.md` |
-| Third-party services required | `GitHub OAuth and GitHub APIs; Cloudflare Workers for signed Marketplace webhook delivery; Android browser/Custom Tabs; Android Package Installer and system sharing/file interfaces; optional Termux integration when explicitly enabled by the user.` |
+| Third-party services required | `GitHub OAuth and GitHub APIs; Cloudflare Workers for signed Marketplace webhook delivery; Android browser/Custom Tabs; Android Package Installer and system sharing/file interfaces.` |
 | Repository visibility | `Public` |
 
 ### Transparency disclosures
@@ -98,7 +98,6 @@ GitHub Rock is an open-source Android developer tool that connects to GitHub thr
 ### User-controlled operations
 - Repository changes, workflow actions, downloads, sharing, and APK installation are initiated by the user.
 - APK installation is delegated to Android's official Package Installer. GitHub Rock does not bypass Android signature checks, Play Protect, repository protections, or organization policy.
-- Optional Termux integration runs only when explicitly selected by the user.
 
 ### Incident reporting and limitations
 - Security issues must be reported privately using the repository's SECURITY.md instructions; live credentials must never be posted publicly.
