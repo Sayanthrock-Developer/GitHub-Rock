@@ -15,6 +15,8 @@ import com.composables.icons.materialsymbols.rounded.Battery_saver as BatterySav
 import com.composables.icons.materialsymbols.rounded.Build as BuildRegular
 import com.composables.icons.materialsymbols.rounded.Call_split as CallSplitRegular
 import com.composables.icons.materialsymbols.rounded.Chat_bubble as ChatBubbleRegular
+import com.composables.icons.materialsymbols.rounded.Check_box as CheckBoxRegular
+import com.composables.icons.materialsymbols.rounded.Check_box_outline_blank as CheckBoxOutlineBlankRegular
 import com.composables.icons.materialsymbols.rounded.Check_circle as CheckCircleRegular
 import com.composables.icons.materialsymbols.rounded.Chevron_right as ChevronRightRegular
 import com.composables.icons.materialsymbols.rounded.Cloud_download as CloudDownloadRegular
@@ -78,6 +80,8 @@ import com.composables.icons.materialsymbols.roundedfilled.Battery_saver
 import com.composables.icons.materialsymbols.roundedfilled.Build
 import com.composables.icons.materialsymbols.roundedfilled.Call_split
 import com.composables.icons.materialsymbols.roundedfilled.Chat_bubble
+import com.composables.icons.materialsymbols.roundedfilled.Check_box
+import com.composables.icons.materialsymbols.roundedfilled.Check_box_outline_blank
 import com.composables.icons.materialsymbols.roundedfilled.Check_circle
 import com.composables.icons.materialsymbols.roundedfilled.Chevron_right
 import com.composables.icons.materialsymbols.roundedfilled.Cloud_download
@@ -137,7 +141,7 @@ enum class RockIcon {
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
     CloudDownload, Palette, Person, PersonAdd, PersonRemove, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile,
     Add, ArrowDropDown, Close, Android, Devices, LaptopMac, DesktopWindows, PhoneIphone, Terminal, BatterySaver, Delete, ViewCompact,
-    InstallMobile, Launch
+    InstallMobile, Launch, CheckBox, CheckBoxOutlineBlank
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -205,4 +209,6 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.ViewCompact -> if (selected) MaterialSymbols.RoundedFilled.View_compact else MaterialSymbols.Rounded.ViewCompactRegular
     RockIcon.InstallMobile -> if (selected) MaterialSymbols.RoundedFilled.Install_mobile else MaterialSymbols.Rounded.InstallMobileRegular
     RockIcon.Launch -> if (selected) MaterialSymbols.RoundedFilled.Launch else MaterialSymbols.Rounded.LaunchRegular
+    RockIcon.CheckBox -> if (selected) MaterialSymbols.RoundedFilled.Check_box else MaterialSymbols.Rounded.CheckBoxRegular
+    RockIcon.CheckBoxOutlineBlank -> if (selected) MaterialSymbols.RoundedFilled.Check_box_outline_blank else MaterialSymbols.Rounded.CheckBoxOutlineBlankRegular
 }
