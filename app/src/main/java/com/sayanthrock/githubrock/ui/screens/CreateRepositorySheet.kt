@@ -10,12 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -48,6 +42,7 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.RepositoryCreationForm
 import com.sayanthrock.githubrock.core.model.RepositoryLicenseTemplate
 import com.sayanthrock.githubrock.core.model.RepositoryOwnerOption
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,7 +119,7 @@ internal fun CreateRepositoryFormContent(
                 )
             }
             IconButton(onClick = onCancel) {
-                Icon(Icons.Default.Close, contentDescription = "Close repository creation")
+                Icon(RockIcon.Close.vector(), contentDescription = "Close repository creation")
             }
         }
 
@@ -184,7 +179,7 @@ internal fun CreateRepositoryFormContent(
             },
             checked = form.privateRepository,
             enabled = !state.submitting,
-            icon = if (form.privateRepository) Icons.Default.Lock else Icons.Default.Public,
+            icon = if (form.privateRepository) RockIcon.Lock.vector() else RockIcon.Public.vector(),
             onCheckedChange = { onFormChange(form.copy(privateRepository = it)) }
         )
 
@@ -195,7 +190,7 @@ internal fun CreateRepositoryFormContent(
             subtitle = "Create the first commit so templates and a custom default branch can be applied.",
             checked = form.initializeReadme,
             enabled = !state.submitting,
-            icon = Icons.Default.Add,
+            icon = RockIcon.Add.vector(),
             onCheckedChange = { initialize ->
                 onFormChange(
                     form.copy(
@@ -279,7 +274,7 @@ internal fun CreateRepositoryFormContent(
                         Spacer(Modifier.width(8.dp))
                         Text("Creating…")
                     } else {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(RockIcon.Add.vector(), contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Create")
                     }
@@ -313,7 +308,7 @@ private fun OwnerDropdown(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            Icon(RockIcon.ArrowDropDown.vector(), contentDescription = null)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             owners.forEach { owner ->
@@ -361,7 +356,7 @@ private fun TemplateDropdown(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            Icon(RockIcon.ArrowDropDown.vector(), contentDescription = null)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
