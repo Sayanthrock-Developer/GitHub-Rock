@@ -4,9 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,6 +21,7 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.repository.ProfileLibraryRepository
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
 import javax.inject.Inject
@@ -36,9 +34,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class ProfileLibrarySection(val route: String, val title: String, val subtitle: String, val icon: ImageVector) {
-    Stars("stars", "Stars", "Repositories starred on GitHub", Icons.Default.Star),
-    Favourites("favourites", "Favourites", "Repositories pinned inside GitHub Rock", Icons.Default.Favorite),
-    RecentlyViewed("recent", "Recently viewed", "Repositories opened on this device", Icons.Default.History);
+    Stars("stars", "Stars", "Repositories starred on GitHub", RockIcon.Star.vector()),
+    Favourites("favourites", "Favourites", "Repositories pinned inside GitHub Rock", RockIcon.Favorite.vector()),
+    RecentlyViewed("recent", "Recently viewed", "Repositories opened on this device", RockIcon.History.vector());
     companion object { fun fromRoute(value: String?) = entries.firstOrNull { it.route.equals(value, true) } ?: Stars }
 }
 
@@ -103,14 +101,14 @@ fun ProfileLibraryScreen(section: ProfileLibrarySection, onBack: () -> Unit, onO
         if (normalized.isBlank()) state.repositories else state.repositories.filter { it.name.contains(normalized, true) || it.fullName.contains(normalized, true) || it.description.orEmpty().contains(normalized, true) || it.language.orEmpty().contains(normalized, true) }
     }
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
-        TopAppBar(title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }, actions = { IconButton(onClick = viewModel::refresh) { Icon(Icons.Default.Refresh, "Refresh ${section.title}") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
+        TopAppBar(title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } }, navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") } }, actions = { IconButton(onClick = viewModel::refresh) { Icon(RockIcon.Refresh.vector(), "Refresh ${section.title}") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { ProfileLibrarySummary(section.icon, section.title, section.subtitle, state.repositories.size) }
             item { OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Search ${section.title.lowercase()}") }) }
             when {
                 state.loading -> item { Box(Modifier.fillMaxWidth().padding(vertical = 56.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                state.error != null -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(state.error!!, color = MaterialTheme.colorScheme.error); OutlinedButton(onClick = viewModel::refresh) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Retry") } } } }
+                state.error != null -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(state.error!!, color = MaterialTheme.colorScheme.error); OutlinedButton(onClick = viewModel::refresh) { Icon(RockIcon.Refresh.vector(), null); Spacer(Modifier.width(8.dp)); Text("Retry") } } } }
                 visibleRepositories.isEmpty() -> item { ProfileLibraryEmpty(section, query.isNotBlank()) }
                 else -> items(visibleRepositories, key = GitHubRepositoryModel::id) { repo -> ProfileLibraryRepositoryCard(repo, repo.profileLibraryKey() in state.favouriteKeys, { viewModel.toggleFavourite(repo) }) { onOpenRepository(repo) } }
             }
@@ -138,7 +136,7 @@ private fun ProfileLibraryRepositoryCard(repository: GitHubRepositoryModel, isFa
             Text(repository.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) { Text("★ ${repository.stars}", style = MaterialTheme.typography.labelMedium); Text("Forks ${repository.forks}", style = MaterialTheme.typography.labelMedium); Text(repository.language ?: "Repository", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
-        IconButton(onClick = onToggleFavourite) { Icon(if (isFavourite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, if (isFavourite) "Remove from favourites" else "Add to favourites", tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
+        IconButton(onClick = onToggleFavourite) { Icon(if (isFavourite) RockIcon.Favorite.vector(selected = true) else RockIcon.FavoriteBorder.vector(), if (isFavourite) "Remove from favourites" else "Add to favourites", tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
     } }
 }
 
