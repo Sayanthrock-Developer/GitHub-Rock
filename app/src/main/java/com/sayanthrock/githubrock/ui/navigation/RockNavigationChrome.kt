@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -86,14 +88,14 @@ private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarSty
 
 @Composable
 private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f), 0.55f, 18.dp, 700.dp, blurSettings) {
+    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f), 0.55f, 18.dp, 700.dp, blurSettings, onDestinationSelected) {
         NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), 26.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
 private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier.fillMaxWidth(), RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), 0.5f, 12.dp, 700.dp, blurSettings) {
+    NavigationSurface(modifier.fillMaxWidth(), RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), 0.5f, 12.dp, 700.dp, blurSettings, onDestinationSelected) {
         NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, true, Modifier.weight(1f), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
@@ -110,28 +112,41 @@ private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animatio
 
 @Composable
 private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface.copy(alpha = 0.58f), 0.65f, 14.dp, 700.dp, blurSettings) {
+    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface.copy(alpha = 0.58f), 0.65f, 14.dp, 700.dp, blurSettings, onDestinationSelected) {
         NavigationRow(70.dp, 6.dp, 3.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
 private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f), 0.5f, 12.dp, 500.dp, blurSettings) {
+    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f), 0.5f, 12.dp, 500.dp, blurSettings, onDestinationSelected) {
         NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, false, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, 22.dp) } }
     }
 }
 
 @Composable
-private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, blurSettings: ApplicationBlurSettings, content: @Composable () -> Unit) {
+private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
+    val swipeModifier = Modifier.pointerInput(Unit) {
+        detectDragGesturesAfterLongPress(
+            onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+            onDrag = { change, _ ->
+                change.consume()
+                if (size.width > 0) {
+                    val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt()
+                        .coerceIn(0, rockNavigationDestinations.lastIndex)
+                    onDestinationSelected(rockNavigationDestinations[index])
+                }
+            }
+        )
+    }
     if (blurEnabled) {
-        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth), shape = shape) {
+        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(swipeModifier), shape = shape) {
             Surface(modifier = Modifier.fillMaxSize(), shape = shape, color = color.copy(alpha = 0f), contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
         }
     } else {
-        Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
+        Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(swipeModifier), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
     }
 }
 
