@@ -21,6 +21,7 @@ import com.composables.icons.materialsymbols.rounded.Expand_less as ExpandLessRe
 import com.composables.icons.materialsymbols.rounded.Expand_more as ExpandMoreRegular
 import com.composables.icons.materialsymbols.rounded.Favorite as FavoriteRegular
 import com.composables.icons.materialsymbols.rounded.Folder as FolderRegular
+import com.composables.icons.materialsymbols.rounded.Folder_open as FolderOpenRegular
 import com.composables.icons.materialsymbols.rounded.History as HistoryRegular
 import com.composables.icons.materialsymbols.rounded.Home as HomeRegular
 import com.composables.icons.materialsymbols.rounded.Info as InfoRegular
@@ -28,6 +29,8 @@ import com.composables.icons.materialsymbols.rounded.Lock as LockRegular
 import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
 import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
 import com.composables.icons.materialsymbols.rounded.Open_in_browser as OpenInBrowserRegular
+import com.composables.icons.materialsymbols.rounded.Open_in_new as OpenInNewRegular
+import com.composables.icons.materialsymbols.rounded.Public as PublicRegular
 import com.composables.icons.materialsymbols.rounded.Refresh as RefreshRegular
 import com.composables.icons.materialsymbols.rounded.Search as SearchRegular
 import com.composables.icons.materialsymbols.rounded.Security as SecurityRegular
@@ -56,6 +59,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Expand_less
 import com.composables.icons.materialsymbols.roundedfilled.Expand_more
 import com.composables.icons.materialsymbols.roundedfilled.Favorite
 import com.composables.icons.materialsymbols.roundedfilled.Folder
+import com.composables.icons.materialsymbols.roundedfilled.Folder_open
 import com.composables.icons.materialsymbols.roundedfilled.History
 import com.composables.icons.materialsymbols.roundedfilled.Home
 import com.composables.icons.materialsymbols.roundedfilled.Info
@@ -63,6 +67,8 @@ import com.composables.icons.materialsymbols.roundedfilled.Lock
 import com.composables.icons.materialsymbols.roundedfilled.Logout
 import com.composables.icons.materialsymbols.roundedfilled.Notifications
 import com.composables.icons.materialsymbols.roundedfilled.Open_in_browser
+import com.composables.icons.materialsymbols.roundedfilled.Open_in_new
+import com.composables.icons.materialsymbols.roundedfilled.Public
 import com.composables.icons.materialsymbols.roundedfilled.Refresh
 import com.composables.icons.materialsymbols.roundedfilled.Search
 import com.composables.icons.materialsymbols.roundedfilled.Security
@@ -78,7 +84,7 @@ enum class RockIcon {
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
-    ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer
+    ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -117,4 +123,7 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Stop -> if (selected) MaterialSymbols.RoundedFilled.Stop else MaterialSymbols.Rounded.StopRegular
     RockIcon.Sync -> if (selected) MaterialSymbols.RoundedFilled.Sync else MaterialSymbols.Rounded.SyncRegular
     RockIcon.Timer -> if (selected) MaterialSymbols.RoundedFilled.Timer else MaterialSymbols.Rounded.TimerRegular
+    RockIcon.FolderOpen -> if (selected) MaterialSymbols.RoundedFilled.Folder_open else MaterialSymbols.Rounded.FolderOpenRegular
+    RockIcon.OpenInNew -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
+    RockIcon.Public -> if (selected) MaterialSymbols.RoundedFilled.Public else MaterialSymbols.Rounded.PublicRegular
 }
