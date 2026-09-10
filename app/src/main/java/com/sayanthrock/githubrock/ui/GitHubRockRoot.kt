@@ -1,14 +1,12 @@
 package com.sayanthrock.githubrock.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -29,7 +27,6 @@ import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 @Composable
 fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewModel: AppearanceViewModel = hiltViewModel(), setupViewModel: GitHubRockSetupViewModel = hiltViewModel()) {
@@ -69,7 +66,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
-                    SwipeNavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle)) {
+                    NavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle)) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
                     RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, blurSettings = blurState, modifier = Modifier.fillMaxSize())
@@ -80,11 +77,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     }
 }
 
-/**
- * The navigation chrome is drawn as an overlay, so the content must reserve the
- * same vertical space. Previously every style returned 0.dp, allowing the last
- * list/card rows to sit underneath the navigation bar.
- */
+/** Reserve space for the fixed navigation chrome without changing the scroll direction or page content gestures. */
 private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.ui.unit.Dp = when (style) {
     NavigationBarStyle.FloatingCapsule -> 102.dp
     NavigationBarStyle.Classic -> 102.dp
@@ -94,19 +87,6 @@ private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.
 }
 
 @Composable
-private fun SwipeNavigationContent(navController: androidx.navigation.NavHostController, bottomContentPadding: androidx.compose.ui.unit.Dp, content: @Composable () -> Unit) {
-    val entry by navController.currentBackStackEntryAsState()
-    val selectedRoute = entry?.destination?.route
-    val destinations = listOf(TopDestinationV2.Home, TopDestinationV2.Repositories, TopDestinationV2.Builds, TopDestinationV2.Downloads, TopDestinationV2.Profile)
-    val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
-    Box(Modifier.fillMaxSize().padding(bottom = bottomContentPadding).pointerInput(selectedRoute) {
-        var totalDragX = 0f
-        detectHorizontalDragGestures(onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount }, onDragEnd = {
-            if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
-                val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
-                destinations.getOrNull(nextIndex)?.let { destination -> navController.navigate(destination.route) { popUpTo(navController.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true } }
-            }
-            totalDragX = 0f
-        }, onDragCancel = { totalDragX = 0f })
-    }) { content() }
+private fun NavigationContent(navController: androidx.navigation.NavHostController, bottomContentPadding: androidx.compose.ui.unit.Dp, content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize().padding(bottom = bottomContentPadding)) { content() }
 }
