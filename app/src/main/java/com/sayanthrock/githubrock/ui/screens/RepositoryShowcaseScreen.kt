@@ -13,8 +13,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +37,8 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.MarkdownTable
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
+import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.vector
 import java.net.URI
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,11 +57,11 @@ fun RepositoryShowcaseScreen(
         topBar = {
             TopAppBar(
                 title = { Text(displayedRepository?.name ?: "Repository", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") } },
                 actions = {
                     displayedRepository?.htmlUrl?.takeIf(String::isNotBlank)?.let { url ->
                         IconButton(onClick = { openHttpsBrowser(context, url) }) {
-                            Icon(Icons.Default.OpenInNew, "Open repository on GitHub")
+                            Icon(RockIcon.OpenInNew.vector(), "Open repository on GitHub")
                         }
                     }
                 }
@@ -125,7 +125,7 @@ fun RepositoryShowcaseContent(
             item { RepositoryDescriptionCard(repo) }
             item {
                 Button(onClick = onOpenGitHub, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.OpenInNew, null)
+                    Icon(RockIcon.OpenInNew.vector(), null)
                     Spacer(Modifier.width(8.dp))
                     Text("Open on GitHub")
                 }
@@ -187,7 +187,7 @@ private fun RenderMarkdownBlock(
         }
         MarkdownBlockKind.Task -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
             Icon(
-                imageVector = if (block.checked) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                imageVector = if (block.checked) RockIcon.CheckBox.vector() else RockIcon.CheckBoxOutlineBlank.vector(),
                 contentDescription = if (block.checked) "Completed task" else "Task"
             )
             InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
@@ -241,7 +241,7 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                     clipboard?.setPrimaryClip(ClipData.newPlainText("README code", block.text))
                 }) {
-                    Icon(Icons.Default.ContentCopy, null)
+                    Icon(RockIcon.Copy.vector(), null)
                     Spacer(Modifier.width(4.dp))
                     Text("Copy")
                 }
