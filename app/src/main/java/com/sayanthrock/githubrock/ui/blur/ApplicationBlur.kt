@@ -1,12 +1,15 @@
 package com.sayanthrock.githubrock.ui.blur
 
 import android.annotation.TargetApi
+import android.graphics.Color as AndroidColor
+import android.graphics.ColorMatrix
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,25 +85,40 @@ data class ApplicationBlurSettings(
 fun ApplicationBlurSettings.effectiveRadius(component: ApplicationBlurComponent? = null): Int {
     if (mode == ApplicationBlurMode.Off) return 0
     val selected = (component?.let(::profileFor) ?: profile).sanitized()
-    if (!selected.enabled) return 0
-    val modeRadius = when (mode) {
-        ApplicationBlurMode.Off -> 0
-        ApplicationBlurMode.Automatic -> selected.radius
-        ApplicationBlurMode.Subtle -> minOf(selected.radius, 12)
-        ApplicationBlurMode.Medium -> minOf(selected.radius, 28)
-        ApplicationBlurMode.Strong -> selected.radius
+    if (!selected.enabled || selected.intensity == 0) return 0
+    val modeMultiplier = when (mode) {
+        ApplicationBlurMode.Off -> 0f
+        ApplicationBlurMode.Automatic -> 1f
+        ApplicationBlurMode.Subtle -> 0.55f
+        ApplicationBlurMode.Medium -> 0.8f
+        ApplicationBlurMode.Strong -> 1.25f
     }
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) modeRadius else 0
+    val effective = (selected.radius * modeMultiplier * (selected.intensity / 100f)).toInt()
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) effective.coerceIn(0, 64) else 0
+}
+
+private fun parseCustomTint(hex: String): Color? = runCatching {
+    val normalized = hex.trim().removePrefix("#")
+    val argb = when (normalized.length) {
+        6, 8 -> AndroidColor.parseColor("#$normalized")
+        else -> return@runCatching null
+    }
+    Color(argb)
+}.getOrNull()
+
+private fun tintColor(settings: ApplicationBlurSettings): Color? = when (settings.profile.tint) {
+    ApplicationBlurTint.System -> null
+    ApplicationBlurTint.Theme -> MaterialTheme.colorScheme.primary
+    ApplicationBlurTint.Custom -> parseCustomTint(settings.customTintHex)
 }
 
 /**
  * Glass surface with a separate background layer. RenderEffect is applied only
  * to the background layer, keeping text, icons and controls sharp.
  *
- * This is intentionally a surface primitive rather than a whole-screen blur:
- * callers choose which real UI surface participates in Application Blur. On
- * Android 10/11 it remains a safe translucent glass surface because native
- * RenderEffect blur is available only from Android 12.
+ * The background slot is intentionally explicit: Compose RenderEffect is not a
+ * backdrop filter, so this primitive never claims to blur pixels outside its
+ * own layer. Android 10/11 safely fall back to translucent glass.
  */
 @TargetApi(Build.VERSION_CODES.S)
 @Composable
@@ -127,6 +145,10 @@ fun ApplicationBlurSurface(
         ApplicationBlurShadow.Soft -> 0.10f
         ApplicationBlurShadow.Strong -> 0.22f
     }
+    val tint = tintColor(settings)
+    val tintAlpha = profile.tintOpacity / 100f
+    val brightnessDelta = (profile.brightness - 100) / 100f
+    val saturation = profile.saturation / 100f
 
     Box(modifier = modifier) {
         Box(
@@ -135,23 +157,41 @@ fun ApplicationBlurSurface(
                 .clip(shape)
                 .then(
                     if (radius > 0) Modifier.graphicsLayer {
-                        renderEffect = android.graphics.RenderEffect.createBlurEffect(
+                        var effect: android.graphics.RenderEffect = android.graphics.RenderEffect.createBlurEffect(
                             radius.toFloat(), radius.toFloat(), android.graphics.Shader.TileMode.CLAMP
-                        ).asComposeRenderEffect()
+                        )
+                        if (saturation != 1f || brightnessDelta != 0f) {
+                            val matrix = ColorMatrix().apply {
+                                setSaturation(saturation)
+                                if (brightnessDelta != 0f) {
+                                    val d = brightnessDelta * 255f
+                                    postConcat(ColorMatrix(floatArrayOf(
+                                        1f, 0f, 0f, 0f, d,
+                                        0f, 1f, 0f, 0f, d,
+                                        0f, 0f, 1f, 0f, d,
+                                        0f, 0f, 0f, 1f, 0f
+                                    )))
+                                }
+                            }
+                            val filterEffect = android.graphics.RenderEffect.createColorFilterEffect(
+                                android.graphics.ColorMatrixColorFilter(matrix)
+                            )
+                            effect = android.graphics.RenderEffect.createChainEffect(filterEffect, effect)
+                        }
+                        renderEffect = effect.asComposeRenderEffect()
                     } else Modifier
                 )
         ) {
             background()
         }
 
-        // Glass treatment is deliberately independent from the sharp content layer.
-        // Keep the dim/opacity values proportional so extreme settings remain usable.
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .clip(shape)
                 .background(Color.Black.copy(alpha = dim * 0.35f))
                 .background(Color.White.copy(alpha = glassAlpha * 0.12f))
+                .then(if (tint != null && tintAlpha > 0f) Modifier.background(tint.copy(alpha = tintAlpha)) else Modifier)
                 .border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape)
         )
 
@@ -160,11 +200,10 @@ fun ApplicationBlurSurface(
                 modifier = Modifier
                     .matchParentSize()
                     .clip(shape)
-                    .background(Color.Black.copy(alpha = shadowAlpha * (glassAlpha.coerceIn(0f, 1f))))
+                    .background(Color.Black.copy(alpha = shadowAlpha * glassAlpha.coerceIn(0f, 1f)))
             )
         }
 
-        // Foreground is never blurred.
         Box(modifier = Modifier.matchParentSize()) {
             content()
         }
