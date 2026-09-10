@@ -21,8 +21,11 @@ import com.composables.icons.materialsymbols.rounded.Folder as FolderRegular
 import com.composables.icons.materialsymbols.rounded.History as HistoryRegular
 import com.composables.icons.materialsymbols.rounded.Home as HomeRegular
 import com.composables.icons.materialsymbols.rounded.Info as InfoRegular
+import com.composables.icons.materialsymbols.rounded.Lock as LockRegular
 import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
+import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
 import com.composables.icons.materialsymbols.rounded.Search as SearchRegular
+import com.composables.icons.materialsymbols.rounded.Security as SecurityRegular
 import com.composables.icons.materialsymbols.rounded.Settings as SettingsRegular
 import com.composables.icons.materialsymbols.rounded.Star as StarRegular
 import com.composables.icons.materialsymbols.rounded.Tune as TuneRegular
@@ -45,8 +48,11 @@ import com.composables.icons.materialsymbols.roundedfilled.Folder
 import com.composables.icons.materialsymbols.roundedfilled.History
 import com.composables.icons.materialsymbols.roundedfilled.Home
 import com.composables.icons.materialsymbols.roundedfilled.Info
+import com.composables.icons.materialsymbols.roundedfilled.Lock
 import com.composables.icons.materialsymbols.roundedfilled.Logout
+import com.composables.icons.materialsymbols.roundedfilled.Notifications
 import com.composables.icons.materialsymbols.roundedfilled.Search
+import com.composables.icons.materialsymbols.roundedfilled.Security
 import com.composables.icons.materialsymbols.roundedfilled.Settings
 import com.composables.icons.materialsymbols.roundedfilled.Star
 import com.composables.icons.materialsymbols.roundedfilled.Tune
@@ -54,7 +60,8 @@ import com.composables.icons.materialsymbols.roundedfilled.Tune
 enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
-    ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code
+    ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
+    Download, Notifications, Security, Lock
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -62,7 +69,7 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Explore -> if (selected) MaterialSymbols.RoundedFilled.Explore else MaterialSymbols.Rounded.ExploreRegular
     RockIcon.Repositories -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.FolderRegular
     RockIcon.Builds -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.BuildRegular
-    RockIcon.Downloads -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.DownloadRegular
+    RockIcon.Downloads, RockIcon.Download -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.DownloadRegular
     RockIcon.Profile, RockIcon.AccountCircle -> if (selected) MaterialSymbols.RoundedFilled.Account_circle else MaterialSymbols.Rounded.AccountCircleRegular
     RockIcon.Settings -> if (selected) MaterialSymbols.RoundedFilled.Settings else MaterialSymbols.Rounded.SettingsRegular
     RockIcon.Back -> if (selected) MaterialSymbols.RoundedFilled.Arrow_back else MaterialSymbols.Rounded.ArrowBackRegular
@@ -82,4 +89,7 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Tune -> if (selected) MaterialSymbols.RoundedFilled.Tune else MaterialSymbols.Rounded.TuneRegular
     RockIcon.Archive -> if (selected) MaterialSymbols.RoundedFilled.Archive else MaterialSymbols.Rounded.ArchiveRegular
     RockIcon.Code -> if (selected) MaterialSymbols.RoundedFilled.Code else MaterialSymbols.Rounded.CodeRegular
+    RockIcon.Notifications -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
+    RockIcon.Security -> if (selected) MaterialSymbols.RoundedFilled.Security else MaterialSymbols.Rounded.SecurityRegular
+    RockIcon.Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
 }
