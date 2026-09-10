@@ -12,6 +12,7 @@ import com.composables.icons.materialsymbols.rounded.Build as BuildRegular
 import com.composables.icons.materialsymbols.rounded.Chat_bubble as ChatBubbleRegular
 import com.composables.icons.materialsymbols.rounded.Check_circle as CheckCircleRegular
 import com.composables.icons.materialsymbols.rounded.Chevron_right as ChevronRightRegular
+import com.composables.icons.materialsymbols.rounded.Cloud_download as CloudDownloadRegular
 import com.composables.icons.materialsymbols.rounded.Code as CodeRegular
 import com.composables.icons.materialsymbols.rounded.Content_copy as ContentCopyRegular
 import com.composables.icons.materialsymbols.rounded.Download as DownloadRegular
@@ -30,12 +31,16 @@ import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
 import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
 import com.composables.icons.materialsymbols.rounded.Open_in_browser as OpenInBrowserRegular
 import com.composables.icons.materialsymbols.rounded.Open_in_new as OpenInNewRegular
+import com.composables.icons.materialsymbols.rounded.Palette as PaletteRegular
+import com.composables.icons.materialsymbols.rounded.Person as PersonRegular
+import com.composables.icons.materialsymbols.rounded.Privacy_tip as PrivacyTipRegular
 import com.composables.icons.materialsymbols.rounded.Public as PublicRegular
 import com.composables.icons.materialsymbols.rounded.Refresh as RefreshRegular
 import com.composables.icons.materialsymbols.rounded.Search as SearchRegular
 import com.composables.icons.materialsymbols.rounded.Security as SecurityRegular
 import com.composables.icons.materialsymbols.rounded.Settings as SettingsRegular
 import com.composables.icons.materialsymbols.rounded.Stop as StopRegular
+import com.composables.icons.materialsymbols.rounded.Storage as StorageRegular
 import com.composables.icons.materialsymbols.rounded.Star as StarRegular
 import com.composables.icons.materialsymbols.rounded.Sync as SyncRegular
 import com.composables.icons.materialsymbols.rounded.Timer as TimerRegular
@@ -50,6 +55,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Build
 import com.composables.icons.materialsymbols.roundedfilled.Chat_bubble
 import com.composables.icons.materialsymbols.roundedfilled.Check_circle
 import com.composables.icons.materialsymbols.roundedfilled.Chevron_right
+import com.composables.icons.materialsymbols.roundedfilled.Cloud_download
 import com.composables.icons.materialsymbols.roundedfilled.Code
 import com.composables.icons.materialsymbols.roundedfilled.Content_copy
 import com.composables.icons.materialsymbols.roundedfilled.Download
@@ -68,12 +74,16 @@ import com.composables.icons.materialsymbols.roundedfilled.Logout
 import com.composables.icons.materialsymbols.roundedfilled.Notifications
 import com.composables.icons.materialsymbols.roundedfilled.Open_in_browser
 import com.composables.icons.materialsymbols.roundedfilled.Open_in_new
+import com.composables.icons.materialsymbols.roundedfilled.Palette
+import com.composables.icons.materialsymbols.roundedfilled.Person
+import com.composables.icons.materialsymbols.roundedfilled.Privacy_tip
 import com.composables.icons.materialsymbols.roundedfilled.Public
 import com.composables.icons.materialsymbols.roundedfilled.Refresh
 import com.composables.icons.materialsymbols.roundedfilled.Search
 import com.composables.icons.materialsymbols.roundedfilled.Security
 import com.composables.icons.materialsymbols.roundedfilled.Settings
 import com.composables.icons.materialsymbols.roundedfilled.Stop
+import com.composables.icons.materialsymbols.roundedfilled.Storage
 import com.composables.icons.materialsymbols.roundedfilled.Star
 import com.composables.icons.materialsymbols.roundedfilled.Sync
 import com.composables.icons.materialsymbols.roundedfilled.Timer
@@ -84,7 +94,8 @@ enum class RockIcon {
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
-    ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public
+    ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
+    CloudDownload, Palette, Person, PrivacyTip, Storage
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -126,4 +137,9 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.FolderOpen -> if (selected) MaterialSymbols.RoundedFilled.Folder_open else MaterialSymbols.Rounded.FolderOpenRegular
     RockIcon.OpenInNew -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
     RockIcon.Public -> if (selected) MaterialSymbols.RoundedFilled.Public else MaterialSymbols.Rounded.PublicRegular
+    RockIcon.CloudDownload -> if (selected) MaterialSymbols.RoundedFilled.Cloud_download else MaterialSymbols.Rounded.CloudDownloadRegular
+    RockIcon.Palette -> if (selected) MaterialSymbols.RoundedFilled.Palette else MaterialSymbols.Rounded.PaletteRegular
+    RockIcon.Person -> if (selected) MaterialSymbols.RoundedFilled.Person else MaterialSymbols.Rounded.PersonRegular
+    RockIcon.PrivacyTip -> if (selected) MaterialSymbols.RoundedFilled.Privacy_tip else MaterialSymbols.Rounded.PrivacyTipRegular
+    RockIcon.Storage -> if (selected) MaterialSymbols.RoundedFilled.Storage else MaterialSymbols.Rounded.StorageRegular
 }
