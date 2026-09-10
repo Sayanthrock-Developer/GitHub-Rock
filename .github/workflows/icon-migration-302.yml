@@ -13,48 +13,73 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Migrate
+      - name: Migrate legacy Compose Material icons
+        shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
           import re
-          root=Path('app/src/main/java')
-          pattern=re.compile(r'Icons\.(?:Default|Filled|Outlined|Rounded|Sharp|TwoTone)\.([A-Za-z0-9_]+)')
-          used=set(); changed=[]
-          for p in root.rglob('*.kt'):
-            if p.as_posix().endswith('ui/icons/RockIcons.kt'): continue
-            s=p.read_text()
-            names=set(pattern.findall(s))
-            if not names: continue
-            used |= names
-            s=re.sub(r'^import androidx\.compose\.material\.icons(?:\.[A-Za-z0-9_*]+)?\s*\n?', '', s, flags=re.M)
-            s=pattern.sub(lambda m:f'RockIcon.{m.group(1)}.vector()', s)
-            imp='import com.sayanthrock.githubrock.ui.icons.RockIcon'
-            if imp not in s:
-              i=s.find('import '); s=s[:i]+imp+'\n'+s[i:]
-            p.write_text(s); changed.append(p)
-          rock=root/'com/sayanthrock/githubrock/ui/icons/RockIcons.kt'; s=rock.read_text()
-          m=re.search(r'enum class RockIcon \{(.*?)\n\}',s,re.S)
-          existing={x.strip() for x in m.group(1).replace('\n',' ').split(',') if x.strip()}
-          missing=sorted(used-existing)
-          for n in missing:
-            snake=re.sub(r'(?<!^)(?=[A-Z])','_',n).lower()
-            alias=f'{n}Regular'
-            imp=f'import com.composables.icons.materialsymbols.rounded.{snake} as {alias}'
-            if imp not in s: s=s.replace('import androidx.compose.ui.graphics.vector.ImageVector\n','import androidx.compose.ui.graphics.vector.ImageVector\n'+imp+'\n',1)
-            s=s.replace('\n    Back,',f'\n    {n},\n    Back,',1)
-            s=s.replace('\n}',f'\n    RockIcon.{n} -> {alias}\n}',1)
-          rock.write_text(s)
-          print('changed',len(changed),'missing',missing)
+
+          root = Path('app/src/main/java')
+          pattern = re.compile(r'Icons\.(?:Default|Filled|Outlined|Rounded|Sharp|TwoTone)\.([A-Za-z0-9_]+)')
+          used = set()
+          changed = []
+
+          for path in root.rglob('*.kt'):
+              if path.as_posix().endswith('ui/icons/RockIcons.kt'):
+                  continue
+              text = path.read_text()
+              names = set(pattern.findall(text))
+              if not names and 'androidx.compose.material.icons' not in text:
+                  continue
+              used.update(names)
+              lines = [line for line in text.splitlines() if not line.startswith('import androidx.compose.material.icons')]
+              text = '\n'.join(lines) + ('\n' if text.endswith('\n') else '')
+              text = pattern.sub(lambda m: f'RockIcon.{m.group(1)}.vector()', text)
+              if names:
+                  imp = 'import com.sayanthrock.githubrock.ui.icons.RockIcon'
+                  if imp not in text:
+                      pos = text.find('import ')
+                      text = text[:pos] + imp + '\n' + text[pos:]
+                  path.write_text(text)
+                  changed.append(str(path))
+
+          rock = root / 'com/sayanthrock/githubrock/ui/icons/RockIcons.kt'
+          text = rock.read_text()
+          enum_start = text.index('enum class RockIcon {') + len('enum class RockIcon {')
+          enum_end = text.index('\n}', enum_start)
+          existing = {x.strip() for x in text[enum_start:enum_end].replace('\n', ' ').split(',') if x.strip()}
+          missing = sorted(used - existing)
+
+          def snake(name):
+              return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
+          for name in missing:
+              enum_pos = text.index('\n    Back,', enum_start)
+              text = text[:enum_pos] + f'\n    {name},' + text[enum_pos:]
+              alias = f'{name}Regular'
+              import_line = f'import com.composables.icons.materialsymbols.rounded.{snake(name)} as {alias}'
+              marker = 'import androidx.compose.ui.graphics.vector.ImageVector\n'
+              text = text.replace(marker, marker + import_line + '\n', 1)
+              vector_pos = text.rfind('\n}')
+              text = text[:vector_pos] + f'\n    RockIcon.{name} -> {alias}' + text[vector_pos:]
+
+          rock.write_text(text)
+          print('Changed files:', len(changed))
+          print('New RockIcon mappings:', ', '.join(missing) if missing else 'none')
           PY
-      - name: Verify
+      - name: Verify source migration
+        shell: bash
         run: |
-          ! grep -RIn --include='*.kt' 'androidx.compose.material.icons\|Icons\.Default\.\|Icons\.Filled\.\|Icons\.Outlined\.\|Icons\.Rounded\.\|Icons\.Sharp\.\|Icons\.TwoTone\.' app/src/main/java
-      - name: Commit and remove runner
+          if grep -RIn --include='*.kt' -E 'androidx\.compose\.material\.icons|Icons\.(Default|Filled|Outlined|Rounded|Sharp|TwoTone)\.' app/src/main/java; then
+            exit 1
+          fi
+      - name: Commit migration and remove runner
+        shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app/src/main/java .github/workflows/icon-migration-302.yml
+          git add app/src/main/java
           git rm .github/workflows/icon-migration-302.yml
           git commit -m 'fix: complete Rock icon migration #302' || exit 0
           git push
