@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -106,10 +107,10 @@ private fun parseCustomTint(hex: String): Color? = runCatching {
     Color(argb)
 }.getOrNull()
 
-private fun tintColor(settings: ApplicationBlurSettings): Color? = when (settings.profile.tint) {
+private fun tintColor(profile: ApplicationBlurProfile, customTintHex: String): Color? = when (profile.tint) {
     ApplicationBlurTint.System -> null
     ApplicationBlurTint.Theme -> MaterialTheme.colorScheme.primary
-    ApplicationBlurTint.Custom -> parseCustomTint(settings.customTintHex)
+    ApplicationBlurTint.Custom -> parseCustomTint(customTintHex)
 }
 
 /**
@@ -132,6 +133,15 @@ fun ApplicationBlurSurface(
 ) {
     val profile = settings.profileFor(component).sanitized()
     val radius = settings.effectiveRadius(component)
+
+    // Off/disabled/zero-intensity means no glass treatment at all. Previously
+    // the tint/dim layers still rendered when blur was disabled, making the
+    // setting appear broken and darkening otherwise untouched content.
+    if (settings.mode == ApplicationBlurMode.Off || !profile.enabled || profile.intensity == 0) {
+        Box(modifier = modifier) { content() }
+        return
+    }
+
     val dim = profile.backgroundDim / 100f
     val glassAlpha = profile.glassOpacity / 100f
     val borderAlpha = profile.borderOpacity / 100f
@@ -140,17 +150,20 @@ fun ApplicationBlurSurface(
         ApplicationBlurBorder.Subtle -> 0.5.dp
         ApplicationBlurBorder.Strong -> 1.dp
     }
-    val shadowAlpha = when (profile.shadow) {
-        ApplicationBlurShadow.Off -> 0f
-        ApplicationBlurShadow.Soft -> 0.10f
-        ApplicationBlurShadow.Strong -> 0.22f
+    val shadowElevation = when (profile.shadow) {
+        ApplicationBlurShadow.Off -> 0.dp
+        ApplicationBlurShadow.Soft -> 10.dp
+        ApplicationBlurShadow.Strong -> 20.dp
     }
-    val tint = tintColor(settings)
+    val tint = tintColor(profile, settings.customTintHex)
     val tintAlpha = profile.tintOpacity / 100f
     val brightnessDelta = (profile.brightness - 100) / 100f
     val saturation = profile.saturation / 100f
 
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier
+            .shadow(shadowElevation, shape, clip = false)
+    ) {
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -194,15 +207,6 @@ fun ApplicationBlurSurface(
                 .then(if (tint != null && tintAlpha > 0f) Modifier.background(tint.copy(alpha = tintAlpha)) else Modifier)
                 .border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape)
         )
-
-        if (shadowAlpha > 0f) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(shape)
-                    .background(Color.Black.copy(alpha = shadowAlpha * glassAlpha.coerceIn(0f, 1f)))
-            )
-        }
 
         Box(modifier = Modifier.matchParentSize()) {
             content()
