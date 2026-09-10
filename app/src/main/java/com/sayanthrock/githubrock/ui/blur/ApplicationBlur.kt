@@ -94,9 +94,13 @@ fun ApplicationBlurSettings.effectiveRadius(component: ApplicationBlurComponent?
 }
 
 /**
- * Glass surface with a separate background layer. The RenderEffect is applied
- * only to [background], so text, icons and controls in [content] remain sharp.
- * Android 10/11 safely fall back to translucency because RenderEffect requires 12+.
+ * Glass surface with a separate background layer. RenderEffect is applied only
+ * to the background layer, keeping text, icons and controls sharp.
+ *
+ * This is intentionally a surface primitive rather than a whole-screen blur:
+ * callers choose which real UI surface participates in Application Blur. On
+ * Android 10/11 it remains a safe translucent glass surface because native
+ * RenderEffect blur is available only from Android 12.
  */
 @TargetApi(Build.VERSION_CODES.S)
 @Composable
@@ -118,6 +122,11 @@ fun ApplicationBlurSurface(
         ApplicationBlurBorder.Subtle -> 0.5.dp
         ApplicationBlurBorder.Strong -> 1.dp
     }
+    val shadowAlpha = when (profile.shadow) {
+        ApplicationBlurShadow.Off -> 0f
+        ApplicationBlurShadow.Soft -> 0.10f
+        ApplicationBlurShadow.Strong -> 0.22f
+    }
 
     Box(modifier = modifier) {
         Box(
@@ -134,6 +143,9 @@ fun ApplicationBlurSurface(
         ) {
             background()
         }
+
+        // Glass treatment is deliberately independent from the sharp content layer.
+        // Keep the dim/opacity values proportional so extreme settings remain usable.
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -142,6 +154,17 @@ fun ApplicationBlurSurface(
                 .background(Color.White.copy(alpha = glassAlpha * 0.12f))
                 .border(borderWidth, Color.White.copy(alpha = borderAlpha * 0.25f), shape)
         )
+
+        if (shadowAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .background(Color.Black.copy(alpha = shadowAlpha * (glassAlpha.coerceIn(0f, 1f))))
+            )
+        }
+
+        // Foreground is never blurred.
         Box(modifier = Modifier.matchParentSize()) {
             content()
         }
