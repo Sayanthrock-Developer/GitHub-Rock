@@ -13,6 +13,7 @@ import com.composables.icons.materialsymbols.rounded.Chat_bubble as ChatBubbleRe
 import com.composables.icons.materialsymbols.rounded.Check_circle as CheckCircleRegular
 import com.composables.icons.materialsymbols.rounded.Chevron_right as ChevronRightRegular
 import com.composables.icons.materialsymbols.rounded.Code as CodeRegular
+import com.composables.icons.materialsymbols.rounded.Content_copy as ContentCopyRegular
 import com.composables.icons.materialsymbols.rounded.Download as DownloadRegular
 import com.composables.icons.materialsymbols.rounded.Error as ErrorRegular
 import com.composables.icons.materialsymbols.rounded.Explore as ExploreRegular
@@ -24,6 +25,7 @@ import com.composables.icons.materialsymbols.rounded.Info as InfoRegular
 import com.composables.icons.materialsymbols.rounded.Lock as LockRegular
 import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
 import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
+import com.composables.icons.materialsymbols.rounded.Open_in_browser as OpenInBrowserRegular
 import com.composables.icons.materialsymbols.rounded.Search as SearchRegular
 import com.composables.icons.materialsymbols.rounded.Security as SecurityRegular
 import com.composables.icons.materialsymbols.rounded.Settings as SettingsRegular
@@ -40,6 +42,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Chat_bubble
 import com.composables.icons.materialsymbols.roundedfilled.Check_circle
 import com.composables.icons.materialsymbols.roundedfilled.Chevron_right
 import com.composables.icons.materialsymbols.roundedfilled.Code
+import com.composables.icons.materialsymbols.roundedfilled.Content_copy
 import com.composables.icons.materialsymbols.roundedfilled.Download
 import com.composables.icons.materialsymbols.roundedfilled.Error
 import com.composables.icons.materialsymbols.roundedfilled.Explore
@@ -51,6 +54,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Info
 import com.composables.icons.materialsymbols.roundedfilled.Lock
 import com.composables.icons.materialsymbols.roundedfilled.Logout
 import com.composables.icons.materialsymbols.roundedfilled.Notifications
+import com.composables.icons.materialsymbols.roundedfilled.Open_in_browser
 import com.composables.icons.materialsymbols.roundedfilled.Search
 import com.composables.icons.materialsymbols.roundedfilled.Security
 import com.composables.icons.materialsymbols.roundedfilled.Settings
@@ -61,7 +65,7 @@ enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
-    Download, Notifications, Security, Lock
+    Download, Notifications, Security, Lock, Copy, OpenInBrowser
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -92,4 +96,6 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Notifications -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
     RockIcon.Security -> if (selected) MaterialSymbols.RoundedFilled.Security else MaterialSymbols.Rounded.SecurityRegular
     RockIcon.Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
+    RockIcon.Copy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
+    RockIcon.OpenInBrowser -> if (selected) MaterialSymbols.RoundedFilled.Open_in_browser else MaterialSymbols.Rounded.OpenInBrowserRegular
 }
