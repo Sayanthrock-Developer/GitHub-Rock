@@ -16,6 +16,7 @@ import com.composables.icons.materialsymbols.rounded.Chevron_right as ChevronRig
 import com.composables.icons.materialsymbols.rounded.Cloud_download as CloudDownloadRegular
 import com.composables.icons.materialsymbols.rounded.Code as CodeRegular
 import com.composables.icons.materialsymbols.rounded.Content_copy as ContentCopyRegular
+import com.composables.icons.materialsymbols.rounded.Description as DescriptionRegular
 import com.composables.icons.materialsymbols.rounded.Download as DownloadRegular
 import com.composables.icons.materialsymbols.rounded.Error as ErrorRegular
 import com.composables.icons.materialsymbols.rounded.Explore as ExploreRegular
@@ -47,6 +48,7 @@ import com.composables.icons.materialsymbols.rounded.Sync as SyncRegular
 import com.composables.icons.materialsymbols.rounded.Tag as TagRegular
 import com.composables.icons.materialsymbols.rounded.Timer as TimerRegular
 import com.composables.icons.materialsymbols.rounded.Tune as TuneRegular
+import com.composables.icons.materialsymbols.rounded.Upload_file as UploadFileRegular
 import com.composables.icons.materialsymbols.roundedfilled.Account_circle
 import com.composables.icons.materialsymbols.roundedfilled.Announcement
 import com.composables.icons.materialsymbols.roundedfilled.Archive
@@ -61,6 +63,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Chevron_right
 import com.composables.icons.materialsymbols.roundedfilled.Cloud_download
 import com.composables.icons.materialsymbols.roundedfilled.Code
 import com.composables.icons.materialsymbols.roundedfilled.Content_copy
+import com.composables.icons.materialsymbols.roundedfilled.Description
 import com.composables.icons.materialsymbols.roundedfilled.Download
 import com.composables.icons.materialsymbols.roundedfilled.Error
 import com.composables.icons.materialsymbols.roundedfilled.Explore
@@ -92,6 +95,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Sync
 import com.composables.icons.materialsymbols.roundedfilled.Tag
 import com.composables.icons.materialsymbols.roundedfilled.Timer
 import com.composables.icons.materialsymbols.roundedfilled.Tune
+import com.composables.icons.materialsymbols.roundedfilled.Upload_file
 
 enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
@@ -99,7 +103,7 @@ enum class RockIcon {
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
-    CloudDownload, Palette, Person, PrivacyTip, Storage, CallSplit, Tag
+    CloudDownload, Palette, Person, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -148,4 +152,6 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Storage -> if (selected) MaterialSymbols.RoundedFilled.Storage else MaterialSymbols.Rounded.StorageRegular
     RockIcon.CallSplit -> if (selected) MaterialSymbols.RoundedFilled.Call_split else MaterialSymbols.Rounded.CallSplitRegular
     RockIcon.Tag -> if (selected) MaterialSymbols.RoundedFilled.Tag else MaterialSymbols.Rounded.TagRegular
+    RockIcon.Description -> if (selected) MaterialSymbols.RoundedFilled.Description else MaterialSymbols.Rounded.DescriptionRegular
+    RockIcon.UploadFile -> if (selected) MaterialSymbols.RoundedFilled.Upload_file else MaterialSymbols.Rounded.UploadFileRegular
 }
