@@ -16,11 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.InstallMobile
-import androidx.compose.material.icons.filled.Launch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -43,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -51,6 +45,8 @@ import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.util.InstalledApkStateResolver
 import com.sayanthrock.githubrock.data.local.DownloadEntity
+import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.vector
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
@@ -166,7 +162,7 @@ internal fun RepositoryAppInstallPanel(
                 ) {
                     when (val artwork = state.icon) {
                         null -> Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
+                            Icon(RockIcon.Android.vector(), contentDescription = null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                         else -> AsyncImage(
                             model = artwork,
@@ -208,12 +204,12 @@ internal fun RepositoryAppInstallPanel(
             if (state.installed) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(onClick = onUninstall, modifier = Modifier.weight(1f).height(56.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                        Icon(Icons.Default.DeleteOutline, contentDescription = null)
+                        Icon(RockIcon.Delete.vector(), contentDescription = null)
                         Spacer(Modifier.width(7.dp))
                         Text("Uninstall", fontWeight = FontWeight.Bold)
                     }
                     Button(onClick = onOpen, enabled = state.openable, modifier = Modifier.weight(1f).height(56.dp)) {
-                        Icon(Icons.Default.Launch, contentDescription = null)
+                        Icon(RockIcon.Launch.vector(), contentDescription = null)
                         Spacer(Modifier.width(7.dp))
                         Text("Open", fontWeight = FontWeight.Bold)
                     }
@@ -222,7 +218,7 @@ internal fun RepositoryAppInstallPanel(
 
             if (!state.canRequestInstall) {
                 OutlinedButton(onClick = onEnableInstallPermission, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Icon(Icons.Default.InstallMobile, contentDescription = null)
+                    Icon(RockIcon.InstallMobile.vector(), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Allow APK installation", fontWeight = FontWeight.Bold)
                 }
@@ -233,7 +229,7 @@ internal fun RepositoryAppInstallPanel(
                 )
             } else {
                 Button(onClick = onInstall, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                    Icon(Icons.Default.InstallMobile, contentDescription = null)
+                    Icon(RockIcon.InstallMobile.vector(), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(state.actionLabel, fontWeight = FontWeight.Bold)
                 }
