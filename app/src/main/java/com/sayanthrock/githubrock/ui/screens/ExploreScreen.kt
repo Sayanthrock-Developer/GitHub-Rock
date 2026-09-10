@@ -11,11 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -41,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -86,7 +82,7 @@ fun ExploreScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    leadingIcon = { Icon(RockIcon.Search.vector(), null) },
                     placeholder = { Text("Search repositories, topics, or languages") },
                     label = { Text("Search GitHub") },
                 )
@@ -113,7 +109,7 @@ fun ExploreScreen(
                 item {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.ErrorOutline, null)
+                            Icon(RockIcon.Error.vector(), null)
                             Text(message)
                             TextButton(onClick = { viewModel.clearError(); viewModel.load() }) { Text("Retry") }
                         }
@@ -151,12 +147,12 @@ private fun ExploreRepositoryCard(
                     Text(repository.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("@${repository.owner.login}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 2.dp))
                 }
-                Icon(Icons.Default.ArrowForward, contentDescription = "Open repository")
+                Icon(RockIcon.ArrowForward.vector(), contentDescription = "Open repository")
             }
             Text(repository.description ?: "No repository description provided.", maxLines = 3, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, null, Modifier.size(17.dp))
+                    Icon(RockIcon.Star.vector(), null, Modifier.size(17.dp))
                     Text(formatCompact(repository.stars))
                 }
                 Text("Forks ${formatCompact(repository.forks)}")
