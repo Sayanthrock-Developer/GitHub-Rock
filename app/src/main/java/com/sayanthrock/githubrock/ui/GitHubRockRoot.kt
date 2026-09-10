@@ -32,28 +32,21 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
-fun GitHubRockRoot(
-    viewModel: MainViewModel = hiltViewModel(),
-    appearanceViewModel: AppearanceViewModel = hiltViewModel(),
-    setupViewModel: GitHubRockSetupViewModel = hiltViewModel()
-) {
+fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewModel: AppearanceViewModel = hiltViewModel(), setupViewModel: GitHubRockSetupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val appearanceState by appearanceViewModel.state.collectAsStateWithLifecycle()
+    val blurState by appearanceViewModel.blurState.collectAsStateWithLifecycle()
     val setupComplete by setupViewModel.setupComplete.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    if (!setupComplete) {
-        SetupGuardScreen(onSetupComplete = setupViewModel::completeSetup)
-        return
-    }
+    if (!setupComplete) { SetupGuardScreen(onSetupComplete = setupViewModel::completeSetup); return }
     val verificationUri = state.auth.code?.verificationUri
     val authorizationUrl = state.auth.authorizationUrl
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
     var authorizationUrlConsumed by rememberSaveable { mutableStateOf<String?>(null) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
     LaunchedEffect(authorizationUrl) {
         val url = authorizationUrl ?: return@LaunchedEffect
         if (authorizationUrlConsumed == url) return@LaunchedEffect
@@ -63,7 +56,6 @@ fun GitHubRockRoot(
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { if (AuthReturnPolicy.shouldCheckAuthorization(awaitingVerificationBrowserReturn, state.auth.code != null)) { awaitingVerificationBrowserReturn = false; viewModel.checkLoginStatus() } }
     LaunchedEffect(Unit) { AccountContextRefreshBus.events.collect { viewModel.refresh() } }
-
     val openGitHubUrl = remember(context, snackbar, scope, verificationUri) { { url: String ->
         val opened = GitHubExternalLinkLauncher.open(context, url)
         if (opened && url == verificationUri) awaitingVerificationBrowserReturn = true
@@ -71,31 +63,16 @@ fun GitHubRockRoot(
     } }
     val openNativeProfile = remember(navController) { { login: String -> navController.navigate(NativeProfileDestination(login, NativeProfileSection.Repositories).route) { launchSingleTop = true } } }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
-    ) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars)) {
         if (state.mode == null) {
             LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
-                    SwipeNavigationContent(
-                        navController = navController,
-                        bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
-                    ) {
+                    SwipeNavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
-                    RockNavigationChrome(
-                        navController = navController,
-                        style = appearanceState.navigationBarStyle,
-                        animationStyle = appearanceState.animationStyle,
-                        reduceMotion = appearanceState.reduceMotion,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, blurSettings = blurState, modifier = Modifier.fillMaxSize())
                 }
             }
         }
@@ -104,53 +81,23 @@ fun GitHubRockRoot(
 }
 
 private fun navigationContentInset(style: NavigationBarStyle, systemNavigationPadding: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = when (style) {
-    NavigationBarStyle.FloatingCapsule,
-    NavigationBarStyle.Classic,
-    NavigationBarStyle.Glass,
-    NavigationBarStyle.Minimal,
-    NavigationBarStyle.Compact -> 0.dp
+    NavigationBarStyle.FloatingCapsule, NavigationBarStyle.Classic, NavigationBarStyle.Glass, NavigationBarStyle.Minimal, NavigationBarStyle.Compact -> 0.dp
 }
 
 @Composable
-private fun SwipeNavigationContent(
-    navController: androidx.navigation.NavHostController,
-    bottomContentPadding: androidx.compose.ui.unit.Dp,
-    content: @Composable () -> Unit
-) {
+private fun SwipeNavigationContent(navController: androidx.navigation.NavHostController, bottomContentPadding: androidx.compose.ui.unit.Dp, content: @Composable () -> Unit) {
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
-    val destinations = listOf(
-        TopDestinationV2.Home,
-        TopDestinationV2.Repositories,
-        TopDestinationV2.Builds,
-        TopDestinationV2.Downloads,
-        TopDestinationV2.Profile
-    )
+    val destinations = listOf(TopDestinationV2.Home, TopDestinationV2.Repositories, TopDestinationV2.Builds, TopDestinationV2.Downloads, TopDestinationV2.Profile)
     val selectedIndex = destinations.indexOfFirst { it.route == selectedRoute }
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .padding(bottom = bottomContentPadding)
-            .pointerInput(selectedRoute) {
-                var totalDragX = 0f
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount },
-                    onDragEnd = {
-                        if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
-                            val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
-                            destinations.getOrNull(nextIndex)?.let { destination ->
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        }
-                        totalDragX = 0f
-                    },
-                    onDragCancel = { totalDragX = 0f }
-                )
+    Box(Modifier.fillMaxSize().padding(bottom = bottomContentPadding).pointerInput(selectedRoute) {
+        var totalDragX = 0f
+        detectHorizontalDragGestures(onHorizontalDrag = { _, dragAmount -> totalDragX += dragAmount }, onDragEnd = {
+            if (selectedIndex >= 0 && abs(totalDragX) >= 100f) {
+                val nextIndex = if (totalDragX < 0) selectedIndex + 1 else selectedIndex - 1
+                destinations.getOrNull(nextIndex)?.let { destination -> navController.navigate(destination.route) { popUpTo(navController.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true } }
             }
-    ) { content() }
+            totalDragX = 0f
+        }, onDragCancel = { totalDragX = 0f })
+    }) { content() }
 }
