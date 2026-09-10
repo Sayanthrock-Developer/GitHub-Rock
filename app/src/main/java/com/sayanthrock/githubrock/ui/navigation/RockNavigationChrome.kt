@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.navigation
 
 import android.view.HapticFeedbackConstants
+import android.view.View
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -101,7 +102,8 @@ private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    val slideModifier = navigationSlideGesture(onDestinationSelected)
+    val view = LocalView.current
+    val slideModifier = navigationSlideGesture(view, onDestinationSelected)
     Row(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp).then(slideModifier), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         rockNavigationDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
@@ -126,9 +128,10 @@ private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
+    val view = LocalView.current
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
-    val slideModifier = navigationSlideGesture(onDestinationSelected)
+    val slideModifier = navigationSlideGesture(view, onDestinationSelected)
     if (blurEnabled) {
         ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape) {
             Surface(modifier = Modifier.fillMaxSize(), shape = shape, color = color.copy(alpha = 0f), contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
@@ -138,9 +141,9 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
     }
 }
 
-private fun navigationSlideGesture(onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
+private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
     detectDragGesturesAfterLongPress(
-        onDragStart = { LocalView.current.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+        onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
         onDrag = { change, _ ->
             if (size.width <= 0) return@detectDragGesturesAfterLongPress
             change.consume()
