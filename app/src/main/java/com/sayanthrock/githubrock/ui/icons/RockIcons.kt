@@ -9,6 +9,7 @@ import com.composables.icons.materialsymbols.rounded.Arrow_forward as ArrowForwa
 import com.composables.icons.materialsymbols.rounded.Archive as ArchiveRegular
 import com.composables.icons.materialsymbols.rounded.Auto_awesome as AutoAwesomeRegular
 import com.composables.icons.materialsymbols.rounded.Build as BuildRegular
+import com.composables.icons.materialsymbols.rounded.Call_split as CallSplitRegular
 import com.composables.icons.materialsymbols.rounded.Chat_bubble as ChatBubbleRegular
 import com.composables.icons.materialsymbols.rounded.Check_circle as CheckCircleRegular
 import com.composables.icons.materialsymbols.rounded.Chevron_right as ChevronRightRegular
@@ -43,6 +44,7 @@ import com.composables.icons.materialsymbols.rounded.Stop as StopRegular
 import com.composables.icons.materialsymbols.rounded.Storage as StorageRegular
 import com.composables.icons.materialsymbols.rounded.Star as StarRegular
 import com.composables.icons.materialsymbols.rounded.Sync as SyncRegular
+import com.composables.icons.materialsymbols.rounded.Tag as TagRegular
 import com.composables.icons.materialsymbols.rounded.Timer as TimerRegular
 import com.composables.icons.materialsymbols.rounded.Tune as TuneRegular
 import com.composables.icons.materialsymbols.roundedfilled.Account_circle
@@ -52,6 +54,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Arrow_back
 import com.composables.icons.materialsymbols.roundedfilled.Arrow_forward
 import com.composables.icons.materialsymbols.roundedfilled.Auto_awesome
 import com.composables.icons.materialsymbols.roundedfilled.Build
+import com.composables.icons.materialsymbols.roundedfilled.Call_split
 import com.composables.icons.materialsymbols.roundedfilled.Chat_bubble
 import com.composables.icons.materialsymbols.roundedfilled.Check_circle
 import com.composables.icons.materialsymbols.roundedfilled.Chevron_right
@@ -86,6 +89,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Stop
 import com.composables.icons.materialsymbols.roundedfilled.Storage
 import com.composables.icons.materialsymbols.roundedfilled.Star
 import com.composables.icons.materialsymbols.roundedfilled.Sync
+import com.composables.icons.materialsymbols.roundedfilled.Tag
 import com.composables.icons.materialsymbols.roundedfilled.Timer
 import com.composables.icons.materialsymbols.roundedfilled.Tune
 
@@ -95,7 +99,7 @@ enum class RockIcon {
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
-    CloudDownload, Palette, Person, PrivacyTip, Storage
+    CloudDownload, Palette, Person, PrivacyTip, Storage, CallSplit, Tag
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -142,4 +146,6 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Person -> if (selected) MaterialSymbols.RoundedFilled.Person else MaterialSymbols.Rounded.PersonRegular
     RockIcon.PrivacyTip -> if (selected) MaterialSymbols.RoundedFilled.Privacy_tip else MaterialSymbols.Rounded.PrivacyTipRegular
     RockIcon.Storage -> if (selected) MaterialSymbols.RoundedFilled.Storage else MaterialSymbols.Rounded.StorageRegular
+    RockIcon.CallSplit -> if (selected) MaterialSymbols.RoundedFilled.Call_split else MaterialSymbols.Rounded.CallSplitRegular
+    RockIcon.Tag -> if (selected) MaterialSymbols.RoundedFilled.Tag else MaterialSymbols.Rounded.TagRegular
 }
