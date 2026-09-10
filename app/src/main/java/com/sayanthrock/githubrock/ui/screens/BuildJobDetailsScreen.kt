@@ -2,9 +2,6 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,6 +19,7 @@ import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,7 +53,7 @@ fun BuildJobDetailsScreen(mode: AppMode, repository: GitHubRepositoryModel, runI
     LazyColumn(Modifier.fillMaxSize(), contentPadding = StandardScreenPadding, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+                IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") }
                 Column { Text("Job details", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
@@ -67,7 +65,7 @@ fun BuildJobDetailsScreen(mode: AppMode, repository: GitHubRepositoryModel, runI
             items(job.steps.size) { index -> val step = job.steps[index]; GlassCard { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("${index + 1}. ${step.name}", Modifier.weight(1f)); Text(step.conclusion ?: step.status, color = if (step.conclusion == "failure") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant) } } }
         }
         state.logs?.let { logs ->
-            item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Logs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); IconButton(onClick = { clipboard.setText(AnnotatedString(logs)) }) { Icon(Icons.Default.ContentCopy, "Copy logs") } } }
+            item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Logs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); IconButton(onClick = { clipboard.setText(AnnotatedString(logs)) }) { Icon(RockIcon.Copy.vector(), "Copy logs") } } }
             item { GlassCard { Text(logs, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) } }
         }
     }
