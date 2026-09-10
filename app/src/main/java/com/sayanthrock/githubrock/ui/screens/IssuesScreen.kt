@@ -10,11 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChatBubbleOutline
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +36,8 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubIssue
 import com.sayanthrock.githubrock.core.model.IssueComment
 import com.sayanthrock.githubrock.data.repository.GitHubIssuesRepository
+import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.vector
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -111,12 +108,12 @@ fun IssuesScreen(onBack: () -> Unit, viewModel: IssuesViewModel = hiltViewModel(
     }
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text("Issues") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } })
+        TopAppBar(title = { Text("Issues") }, navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") } })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = state.selected == IssueListState.OPEN, onClick = { viewModel.select(IssueListState.OPEN) }, label = { Text("Open") }, leadingIcon = { Icon(Icons.Default.ErrorOutline, null, Modifier.size(18.dp)) })
-                FilterChip(selected = state.selected == IssueListState.CLOSED, onClick = { viewModel.select(IssueListState.CLOSED) }, label = { Text("Closed") }, leadingIcon = { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) })
+                FilterChip(selected = state.selected == IssueListState.OPEN, onClick = { viewModel.select(IssueListState.OPEN) }, label = { Text("Open") }, leadingIcon = { Icon(RockIcon.Error.vector(), null, Modifier.size(18.dp)) })
+                FilterChip(selected = state.selected == IssueListState.CLOSED, onClick = { viewModel.select(IssueListState.CLOSED) }, label = { Text("Closed") }, leadingIcon = { Icon(RockIcon.Check.vector(), null, Modifier.size(18.dp)) })
             }
             state.error?.let { error ->
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -142,7 +139,7 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
     androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (issue.state.equals("open", true)) Icons.Default.ErrorOutline else Icons.Default.CheckCircle, contentDescription = issue.state)
+                Icon(if (issue.state.equals("open", true)) RockIcon.Error.vector() else RockIcon.Check.vector(), contentDescription = issue.state)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(issue.title, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text("#${issue.number} · ${issue.user.login}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -152,7 +149,7 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
             if (issue.labels.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { issue.labels.take(4).forEach { label -> AssistChip(onClick = {}, enabled = false, label = { Text(label.name) }) } }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Updated ${issue.updatedAt.ifBlank { "—" }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.ChatBubbleOutline, null, Modifier.size(16.dp)); Text(" ${issue.commentCount}", style = MaterialTheme.typography.bodySmall) }
+                Row(verticalAlignment = Alignment.CenterVertically) { Icon(RockIcon.Chat.vector(), null, Modifier.size(16.dp)); Text(" ${issue.commentCount}", style = MaterialTheme.typography.bodySmall) }
             }
         }
     }
@@ -161,7 +158,7 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IssueDetailsScreen(issue: GitHubIssue, comments: List<IssueComment>, loadingComments: Boolean, error: String?, onBack: () -> Unit, onRetry: () -> Unit) {
-    Scaffold(topBar = { TopAppBar(title = { Text("Issue #${issue.number}") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text("Issue #${issue.number}") }, navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") } }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
