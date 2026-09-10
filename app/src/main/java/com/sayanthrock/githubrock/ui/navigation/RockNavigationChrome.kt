@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -62,8 +63,8 @@ fun RockNavigationChrome(navController: NavHostController, style: NavigationBarS
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
     if (rockNavigationDestinations.none { it.route == selectedRoute }) return
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        RockBottomNavigation(selectedRoute, style, maxWidth < 360.dp, animationStyle, reduceMotion, blurSettings, { navigateToTopLevel(navController, it) }, Modifier.align(Alignment.BottomCenter))
+    BoxWithConstraints(modifier.fillMaxSize().zIndex(10f)) {
+        RockBottomNavigation(selectedRoute, style, maxWidth < 360.dp, animationStyle, reduceMotion, blurSettings, { navigateToTopLevel(navController, it) }, Modifier.align(Alignment.BottomCenter).zIndex(10f))
     }
 }
 
