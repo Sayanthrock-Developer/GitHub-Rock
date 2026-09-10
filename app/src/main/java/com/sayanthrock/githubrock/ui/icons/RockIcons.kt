@@ -17,6 +17,8 @@ import com.composables.icons.materialsymbols.rounded.Content_copy as ContentCopy
 import com.composables.icons.materialsymbols.rounded.Download as DownloadRegular
 import com.composables.icons.materialsymbols.rounded.Error as ErrorRegular
 import com.composables.icons.materialsymbols.rounded.Explore as ExploreRegular
+import com.composables.icons.materialsymbols.rounded.Expand_less as ExpandLessRegular
+import com.composables.icons.materialsymbols.rounded.Expand_more as ExpandMoreRegular
 import com.composables.icons.materialsymbols.rounded.Favorite as FavoriteRegular
 import com.composables.icons.materialsymbols.rounded.Folder as FolderRegular
 import com.composables.icons.materialsymbols.rounded.History as HistoryRegular
@@ -26,10 +28,14 @@ import com.composables.icons.materialsymbols.rounded.Lock as LockRegular
 import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
 import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
 import com.composables.icons.materialsymbols.rounded.Open_in_browser as OpenInBrowserRegular
+import com.composables.icons.materialsymbols.rounded.Refresh as RefreshRegular
 import com.composables.icons.materialsymbols.rounded.Search as SearchRegular
 import com.composables.icons.materialsymbols.rounded.Security as SecurityRegular
 import com.composables.icons.materialsymbols.rounded.Settings as SettingsRegular
+import com.composables.icons.materialsymbols.rounded.Stop as StopRegular
 import com.composables.icons.materialsymbols.rounded.Star as StarRegular
+import com.composables.icons.materialsymbols.rounded.Sync as SyncRegular
+import com.composables.icons.materialsymbols.rounded.Timer as TimerRegular
 import com.composables.icons.materialsymbols.rounded.Tune as TuneRegular
 import com.composables.icons.materialsymbols.roundedfilled.Account_circle
 import com.composables.icons.materialsymbols.roundedfilled.Announcement
@@ -46,6 +52,8 @@ import com.composables.icons.materialsymbols.roundedfilled.Content_copy
 import com.composables.icons.materialsymbols.roundedfilled.Download
 import com.composables.icons.materialsymbols.roundedfilled.Error
 import com.composables.icons.materialsymbols.roundedfilled.Explore
+import com.composables.icons.materialsymbols.roundedfilled.Expand_less
+import com.composables.icons.materialsymbols.roundedfilled.Expand_more
 import com.composables.icons.materialsymbols.roundedfilled.Favorite
 import com.composables.icons.materialsymbols.roundedfilled.Folder
 import com.composables.icons.materialsymbols.roundedfilled.History
@@ -55,17 +63,22 @@ import com.composables.icons.materialsymbols.roundedfilled.Lock
 import com.composables.icons.materialsymbols.roundedfilled.Logout
 import com.composables.icons.materialsymbols.roundedfilled.Notifications
 import com.composables.icons.materialsymbols.roundedfilled.Open_in_browser
+import com.composables.icons.materialsymbols.roundedfilled.Refresh
 import com.composables.icons.materialsymbols.roundedfilled.Search
 import com.composables.icons.materialsymbols.roundedfilled.Security
 import com.composables.icons.materialsymbols.roundedfilled.Settings
+import com.composables.icons.materialsymbols.roundedfilled.Stop
 import com.composables.icons.materialsymbols.roundedfilled.Star
+import com.composables.icons.materialsymbols.roundedfilled.Sync
+import com.composables.icons.materialsymbols.roundedfilled.Timer
 import com.composables.icons.materialsymbols.roundedfilled.Tune
 
 enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
-    Download, Notifications, Security, Lock, Copy, OpenInBrowser
+    Download, Notifications, Security, Lock, Copy, OpenInBrowser,
+    ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -98,4 +111,10 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
     RockIcon.Copy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
     RockIcon.OpenInBrowser -> if (selected) MaterialSymbols.RoundedFilled.Open_in_browser else MaterialSymbols.Rounded.OpenInBrowserRegular
+    RockIcon.ExpandLess -> if (selected) MaterialSymbols.RoundedFilled.Expand_less else MaterialSymbols.Rounded.ExpandLessRegular
+    RockIcon.ExpandMore -> if (selected) MaterialSymbols.RoundedFilled.Expand_more else MaterialSymbols.Rounded.ExpandMoreRegular
+    RockIcon.Refresh -> if (selected) MaterialSymbols.RoundedFilled.Refresh else MaterialSymbols.Rounded.RefreshRegular
+    RockIcon.Stop -> if (selected) MaterialSymbols.RoundedFilled.Stop else MaterialSymbols.Rounded.StopRegular
+    RockIcon.Sync -> if (selected) MaterialSymbols.RoundedFilled.Sync else MaterialSymbols.Rounded.SyncRegular
+    RockIcon.Timer -> if (selected) MaterialSymbols.RoundedFilled.Timer else MaterialSymbols.Rounded.TimerRegular
 }
