@@ -3,8 +3,10 @@ package com.sayanthrock.githubrock.ui.icons
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Account_circle as AccountCircleRegular
+import com.composables.icons.materialsymbols.rounded.Add as AddRegular
 import com.composables.icons.materialsymbols.rounded.Announcement as AnnouncementRegular
 import com.composables.icons.materialsymbols.rounded.Arrow_back as ArrowBackRegular
+import com.composables.icons.materialsymbols.rounded.Arrow_drop_down as ArrowDropDownRegular
 import com.composables.icons.materialsymbols.rounded.Arrow_forward as ArrowForwardRegular
 import com.composables.icons.materialsymbols.rounded.Archive as ArchiveRegular
 import com.composables.icons.materialsymbols.rounded.Auto_awesome as AutoAwesomeRegular
@@ -49,10 +51,13 @@ import com.composables.icons.materialsymbols.rounded.Tag as TagRegular
 import com.composables.icons.materialsymbols.rounded.Timer as TimerRegular
 import com.composables.icons.materialsymbols.rounded.Tune as TuneRegular
 import com.composables.icons.materialsymbols.rounded.Upload_file as UploadFileRegular
+import com.composables.icons.materialsymbols.rounded.Close as CloseRegular
 import com.composables.icons.materialsymbols.roundedfilled.Account_circle
+import com.composables.icons.materialsymbols.roundedfilled.Add
 import com.composables.icons.materialsymbols.roundedfilled.Announcement
 import com.composables.icons.materialsymbols.roundedfilled.Archive
 import com.composables.icons.materialsymbols.roundedfilled.Arrow_back
+import com.composables.icons.materialsymbols.roundedfilled.Arrow_drop_down
 import com.composables.icons.materialsymbols.roundedfilled.Arrow_forward
 import com.composables.icons.materialsymbols.roundedfilled.Auto_awesome
 import com.composables.icons.materialsymbols.roundedfilled.Build
@@ -96,6 +101,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Tag
 import com.composables.icons.materialsymbols.roundedfilled.Timer
 import com.composables.icons.materialsymbols.roundedfilled.Tune
 import com.composables.icons.materialsymbols.roundedfilled.Upload_file
+import com.composables.icons.materialsymbols.roundedfilled.Close
 
 enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
@@ -103,7 +109,8 @@ enum class RockIcon {
     ChevronRight, Favorite, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
-    CloudDownload, Palette, Person, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile
+    CloudDownload, Palette, Person, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile,
+    Add, ArrowDropDown, Close
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -154,4 +161,7 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Tag -> if (selected) MaterialSymbols.RoundedFilled.Tag else MaterialSymbols.Rounded.TagRegular
     RockIcon.Description -> if (selected) MaterialSymbols.RoundedFilled.Description else MaterialSymbols.Rounded.DescriptionRegular
     RockIcon.UploadFile -> if (selected) MaterialSymbols.RoundedFilled.Upload_file else MaterialSymbols.Rounded.UploadFileRegular
+    RockIcon.Add -> if (selected) MaterialSymbols.RoundedFilled.Add else MaterialSymbols.Rounded.AddRegular
+    RockIcon.ArrowDropDown -> if (selected) MaterialSymbols.RoundedFilled.Arrow_drop_down else MaterialSymbols.Rounded.ArrowDropDownRegular
+    RockIcon.Close -> if (selected) MaterialSymbols.RoundedFilled.Close else MaterialSymbols.Rounded.CloseRegular
 }
