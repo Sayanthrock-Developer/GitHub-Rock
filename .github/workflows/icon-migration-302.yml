@@ -1,0 +1,104 @@
+name: One-time Rock icon migration
+
+on:
+  push:
+    branches:
+      - fix/icon-migration-302
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Replace legacy Compose Material icons
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("app/src/main/java")
+          files = list(root.rglob("*.kt"))
+          icon_pattern = re.compile(r"Icons\\.(?:Default|Filled|Outlined|Rounded|Sharp|TwoTone)\\.([A-Za-z0-9_]+)")
+          changed = []
+          used = set()
+
+          for path in files:
+              if path.as_posix().endswith("ui/icons/RockIcons.kt"):
+                  continue
+              text = path.read_text()
+              if "androidx.compose.material.icons" not in text and "Icons.Default." not in text and "Icons.Filled." not in text and "Icons.Outlined." not in text and "Icons.Rounded." not in text:
+                  continue
+
+              names = set(icon_pattern.findall(text))
+              if not names:
+                  continue
+              used.update(names)
+              text = re.sub(r"^import androidx\\.compose\\.material\\.icons(?:\\.[A-Za-z0-9_*]+)?\\s*$\\n?", "", text, flags=re.M)
+              text = icon_pattern.sub(lambda m: f"RockIcon.{m.group(1)}.vector()", text)
+              import_line = "import com.sayanthrock.githubrock.ui.icons.RockIcon"
+              if import_line not in text:
+                  marker = "import "
+                  idx = text.find(marker)
+                  text = text[:idx] + import_line + "\\n" + text[idx:]
+              path.write_text(text)
+              changed.append(path)
+
+          rock = root / "com/sayanthrock/githubrock/ui/icons/RockIcons.kt"
+          rock_text = rock.read_text()
+          enum_match = re.search(r"enum class RockIcon \\{(.*?)\\n\\}", rock_text, re.S)
+          if not enum_match:
+              raise SystemExit("RockIcon enum not found")
+          existing = {x.strip() for x in enum_match.group(1).replace("\\n", " ").split(",") if x.strip()}
+          missing = sorted(used - existing)
+
+          def snake(name):
+              return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+          for name in missing:
+              rock_text = rock_text.replace("\\n    Back,", f"\\n    {name},\\n    Back,", 1)
+              import_line = f"import com.composables.icons.materialsymbols.rounded.{snake(name)} as {name}Regular"
+              if import_line not in rock_text:
+                  rock_text = rock_text.replace("import androidx.compose.ui.graphics.vector.ImageVector\\n", "import androidx.compose.ui.graphics.vector.ImageVector\\n" + import_line + "\\n", 1)
+              branch = f"    RockIcon.{name} -> {name}Regular\\n"
+              rock_text = rock_text.replace("\\n}", "\\n" + branch + "}", 1)
+
+          rock.write_text(rock_text)
+
+          if changed or missing:
+              print("Changed files:")
+              for p in changed:
+                  print(p)
+              print("Added RockIcon mappings:", ", ".join(missing) if missing else "none")
+          else:
+              print("No legacy icon usages found")
+          PY
+
+      - name: Verify no legacy icon source remains
+        shell: bash
+        run: |
+          if grep -RIn --include='*.kt' 'androidx.compose.material.icons\|Icons\.Default\.\|Icons\.Filled\.\|Icons\.Outlined\.\|Icons\.Rounded\.\|Icons\.Sharp\.\|Icons\.TwoTone\.' app/src/main/java; then
+            echo "Legacy Compose Material icon usage remains."
+            exit 1
+          fi
+
+      - name: Commit migration and remove runner
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java .github/workflows/icon-migration-302.yml
+          git rm .github/workflows/icon-migration-302.yml
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "fix: complete Rock icon migration #302"
+          git push
