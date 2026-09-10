@@ -16,19 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Announcement
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +42,8 @@ import com.sayanthrock.githubrock.core.navigation.normalizedGitHubLogin
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
 import com.sayanthrock.githubrock.ui.components.LogoutConfirmationSheet
+import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.vector
 import java.util.Locale
 
 data class ConnectedProfileDashboardUiState(
@@ -124,25 +113,25 @@ fun ProfileScreen(
     }
 
     val libraryItems = listOf(
-        ProfileMenuItem(Icons.Default.Star, "Stars", "Your starred repositories from GitHub", { activeLibraryRoute = ProfileLibrarySection.Stars.route }),
-        ProfileMenuItem(Icons.Default.Favorite, "Favourites", "Repositories pinned inside GitHub Rock", { activeLibraryRoute = ProfileLibrarySection.Favourites.route }),
-        ProfileMenuItem(Icons.Default.History, "Recently viewed", "Repositories you have opened on this device", { activeLibraryRoute = ProfileLibrarySection.RecentlyViewed.route })
+        ProfileMenuItem(RockIcon.Star.vector(), "Stars", "Your starred repositories from GitHub", { activeLibraryRoute = ProfileLibrarySection.Stars.route }),
+        ProfileMenuItem(RockIcon.Favorite.vector(), "Favourites", "Repositories pinned inside GitHub Rock", { activeLibraryRoute = ProfileLibrarySection.Favourites.route }),
+        ProfileMenuItem(RockIcon.History.vector(), "Recently viewed", "Repositories you have opened on this device", { activeLibraryRoute = ProfileLibrarySection.RecentlyViewed.route })
     )
     val updateItems = listOf(
-        ProfileMenuItem(Icons.Default.AutoAwesome, "What's new", "Highlights from recent GitHub Rock updates", { activeUpdateRoute = ProfileUpdateSection.WhatsNew.route }),
-        ProfileMenuItem(Icons.Default.Announcement, "Announcements", "Security, account, and important app notices", { activeUpdateRoute = ProfileUpdateSection.Announcements.route })
+        ProfileMenuItem(RockIcon.AutoAwesome.vector(), "What's new", "Highlights from recent GitHub Rock updates", { activeUpdateRoute = ProfileUpdateSection.WhatsNew.route }),
+        ProfileMenuItem(RockIcon.Announcement.vector(), "Announcements", "Security, account, and important app notices", { activeUpdateRoute = ProfileUpdateSection.Announcements.route })
     )
     val appItems = listOf(
-        ProfileMenuItem(Icons.Default.Tune, "Tweaks", "App settings, theme, network, and display", onOpenSettings),
-        ProfileMenuItem(Icons.Default.Settings, "GitHub settings", "Account, security, notifications, and applications", onOpenSettings),
-        ProfileMenuItem(Icons.Default.AutoAwesome, "GitHub features", "Native, connected, and roadmap capabilities", onOpenFeatures),
-        ProfileMenuItem(Icons.Default.Download, "Downloads", "Applications, artifacts, files, and APK safety", onOpenDownloads),
-        ProfileMenuItem(Icons.Default.Info, "About", "Version, Android capabilities, community, and legal", onOpenAppInfo)
+        ProfileMenuItem(RockIcon.Tune.vector(), "Tweaks", "App settings, theme, network, and display", onOpenSettings),
+        ProfileMenuItem(RockIcon.Settings.vector(), "GitHub settings", "Account, security, notifications, and applications", onOpenSettings),
+        ProfileMenuItem(RockIcon.AutoAwesome.vector(), "GitHub features", "Native, connected, and roadmap capabilities", onOpenFeatures),
+        ProfileMenuItem(RockIcon.Downloads.vector(), "Downloads", "Applications, artifacts, files, and APK safety", onOpenDownloads),
+        ProfileMenuItem(RockIcon.Info.vector(), "About", "Version, Android capabilities, community, and legal", onOpenAppInfo)
     )
     val accountItems = listOf(
-        ProfileMenuItem(Icons.Default.AccountCircle, "Accounts & organizations", "Connected account, organizations, and public profiles", onOpenAccounts),
+        ProfileMenuItem(RockIcon.AccountCircle.vector(), "Accounts & organizations", "Connected account, organizations, and public profiles", onOpenAccounts),
         ProfileMenuItem(
-            Icons.Default.Logout,
+            RockIcon.Logout.vector(),
             if (mode == AppMode.Connected) "Logout" else "Exit ${mode.name.lowercase()}",
             if (mode == AppMode.Connected) "Sign out safely from this device" else "Close the current ${mode.name.lowercase()} session",
             { showLogoutSheet = true },
@@ -273,6 +262,6 @@ private fun ProfileMenuRow(item: ProfileMenuItem) {
             Text(item.title, color = accent, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(item.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (!item.destructive) Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        if (!item.destructive) Icon(RockIcon.ChevronRight.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
