@@ -35,7 +35,9 @@ import com.composables.icons.materialsymbols.rounded.Folder_open as FolderOpenRe
 import com.composables.icons.materialsymbols.rounded.History as HistoryRegular
 import com.composables.icons.materialsymbols.rounded.Home as HomeRegular
 import com.composables.icons.materialsymbols.rounded.Info as InfoRegular
+import com.composables.icons.materialsymbols.rounded.Install_mobile as InstallMobileRegular
 import com.composables.icons.materialsymbols.rounded.Laptop_mac as LaptopMacRegular
+import com.composables.icons.materialsymbols.rounded.Launch as LaunchRegular
 import com.composables.icons.materialsymbols.rounded.Lock as LockRegular
 import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
 import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
@@ -96,7 +98,9 @@ import com.composables.icons.materialsymbols.roundedfilled.Folder_open
 import com.composables.icons.materialsymbols.roundedfilled.History
 import com.composables.icons.materialsymbols.roundedfilled.Home
 import com.composables.icons.materialsymbols.roundedfilled.Info
+import com.composables.icons.materialsymbols.roundedfilled.Install_mobile
 import com.composables.icons.materialsymbols.roundedfilled.Laptop_mac
+import com.composables.icons.materialsymbols.roundedfilled.Launch
 import com.composables.icons.materialsymbols.roundedfilled.Lock
 import com.composables.icons.materialsymbols.roundedfilled.Logout
 import com.composables.icons.materialsymbols.roundedfilled.Notifications
@@ -132,7 +136,8 @@ enum class RockIcon {
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
     CloudDownload, Palette, Person, PersonAdd, PersonRemove, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile,
-    Add, ArrowDropDown, Close, Android, Devices, LaptopMac, DesktopWindows, PhoneIphone, Terminal, BatterySaver, Delete, ViewCompact
+    Add, ArrowDropDown, Close, Android, Devices, LaptopMac, DesktopWindows, PhoneIphone, Terminal, BatterySaver, Delete, ViewCompact,
+    InstallMobile, Launch
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
@@ -198,4 +203,6 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.BatterySaver -> if (selected) MaterialSymbols.RoundedFilled.Battery_saver else MaterialSymbols.Rounded.BatterySaverRegular
     RockIcon.Delete -> if (selected) MaterialSymbols.RoundedFilled.Delete else MaterialSymbols.Rounded.DeleteRegular
     RockIcon.ViewCompact -> if (selected) MaterialSymbols.RoundedFilled.View_compact else MaterialSymbols.Rounded.ViewCompactRegular
+    RockIcon.InstallMobile -> if (selected) MaterialSymbols.RoundedFilled.Install_mobile else MaterialSymbols.Rounded.InstallMobileRegular
+    RockIcon.Launch -> if (selected) MaterialSymbols.RoundedFilled.Launch else MaterialSymbols.Rounded.LaunchRegular
 }
