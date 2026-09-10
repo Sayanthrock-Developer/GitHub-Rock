@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Account_circle as AccountCircleRegular
 import com.composables.icons.materialsymbols.rounded.Add as AddRegular
-import com.composables.icons.materialsymbols.rounded.Announcement as AnnouncementRegular
 import com.composables.icons.materialsymbols.rounded.Android as AndroidRegular
 import com.composables.icons.materialsymbols.rounded.Arrow_back as ArrowBackRegular
 import com.composables.icons.materialsymbols.rounded.Arrow_drop_down as ArrowDropDownRegular
@@ -39,7 +38,6 @@ import com.composables.icons.materialsymbols.rounded.Home as HomeRegular
 import com.composables.icons.materialsymbols.rounded.Info as InfoRegular
 import com.composables.icons.materialsymbols.rounded.Install_mobile as InstallMobileRegular
 import com.composables.icons.materialsymbols.rounded.Laptop_mac as LaptopMacRegular
-import com.composables.icons.materialsymbols.rounded.Launch as LaunchRegular
 import com.composables.icons.materialsymbols.rounded.Lock as LockRegular
 import com.composables.icons.materialsymbols.rounded.Logout as LogoutRegular
 import com.composables.icons.materialsymbols.rounded.Notifications as NotificationsRegular
@@ -69,7 +67,6 @@ import com.composables.icons.materialsymbols.rounded.View_compact as ViewCompact
 import com.composables.icons.materialsymbols.rounded.Close as CloseRegular
 import com.composables.icons.materialsymbols.roundedfilled.Account_circle
 import com.composables.icons.materialsymbols.roundedfilled.Add
-import com.composables.icons.materialsymbols.roundedfilled.Announcement
 import com.composables.icons.materialsymbols.roundedfilled.Android
 import com.composables.icons.materialsymbols.roundedfilled.Archive
 import com.composables.icons.materialsymbols.roundedfilled.Arrow_back
@@ -104,7 +101,6 @@ import com.composables.icons.materialsymbols.roundedfilled.Home
 import com.composables.icons.materialsymbols.roundedfilled.Info
 import com.composables.icons.materialsymbols.roundedfilled.Install_mobile
 import com.composables.icons.materialsymbols.roundedfilled.Laptop_mac
-import com.composables.icons.materialsymbols.roundedfilled.Launch
 import com.composables.icons.materialsymbols.roundedfilled.Lock
 import com.composables.icons.materialsymbols.roundedfilled.Logout
 import com.composables.icons.materialsymbols.roundedfilled.Notifications
@@ -141,74 +137,74 @@ enum class RockIcon {
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
     CloudDownload, Palette, Person, PersonAdd, PersonRemove, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile,
     Add, ArrowDropDown, Close, Android, Devices, LaptopMac, DesktopWindows, PhoneIphone, Terminal, BatterySaver, Delete, ViewCompact,
-    InstallMobile, Launch, CheckBox, CheckBoxOutlineBlank
-}
+    InstallMobile, Launch, CheckBox, CheckBoxOutlineBlank;
 
-fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
-    RockIcon.Home -> if (selected) MaterialSymbols.RoundedFilled.Home else MaterialSymbols.Rounded.HomeRegular
-    RockIcon.Explore -> if (selected) MaterialSymbols.RoundedFilled.Explore else MaterialSymbols.Rounded.ExploreRegular
-    RockIcon.Repositories -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.FolderRegular
-    RockIcon.Builds -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.BuildRegular
-    RockIcon.Downloads, RockIcon.Download -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.DownloadRegular
-    RockIcon.Profile, RockIcon.AccountCircle -> if (selected) MaterialSymbols.RoundedFilled.Account_circle else MaterialSymbols.Rounded.AccountCircleRegular
-    RockIcon.Settings -> if (selected) MaterialSymbols.RoundedFilled.Settings else MaterialSymbols.Rounded.SettingsRegular
-    RockIcon.Back -> if (selected) MaterialSymbols.RoundedFilled.Arrow_back else MaterialSymbols.Rounded.ArrowBackRegular
-    RockIcon.ArrowForward -> if (selected) MaterialSymbols.RoundedFilled.Arrow_forward else MaterialSymbols.Rounded.ArrowForwardRegular
-    RockIcon.Search -> if (selected) MaterialSymbols.RoundedFilled.Search else MaterialSymbols.Rounded.SearchRegular
-    RockIcon.Chat -> if (selected) MaterialSymbols.RoundedFilled.Chat_bubble else MaterialSymbols.Rounded.ChatBubbleRegular
-    RockIcon.Check -> if (selected) MaterialSymbols.RoundedFilled.Check_circle else MaterialSymbols.Rounded.CheckCircleRegular
-    RockIcon.Error -> if (selected) MaterialSymbols.RoundedFilled.Error else MaterialSymbols.Rounded.ErrorRegular
-    RockIcon.Announcement -> if (selected) MaterialSymbols.RoundedFilled.Announcement else MaterialSymbols.Rounded.AnnouncementRegular
-    RockIcon.AutoAwesome -> if (selected) MaterialSymbols.RoundedFilled.Auto_awesome else MaterialSymbols.Rounded.AutoAwesomeRegular
-    RockIcon.ChevronRight -> if (selected) MaterialSymbols.RoundedFilled.Chevron_right else MaterialSymbols.Rounded.ChevronRightRegular
-    RockIcon.Favorite -> if (selected) MaterialSymbols.RoundedFilled.Favorite else MaterialSymbols.Rounded.FavoriteRegular
-    RockIcon.FavoriteBorder -> MaterialSymbols.Rounded.FavoriteRegular
-    RockIcon.History -> if (selected) MaterialSymbols.RoundedFilled.History else MaterialSymbols.Rounded.HistoryRegular
-    RockIcon.Info -> if (selected) MaterialSymbols.RoundedFilled.Info else MaterialSymbols.Rounded.InfoRegular
-    RockIcon.Logout -> if (selected) MaterialSymbols.RoundedFilled.Logout else MaterialSymbols.Rounded.LogoutRegular
-    RockIcon.Star -> if (selected) MaterialSymbols.RoundedFilled.Star else MaterialSymbols.Rounded.StarRegular
-    RockIcon.Tune -> if (selected) MaterialSymbols.RoundedFilled.Tune else MaterialSymbols.Rounded.TuneRegular
-    RockIcon.Archive -> if (selected) MaterialSymbols.RoundedFilled.Archive else MaterialSymbols.Rounded.ArchiveRegular
-    RockIcon.Code -> if (selected) MaterialSymbols.RoundedFilled.Code else MaterialSymbols.Rounded.CodeRegular
-    RockIcon.Notifications -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
-    RockIcon.Security -> if (selected) MaterialSymbols.RoundedFilled.Security else MaterialSymbols.Rounded.SecurityRegular
-    RockIcon.Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
-    RockIcon.Copy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
-    RockIcon.OpenInBrowser -> if (selected) MaterialSymbols.RoundedFilled.Open_in_browser else MaterialSymbols.Rounded.OpenInBrowserRegular
-    RockIcon.ExpandLess -> if (selected) MaterialSymbols.RoundedFilled.Expand_less else MaterialSymbols.Rounded.ExpandLessRegular
-    RockIcon.ExpandMore -> if (selected) MaterialSymbols.RoundedFilled.Expand_more else MaterialSymbols.Rounded.ExpandMoreRegular
-    RockIcon.Refresh -> if (selected) MaterialSymbols.RoundedFilled.Refresh else MaterialSymbols.Rounded.RefreshRegular
-    RockIcon.Stop -> if (selected) MaterialSymbols.RoundedFilled.Stop else MaterialSymbols.Rounded.StopRegular
-    RockIcon.Sync -> if (selected) MaterialSymbols.RoundedFilled.Sync else MaterialSymbols.Rounded.SyncRegular
-    RockIcon.Timer -> if (selected) MaterialSymbols.RoundedFilled.Timer else MaterialSymbols.Rounded.TimerRegular
-    RockIcon.FolderOpen -> if (selected) MaterialSymbols.RoundedFilled.Folder_open else MaterialSymbols.Rounded.FolderOpenRegular
-    RockIcon.OpenInNew -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
-    RockIcon.Public -> if (selected) MaterialSymbols.RoundedFilled.Public else MaterialSymbols.Rounded.PublicRegular
-    RockIcon.CloudDownload -> if (selected) MaterialSymbols.RoundedFilled.Cloud_download else MaterialSymbols.Rounded.CloudDownloadRegular
-    RockIcon.Palette -> if (selected) MaterialSymbols.RoundedFilled.Palette else MaterialSymbols.Rounded.PaletteRegular
-    RockIcon.Person -> if (selected) MaterialSymbols.RoundedFilled.Person else MaterialSymbols.Rounded.PersonRegular
-    RockIcon.PersonAdd -> if (selected) MaterialSymbols.RoundedFilled.Person_add else MaterialSymbols.Rounded.PersonAddRegular
-    RockIcon.PersonRemove -> if (selected) MaterialSymbols.RoundedFilled.Person_remove else MaterialSymbols.Rounded.PersonRemoveRegular
-    RockIcon.PrivacyTip -> if (selected) MaterialSymbols.RoundedFilled.Privacy_tip else MaterialSymbols.Rounded.PrivacyTipRegular
-    RockIcon.Storage -> if (selected) MaterialSymbols.RoundedFilled.Storage else MaterialSymbols.Rounded.StorageRegular
-    RockIcon.CallSplit -> if (selected) MaterialSymbols.RoundedFilled.Call_split else MaterialSymbols.Rounded.CallSplitRegular
-    RockIcon.Tag -> if (selected) MaterialSymbols.RoundedFilled.Tag else MaterialSymbols.Rounded.TagRegular
-    RockIcon.Description -> if (selected) MaterialSymbols.RoundedFilled.Description else MaterialSymbols.Rounded.DescriptionRegular
-    RockIcon.UploadFile -> if (selected) MaterialSymbols.RoundedFilled.Upload_file else MaterialSymbols.Rounded.UploadFileRegular
-    RockIcon.Add -> if (selected) MaterialSymbols.RoundedFilled.Add else MaterialSymbols.Rounded.AddRegular
-    RockIcon.ArrowDropDown -> if (selected) MaterialSymbols.RoundedFilled.Arrow_drop_down else MaterialSymbols.Rounded.ArrowDropDownRegular
-    RockIcon.Close -> if (selected) MaterialSymbols.RoundedFilled.Close else MaterialSymbols.Rounded.CloseRegular
-    RockIcon.Android -> if (selected) MaterialSymbols.RoundedFilled.Android else MaterialSymbols.Rounded.AndroidRegular
-    RockIcon.Devices -> if (selected) MaterialSymbols.RoundedFilled.Devices else MaterialSymbols.Rounded.DevicesRegular
-    RockIcon.LaptopMac -> if (selected) MaterialSymbols.RoundedFilled.Laptop_mac else MaterialSymbols.Rounded.LaptopMacRegular
-    RockIcon.DesktopWindows -> if (selected) MaterialSymbols.RoundedFilled.Desktop_windows else MaterialSymbols.Rounded.DesktopWindowsRegular
-    RockIcon.PhoneIphone -> if (selected) MaterialSymbols.RoundedFilled.Phone_iphone else MaterialSymbols.Rounded.PhoneIphoneRegular
-    RockIcon.Terminal -> if (selected) MaterialSymbols.RoundedFilled.Terminal else MaterialSymbols.Rounded.TerminalRegular
-    RockIcon.BatterySaver -> if (selected) MaterialSymbols.RoundedFilled.Battery_saver else MaterialSymbols.Rounded.BatterySaverRegular
-    RockIcon.Delete -> if (selected) MaterialSymbols.RoundedFilled.Delete else MaterialSymbols.Rounded.DeleteRegular
-    RockIcon.ViewCompact -> if (selected) MaterialSymbols.RoundedFilled.View_compact else MaterialSymbols.Rounded.ViewCompactRegular
-    RockIcon.InstallMobile -> if (selected) MaterialSymbols.RoundedFilled.Install_mobile else MaterialSymbols.Rounded.InstallMobileRegular
-    RockIcon.Launch -> if (selected) MaterialSymbols.RoundedFilled.Launch else MaterialSymbols.Rounded.LaunchRegular
-    RockIcon.CheckBox -> if (selected) MaterialSymbols.RoundedFilled.Check_box else MaterialSymbols.Rounded.CheckBoxRegular
-    RockIcon.CheckBoxOutlineBlank -> if (selected) MaterialSymbols.RoundedFilled.Check_box_outline_blank else MaterialSymbols.Rounded.CheckBoxOutlineBlankRegular
+    fun vector(selected: Boolean = false): ImageVector = when (this) {
+        Home -> if (selected) MaterialSymbols.RoundedFilled.Home else MaterialSymbols.Rounded.HomeRegular
+        Explore -> if (selected) MaterialSymbols.RoundedFilled.Explore else MaterialSymbols.Rounded.ExploreRegular
+        Repositories -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.FolderRegular
+        Builds -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.BuildRegular
+        Downloads, Download -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.DownloadRegular
+        Profile, AccountCircle -> if (selected) MaterialSymbols.RoundedFilled.Account_circle else MaterialSymbols.Rounded.AccountCircleRegular
+        Settings -> if (selected) MaterialSymbols.RoundedFilled.Settings else MaterialSymbols.Rounded.SettingsRegular
+        Back -> if (selected) MaterialSymbols.RoundedFilled.Arrow_back else MaterialSymbols.Rounded.ArrowBackRegular
+        ArrowForward -> if (selected) MaterialSymbols.RoundedFilled.Arrow_forward else MaterialSymbols.Rounded.ArrowForwardRegular
+        Search -> if (selected) MaterialSymbols.RoundedFilled.Search else MaterialSymbols.Rounded.SearchRegular
+        Chat -> if (selected) MaterialSymbols.RoundedFilled.Chat_bubble else MaterialSymbols.Rounded.ChatBubbleRegular
+        Check -> if (selected) MaterialSymbols.RoundedFilled.Check_circle else MaterialSymbols.Rounded.CheckCircleRegular
+        Error -> if (selected) MaterialSymbols.RoundedFilled.Error else MaterialSymbols.Rounded.ErrorRegular
+        Announcement -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
+        AutoAwesome -> if (selected) MaterialSymbols.RoundedFilled.Auto_awesome else MaterialSymbols.Rounded.AutoAwesomeRegular
+        ChevronRight -> if (selected) MaterialSymbols.RoundedFilled.Chevron_right else MaterialSymbols.Rounded.ChevronRightRegular
+        Favorite -> if (selected) MaterialSymbols.RoundedFilled.Favorite else MaterialSymbols.Rounded.FavoriteRegular
+        FavoriteBorder -> MaterialSymbols.Rounded.FavoriteRegular
+        History -> if (selected) MaterialSymbols.RoundedFilled.History else MaterialSymbols.Rounded.HistoryRegular
+        Info -> if (selected) MaterialSymbols.RoundedFilled.Info else MaterialSymbols.Rounded.InfoRegular
+        Logout -> if (selected) MaterialSymbols.RoundedFilled.Logout else MaterialSymbols.Rounded.LogoutRegular
+        Star -> if (selected) MaterialSymbols.RoundedFilled.Star else MaterialSymbols.Rounded.StarRegular
+        Tune -> if (selected) MaterialSymbols.RoundedFilled.Tune else MaterialSymbols.Rounded.TuneRegular
+        Archive -> if (selected) MaterialSymbols.RoundedFilled.Archive else MaterialSymbols.Rounded.ArchiveRegular
+        Code -> if (selected) MaterialSymbols.RoundedFilled.Code else MaterialSymbols.Rounded.CodeRegular
+        Notifications -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
+        Security -> if (selected) MaterialSymbols.RoundedFilled.Security else MaterialSymbols.Rounded.SecurityRegular
+        Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
+        Copy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
+        OpenInBrowser -> if (selected) MaterialSymbols.RoundedFilled.Open_in_browser else MaterialSymbols.Rounded.OpenInBrowserRegular
+        ExpandLess -> if (selected) MaterialSymbols.RoundedFilled.Expand_less else MaterialSymbols.Rounded.ExpandLessRegular
+        ExpandMore -> if (selected) MaterialSymbols.RoundedFilled.Expand_more else MaterialSymbols.Rounded.ExpandMoreRegular
+        Refresh -> if (selected) MaterialSymbols.RoundedFilled.Refresh else MaterialSymbols.Rounded.RefreshRegular
+        Stop -> if (selected) MaterialSymbols.RoundedFilled.Stop else MaterialSymbols.Rounded.StopRegular
+        Sync -> if (selected) MaterialSymbols.RoundedFilled.Sync else MaterialSymbols.Rounded.SyncRegular
+        Timer -> if (selected) MaterialSymbols.RoundedFilled.Timer else MaterialSymbols.Rounded.TimerRegular
+        FolderOpen -> if (selected) MaterialSymbols.RoundedFilled.Folder_open else MaterialSymbols.Rounded.FolderOpenRegular
+        OpenInNew -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
+        Public -> if (selected) MaterialSymbols.RoundedFilled.Public else MaterialSymbols.Rounded.PublicRegular
+        CloudDownload -> if (selected) MaterialSymbols.RoundedFilled.Cloud_download else MaterialSymbols.Rounded.CloudDownloadRegular
+        Palette -> if (selected) MaterialSymbols.RoundedFilled.Palette else MaterialSymbols.Rounded.PaletteRegular
+        Person -> if (selected) MaterialSymbols.RoundedFilled.Person else MaterialSymbols.Rounded.PersonRegular
+        PersonAdd -> if (selected) MaterialSymbols.RoundedFilled.Person_add else MaterialSymbols.Rounded.PersonAddRegular
+        PersonRemove -> if (selected) MaterialSymbols.RoundedFilled.Person_remove else MaterialSymbols.Rounded.PersonRemoveRegular
+        PrivacyTip -> if (selected) MaterialSymbols.RoundedFilled.Privacy_tip else MaterialSymbols.Rounded.PrivacyTipRegular
+        Storage -> if (selected) MaterialSymbols.RoundedFilled.Storage else MaterialSymbols.Rounded.StorageRegular
+        CallSplit -> if (selected) MaterialSymbols.RoundedFilled.Call_split else MaterialSymbols.Rounded.CallSplitRegular
+        Tag -> if (selected) MaterialSymbols.RoundedFilled.Tag else MaterialSymbols.Rounded.TagRegular
+        Description -> if (selected) MaterialSymbols.RoundedFilled.Description else MaterialSymbols.Rounded.DescriptionRegular
+        UploadFile -> if (selected) MaterialSymbols.RoundedFilled.Upload_file else MaterialSymbols.Rounded.UploadFileRegular
+        Add -> if (selected) MaterialSymbols.RoundedFilled.Add else MaterialSymbols.Rounded.AddRegular
+        ArrowDropDown -> if (selected) MaterialSymbols.RoundedFilled.Arrow_drop_down else MaterialSymbols.Rounded.ArrowDropDownRegular
+        Close -> if (selected) MaterialSymbols.RoundedFilled.Close else MaterialSymbols.Rounded.CloseRegular
+        Android -> if (selected) MaterialSymbols.RoundedFilled.Android else MaterialSymbols.Rounded.AndroidRegular
+        Devices -> if (selected) MaterialSymbols.RoundedFilled.Devices else MaterialSymbols.Rounded.DevicesRegular
+        LaptopMac -> if (selected) MaterialSymbols.RoundedFilled.Laptop_mac else MaterialSymbols.Rounded.LaptopMacRegular
+        DesktopWindows -> if (selected) MaterialSymbols.RoundedFilled.Desktop_windows else MaterialSymbols.Rounded.DesktopWindowsRegular
+        PhoneIphone -> if (selected) MaterialSymbols.RoundedFilled.Phone_iphone else MaterialSymbols.Rounded.PhoneIphoneRegular
+        Terminal -> if (selected) MaterialSymbols.RoundedFilled.Terminal else MaterialSymbols.Rounded.TerminalRegular
+        BatterySaver -> if (selected) MaterialSymbols.RoundedFilled.Battery_saver else MaterialSymbols.Rounded.BatterySaverRegular
+        Delete -> if (selected) MaterialSymbols.RoundedFilled.Delete else MaterialSymbols.Rounded.DeleteRegular
+        ViewCompact -> if (selected) MaterialSymbols.RoundedFilled.View_compact else MaterialSymbols.Rounded.ViewCompactRegular
+        InstallMobile -> if (selected) MaterialSymbols.RoundedFilled.Install_mobile else MaterialSymbols.Rounded.InstallMobileRegular
+        Launch -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
+        CheckBox -> if (selected) MaterialSymbols.RoundedFilled.Check_box else MaterialSymbols.Rounded.CheckBoxRegular
+        CheckBoxOutlineBlank -> if (selected) MaterialSymbols.RoundedFilled.Check_box_outline_blank else MaterialSymbols.Rounded.CheckBoxOutlineBlankRegular
+    }
 }
