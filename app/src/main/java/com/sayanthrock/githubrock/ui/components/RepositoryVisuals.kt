@@ -14,13 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CallSplit
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
 /** Returns an explicit repository preview URL or GitHub's generated Open Graph image. */
@@ -99,7 +93,7 @@ fun RepositoryGalleryCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Default.ChevronRight,
+                            RockIcon.ChevronRight.vector(),
                             contentDescription = "Open ${repository.name}",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -121,12 +115,12 @@ fun RepositoryGalleryCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                RepositoryMetaPill(Icons.Default.Star, "Stars", compactCount(repository.stars))
-                RepositoryMetaPill(Icons.Default.CallSplit, "Forks", compactCount(repository.forks))
-                RepositoryMetaPill(Icons.Default.ErrorOutline, "Open issues", compactCount(repository.openIssues))
-                RepositoryMetaPill(Icons.Default.Code, "Language", repository.language ?: "Repository", accent = true)
+                RepositoryMetaPill(RockIcon.Star, "Stars", compactCount(repository.stars))
+                RepositoryMetaPill(RockIcon.CallSplit, "Forks", compactCount(repository.forks))
+                RepositoryMetaPill(RockIcon.Error, "Open issues", compactCount(repository.openIssues))
+                RepositoryMetaPill(RockIcon.Code, "Language", repository.language ?: "Repository", accent = true)
                 repository.topics.firstOrNull()?.takeIf(String::isNotBlank)?.let { topic ->
-                    RepositoryMetaPill(Icons.Default.Tag, "Topic", topic)
+                    RepositoryMetaPill(RockIcon.Tag, "Topic", topic)
                 }
             }
         }
@@ -217,7 +211,7 @@ private fun RepositoryPreviewFallback(repository: GitHubRepositoryModel, showPro
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
             } else {
                 Icon(
-                    Icons.Default.Code,
+                    RockIcon.Code.vector(),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(34.dp)
@@ -276,7 +270,7 @@ private fun RepositoryVisualBadge(label: String, accent: Boolean = false) {
 
 @Composable
 private fun RepositoryMetaPill(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: RockIcon,
     label: String,
     value: String,
     accent: Boolean = false
@@ -294,7 +288,7 @@ private fun RepositoryMetaPill(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
+            Icon(icon.vector(), contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
             Text(
                 value,
                 color = foreground,
