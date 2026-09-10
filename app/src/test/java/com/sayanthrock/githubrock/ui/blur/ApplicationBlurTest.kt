@@ -38,6 +38,31 @@ class ApplicationBlurTest {
     }
 
     @Test
+    fun intensityControlsEffectiveRadius() {
+        val base = ApplicationBlurSettings(
+            mode = ApplicationBlurMode.Automatic,
+            profile = ApplicationBlurProfile(intensity = 100, radius = 40)
+        )
+        val half = base.copy(profile = base.profile.copy(intensity = 50))
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            assertEquals(40, base.effectiveRadius())
+            assertEquals(20, half.effectiveRadius())
+        } else {
+            assertEquals(0, base.effectiveRadius())
+            assertEquals(0, half.effectiveRadius())
+        }
+    }
+
+    @Test
+    fun disabledProfileDisablesEffectiveBlur() {
+        val settings = ApplicationBlurSettings(
+            profile = ApplicationBlurProfile(enabled = false, intensity = 100, radius = 40)
+        )
+        assertEquals(0, settings.effectiveRadius())
+    }
+
+    @Test
     fun presetsProduceExpectedModesAndProfiles() {
         val none = ApplicationBlurPreset.None.toSettings()
         assertEquals(ApplicationBlurMode.Off, none.mode)
