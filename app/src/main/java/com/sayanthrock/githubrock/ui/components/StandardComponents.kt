@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 @Composable
 fun StandardScreenHeader(

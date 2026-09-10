@@ -43,6 +43,7 @@ import com.sayanthrock.githubrock.core.model.RepositoryCreationForm
 import com.sayanthrock.githubrock.core.model.RepositoryLicenseTemplate
 import com.sayanthrock.githubrock.core.model.RepositoryOwnerOption
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

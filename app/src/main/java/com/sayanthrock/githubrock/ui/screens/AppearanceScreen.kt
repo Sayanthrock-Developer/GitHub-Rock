@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -83,6 +84,7 @@ import com.sayanthrock.githubrock.ui.blur.ApplicationBlurMode
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurPreset
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurProfile
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
+import com.sayanthrock.githubrock.ui.blur.toSettings
 import com.sayanthrock.githubrock.ui.blur.ApplicationBlurComponent
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard

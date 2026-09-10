@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement

@@ -22,6 +22,7 @@ import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.repository.ProfileLibraryRepository
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
 import javax.inject.Inject

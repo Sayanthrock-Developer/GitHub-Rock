@@ -43,6 +43,7 @@ import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.ProfileExplorerState
 import com.sayanthrock.githubrock.ui.components.LogoutConfirmationSheet
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 import java.util.Locale
 

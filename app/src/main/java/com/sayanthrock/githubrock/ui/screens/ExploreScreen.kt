@@ -37,6 +37,7 @@ import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

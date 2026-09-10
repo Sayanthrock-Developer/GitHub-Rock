@@ -34,6 +34,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
 
 /** Returns an explicit repository preview URL or GitHub's generated Open Graph image. */

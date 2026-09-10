@@ -46,6 +46,7 @@ import com.sayanthrock.githubrock.core.util.WorkflowLogHighlighter
 import com.sayanthrock.githubrock.core.util.WorkflowLogTokenKind
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 private val TerminalBackground = Color(0xFF0D1117)
 private val TerminalSurface = Color(0xFF161B22)

@@ -26,6 +26,7 @@ import com.sayanthrock.githubrock.core.navigation.nativeProfileDestination
 import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 import com.sayanthrock.githubrock.ui.screens.*
 

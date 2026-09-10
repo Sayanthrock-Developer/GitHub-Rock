@@ -40,6 +40,7 @@ import com.sayanthrock.githubrock.ui.components.StandardSettingsDivider
 import com.sayanthrock.githubrock.ui.components.StandardSettingsGroup
 import com.sayanthrock.githubrock.ui.components.StandardSettingsRow
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

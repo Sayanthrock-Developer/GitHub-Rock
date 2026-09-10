@@ -39,6 +39,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 @Composable
 fun AppInformationScreen(onBack: () -> Unit) {

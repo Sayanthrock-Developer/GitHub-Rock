@@ -46,6 +46,7 @@ import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.util.InstalledApkStateResolver
 import com.sayanthrock.githubrock.data.local.DownloadEntity
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 import java.io.File
 import java.util.Locale

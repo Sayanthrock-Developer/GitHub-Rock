@@ -35,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import kotlinx.coroutines.launch
 
 /** Native repository workspace. GitHub browsing stays inside GitHub Rock; only the explicit external action opens GitHub. */

@@ -58,6 +58,7 @@ import com.sayanthrock.githubrock.core.model.ContentEntry
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 import java.io.ByteArrayOutputStream
 import java.util.UUID

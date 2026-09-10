@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock.ui.screens
 
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -932,7 +934,7 @@ private fun ReadmeTitle() {
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(48.dp)
             ) {
-                Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                Icon(RockIcon.Description.vector(), contentDescription = null, modifier = Modifier.padding(12.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
             Spacer(Modifier.width(16.dp))
             Column {

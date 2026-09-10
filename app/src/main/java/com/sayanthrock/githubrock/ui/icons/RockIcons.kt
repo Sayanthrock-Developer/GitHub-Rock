@@ -1,34 +1,6 @@
 package com.sayanthrock.githubrock.ui.icons
 
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.composables.icons.materialsymbols.rounded.text_fields as TextFieldsRegular
-import com.composables.icons.materialsymbols.rounded.share as ShareRegular
-import com.composables.icons.materialsymbols.rounded.schedule as ScheduleRegular
-import com.composables.icons.materialsymbols.rounded.restart_alt as RestartAltRegular
-import com.composables.icons.materialsymbols.rounded.play_arrow as PlayArrowRegular
-import com.composables.icons.materialsymbols.rounded.pause as PauseRegular
-import com.composables.icons.materialsymbols.rounded.more_horiz as MoreHorizRegular
-import com.composables.icons.materialsymbols.rounded.login as LoginRegular
-import com.composables.icons.materialsymbols.rounded.location_on as LocationOnRegular
-import com.composables.icons.materialsymbols.rounded.link as LinkRegular
-import com.composables.icons.materialsymbols.rounded.key as KeyRegular
-import com.composables.icons.materialsymbols.rounded.insert_drive_file as InsertDriveFileRegular
-import com.composables.icons.materialsymbols.rounded.image as ImageRegular
-import com.composables.icons.materialsymbols.rounded.format_size as FormatSizeRegular
-import com.composables.icons.materialsymbols.rounded.fork_right as ForkRightRegular
-import com.composables.icons.materialsymbols.rounded.folder as FolderRegular
-import com.composables.icons.materialsymbols.rounded.error_outline as ErrorOutlineRegular
-import com.composables.icons.materialsymbols.rounded.delete_outline as DeleteOutlineRegular
-import com.composables.icons.materialsymbols.rounded.dark_mode as DarkModeRegular
-import com.composables.icons.materialsymbols.rounded.content_copy as ContentCopyRegular
-import com.composables.icons.materialsymbols.rounded.color_lens as ColorLensRegular
-import com.composables.icons.materialsymbols.rounded.cloud_queue as CloudQueueRegular
-import com.composables.icons.materialsymbols.rounded.clear as ClearRegular
-import com.composables.icons.materialsymbols.rounded.check_circle as CheckCircleRegular
-import com.composables.icons.materialsymbols.rounded.cancel as CancelRegular
-import com.composables.icons.materialsymbols.rounded.business as BusinessRegular
-import com.composables.icons.materialsymbols.rounded.build as BuildRegular
-import com.composables.icons.materialsymbols.rounded.arrow_back as ArrowBackRegular
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Account_circle as AccountCircleRegular
 import com.composables.icons.materialsymbols.rounded.Add as AddRegular
@@ -162,158 +134,72 @@ import com.composables.icons.materialsymbols.roundedfilled.View_compact
 import com.composables.icons.materialsymbols.roundedfilled.Close
 
 enum class RockIcon {
-    Home,
-    Explore,
-    Repositories,
-    Builds,
-    Downloads,
-    Profile,
-    Settings,
-    ArrowBack,
-    Build,
-    Business,
-    Cancel,
-    CheckCircle,
-    Clear,
-    CloudQueue,
-    ColorLens,
-    ContentCopy,
-    DarkMode,
-    DeleteOutline,
-    ErrorOutline,
-    Folder,
-    ForkRight,
-    FormatSize,
-    Image,
-    InsertDriveFile,
-    Key,
-    Link,
-    LocationOn,
-    Login,
-    MoreHoriz,
-    Pause,
-    PlayArrow,
-    RestartAlt,
-    Schedule,
-    Share,
-    TextFields,
-    Back,
-    ArrowForward,
-    Search,
-    Chat,
-    Check,
-    Error,
-    AccountCircle,
-    Announcement,
-    AutoAwesome,
-    ChevronRight,
-    Favorite,
-    FavoriteBorder,
-    History,
-    Info,
-    Logout,
-    Star,
-    Tune,
-    Archive,
-    Code,
-    Download,
-    Notifications,
-    Security,
-    Lock,
-    Copy,
-    OpenInBrowser,
-    ExpandLess,
-    ExpandMore,
-    Refresh,
-    Stop,
-    Sync,
-    Timer,
-    FolderOpen,
-    OpenInNew,
-    Public,
-    CloudDownload,
-    Palette,
-    Person,
-    PersonAdd,
-    PersonRemove,
-    PrivacyTip,
-    Storage,
-    CallSplit,
-    Tag,
-    Description,
-    UploadFile,
-    Add,
-    ArrowDropDown,
-    Close,
-    Android,
-    Devices,
-    LaptopMac,
-    DesktopWindows,
-    PhoneIphone,
-    Terminal,
-    BatterySaver,
-    Delete,
-    ViewCompact,
-    InstallMobile,
-    Launch,
-    CheckBox,
-    CheckBoxOutlineBlank
+    Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
+    Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
+    ChevronRight, Favorite, FavoriteBorder, History, Info, Logout, Star, Tune, Archive, Code,
+    Download, Notifications, Security, Lock, Copy, OpenInBrowser,
+    ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
+    CloudDownload, Palette, Person, PersonAdd, PersonRemove, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile,
+    Add, ArrowDropDown, Close, Android, Devices, LaptopMac, DesktopWindows, PhoneIphone, Terminal, BatterySaver, Delete, ViewCompact,
+    InstallMobile, Launch, CheckBox, CheckBoxOutlineBlank,
+    Build, Business, Cancel, CheckCircle, Clear, CloudQueue, ColorLens, ContentCopy, DarkMode, DeleteOutline, ErrorOutline,
+    Folder, ForkRight, FormatSize, Image, InsertDriveFile, Key, Link, LocationOn, Login, MoreHoriz, Pause, PlayArrow, RestartAlt,
+    Schedule, Share, TextFields
 }
 
 fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Home -> if (selected) MaterialSymbols.RoundedFilled.Home else MaterialSymbols.Rounded.HomeRegular
     RockIcon.Explore -> if (selected) MaterialSymbols.RoundedFilled.Explore else MaterialSymbols.Rounded.ExploreRegular
-    RockIcon.Repositories -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.FolderRegular
-    RockIcon.Builds -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.BuildRegular
+    RockIcon.Repositories, RockIcon.Folder -> if (selected) MaterialSymbols.RoundedFilled.Folder else MaterialSymbols.Rounded.FolderRegular
+    RockIcon.Builds, RockIcon.Build -> if (selected) MaterialSymbols.RoundedFilled.Build else MaterialSymbols.Rounded.BuildRegular
     RockIcon.Downloads, RockIcon.Download -> if (selected) MaterialSymbols.RoundedFilled.Download else MaterialSymbols.Rounded.DownloadRegular
     RockIcon.Profile, RockIcon.AccountCircle -> if (selected) MaterialSymbols.RoundedFilled.Account_circle else MaterialSymbols.Rounded.AccountCircleRegular
     RockIcon.Settings -> if (selected) MaterialSymbols.RoundedFilled.Settings else MaterialSymbols.Rounded.SettingsRegular
-    RockIcon.Back -> if (selected) MaterialSymbols.RoundedFilled.Arrow_back else MaterialSymbols.Rounded.ArrowBackRegular
+    RockIcon.Back, RockIcon.ArrowBack -> if (selected) MaterialSymbols.RoundedFilled.Arrow_back else MaterialSymbols.Rounded.ArrowBackRegular
     RockIcon.ArrowForward -> if (selected) MaterialSymbols.RoundedFilled.Arrow_forward else MaterialSymbols.Rounded.ArrowForwardRegular
     RockIcon.Search -> if (selected) MaterialSymbols.RoundedFilled.Search else MaterialSymbols.Rounded.SearchRegular
     RockIcon.Chat -> if (selected) MaterialSymbols.RoundedFilled.Chat_bubble else MaterialSymbols.Rounded.ChatBubbleRegular
-    RockIcon.Check -> if (selected) MaterialSymbols.RoundedFilled.Check_circle else MaterialSymbols.Rounded.CheckCircleRegular
-    RockIcon.Error -> if (selected) MaterialSymbols.RoundedFilled.Error else MaterialSymbols.Rounded.ErrorRegular
+    RockIcon.Check, RockIcon.CheckCircle -> if (selected) MaterialSymbols.RoundedFilled.Check_circle else MaterialSymbols.Rounded.CheckCircleRegular
+    RockIcon.Error, RockIcon.ErrorOutline -> if (selected) MaterialSymbols.RoundedFilled.Error else MaterialSymbols.Rounded.ErrorRegular
     RockIcon.Announcement -> if (selected) MaterialSymbols.RoundedFilled.Announcement else MaterialSymbols.Rounded.AnnouncementRegular
     RockIcon.AutoAwesome -> if (selected) MaterialSymbols.RoundedFilled.Auto_awesome else MaterialSymbols.Rounded.AutoAwesomeRegular
     RockIcon.ChevronRight -> if (selected) MaterialSymbols.RoundedFilled.Chevron_right else MaterialSymbols.Rounded.ChevronRightRegular
-    RockIcon.Favorite -> if (selected) MaterialSymbols.RoundedFilled.Favorite else MaterialSymbols.Rounded.FavoriteRegular
-    RockIcon.FavoriteBorder -> MaterialSymbols.Rounded.FavoriteRegular
+    RockIcon.Favorite, RockIcon.FavoriteBorder -> if (selected) MaterialSymbols.RoundedFilled.Favorite else MaterialSymbols.Rounded.FavoriteRegular
     RockIcon.History -> if (selected) MaterialSymbols.RoundedFilled.History else MaterialSymbols.Rounded.HistoryRegular
     RockIcon.Info -> if (selected) MaterialSymbols.RoundedFilled.Info else MaterialSymbols.Rounded.InfoRegular
     RockIcon.Logout -> if (selected) MaterialSymbols.RoundedFilled.Logout else MaterialSymbols.Rounded.LogoutRegular
     RockIcon.Star -> if (selected) MaterialSymbols.RoundedFilled.Star else MaterialSymbols.Rounded.StarRegular
-    RockIcon.Tune -> if (selected) MaterialSymbols.RoundedFilled.Tune else MaterialSymbols.Rounded.TuneRegular
+    RockIcon.Tune, RockIcon.MoreHoriz -> if (selected) MaterialSymbols.RoundedFilled.Tune else MaterialSymbols.Rounded.TuneRegular
     RockIcon.Archive -> if (selected) MaterialSymbols.RoundedFilled.Archive else MaterialSymbols.Rounded.ArchiveRegular
     RockIcon.Code -> if (selected) MaterialSymbols.RoundedFilled.Code else MaterialSymbols.Rounded.CodeRegular
     RockIcon.Notifications -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
     RockIcon.Security -> if (selected) MaterialSymbols.RoundedFilled.Security else MaterialSymbols.Rounded.SecurityRegular
-    RockIcon.Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
-    RockIcon.Copy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
+    RockIcon.Lock, RockIcon.Key -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
+    RockIcon.Copy, RockIcon.ContentCopy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
     RockIcon.OpenInBrowser -> if (selected) MaterialSymbols.RoundedFilled.Open_in_browser else MaterialSymbols.Rounded.OpenInBrowserRegular
     RockIcon.ExpandLess -> if (selected) MaterialSymbols.RoundedFilled.Expand_less else MaterialSymbols.Rounded.ExpandLessRegular
     RockIcon.ExpandMore -> if (selected) MaterialSymbols.RoundedFilled.Expand_more else MaterialSymbols.Rounded.ExpandMoreRegular
-    RockIcon.Refresh -> if (selected) MaterialSymbols.RoundedFilled.Refresh else MaterialSymbols.Rounded.RefreshRegular
-    RockIcon.Stop -> if (selected) MaterialSymbols.RoundedFilled.Stop else MaterialSymbols.Rounded.StopRegular
+    RockIcon.Refresh, RockIcon.RestartAlt -> if (selected) MaterialSymbols.RoundedFilled.Refresh else MaterialSymbols.Rounded.RefreshRegular
+    RockIcon.Stop, RockIcon.Pause -> if (selected) MaterialSymbols.RoundedFilled.Stop else MaterialSymbols.Rounded.StopRegular
     RockIcon.Sync -> if (selected) MaterialSymbols.RoundedFilled.Sync else MaterialSymbols.Rounded.SyncRegular
-    RockIcon.Timer -> if (selected) MaterialSymbols.RoundedFilled.Timer else MaterialSymbols.Rounded.TimerRegular
+    RockIcon.Timer, RockIcon.Schedule -> if (selected) MaterialSymbols.RoundedFilled.Timer else MaterialSymbols.Rounded.TimerRegular
     RockIcon.FolderOpen -> if (selected) MaterialSymbols.RoundedFilled.Folder_open else MaterialSymbols.Rounded.FolderOpenRegular
-    RockIcon.OpenInNew -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
-    RockIcon.Public -> if (selected) MaterialSymbols.RoundedFilled.Public else MaterialSymbols.Rounded.PublicRegular
-    RockIcon.CloudDownload -> if (selected) MaterialSymbols.RoundedFilled.Cloud_download else MaterialSymbols.Rounded.CloudDownloadRegular
-    RockIcon.Palette -> if (selected) MaterialSymbols.RoundedFilled.Palette else MaterialSymbols.Rounded.PaletteRegular
-    RockIcon.Person -> if (selected) MaterialSymbols.RoundedFilled.Person else MaterialSymbols.Rounded.PersonRegular
+    RockIcon.OpenInNew, RockIcon.Link, RockIcon.Share, RockIcon.PlayArrow, RockIcon.Login -> if (selected) MaterialSymbols.RoundedFilled.Open_in_new else MaterialSymbols.Rounded.OpenInNewRegular
+    RockIcon.Public, RockIcon.LocationOn -> if (selected) MaterialSymbols.RoundedFilled.Public else MaterialSymbols.Rounded.PublicRegular
+    RockIcon.CloudDownload, RockIcon.CloudQueue -> if (selected) MaterialSymbols.RoundedFilled.Cloud_download else MaterialSymbols.Rounded.CloudDownloadRegular
+    RockIcon.Palette, RockIcon.ColorLens -> if (selected) MaterialSymbols.RoundedFilled.Palette else MaterialSymbols.Rounded.PaletteRegular
+    RockIcon.Person, RockIcon.Business -> if (selected) MaterialSymbols.RoundedFilled.Person else MaterialSymbols.Rounded.PersonRegular
     RockIcon.PersonAdd -> if (selected) MaterialSymbols.RoundedFilled.Person_add else MaterialSymbols.Rounded.PersonAddRegular
     RockIcon.PersonRemove -> if (selected) MaterialSymbols.RoundedFilled.Person_remove else MaterialSymbols.Rounded.PersonRemoveRegular
     RockIcon.PrivacyTip -> if (selected) MaterialSymbols.RoundedFilled.Privacy_tip else MaterialSymbols.Rounded.PrivacyTipRegular
     RockIcon.Storage -> if (selected) MaterialSymbols.RoundedFilled.Storage else MaterialSymbols.Rounded.StorageRegular
-    RockIcon.CallSplit -> if (selected) MaterialSymbols.RoundedFilled.Call_split else MaterialSymbols.Rounded.CallSplitRegular
+    RockIcon.CallSplit, RockIcon.ForkRight -> if (selected) MaterialSymbols.RoundedFilled.Call_split else MaterialSymbols.Rounded.CallSplitRegular
     RockIcon.Tag -> if (selected) MaterialSymbols.RoundedFilled.Tag else MaterialSymbols.Rounded.TagRegular
-    RockIcon.Description -> if (selected) MaterialSymbols.RoundedFilled.Description else MaterialSymbols.Rounded.DescriptionRegular
+    RockIcon.Description, RockIcon.FormatSize, RockIcon.Image, RockIcon.InsertDriveFile, RockIcon.TextFields -> if (selected) MaterialSymbols.RoundedFilled.Description else MaterialSymbols.Rounded.DescriptionRegular
     RockIcon.UploadFile -> if (selected) MaterialSymbols.RoundedFilled.Upload_file else MaterialSymbols.Rounded.UploadFileRegular
     RockIcon.Add -> if (selected) MaterialSymbols.RoundedFilled.Add else MaterialSymbols.Rounded.AddRegular
     RockIcon.ArrowDropDown -> if (selected) MaterialSymbols.RoundedFilled.Arrow_drop_down else MaterialSymbols.Rounded.ArrowDropDownRegular
-    RockIcon.Close -> if (selected) MaterialSymbols.RoundedFilled.Close else MaterialSymbols.Rounded.CloseRegular
+    RockIcon.Close, RockIcon.Cancel, RockIcon.Clear, RockIcon.DeleteOutline -> if (selected) MaterialSymbols.RoundedFilled.Close else MaterialSymbols.Rounded.CloseRegular
     RockIcon.Android -> if (selected) MaterialSymbols.RoundedFilled.Android else MaterialSymbols.Rounded.AndroidRegular
     RockIcon.Devices -> if (selected) MaterialSymbols.RoundedFilled.Devices else MaterialSymbols.Rounded.DevicesRegular
     RockIcon.LaptopMac -> if (selected) MaterialSymbols.RoundedFilled.Laptop_mac else MaterialSymbols.Rounded.LaptopMacRegular
@@ -327,32 +213,6 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Launch -> if (selected) MaterialSymbols.RoundedFilled.Launch else MaterialSymbols.Rounded.LaunchRegular
     RockIcon.CheckBox -> if (selected) MaterialSymbols.RoundedFilled.Check_box else MaterialSymbols.Rounded.CheckBoxRegular
     RockIcon.CheckBoxOutlineBlank -> if (selected) MaterialSymbols.RoundedFilled.Check_box_outline_blank else MaterialSymbols.Rounded.CheckBoxOutlineBlankRegular
-    RockIcon.ArrowBack -> ArrowBackRegular
-    RockIcon.Build -> BuildRegular
-    RockIcon.Business -> BusinessRegular
-    RockIcon.Cancel -> CancelRegular
-    RockIcon.CheckCircle -> CheckCircleRegular
-    RockIcon.Clear -> ClearRegular
-    RockIcon.CloudQueue -> CloudQueueRegular
-    RockIcon.ColorLens -> ColorLensRegular
-    RockIcon.ContentCopy -> ContentCopyRegular
-    RockIcon.DarkMode -> DarkModeRegular
-    RockIcon.DeleteOutline -> DeleteOutlineRegular
-    RockIcon.ErrorOutline -> ErrorOutlineRegular
-    RockIcon.Folder -> FolderRegular
-    RockIcon.ForkRight -> ForkRightRegular
-    RockIcon.FormatSize -> FormatSizeRegular
-    RockIcon.Image -> ImageRegular
-    RockIcon.InsertDriveFile -> InsertDriveFileRegular
-    RockIcon.Key -> KeyRegular
-    RockIcon.Link -> LinkRegular
-    RockIcon.LocationOn -> LocationOnRegular
-    RockIcon.Login -> LoginRegular
-    RockIcon.MoreHoriz -> MoreHorizRegular
-    RockIcon.Pause -> PauseRegular
-    RockIcon.PlayArrow -> PlayArrowRegular
-    RockIcon.RestartAlt -> RestartAltRegular
-    RockIcon.Schedule -> ScheduleRegular
-    RockIcon.Share -> ShareRegular
-    RockIcon.TextFields -> TextFieldsRegular
+    RockIcon.DarkMode -> MaterialSymbols.Rounded.HomeRegular
+    RockIcon.TextFields -> MaterialSymbols.Rounded.DescriptionRegular
 }

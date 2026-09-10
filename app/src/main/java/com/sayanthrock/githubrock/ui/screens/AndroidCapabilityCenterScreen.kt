@@ -55,6 +55,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 internal data class AndroidCapabilityState(
     val notificationsEnabled: Boolean,

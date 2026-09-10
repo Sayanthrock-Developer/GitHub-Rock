@@ -37,6 +37,7 @@ import com.sayanthrock.githubrock.core.model.GitHubIssue
 import com.sayanthrock.githubrock.core.model.IssueComment
 import com.sayanthrock.githubrock.data.repository.GitHubIssuesRepository
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

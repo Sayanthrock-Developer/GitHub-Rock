@@ -37,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sayanthrock.githubrock.core.model.GitHubNotification
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 
 enum class ProfileUpdateSection(val route: String, val title: String, val subtitle: String) {
     WhatsNew("whats-new", "What's new", "Recent GitHub Rock improvements"),

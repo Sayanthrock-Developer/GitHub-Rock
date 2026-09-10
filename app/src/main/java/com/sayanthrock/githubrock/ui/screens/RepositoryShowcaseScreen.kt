@@ -38,6 +38,7 @@ import com.sayanthrock.githubrock.core.util.MarkdownTable
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 import java.net.URI
 

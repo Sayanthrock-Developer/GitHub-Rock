@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import com.sayanthrock.githubrock.ui.icons.RockIcon.vector
 import com.sayanthrock.githubrock.ui.icons.vector
 
 @Composable
