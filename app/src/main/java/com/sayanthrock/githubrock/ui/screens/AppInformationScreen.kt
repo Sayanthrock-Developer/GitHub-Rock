@@ -14,11 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +38,7 @@ import com.sayanthrock.githubrock.core.util.AppInformationProvider
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
 import com.sayanthrock.githubrock.ui.components.StandardSectionHeader
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 @Composable
 fun AppInformationScreen(onBack: () -> Unit) {
@@ -83,7 +79,7 @@ fun AppInformationContent(
             TopAppBar(
                 title = { Text("App information") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), contentDescription = "Back") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
@@ -149,7 +145,7 @@ fun AppInformationContent(
                     onClick = onOpenCapabilities,
                     modifier = Modifier.fillMaxWidth().height(52.dp)
                 ) {
-                    Icon(Icons.Default.Security, contentDescription = null)
+                    Icon(RockIcon.Security.vector(), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Android capabilities & permissions", fontWeight = FontWeight.Bold)
                 }
@@ -159,7 +155,7 @@ fun AppInformationContent(
                     onClick = onOpenSystemSettings,
                     modifier = Modifier.fillMaxWidth().height(52.dp)
                 ) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = null)
+                    Icon(RockIcon.OpenInNew.vector(), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Open Android app settings", fontWeight = FontWeight.Bold)
                 }
@@ -174,7 +170,7 @@ private fun InformationCard(rows: List<Pair<String, String>>) {
         Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
             rows.forEach { (label, value) ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(RockIcon.Info.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Column(Modifier.weight(1f)) {
                         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(value, fontWeight = FontWeight.SemiBold)
