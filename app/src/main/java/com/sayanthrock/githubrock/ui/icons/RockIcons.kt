@@ -135,7 +135,7 @@ import com.composables.icons.materialsymbols.roundedfilled.Close
 
 enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
-    Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
+    Back, ArrowBack, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, FavoriteBorder, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
@@ -213,6 +213,5 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Launch -> if (selected) MaterialSymbols.RoundedFilled.Launch else MaterialSymbols.Rounded.LaunchRegular
     RockIcon.CheckBox -> if (selected) MaterialSymbols.RoundedFilled.Check_box else MaterialSymbols.Rounded.CheckBoxRegular
     RockIcon.CheckBoxOutlineBlank -> if (selected) MaterialSymbols.RoundedFilled.Check_box_outline_blank else MaterialSymbols.Rounded.CheckBoxOutlineBlankRegular
-    RockIcon.DarkMode -> MaterialSymbols.Rounded.HomeRegular
-    RockIcon.TextFields -> MaterialSymbols.Rounded.DescriptionRegular
+    RockIcon.DarkMode -> MaterialSymbols.Rounded.SettingsRegular
 }
