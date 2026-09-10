@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -20,28 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
-import androidx.compose.material.icons.filled.InsertDriveFile
-import androidx.compose.material.icons.filled.LaptopMac
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PhoneIphone
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -168,7 +149,7 @@ fun RepositoryHubContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Folder, contentDescription = null)
+                        Icon(RockIcon.Folder.vector(), contentDescription = null)
                         Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -274,7 +255,7 @@ private fun RepositoryHubIcon(repository: GitHubRepositoryModel, modifier: Modif
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Folder, contentDescription = "${repository.name} application icon")
+                Icon(RockIcon.Folder.vector(), contentDescription = "${repository.name} application icon")
             }
         }
     }
@@ -324,11 +305,11 @@ private fun MiniPill(text: String) {
 private fun RepositoryQuickTools(repository: GitHubRepositoryModel, onOpenUrl: (String) -> Unit) {
     val base = repository.htmlUrl.trimEnd('/')
     val tools = listOf(
-        Triple("Code", Icons.Default.Code, base),
-        Triple("Issues", Icons.Default.Description, "$base/issues"),
-        Triple("Pull requests", Icons.Default.Description, "$base/pulls"),
-        Triple("Actions", Icons.Default.Build, "$base/actions"),
-        Triple("Releases", Icons.Default.Download, "$base/releases")
+        Triple("Code", RockIcon.Code.vector(), base),
+        Triple("Issues", RockIcon.Description.vector(), "$base/issues"),
+        Triple("Pull requests", RockIcon.Description.vector(), "$base/pulls"),
+        Triple("Actions", RockIcon.Build.vector(), "$base/actions"),
+        Triple("Releases", RockIcon.Download.vector(), "$base/releases")
     )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Repository tools", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
@@ -479,7 +460,7 @@ private fun RepositoryReleasePanel(
                             .semantics { contentDescription = "Download selected release asset" },
                         shape = RoundedCornerShape(22.dp)
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = null)
+                        Icon(RockIcon.Download.vector(), contentDescription = null)
                         Spacer(Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -498,7 +479,7 @@ private fun RepositoryReleasePanel(
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
-                        Icon(Icons.Default.Lock, contentDescription = null)
+                        Icon(RockIcon.Lock.vector(), contentDescription = null)
                     }
                     ReleaseProtectionCard(
                         platform = selectedPlatform,
@@ -524,7 +505,7 @@ private fun ReleasePickerHeader(release: Release) {
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    Icons.Default.Download,
+                    RockIcon.Download.vector(),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -638,7 +619,7 @@ private fun ReleasePlatformTile(
                 Icon(platformIcon(platform), contentDescription = null, tint = color)
                 if (selected) {
                     Icon(
-                        Icons.Default.CheckCircle,
+                        RockIcon.CheckCircle.vector(),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
@@ -705,7 +686,7 @@ private fun ReleaseAssetOption(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                if (selected) Icons.Default.CheckCircle else Icons.Default.InsertDriveFile,
+                if (selected) RockIcon.CheckCircle.vector() else RockIcon.InsertDriveFile.vector(),
                 contentDescription = null,
                 tint = if (selected) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
@@ -758,7 +739,7 @@ private fun ReleaseProtectionCard(
             horizontalArrangement = Arrangement.spacedBy(11.dp),
             verticalAlignment = Alignment.Top
         ) {
-            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+            Icon(RockIcon.Lock.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Standard download protection", fontWeight = FontWeight.Bold)
                 Text(
@@ -777,12 +758,12 @@ private fun ReleaseProtectionCard(
 }
 
 private fun platformIcon(platform: ReleasePlatform): ImageVector = when (platform) {
-    ReleasePlatform.Android -> Icons.Default.Android
-    ReleasePlatform.Windows -> Icons.Default.DesktopWindows
-    ReleasePlatform.Linux -> Icons.Default.Terminal
-    ReleasePlatform.IOS -> Icons.Default.PhoneIphone
-    ReleasePlatform.MacOS -> Icons.Default.LaptopMac
-    ReleasePlatform.Other -> Icons.Default.InsertDriveFile
+    ReleasePlatform.Android -> RockIcon.Android.vector()
+    ReleasePlatform.Windows -> RockIcon.DesktopWindows.vector()
+    ReleasePlatform.Linux -> RockIcon.Terminal.vector()
+    ReleasePlatform.IOS -> RockIcon.PhoneIphone.vector()
+    ReleasePlatform.MacOS -> RockIcon.LaptopMac.vector()
+    ReleasePlatform.Other -> RockIcon.InsertDriveFile.vector()
 }
 
 @Composable
@@ -815,7 +796,7 @@ private fun ReleaseDropdown(
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    Icon(RockIcon.ArrowDropDown.vector(), contentDescription = null)
                 }
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -883,7 +864,7 @@ private fun RepositoryActionButtons(repository: GitHubRepositoryModel, onOpenUrl
             modifier = Modifier.weight(1f).height(54.dp),
             shape = RoundedCornerShape(18.dp)
         ) {
-            Icon(Icons.Default.Description, contentDescription = null)
+            Icon(RockIcon.Description.vector(), contentDescription = null)
             Spacer(Modifier.width(7.dp))
             Text("Issues")
         }
@@ -892,7 +873,7 @@ private fun RepositoryActionButtons(repository: GitHubRepositoryModel, onOpenUrl
             modifier = Modifier.weight(1f).height(54.dp),
             shape = RoundedCornerShape(18.dp)
         ) {
-            Icon(Icons.Default.Security, contentDescription = null)
+            Icon(RockIcon.Security.vector(), contentDescription = null)
             Spacer(Modifier.width(7.dp))
             Text("Security")
         }
@@ -1089,10 +1070,10 @@ private fun MarkdownBlockView(block: MarkdownBlock) {
 private fun RepositoryErrorCard(message: String, onRetry: () -> Unit) {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            Icon(RockIcon.ErrorOutline.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.error)
             Text(message, color = MaterialTheme.colorScheme.error)
             OutlinedButton(onClick = onRetry) {
-                Icon(Icons.Default.Refresh, contentDescription = null)
+                Icon(RockIcon.Refresh.vector(), contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Try again")
             }

@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -17,8 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -124,7 +123,7 @@ fun BuildsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = preferences.repositoryManager
                     ) {
-                        Icon(Icons.Default.Code, null)
+                        Icon(RockIcon.Code.vector(), null)
                         Spacer(Modifier.width(8.dp))
                         Text(if (preferences.repositoryManager) "Open repository manager" else "Repository manager disabled")
                     }
@@ -295,7 +294,7 @@ private fun RepositoryPicker(repositories: List<GitHubRepositoryModel>, selected
                         selected = selected?.id == repo.id,
                         onClick = { onSelect(repo) },
                         label = { Text(repo.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        leadingIcon = if (selected?.id == repo.id) { { Icon(Icons.Default.Build, null, Modifier.size(18.dp)) } } else null
+                        leadingIcon = if (selected?.id == repo.id) { { Icon(RockIcon.Build.vector(), null, Modifier.size(18.dp)) } } else null
                     )
                 }
             }
@@ -308,7 +307,7 @@ private fun StatusMessageCard(message: String, problem: Boolean, preferences: Ap
     val accent = statusColor(problem, !problem, preferences)
     GlassCard {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(if (problem) Icons.Default.ErrorOutline else Icons.Default.CheckCircle, null, tint = accent)
+            Icon(if (problem) RockIcon.ErrorOutline.vector() else RockIcon.CheckCircle.vector(), null, tint = accent)
             Text(message, color = accent)
         }
     }
@@ -335,7 +334,7 @@ private fun WorkflowCodePanel(actionState: BuildsActionState, preferences: Appea
                 else -> WorkflowCodeViewer(source, preferences.compactCards)
             }
             OutlinedButton({ clipboard.setText(AnnotatedString(source)) }, Modifier.fillMaxWidth().padding(16.dp), enabled = source.isNotBlank()) {
-                Icon(Icons.Default.ContentCopy, null)
+                Icon(RockIcon.ContentCopy.vector(), null)
                 Spacer(Modifier.width(8.dp))
                 Text("Copy workflow code")
             }
@@ -353,7 +352,7 @@ private fun WorkflowHealthFrame(health: WorkflowPreviewHealth, title: String, de
     }
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = accent.copy(alpha = .12f), border = BorderStroke(1.dp, accent.copy(alpha = .45f))) {
         Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Info, title, tint = accent)
+            Icon(RockIcon.Info.vector(), title, tint = accent)
             Column(Modifier.weight(1f)) {
                 Text(title, color = accent, fontWeight = FontWeight.Bold)
                 Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
@@ -431,7 +430,7 @@ private fun BuildExecutionPanel(
                 Text("Artifacts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 actionState.artifacts.forEach { artifact ->
                     OutlinedButton(onClick = { onDownload(artifact) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                        Icon(Icons.Default.Download, null)
+                        Icon(RockIcon.Download.vector(), null)
                         Spacer(Modifier.width(8.dp))
                         Text(artifact.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
@@ -461,10 +460,10 @@ private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences) {
 private fun StatusIcon(state: WorkflowDisplayState, accent: Color) {
     Icon(
         when (state) {
-            WorkflowDisplayState.Success -> Icons.Default.CheckCircle
-            WorkflowDisplayState.Failed -> Icons.Default.ErrorOutline
-            WorkflowDisplayState.Cancelled -> Icons.Default.Cancel
-            else -> Icons.Default.Sync
+            WorkflowDisplayState.Success -> RockIcon.CheckCircle.vector()
+            WorkflowDisplayState.Failed -> RockIcon.ErrorOutline.vector()
+            WorkflowDisplayState.Cancelled -> RockIcon.Cancel.vector()
+            else -> RockIcon.Sync.vector()
         },
         state.name,
         tint = accent
@@ -491,7 +490,7 @@ private fun RecentRunCard(run: WorkflowRun, preferences: AppearancePreferences, 
                 Text("${run.event} • ${run.headBranch.orEmpty()} • #${run.id}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
             Text(state.name, color = accent, fontWeight = FontWeight.SemiBold)
-            Icon(Icons.Default.ChevronRight, "Open run details")
+            Icon(RockIcon.ChevronRight.vector(), "Open run details")
         }
     }
 }
@@ -539,11 +538,11 @@ private fun RunDetailsDialog(
                                 Text("Run details", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                 Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
-                            IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, "Refresh") }
+                            IconButton(onClick = onRefresh) { Icon(RockIcon.Refresh.vector(), "Refresh") }
                             IconButton(onClick = { height = when (height) { DetailHeight.Compact -> DetailHeight.Expanded; DetailHeight.Expanded -> DetailHeight.Full; DetailHeight.Full -> DetailHeight.Compact } }) {
-                                Icon(if (height == DetailHeight.Full) Icons.Default.ExpandLess else Icons.Default.ExpandMore, "Resize")
+                                Icon(if (height == DetailHeight.Full) RockIcon.ExpandLess.vector() else RockIcon.ExpandMore.vector(), "Resize")
                             }
-                            IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close") }
+                            IconButton(onClick = onDismiss) { Icon(RockIcon.Close.vector(), "Close") }
                         }
                     }
                     item {
@@ -565,21 +564,21 @@ private fun RunDetailsDialog(
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton({ clipboard.setText(AnnotatedString(run.htmlUrl)) }, Modifier.weight(1f).heightIn(min = 48.dp), enabled = run.htmlUrl.isNotBlank()) {
-                                Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(4.dp)); Text("Copy URL")
+                                Icon(RockIcon.ContentCopy.vector(), null); Spacer(Modifier.width(4.dp)); Text("Copy URL")
                             }
                             OutlinedButton({ context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))) }, Modifier.weight(1f).heightIn(min = 48.dp), enabled = run.htmlUrl.isNotBlank()) {
-                                Icon(Icons.Default.OpenInNew, null); Spacer(Modifier.width(4.dp)); Text("Open GitHub")
+                                Icon(RockIcon.OpenInNew.vector(), null); Spacer(Modifier.width(4.dp)); Text("Open GitHub")
                             }
                         }
                     }
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (state == WorkflowDisplayState.Running || state == WorkflowDisplayState.Queued) {
-                                OutlinedButton(onCancel, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Cancel, null); Spacer(Modifier.width(4.dp)); Text("Cancel") }
+                                OutlinedButton(onCancel, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(RockIcon.Cancel.vector(), null); Spacer(Modifier.width(4.dp)); Text("Cancel") }
                             } else {
-                                OutlinedButton(onRerun, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(4.dp)); Text("Re-run") }
+                                OutlinedButton(onRerun, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(RockIcon.Refresh.vector(), null); Spacer(Modifier.width(4.dp)); Text("Re-run") }
                             }
-                            OutlinedButton(onRefresh, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Sync, null); Spacer(Modifier.width(4.dp)); Text("Refresh") }
+                            OutlinedButton(onRefresh, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(RockIcon.Sync.vector(), null); Spacer(Modifier.width(4.dp)); Text("Refresh") }
                         }
                     }
                     item { Text("Jobs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
@@ -596,12 +595,12 @@ private fun RunDetailsDialog(
                                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     val failed = job.conclusion in failureConclusions
                                     val passed = job.conclusion == "success"
-                                    Icon(if (failed) Icons.Default.ErrorOutline else if (passed) Icons.Default.CheckCircle else Icons.Default.Sync, null, tint = if (failed) MaterialTheme.colorScheme.error else if (passed) WorkflowHealthyGreen else MaterialTheme.colorScheme.primary)
+                                    Icon(if (failed) RockIcon.ErrorOutline.vector() else if (passed) RockIcon.CheckCircle.vector() else RockIcon.Sync.vector(), null, tint = if (failed) MaterialTheme.colorScheme.error else if (passed) WorkflowHealthyGreen else MaterialTheme.colorScheme.primary)
                                     Column(Modifier.weight(1f)) {
                                         Text(job.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text("${job.status} · ${job.conclusion ?: "in progress"}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                                     }
-                                    Icon(if (selected) Icons.Default.ExpandLess else Icons.Default.ExpandMore, "Toggle job")
+                                    Icon(if (selected) RockIcon.ExpandLess.vector() else RockIcon.ExpandMore.vector(), "Toggle job")
                                 }
                             }
                         }
@@ -625,7 +624,7 @@ private fun RunDetailsDialog(
                                         jobState.logs?.let { logs ->
                                             Text("Logs", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                             SelectionContainer { Text(logs, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) }
-                                            OutlinedButton({ clipboard.setText(AnnotatedString(logs)) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(6.dp)); Text("Copy logs") }
+                                            OutlinedButton({ clipboard.setText(AnnotatedString(logs)) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Icon(RockIcon.ContentCopy.vector(), null); Spacer(Modifier.width(6.dp)); Text("Copy logs") }
                                         }
                                     }
                                 }
@@ -636,7 +635,7 @@ private fun RunDetailsDialog(
                         item { Text("Artifacts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
                         items(artifacts, key = { it.id }) { artifact ->
                             OutlinedButton(onClick = { onDownload(artifact) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                                Icon(Icons.Default.Download, null)
+                                Icon(RockIcon.Download.vector(), null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(artifact.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text("ZIP", style = MaterialTheme.typography.labelSmall)

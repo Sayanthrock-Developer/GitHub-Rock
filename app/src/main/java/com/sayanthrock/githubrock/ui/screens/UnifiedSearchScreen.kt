@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,11 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -188,15 +184,15 @@ fun UnifiedSearchScreen(
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+            IconButton(onClick = onBack) { Icon(RockIcon.ArrowBack.vector(), "Back") }
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it; viewModel.queryChanged(it) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 shape = RoundedCornerShape(18.dp),
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = ""; viewModel.queryChanged("") }) { Icon(Icons.Default.Clear, "Clear") } }) else null,
+                leadingIcon = { Icon(RockIcon.Search.vector(), null) },
+                trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = ""; viewModel.queryChanged("") }) { Icon(RockIcon.Clear.vector(), "Clear") } }) else null,
                 placeholder = { Text("Search repositories, owners, or topics") }
             )
         }
@@ -211,7 +207,7 @@ fun UnifiedSearchScreen(
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { Text("Recent searches", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
                 items(history) { item ->
-                    AssistChip(onClick = { query = item; viewModel.submit(item) }, label = { Text(item) }, leadingIcon = { Icon(Icons.Default.History, null) })
+                    AssistChip(onClick = { query = item; viewModel.submit(item) }, label = { Text(item) }, leadingIcon = { Icon(RockIcon.History.vector(), null) })
                 }
             }
             return@Column

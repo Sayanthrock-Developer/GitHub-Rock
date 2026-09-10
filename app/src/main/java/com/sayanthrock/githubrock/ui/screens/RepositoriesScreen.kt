@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -26,22 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CallSplit
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -449,14 +434,14 @@ private fun RepositoryChartsHeader(
         }
 
         RepositoryRoundAction(
-            icon = Icons.Default.Search,
+            icon = RockIcon.Search.vector(),
             contentDescription = "Search repositories",
             onClick = onSearch
         )
 
         if (creationEnabled) {
             RepositoryRoundAction(
-                icon = Icons.Default.Add,
+                icon = RockIcon.Add.vector(),
                 contentDescription = "Create repository",
                 onClick = onCreate
             )
@@ -470,7 +455,7 @@ private fun RepositoryChartsHeader(
             }
         ) {
             RepositoryRoundAction(
-                icon = Icons.Default.Tune,
+                icon = RockIcon.Tune.vector(),
                 contentDescription = "Filter repositories",
                 primary = true,
                 onClick = onOpenFilters
@@ -553,11 +538,11 @@ private fun RepositorySearchField(
             .fillMaxWidth()
             .focusRequester(focusRequester),
         singleLine = true,
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        leadingIcon = { Icon(RockIcon.Search.vector(), contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = onClear) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear repository search")
+                    Icon(RockIcon.Close.vector(), contentDescription = "Clear repository search")
                 }
             }
         },
@@ -580,7 +565,7 @@ private fun RepositorySearchHistory(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                Icons.Default.History,
+                RockIcon.History.vector(),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -728,14 +713,14 @@ private fun RepositoryChartCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (platforms.isEmpty()) {
-                    RepositoryChartPlatformChip(Icons.Default.Devices, "Cross-platform")
+                    RepositoryChartPlatformChip(RockIcon.Devices.vector(), "Cross-platform")
                 } else {
                     platforms.forEach { platform ->
                         RepositoryChartPlatformChip(platform.icon, platform.label)
                     }
                 }
                 RepositoryChartPlatformChip(
-                    icon = if (repository.private) Icons.Default.Lock else Icons.Default.Check,
+                    icon = if (repository.private) RockIcon.Lock.vector() else RockIcon.Check.vector(),
                     label = if (repository.private) "Private" else "Public"
                 )
             }
@@ -747,13 +732,13 @@ private fun RepositoryChartCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                RepositoryChartMetric(Icons.Default.Star, compactRepositoryCount(repository.stars))
-                RepositoryChartMetric(Icons.Default.CallSplit, compactRepositoryCount(repository.forks))
-                RepositoryChartMetric(Icons.Default.Schedule, relativeRepositoryTime(repository.updatedAt))
+                RepositoryChartMetric(RockIcon.Star.vector(), compactRepositoryCount(repository.stars))
+                RepositoryChartMetric(RockIcon.CallSplit.vector(), compactRepositoryCount(repository.forks))
+                RepositoryChartMetric(RockIcon.Schedule.vector(), relativeRepositoryTime(repository.updatedAt))
                 Spacer(Modifier.weight(1f))
                 Text("Open", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                 Icon(
-                    Icons.Default.ChevronRight,
+                    RockIcon.ChevronRight.vector(),
                     contentDescription = "Open ${repository.name}",
                     modifier = Modifier.size(18.dp)
                 )
@@ -817,7 +802,7 @@ private fun RepositoryChartsEmptyState(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Icon(
-                if (hasFilters) Icons.Default.Search else Icons.Default.Refresh,
+                if (hasFilters) RockIcon.Search.vector() else RockIcon.Refresh.vector(),
                 contentDescription = null,
                 modifier = Modifier.size(34.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -970,7 +955,7 @@ private fun RepositoryFilterMainPanel(
                     onClick = { onSourceChange(item) },
                     label = { Text(item.label) },
                     leadingIcon = if (item == source) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        { Icon(RockIcon.Check.vector(), contentDescription = null, modifier = Modifier.size(18.dp)) }
                     } else {
                         null
                     }
@@ -1003,7 +988,7 @@ private fun RepositoryFilterMainPanel(
                     onClick = { onPlatformChange(platform) },
                     label = { Text(if (platform == HomePlatform.All) "All" else platform.label) },
                     leadingIcon = if (platform == selectedPlatform) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        { Icon(RockIcon.Check.vector(), contentDescription = null, modifier = Modifier.size(18.dp)) }
                     } else {
                         { Icon(platform.icon, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     }
@@ -1027,7 +1012,7 @@ private fun RepositoryFilterMainPanel(
 
         RepositoryFilterSectionTitle("Language")
         RepositoryFilterNavigationRow(
-            icon = Icons.Default.Code,
+            icon = RockIcon.Code.vector(),
             label = language ?: "All Languages",
             contentDescription = "Choose repository language",
             onClick = onOpenLanguage
@@ -1035,7 +1020,7 @@ private fun RepositoryFilterMainPanel(
 
         RepositoryFilterSectionTitle("Sort by")
         RepositoryFilterNavigationRow(
-            icon = Icons.Default.Tune,
+            icon = RockIcon.Tune.vector(),
             label = "${sort.label} · ${if (ascending) "Ascending" else "Descending"}",
             contentDescription = "Choose repository sort order",
             onClick = onOpenSort
@@ -1092,7 +1077,7 @@ private fun RepositoryFilterNavigationRow(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(RockIcon.ChevronRight.vector(), contentDescription = null)
         }
     }
 }
@@ -1174,7 +1159,7 @@ private fun RepositorySortPanel(
                 ) {
                     if (item == selected) {
                         Icon(
-                            Icons.Default.Check,
+                            RockIcon.Check.vector(),
                             contentDescription = "Selected",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -1233,7 +1218,7 @@ private fun RepositoryNestedPanelHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            Icon(RockIcon.ArrowBack.vector(), contentDescription = "Back")
         }
         Spacer(Modifier.width(4.dp))
         Text(

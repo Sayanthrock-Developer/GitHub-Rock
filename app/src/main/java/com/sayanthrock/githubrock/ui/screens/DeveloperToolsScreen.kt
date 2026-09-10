@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -16,16 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -139,7 +130,7 @@ fun DeveloperToolsScreen(
     pendingCommand?.let { pending ->
         AlertDialog(
             onDismissRequest = { pendingCommand = null },
-            icon = { Icon(Icons.Default.Terminal, contentDescription = null) },
+            icon = { Icon(RockIcon.Terminal.vector(), contentDescription = null) },
             title = { Text("Send to Termux?") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -183,7 +174,7 @@ fun DeveloperToolsScreen(
                 title = { Text("Developer Tools") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(RockIcon.ArrowBack.vector(), contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -201,7 +192,7 @@ fun DeveloperToolsScreen(
             GlassCard {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Default.Terminal, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(RockIcon.Terminal.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f)) {
                             Text("GitHub ↔ Termux bridge", fontWeight = FontWeight.Bold)
                             Text(
@@ -218,7 +209,7 @@ fun DeveloperToolsScreen(
                             )
                         }
                         IconButton(onClick = ::refreshTermuxState) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Check Termux again")
+                            Icon(RockIcon.Refresh.vector(), contentDescription = "Check Termux again")
                         }
                     }
                     Text(
@@ -237,7 +228,7 @@ fun DeveloperToolsScreen(
                             enabled = termuxInstalled,
                             modifier = Modifier.weight(1f).height(50.dp)
                         ) {
-                            Icon(Icons.Default.Terminal, contentDescription = null)
+                            Icon(RockIcon.Terminal.vector(), contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text("Open Termux")
                         }
@@ -246,7 +237,7 @@ fun DeveloperToolsScreen(
                             enabled = termuxInstalled && !termuxPermissionGranted,
                             modifier = Modifier.weight(1f).height(50.dp)
                         ) {
-                            Icon(Icons.Default.Security, contentDescription = null)
+                            Icon(RockIcon.Security.vector(), contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(if (termuxPermissionGranted) "Granted" else "Grant permission")
                         }
@@ -255,7 +246,7 @@ fun DeveloperToolsScreen(
                         onClick = { copy("Termux bridge setup", DeveloperCommandBuilder.ENABLE_TERMUX_BRIDGE.value) },
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                        Icon(RockIcon.ContentCopy.vector(), contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Copy allow-external-apps setup")
                     }
@@ -296,7 +287,7 @@ fun DeveloperToolsScreen(
                 enabled = termuxInstalled && termuxPermissionGranted,
                 modifier = Modifier.fillMaxWidth().height(54.dp)
             ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                Icon(RockIcon.CheckCircle.vector(), contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Connect GitHub to Termux")
             }
@@ -304,7 +295,7 @@ fun DeveloperToolsScreen(
             GlassCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(RockIcon.Security.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Text("Connection status", fontWeight = FontWeight.Bold)
                     }
                     Text(
@@ -378,7 +369,7 @@ fun DeveloperToolsScreen(
             GlassCard {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(RockIcon.Key.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f)) {
                             Text("Mobile coding API keys", fontWeight = FontWeight.Bold)
                             Text(
@@ -449,7 +440,7 @@ fun DeveloperToolsScreen(
             GlassCard {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(RockIcon.Code.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Text("Mobile coding environment", fontWeight = FontWeight.Bold)
                     }
                     Text("Git · GitHub CLI · SSH · repository cloning · pull-request checkout · gh api · provider API-key environment variables")
@@ -482,13 +473,13 @@ private fun CommandCard(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(onClick = onCopy, enabled = command != null) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Icon(RockIcon.ContentCopy.vector(), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Copy")
                 }
                 if (onSend != null) {
                     FilledTonalButton(onClick = onSend, enabled = command != null) {
-                        Icon(Icons.Default.OpenInNew, contentDescription = null)
+                        Icon(RockIcon.OpenInNew.vector(), contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Termux")
                     }

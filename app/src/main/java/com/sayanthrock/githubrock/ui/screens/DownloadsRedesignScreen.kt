@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
@@ -18,24 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.InstallMobile
-import androidx.compose.material.icons.filled.InsertDriveFile
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -233,7 +216,7 @@ fun DownloadsRedesignScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
     errorMessage?.takeIf(String::isNotBlank)?.let { message ->
         AlertDialog(
             onDismissRequest = { errorMessage = null },
-            icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null) },
+            icon = { Icon(RockIcon.ErrorOutline.vector(), contentDescription = null) },
             title = { Text("Action unavailable") },
             text = { Text(message) },
             confirmButton = { TextButton(onClick = { errorMessage = null }) { Text("Close") } }
@@ -300,7 +283,7 @@ private fun EmptyDownloadsCard(filter: DownloadListFilter) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Surface(Modifier.size(64.dp), MaterialTheme.shapes.extraLarge, MaterialTheme.colorScheme.primary.copy(alpha = .12f)) {
-                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Folder, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary) }
+                Box(contentAlignment = Alignment.Center) { Icon(RockIcon.Folder.vector(), null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary) }
             }
             Text(if (filter == DownloadListFilter.All) "No downloads yet" else "No ${filter.label.lowercase()} downloads", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
             Text(
@@ -328,7 +311,7 @@ private fun DownloadListCard(item: DownloadEntity, onPrimaryAction: () -> Unit, 
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(Modifier.size(56.dp), MaterialTheme.shapes.extraLarge, MaterialTheme.colorScheme.surfaceContainerHigh) {
-                    Box(contentAlignment = Alignment.Center) { Icon(if (item.isApkDownload()) Icons.Default.Android else Icons.Default.InsertDriveFile, null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary) }
+                    Box(contentAlignment = Alignment.Center) { Icon(if (item.isApkDownload()) RockIcon.Android.vector() else RockIcon.InsertDriveFile.vector(), null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary) }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(item.fileName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -358,7 +341,7 @@ private fun DownloadListCard(item: DownloadEntity, onPrimaryAction: () -> Unit, 
             }
             if (isTerminal && item.sha256 != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(RockIcon.CheckCircle.vector(), null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.primary)
                     Text("Verified ✓", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             }
@@ -375,11 +358,11 @@ private fun DownloadListCard(item: DownloadEntity, onPrimaryAction: () -> Unit, 
                     Spacer(Modifier.width(7.dp))
                     Text(primaryActionLabel(item), fontWeight = FontWeight.Bold)
                 }
-                IconButton(onClick = onOpenActions) { Icon(Icons.Default.MoreHoriz, "More actions for ${item.fileName}") }
+                IconButton(onClick = onOpenActions) { Icon(RockIcon.MoreHoriz.vector(), "More actions for ${item.fileName}") }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(RockIcon.Schedule.vector(), null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Added ${formatDownloadTimestamp(item.createdAt)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -425,19 +408,19 @@ private fun DownloadActionsSheet(
         item.repositoryFullName?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item.releaseName?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold) }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        if (state == DownloadState.DOWNLOADING || state == DownloadState.QUEUED || state == DownloadState.RETRYING) ActionRow(Icons.Default.Pause, "Pause download", onPause)
-        if (state == DownloadState.PAUSED) ActionRow(Icons.Default.PlayArrow, "Resume download", onResume)
-        if (state == DownloadState.FAILED || state == DownloadState.CANCELLED) ActionRow(Icons.Default.Refresh, "Retry download", onRetry)
-        if (state == DownloadState.DOWNLOADING || state == DownloadState.QUEUED || state == DownloadState.RETRYING || state == DownloadState.PAUSED) ActionRow(Icons.Default.Cancel, "Cancel download", onCancel, destructive = true)
+        if (state == DownloadState.DOWNLOADING || state == DownloadState.QUEUED || state == DownloadState.RETRYING) ActionRow(RockIcon.Pause.vector(), "Pause download", onPause)
+        if (state == DownloadState.PAUSED) ActionRow(RockIcon.PlayArrow.vector(), "Resume download", onResume)
+        if (state == DownloadState.FAILED || state == DownloadState.CANCELLED) ActionRow(RockIcon.Refresh.vector(), "Retry download", onRetry)
+        if (state == DownloadState.DOWNLOADING || state == DownloadState.QUEUED || state == DownloadState.RETRYING || state == DownloadState.PAUSED) ActionRow(RockIcon.Cancel.vector(), "Cancel download", onCancel, destructive = true)
         if (terminal && item.isApkDownload() && localFileExists) {
-            ActionRow(Icons.Default.InstallMobile, "Install application", onInstall)
-            ActionRow(Icons.Default.OpenInNew, "Open installed application", onOpen)
-            ActionRow(Icons.Default.Security, "Inspect APK", onInspect)
+            ActionRow(RockIcon.InstallMobile.vector(), "Install application", onInstall)
+            ActionRow(RockIcon.OpenInNew.vector(), "Open installed application", onOpen)
+            ActionRow(RockIcon.Security.vector(), "Inspect APK", onInspect)
         }
-        if (terminal && localFileExists) ActionRow(Icons.Default.Share, "Share file", onShare)
-        if (item.releaseUrl?.isNotBlank() == true) ActionRow(Icons.Default.Link, "View release", onViewRelease)
+        if (terminal && localFileExists) ActionRow(RockIcon.Share.vector(), "Share file", onShare)
+        if (item.releaseUrl?.isNotBlank() == true) ActionRow(RockIcon.Link.vector(), "View release", onViewRelease)
         if (state != DownloadState.DOWNLOADING && state != DownloadState.QUEUED && state != DownloadState.RETRYING && state != DownloadState.PAUSED && state != DownloadState.VERIFYING) {
-            ActionRow(Icons.Default.Delete, "Delete file and history", onDelete, destructive = true)
+            ActionRow(RockIcon.Delete.vector(), "Delete file and history", onDelete, destructive = true)
         }
     }
 }
@@ -508,12 +491,12 @@ private fun primaryActionLabel(item: DownloadEntity): String = when (item.state)
 }
 
 private fun primaryActionIcon(item: DownloadEntity): ImageVector = when (item.state) {
-    DownloadState.DOWNLOADING, DownloadState.QUEUED, DownloadState.RETRYING -> Icons.Default.Pause
-    DownloadState.PAUSED -> Icons.Default.PlayArrow
-    DownloadState.FAILED, DownloadState.CANCELLED -> Icons.Default.Refresh
-    DownloadState.INSTALLABLE -> Icons.Default.InstallMobile
-    DownloadState.COMPLETED -> if (item.isApkDownload()) Icons.Default.OpenInNew else Icons.Default.Share
-    DownloadState.VERIFYING -> Icons.Default.Security
+    DownloadState.DOWNLOADING, DownloadState.QUEUED, DownloadState.RETRYING -> RockIcon.Pause.vector()
+    DownloadState.PAUSED -> RockIcon.PlayArrow.vector()
+    DownloadState.FAILED, DownloadState.CANCELLED -> RockIcon.Refresh.vector()
+    DownloadState.INSTALLABLE -> RockIcon.InstallMobile.vector()
+    DownloadState.COMPLETED -> if (item.isApkDownload()) RockIcon.OpenInNew.vector() else RockIcon.Share.vector()
+    DownloadState.VERIFYING -> RockIcon.Security.vector()
 }
 
 private fun downloadProgressPercent(item: DownloadEntity): Int = when {

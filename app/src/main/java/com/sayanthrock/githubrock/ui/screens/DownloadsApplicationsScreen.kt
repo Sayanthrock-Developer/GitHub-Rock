@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -22,17 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.InsertDriveFile
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -139,7 +129,7 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
             item {
                 Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer) {
                     Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(32.dp))
+                        Icon(RockIcon.Download.vector(), contentDescription = null, modifier = Modifier.size(32.dp))
                         Text("Nothing here", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -219,7 +209,7 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
     errorMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { errorMessage = null },
-            icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null) },
+            icon = { Icon(RockIcon.ErrorOutline.vector(), contentDescription = null) },
             title = { Text("Action unavailable") },
             text = { Text(message) },
             confirmButton = { TextButton(onClick = { errorMessage = null }) { Text("Close") } }
@@ -270,7 +260,7 @@ private fun ApplicationDownloadCard(
                     Text("${state?.downloadedVersionName?.let { "v$it" } ?: "Version unavailable"} · ${formatDownloadBytes(item.totalBytes.takeIf { it > 0 } ?: item.downloadedBytes)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (repository != null) Text("${repository.first}/${repository.second}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
-                IconButton(onClick = onInspect) { Icon(Icons.Default.MoreHoriz, contentDescription = "Application details") }
+                IconButton(onClick = onInspect) { Icon(RockIcon.MoreHoriz.vector(), contentDescription = "Application details") }
             }
             if (item.status != "completed") LinearProgressIndicator(progress = { downloadProgressPercent(item) / 100f }, modifier = Modifier.fillMaxWidth().height(6.dp))
             Text(
@@ -286,10 +276,10 @@ private fun ApplicationDownloadCard(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onPrimary, modifier = Modifier.weight(1f)) {
-                    Icon(when (primaryLabel) { "Open" -> Icons.Default.PlayArrow; "Install", "Update", "Download again" -> Icons.Default.Android; "Resume" -> Icons.Default.PlayArrow; "Retry" -> Icons.Default.Refresh; else -> Icons.Default.Pause }, contentDescription = null)
+                    Icon(when (primaryLabel) { "Open" -> RockIcon.PlayArrow.vector(); "Install", "Update", "Download again" -> RockIcon.Android.vector(); "Resume" -> RockIcon.PlayArrow.vector(); "Retry" -> RockIcon.Refresh.vector(); else -> RockIcon.Pause.vector() }, contentDescription = null)
                     Spacer(Modifier.width(6.dp)); Text(primaryLabel)
                 }
-                OutlinedButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Delete download") }
+                OutlinedButton(onClick = onDelete) { Icon(RockIcon.Delete.vector(), contentDescription = "Delete download") }
             }
         }
     }
@@ -299,13 +289,13 @@ private fun ApplicationDownloadCard(
 private fun FileDownloadCard(item: DownloadEntity, onPrimary: () -> Unit, onDelete: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(Modifier.size(50.dp), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.InsertDriveFile, contentDescription = null) } }
+            Surface(Modifier.size(50.dp), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh) { Box(contentAlignment = Alignment.Center) { Icon(RockIcon.InsertDriveFile.vector(), contentDescription = null) } }
             Column(Modifier.weight(1f)) {
                 Text(item.fileName, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${item.status.replaceFirstChar { it.uppercase() }} · ${formatDownloadBytes(item.totalBytes.takeIf { it > 0 } ?: item.downloadedBytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick = onPrimary) { Icon(when (item.status) { "paused" -> Icons.Default.PlayArrow; "failed", "cancelled" -> Icons.Default.Refresh; "completed" -> Icons.Default.Share; else -> Icons.Default.Pause }, contentDescription = "File action") }
-            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Delete file") }
+            IconButton(onClick = onPrimary) { Icon(when (item.status) { "paused" -> RockIcon.PlayArrow.vector(); "failed", "cancelled" -> RockIcon.Refresh.vector(); "completed" -> RockIcon.Share.vector(); else -> RockIcon.Pause.vector() }, contentDescription = "File action") }
+            IconButton(onClick = onDelete) { Icon(RockIcon.Delete.vector(), contentDescription = "Delete file") }
         }
     }
 }
@@ -313,7 +303,7 @@ private fun FileDownloadCard(item: DownloadEntity, onPrimary: () -> Unit, onDele
 @Composable
 private fun AppIcon(icon: Drawable?) {
     Surface(Modifier.size(64.dp), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-        if (icon == null) Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Android, contentDescription = "Application", modifier = Modifier.size(32.dp)) }
+        if (icon == null) Box(contentAlignment = Alignment.Center) { Icon(RockIcon.Android.vector(), contentDescription = "Application", modifier = Modifier.size(32.dp)) }
         else Image(bitmap = remember(icon) { drawableToBitmap(icon).asImageBitmap() }, contentDescription = "Application icon", modifier = Modifier.padding(7.dp).fillMaxSize())
     }
 }

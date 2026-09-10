@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,20 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.CallSplit
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.LaptopMac
-import androidx.compose.material.icons.filled.PhoneIphone
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -72,12 +59,12 @@ internal enum class HomePlatform(
     val label: String,
     val icon: ImageVector,
 ) {
-    All("All Platforms", Icons.Default.Devices),
-    Android("Android", Icons.Default.Android),
-    MacOS("macOS", Icons.Default.LaptopMac),
-    Windows("Windows", Icons.Default.DesktopWindows),
-    Linux("Linux", Icons.Default.Terminal),
-    IOS("iOS", Icons.Default.PhoneIphone),
+    All("All Platforms", RockIcon.Devices.vector()),
+    Android("Android", RockIcon.Android.vector()),
+    MacOS("macOS", RockIcon.LaptopMac.vector()),
+    Windows("Windows", RockIcon.DesktopWindows.vector()),
+    Linux("Linux", RockIcon.Terminal.vector()),
+    IOS("iOS", RockIcon.PhoneIphone.vector()),
 }
 
 internal enum class HomeCategory(
@@ -312,7 +299,7 @@ private fun HomeBrowsingHeader(
                     maxLines = 1,
                 )
                 Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
+                    imageVector = RockIcon.ArrowDropDown.vector(),
                     contentDescription = "Choose platform",
                     modifier = Modifier.size(20.dp),
                 )
@@ -417,7 +404,7 @@ private fun EmptyDiscoveryCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Icon(
-                Icons.Default.ErrorOutline,
+                RockIcon.ErrorOutline.vector(),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -544,7 +531,7 @@ private fun DiscoveryRepositoryCard(
             ) {
                 if (platforms.isEmpty()) {
                     RepositoryPlatformChip(
-                        icon = Icons.Default.Devices,
+                        icon = RockIcon.Devices.vector(),
                         label = "Cross-platform",
                     )
                 } else {
@@ -556,7 +543,7 @@ private fun DiscoveryRepositoryCard(
                     }
                 }
                 RepositoryPlatformChip(
-                    icon = Icons.Default.Check,
+                    icon = RockIcon.Check.vector(),
                     label = "Public",
                 )
             }
@@ -569,17 +556,17 @@ private fun DiscoveryRepositoryCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RepositoryFooterMetric(
-                    icon = Icons.Default.Star,
+                    icon = RockIcon.Star.vector(),
                     value = compactCount(repository.stars),
                     contentDescription = "${compactCount(repository.stars)} stars",
                 )
                 RepositoryFooterMetric(
-                    icon = Icons.Default.CallSplit,
+                    icon = RockIcon.CallSplit.vector(),
                     value = compactCount(repository.forks),
                     contentDescription = "${compactCount(repository.forks)} forks",
                 )
                 RepositoryFooterMetric(
-                    icon = Icons.Default.Schedule,
+                    icon = RockIcon.Schedule.vector(),
                     value = relativeRepositoryTime(repository.updatedAt),
                     contentDescription = "Updated ${relativeRepositoryTime(repository.updatedAt)}",
                 )
@@ -590,7 +577,7 @@ private fun DiscoveryRepositoryCard(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Icon(
-                    Icons.Default.ChevronRight,
+                    RockIcon.ChevronRight.vector(),
                     contentDescription = "Open ${repository.name}",
                     modifier = Modifier.size(18.dp),
                 )
@@ -715,7 +702,7 @@ private fun HomePlatformPickerSheet(
                         )
                         if (isSelected) {
                             Icon(
-                                imageVector = Icons.Default.Check,
+                                imageVector = RockIcon.Check.vector(),
                                 contentDescription = "Selected",
                                 modifier = Modifier.size(24.dp),
                             )

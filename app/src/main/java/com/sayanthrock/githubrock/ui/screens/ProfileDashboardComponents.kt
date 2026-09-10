@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -15,19 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ForkRight
-import androidx.compose.material.icons.filled.InstallMobile
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.PersonRemove
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -208,7 +196,7 @@ internal fun ProfileDashboardHeader(
                         )
                     } else {
                         Icon(
-                            if (isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
+                            if (isFollowing) RockIcon.PersonRemove.vector() else RockIcon.PersonAdd.vector(),
                             contentDescription = null
                         )
                         Spacer(Modifier.width(8.dp))
@@ -342,10 +330,10 @@ internal fun ProfileIdentitySummary(
         ZonedDateTime.now().format(DateTimeFormatter.ofPattern("h:mm a · 'GMT'XXX", Locale.getDefault()))
     }
     val items = buildList {
-        profile?.company?.takeIf(String::isNotBlank)?.let { add(IdentityItem(Icons.Default.Business, it, null)) }
-        profile?.location?.takeIf(String::isNotBlank)?.let { add(IdentityItem(Icons.Default.LocationOn, it, null)) }
-        add(IdentityItem(Icons.Default.Schedule, localTime, null))
-        details?.pronouns?.takeIf(String::isNotBlank)?.let { add(IdentityItem(Icons.Default.Check, it, null)) }
+        profile?.company?.takeIf(String::isNotBlank)?.let { add(IdentityItem(RockIcon.Business.vector(), it, null)) }
+        profile?.location?.takeIf(String::isNotBlank)?.let { add(IdentityItem(RockIcon.LocationOn.vector(), it, null)) }
+        add(IdentityItem(RockIcon.Schedule.vector(), localTime, null))
+        details?.pronouns?.takeIf(String::isNotBlank)?.let { add(IdentityItem(RockIcon.Check.vector(), it, null)) }
     }
     val blog = profile?.blog?.takeIf(String::isNotBlank)
     val orcid = details?.orcid
@@ -408,7 +396,7 @@ private fun ProfileLinkRow(label: String, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(19.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(RockIcon.Link.vector(), contentDescription = null, modifier = Modifier.size(19.dp), tint = MaterialTheme.colorScheme.primary)
             Text(
                 label,
                 modifier = Modifier.weight(1f),
@@ -435,7 +423,7 @@ internal fun ProfileRepositoryToolbar(
             value = query,
             onValueChange = onQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            leadingIcon = { Icon(RockIcon.Search.vector(), contentDescription = null) },
             placeholder = { Text("Search repositories…") },
             singleLine = true,
             shape = MaterialTheme.shapes.extraLarge
@@ -472,10 +460,10 @@ internal fun ProfileRepositoryToolbar(
 }
 
 private fun ProfileRepositoryFilter.icon(): ImageVector = when (this) {
-    ProfileRepositoryFilter.All -> Icons.Default.Code
-    ProfileRepositoryFilter.Sources -> Icons.Default.Code
-    ProfileRepositoryFilter.Forks -> Icons.Default.ForkRight
-    ProfileRepositoryFilter.Apps -> Icons.Default.InstallMobile
+    ProfileRepositoryFilter.All -> RockIcon.Code.vector()
+    ProfileRepositoryFilter.Sources -> RockIcon.Code.vector()
+    ProfileRepositoryFilter.Forks -> RockIcon.ForkRight.vector()
+    ProfileRepositoryFilter.Apps -> RockIcon.InstallMobile.vector()
 }
 
 @Composable

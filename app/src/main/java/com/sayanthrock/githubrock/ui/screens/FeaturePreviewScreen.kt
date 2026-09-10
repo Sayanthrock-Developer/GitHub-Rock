@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,19 +21,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CloudQueue
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -130,7 +118,7 @@ fun FeaturePreviewScreen(
                     title = { Text("All GitHub") },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(RockIcon.ArrowBack.vector(), contentDescription = "Back")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -230,11 +218,11 @@ private fun GitHubWebSearch(
             singleLine = true,
             label = { Text("Find a GitHub tool") },
             placeholder = { Text("Notifications, tokens, Codespaces…") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            leadingIcon = { Icon(RockIcon.Search.vector(), contentDescription = null) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     IconButton(onClick = { onQueryChange("") }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear GitHub tool search")
+                        Icon(RockIcon.Close.vector(), contentDescription = "Clear GitHub tool search")
                     }
                 }
             }
@@ -309,7 +297,7 @@ private fun FeaturePreviewHero(
         ) {
             Text("Open GitHub.com", fontWeight = FontWeight.Bold)
             Spacer(Modifier.size(8.dp))
-            Icon(Icons.Default.OpenInNew, contentDescription = null)
+            Icon(RockIcon.OpenInNew.vector(), contentDescription = null)
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             item { PreviewMetric("5", "main tabs") }
@@ -352,7 +340,7 @@ private fun GitHubWebAccessNote() {
             verticalAlignment = Alignment.Top
         ) {
             Icon(
-                Icons.Default.Security,
+                RockIcon.Security.vector(),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.tertiary
             )
@@ -387,7 +375,7 @@ private fun GitHubWebSectionCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Default.OpenInNew,
+                            RockIcon.OpenInNew.vector(),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.tertiary
                         )
@@ -475,7 +463,7 @@ private fun GitHubWebDestinationRow(
                     fontWeight = FontWeight.Bold
                 )
                 Icon(
-                    Icons.Default.OpenInNew,
+                    RockIcon.OpenInNew.vector(),
                     contentDescription = "Open ${destination.title} on GitHub",
                     tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(14.dp)
@@ -666,7 +654,7 @@ private fun HonestPreviewNote() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top
         ) {
-            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(RockIcon.Security.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Clear feature status", fontWeight = FontWeight.Bold)
                 Text(
@@ -683,7 +671,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Access & identity",
         subtitle = "Secure entry points for every customer mode",
-        icon = Icons.Default.AccountCircle,
+        icon = RockIcon.AccountCircle.vector(),
         features = listOf(
             GitHubFeature("GitHub Device Flow", "Password-free browser authorization with a one-time code.", FeatureAvailability.Ready),
             GitHubFeature("Connected profile", "Account identity, avatar, profile details, and API health.", FeatureAvailability.Connected),
@@ -694,7 +682,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Repositories & code",
         subtitle = "A mobile repository workspace with review-safe editing",
-        icon = Icons.Default.Folder,
+        icon = RockIcon.Folder.vector(),
         features = listOf(
             GitHubFeature("Repository dashboard", "Search repositories and view language, topics, stars, forks, and issues.", FeatureAvailability.Ready),
             GitHubFeature("Files and folders", "Browse repository directories and open supported source files.", FeatureAvailability.Connected),
@@ -708,7 +696,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Issues & pull requests",
         subtitle = "Collaboration tools for maintainers and teams",
-        icon = Icons.Default.Description,
+        icon = RockIcon.Description.vector(),
         features = listOf(
             GitHubFeature("Issue management", "Create issues, open discussions, add comments, and change issue state.", FeatureAvailability.Connected),
             GitHubFeature("Labels, assignees, and milestones", "Organize issue ownership and delivery targets.", FeatureAvailability.Connected),
@@ -721,7 +709,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Actions & Android builds",
         subtitle = "Automation, logs, artifacts, and release pipelines",
-        icon = Icons.Default.Build,
+        icon = RockIcon.Build.vector(),
         features = listOf(
             GitHubFeature("Workflow browser", "View workflows, recent runs, states, branches, and conclusions.", FeatureAvailability.Connected),
             GitHubFeature("Run, cancel, and rerun", "Dispatch workflows and control active or failed runs.", FeatureAvailability.Connected),
@@ -734,7 +722,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Releases & distribution",
         subtitle = "Choose, inspect, download, and distribute project releases",
-        icon = Icons.Default.Download,
+        icon = RockIcon.Download.vector(),
         features = listOf(
             GitHubFeature("Release management", "Create draft releases and edit or delete existing release metadata.", FeatureAvailability.Connected),
             GitHubFeature("Release notes and assets", "Read release details and download individual assets.", FeatureAvailability.Connected),
@@ -747,7 +735,7 @@ private val featureCategories: List<FeatureCategory> = listOf(
     FeatureCategory(
         title = "Security, service & growth",
         subtitle = "Trustworthy controls with room for the wider GitHub platform",
-        icon = Icons.Default.Security,
+        icon = RockIcon.Security.vector(),
         features = listOf(
             GitHubFeature("No password collection", "GitHub credentials are never entered or stored inside GitHub Rock.", FeatureAvailability.Ready),
             GitHubFeature("Permission-aware actions", "Connected operations depend on GitHub authorization and repository access.", FeatureAvailability.Connected),
@@ -764,24 +752,24 @@ private val customerWorkflows: List<CustomerWorkflow> = listOf(
         title = "Individual developer",
         description = "Manage personal repositories, edit code, review workflows, and download builds from a phone.",
         tools = "Repositories · Code · Actions · Downloads",
-        icon = Icons.Default.Code
+        icon = RockIcon.Code.vector()
     ),
     CustomerWorkflow(
         title = "Open-source maintainer",
         description = "Triage issues, review pull requests, manage contributors, and publish releases.",
         tools = "Issues · Pull requests · Reviews · Releases",
-        icon = Icons.Default.Description
+        icon = RockIcon.Description.vector()
     ),
     CustomerWorkflow(
         title = "Team and organization",
         description = "Coordinate shared repositories, protected branches, approvals, and automation.",
         tools = "Permissions · Reviews · Workflows · Roadmap",
-        icon = Icons.Default.CloudQueue
+        icon = RockIcon.CloudQueue.vector()
     ),
     CustomerWorkflow(
         title = "Android release manager",
         description = "Trigger APK or AAB builds, inspect artifacts, prepare releases, and install verified builds.",
         tools = "Builds · Artifacts · APK inspection · Releases",
-        icon = Icons.Default.Build
+        icon = RockIcon.Build.vector()
     )
 )

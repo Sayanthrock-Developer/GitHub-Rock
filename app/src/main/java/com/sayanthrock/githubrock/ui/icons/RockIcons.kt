@@ -1,6 +1,34 @@
 package com.sayanthrock.githubrock.ui.icons
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.materialsymbols.rounded.text_fields as TextFieldsRegular
+import com.composables.icons.materialsymbols.rounded.share as ShareRegular
+import com.composables.icons.materialsymbols.rounded.schedule as ScheduleRegular
+import com.composables.icons.materialsymbols.rounded.restart_alt as RestartAltRegular
+import com.composables.icons.materialsymbols.rounded.play_arrow as PlayArrowRegular
+import com.composables.icons.materialsymbols.rounded.pause as PauseRegular
+import com.composables.icons.materialsymbols.rounded.more_horiz as MoreHorizRegular
+import com.composables.icons.materialsymbols.rounded.login as LoginRegular
+import com.composables.icons.materialsymbols.rounded.location_on as LocationOnRegular
+import com.composables.icons.materialsymbols.rounded.link as LinkRegular
+import com.composables.icons.materialsymbols.rounded.key as KeyRegular
+import com.composables.icons.materialsymbols.rounded.insert_drive_file as InsertDriveFileRegular
+import com.composables.icons.materialsymbols.rounded.image as ImageRegular
+import com.composables.icons.materialsymbols.rounded.format_size as FormatSizeRegular
+import com.composables.icons.materialsymbols.rounded.fork_right as ForkRightRegular
+import com.composables.icons.materialsymbols.rounded.folder as FolderRegular
+import com.composables.icons.materialsymbols.rounded.error_outline as ErrorOutlineRegular
+import com.composables.icons.materialsymbols.rounded.delete_outline as DeleteOutlineRegular
+import com.composables.icons.materialsymbols.rounded.dark_mode as DarkModeRegular
+import com.composables.icons.materialsymbols.rounded.content_copy as ContentCopyRegular
+import com.composables.icons.materialsymbols.rounded.color_lens as ColorLensRegular
+import com.composables.icons.materialsymbols.rounded.cloud_queue as CloudQueueRegular
+import com.composables.icons.materialsymbols.rounded.clear as ClearRegular
+import com.composables.icons.materialsymbols.rounded.check_circle as CheckCircleRegular
+import com.composables.icons.materialsymbols.rounded.cancel as CancelRegular
+import com.composables.icons.materialsymbols.rounded.business as BusinessRegular
+import com.composables.icons.materialsymbols.rounded.build as BuildRegular
+import com.composables.icons.materialsymbols.rounded.arrow_back as ArrowBackRegular
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Account_circle as AccountCircleRegular
 import com.composables.icons.materialsymbols.rounded.Add as AddRegular
@@ -135,6 +163,34 @@ import com.composables.icons.materialsymbols.roundedfilled.Close
 
 enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
+    ArrowBack,
+    Build,
+    Business,
+    Cancel,
+    CheckCircle,
+    Clear,
+    CloudQueue,
+    ColorLens,
+    ContentCopy,
+    DarkMode,
+    DeleteOutline,
+    ErrorOutline,
+    Folder,
+    ForkRight,
+    FormatSize,
+    Image,
+    InsertDriveFile,
+    Key,
+    Link,
+    LocationOn,
+    Login,
+    MoreHoriz,
+    Pause,
+    PlayArrow,
+    RestartAlt,
+    Schedule,
+    Share,
+    TextFields,
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, FavoriteBorder, History, Info, Logout, Star, Tune, Archive, Code,
     Download, Notifications, Security, Lock, Copy, OpenInBrowser,
@@ -211,4 +267,32 @@ fun RockIcon.vector(selected: Boolean = false): ImageVector = when (this) {
     RockIcon.Launch -> if (selected) MaterialSymbols.RoundedFilled.Launch else MaterialSymbols.Rounded.LaunchRegular
     RockIcon.CheckBox -> if (selected) MaterialSymbols.RoundedFilled.Check_box else MaterialSymbols.Rounded.CheckBoxRegular
     RockIcon.CheckBoxOutlineBlank -> if (selected) MaterialSymbols.RoundedFilled.Check_box_outline_blank else MaterialSymbols.Rounded.CheckBoxOutlineBlankRegular
+    RockIcon.ArrowBack -> ArrowBackRegular
+    RockIcon.Build -> BuildRegular
+    RockIcon.Business -> BusinessRegular
+    RockIcon.Cancel -> CancelRegular
+    RockIcon.CheckCircle -> CheckCircleRegular
+    RockIcon.Clear -> ClearRegular
+    RockIcon.CloudQueue -> CloudQueueRegular
+    RockIcon.ColorLens -> ColorLensRegular
+    RockIcon.ContentCopy -> ContentCopyRegular
+    RockIcon.DarkMode -> DarkModeRegular
+    RockIcon.DeleteOutline -> DeleteOutlineRegular
+    RockIcon.ErrorOutline -> ErrorOutlineRegular
+    RockIcon.Folder -> FolderRegular
+    RockIcon.ForkRight -> ForkRightRegular
+    RockIcon.FormatSize -> FormatSizeRegular
+    RockIcon.Image -> ImageRegular
+    RockIcon.InsertDriveFile -> InsertDriveFileRegular
+    RockIcon.Key -> KeyRegular
+    RockIcon.Link -> LinkRegular
+    RockIcon.LocationOn -> LocationOnRegular
+    RockIcon.Login -> LoginRegular
+    RockIcon.MoreHoriz -> MoreHorizRegular
+    RockIcon.Pause -> PauseRegular
+    RockIcon.PlayArrow -> PlayArrowRegular
+    RockIcon.RestartAlt -> RestartAltRegular
+    RockIcon.Schedule -> ScheduleRegular
+    RockIcon.Share -> ShareRegular
+    RockIcon.TextFields -> TextFieldsRegular
 }

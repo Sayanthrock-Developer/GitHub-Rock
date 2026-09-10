@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -21,19 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ColorLens
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.FormatSize
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.filled.ViewCompact
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -179,7 +167,7 @@ fun AppearanceContent(
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.ArrowBack.vector(), "Back") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -192,7 +180,7 @@ fun AppearanceContent(
             item { StandardScreenHeader("Customize your experience", "Choose the visual system, scale, typography, loading style, animation, and code presentation.") }
             item { StandardSectionHeader("Theme") }
             item { ThemePreview(state) }
-            item { ChoiceCard("Design style", "Complete surface and shape system", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
+            item { ChoiceCard("Design style", "Complete surface and shape system", RockIcon.Palette.vector(), ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
             item { AccentPicker(state, onAccentColor, onSystemDynamicAccent, onCustomAccentHex) { showAccentPicker = true } }
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
             item { StandardSectionHeader("Navigation") }
@@ -210,44 +198,44 @@ fun AppearanceContent(
                 )
             }
             item { StandardSectionHeader("Display size") }
-            item { ChoiceCard("Interface scale", "Changes controls, cards, spacing, and navigation app-wide", Icons.Default.ViewCompact, listOf(DisplaySize.Large to "Large", DisplaySize.Standard to "Standard", DisplaySize.Small to "Small"), state.displaySize, onDisplaySize) }
+            item { ChoiceCard("Interface scale", "Changes controls, cards, spacing, and navigation app-wide", RockIcon.ViewCompact.vector(), listOf(DisplaySize.Large to "Large", DisplaySize.Standard to "Standard", DisplaySize.Small to "Small"), state.displaySize, onDisplaySize) }
             item { StandardSectionHeader("Fonts") }
-            item { ChoiceCard("Font family", "System sans, serif, or developer monospace", Icons.Default.TextFields, AppFontFamily.entries.map { it to it.displayName }, state.fontFamily, onFontFamily) }
-            item { ChoiceCard("Font size", "Readable text scale", Icons.Default.FormatSize, listOf(FontSize.Small to "Small", FontSize.Default to "Default", FontSize.Large to "Large"), state.fontSize, onFontSize) }
-            item { ChoiceCard("Font weight", "Light, default, or stronger text", Icons.Default.FormatSize, listOf(FontWeightStyle.Light to "Light", FontWeightStyle.Default to "Default", FontWeightStyle.Bold to "Bold"), state.fontWeight, onFontWeight) }
+            item { ChoiceCard("Font family", "System sans, serif, or developer monospace", RockIcon.TextFields.vector(), AppFontFamily.entries.map { it to it.displayName }, state.fontFamily, onFontFamily) }
+            item { ChoiceCard("Font size", "Readable text scale", RockIcon.FormatSize.vector(), listOf(FontSize.Small to "Small", FontSize.Default to "Default", FontSize.Large to "Large"), state.fontSize, onFontSize) }
+            item { ChoiceCard("Font weight", "Light, default, or stronger text", RockIcon.FormatSize.vector(), listOf(FontWeightStyle.Light to "Light", FontWeightStyle.Default to "Default", FontWeightStyle.Bold to "Bold"), state.fontWeight, onFontWeight) }
             item { TypographyPreview() }
             item { StandardSectionHeader("Animation") }
             item { AnimationStyleControl(state.animationStyle, state.reduceMotion, onAnimationStyle) }
             item { StandardSectionHeader("Loading and code") }
-            item { ChoiceCard("Loading animation", "Applied to repository operations", Icons.Default.PlayArrow, LoadingStyle.entries.map { it to it.name }, state.loadingStyle, onLoadingStyle) }
+            item { ChoiceCard("Loading animation", "Applied to repository operations", RockIcon.PlayArrow.vector(), LoadingStyle.entries.map { it to it.name }, state.loadingStyle, onLoadingStyle) }
             item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { AppLoadingIndicator(state.loadingStyle, state.reduceMotion); Text("Live loading preview", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } } }
-            item { ChoiceCard("Code colors", "Syntax colors stay isolated from the interface", Icons.Default.Code, CodeColorStyle.entries.map { it to it.displayName }, state.codeColorStyle, onCodeColorStyle) }
-            item { ChoiceCard("Log display style", "Popup or highlighted terminal", Icons.Default.Code, listOf(LogDisplayStyle.Dialog to "Popup dialog", LogDisplayStyle.Terminal to "On-screen terminal"), state.logDisplayStyle, onLogDisplayStyle) }
+            item { ChoiceCard("Code colors", "Syntax colors stay isolated from the interface", RockIcon.Code.vector(), CodeColorStyle.entries.map { it to it.displayName }, state.codeColorStyle, onCodeColorStyle) }
+            item { ChoiceCard("Log display style", "Popup or highlighted terminal", RockIcon.Code.vector(), listOf(LogDisplayStyle.Dialog to "Popup dialog", LogDisplayStyle.Terminal to "On-screen terminal"), state.logDisplayStyle, onLogDisplayStyle) }
             item { CodeColorPreview() }
-            item { OutlinedButton(onClick = { confirmReset = true }, Modifier.fillMaxWidth().height(52.dp)) { Icon(Icons.Default.RestartAlt, null); Spacer(Modifier.width(8.dp)); Text("Reset settings") } }
+            item { OutlinedButton(onClick = { confirmReset = true }, Modifier.fillMaxWidth().height(52.dp)) { Icon(RockIcon.RestartAlt.vector(), null); Spacer(Modifier.width(8.dp)); Text("Reset settings") } }
         }
     }
     if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent, dynamic colors, true black, remote images, navigation, display, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
     if (showAccentPicker) AccentColorPickerDialog(state.customAccentHex.ifBlank { "#52D3DC" }, state.recentAccentColors, { showAccentPicker = false }) { hex -> showAccentPicker = false; onCustomAccentHex(hex) }
 }
 
-@Composable private fun NavigationBarStyleControl(selected: NavigationBarStyle, onSelected: (NavigationBarStyle) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.ViewCompact, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Navigation Bar Style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text("Choose how the five main destinations are presented.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { NavigationBarStyle.entries.forEach { style -> FilterChip(selected == style, { onSelected(style) }, label = { Text(style.displayName) }, leadingIcon = if (selected == style) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) } } } }
+@Composable private fun NavigationBarStyleControl(selected: NavigationBarStyle, onSelected: (NavigationBarStyle) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(RockIcon.ViewCompact.vector(), null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Navigation Bar Style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text("Choose how the five main destinations are presented.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { NavigationBarStyle.entries.forEach { style -> FilterChip(selected == style, { onSelected(style) }, label = { Text(style.displayName) }, leadingIcon = if (selected == style) ({ Icon(RockIcon.Check.vector(), null, Modifier.size(18.dp)) }) else null) } } } }
 
 @Composable private fun AnimationStyleControl(selected: AnimationStyle, reduceMotion: Boolean, onSelected: (AnimationStyle) -> Unit) { val styles = AnimationStyle.entries; var value by remember(selected) { mutableFloatStateOf(styles.indexOf(selected).coerceAtLeast(0).toFloat()) }; val current = styles[value.toInt().coerceIn(0, styles.lastIndex)]; GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("Animation style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(current.displayName, style = MaterialTheme.typography.titleSmall); Slider(value = value, onValueChange = { value = it }, onValueChangeFinished = { onSelected(styles[value.toInt().coerceIn(0, styles.lastIndex)]) }, valueRange = 0f..styles.lastIndex.toFloat(), steps = (styles.size - 2).coerceAtLeast(0), enabled = !reduceMotion); Text(if (reduceMotion) "Reduced motion is enabled." else "Liquid · Spring · Cinematic · Magnetic · Dynamic", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } } }
 
-@Composable private fun ThemePreview(state: AppearancePreferences) = GlassCard { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { Surface(Modifier.size(52.dp), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Palette, null, tint = MaterialTheme.colorScheme.primary) } }; Column(Modifier.weight(1f)) { Text(state.themeStyle.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("${state.themeMode.name} mode · ${state.displaySize.name} display · ${state.fontSize.name} text", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }; Icon(Icons.Default.Check, "Selected theme", tint = MaterialTheme.colorScheme.primary) } }
+@Composable private fun ThemePreview(state: AppearancePreferences) = GlassCard { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { Surface(Modifier.size(52.dp), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer) { Box(contentAlignment = Alignment.Center) { Icon(RockIcon.Palette.vector(), null, tint = MaterialTheme.colorScheme.primary) } }; Column(Modifier.weight(1f)) { Text(state.themeStyle.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("${state.themeMode.name} mode · ${state.displaySize.name} display · ${state.fontSize.name} text", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }; Icon(RockIcon.Check.vector(), "Selected theme", tint = MaterialTheme.colorScheme.primary) } }
 
-@Composable private fun <T> ChoiceCard(title: String, subtitle: String, icon: ImageVector, choices: List<Pair<T, String>>, selected: T, onSelected: (T) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(icon, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { choices.forEach { (v, label) -> FilterChip(selected == v, { onSelected(v) }, label = { Text(label) }, leadingIcon = if (selected == v) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) } } } }
+@Composable private fun <T> ChoiceCard(title: String, subtitle: String, icon: ImageVector, choices: List<Pair<T, String>>, selected: T, onSelected: (T) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(icon, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { choices.forEach { (v, label) -> FilterChip(selected == v, { onSelected(v) }, label = { Text(label) }, leadingIcon = if (selected == v) ({ Icon(RockIcon.Check.vector(), null, Modifier.size(18.dp)) }) else null) } } } }
 
 @Composable private fun AccentPicker(state: AppearancePreferences, onSelected: (AccentColor) -> Unit, onSystemDynamic: () -> Unit, onCustomHex: (String) -> Unit, onOpenPicker: () -> Unit) {
     val presets = listOf(AccentColor.DefaultGitHubRock, AccentColor.Red, AccentColor.Orange, AccentColor.Yellow, AccentColor.Green, AccentColor.Teal, AccentColor.Cyan, AccentColor.Blue, AccentColor.Indigo, AccentColor.Purple, AccentColor.Pink)
     val customColor = parseAccentHex(state.customAccentHex) ?: MaterialTheme.colorScheme.primary
     val customSelected = state.accentColor == AccentColor.Custom && !state.dynamicColor
     GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.ColorLens, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Accent color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(if (state.dynamicColor) "System Dynamic is active" else "Accent works independently of Light / Dark mode", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }
-        FilterChip(state.dynamicColor, onSystemDynamic, label = { Text("System Dynamic") }, leadingIcon = if (state.dynamicColor) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(RockIcon.ColorLens.vector(), null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Accent color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(if (state.dynamicColor) "System Dynamic is active" else "Accent works independently of Light / Dark mode", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }
+        FilterChip(state.dynamicColor, onSystemDynamic, label = { Text("System Dynamic") }, leadingIcon = if (state.dynamicColor) ({ Icon(RockIcon.Check.vector(), null, Modifier.size(18.dp)) }) else null)
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            presets.forEach { accent -> val selected = !state.dynamicColor && state.accentColor == accent; Surface(Modifier.size(48.dp).selectable(selected, true, Role.RadioButton) { onSelected(accent) }.semantics { contentDescription = "Use ${accent.displayName} accent" }, shape = CircleShape, color = accent.previewColor, border = BorderStroke(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)) { if (selected) Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Check, null, tint = Color.Black) } } }
+            presets.forEach { accent -> val selected = !state.dynamicColor && state.accentColor == accent; Surface(Modifier.size(48.dp).selectable(selected, true, Role.RadioButton) { onSelected(accent) }.semantics { contentDescription = "Use ${accent.displayName} accent" }, shape = CircleShape, color = accent.previewColor, border = BorderStroke(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)) { if (selected) Box(contentAlignment = Alignment.Center) { Icon(RockIcon.Check.vector(), null, tint = Color.Black) } } }
             Surface(Modifier.size(48.dp).selectable(customSelected, true, Role.Button) { onOpenPicker() }.semantics { contentDescription = "Open custom accent color picker" }, shape = CircleShape, color = customColor, border = BorderStroke(if (customSelected) 3.dp else 1.dp, MaterialTheme.colorScheme.outline)) { Box(contentAlignment = Alignment.Center) { Text("+", fontWeight = FontWeight.Bold, color = readableOn(customColor)) } }
         }
         if (state.recentAccentColors.isNotEmpty()) { Text("Recent colors", style = MaterialTheme.typography.labelLarge); Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) { state.recentAccentColors.forEach { hex -> val color = parseAccentHex(hex) ?: return@forEach; Surface(Modifier.size(38.dp).selectable(false, true, Role.Button) { onCustomHex(hex) }, shape = CircleShape, color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {} } } }
@@ -310,8 +298,8 @@ private fun selectedHex(hue: Float, saturation: Float, brightness: Float): Strin
 }
 
 @Composable private fun ThemeControls(state: AppearancePreferences, onThemeMode: (ThemeMode) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onShowImages: (Boolean) -> Unit) = StandardSettingsGroup {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary); Column { Text("Color mode", style = MaterialTheme.typography.titleSmall); Text("Follow the system, stay light, or stay dark", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { ThemeMode.entries.forEach { mode -> FilterChip(state.themeMode == mode, { onThemeMode(mode) }, label = { Text(mode.name) }, modifier = Modifier.weight(1f)) } } }
-    StandardSettingsDivider(); ToggleRow(Icons.Default.Image, "Show remote images", "Avatars and repository artwork", state.showImages, onShowImages); StandardSettingsDivider(); ToggleRow(Icons.Default.ColorLens, "System dynamic color", "Use the Android wallpaper palette", state.dynamicColor, onDynamicColor); StandardSettingsDivider(); ToggleRow(Icons.Default.DarkMode, "True black", "Pure black in dark mode", state.trueBlack, onTrueBlack)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(RockIcon.DarkMode.vector(), null, tint = MaterialTheme.colorScheme.primary); Column { Text("Color mode", style = MaterialTheme.typography.titleSmall); Text("Follow the system, stay light, or stay dark", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { ThemeMode.entries.forEach { mode -> FilterChip(state.themeMode == mode, { onThemeMode(mode) }, label = { Text(mode.name) }, modifier = Modifier.weight(1f)) } } }
+    StandardSettingsDivider(); ToggleRow(RockIcon.Image.vector(), "Show remote images", "Avatars and repository artwork", state.showImages, onShowImages); StandardSettingsDivider(); ToggleRow(RockIcon.ColorLens.vector(), "System dynamic color", "Use the Android wallpaper palette", state.dynamicColor, onDynamicColor); StandardSettingsDivider(); ToggleRow(RockIcon.DarkMode.vector(), "True black", "Pure black in dark mode", state.trueBlack, onTrueBlack)
 }
 
 @Composable private fun TypographyPreview() = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { Text("Interface preview", style = MaterialTheme.typography.headlineSmall); Text("Clean typography preview", style = MaterialTheme.typography.titleMedium); Text("Repositories, workflows, releases, and code remain readable at every selected size.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }

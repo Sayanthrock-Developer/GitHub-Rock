@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -244,10 +236,10 @@ fun AccountSwitcherScreen(
                         )
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.ArrowBack.vector(), "Back") } },
                 actions = {
                     if (connected) IconButton(onClick = { viewModel.load(true) }) {
-                        Icon(Icons.Default.Refresh, "Refresh accounts")
+                        Icon(RockIcon.Refresh.vector(), "Refresh accounts")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -275,7 +267,7 @@ fun AccountSwitcherScreen(
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Login, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(RockIcon.Login.vector(), null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("GitHub accounts", fontWeight = FontWeight.Bold)
@@ -288,7 +280,7 @@ fun AccountSwitcherScreen(
                             Text(state.accounts.size.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
                         }
                         Button(onClick = viewModel::startAddAccount, modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                            Icon(Icons.Default.Add, null)
+                            Icon(RockIcon.Add.vector(), null)
                             Spacer(Modifier.width(8.dp))
                             Text("Add another account")
                         }
@@ -312,7 +304,7 @@ fun AccountSwitcherScreen(
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Business, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(RockIcon.Business.vector(), null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("Organization context", fontWeight = FontWeight.Bold)
@@ -343,7 +335,7 @@ fun AccountSwitcherScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text(requireNotNull(state.error), color = MaterialTheme.colorScheme.error)
                             OutlinedButton(onClick = { viewModel.load(connected) }) {
-                                Icon(Icons.Default.Refresh, null)
+                                Icon(RockIcon.Refresh.vector(), null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Retry")
                             }
@@ -371,7 +363,7 @@ fun AccountSwitcherScreen(
             if (connected) {
                 item {
                     OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Login, null)
+                        Icon(RockIcon.Login.vector(), null)
                         Spacer(Modifier.width(8.dp))
                         Text("Log out of all accounts")
                     }
@@ -437,9 +429,9 @@ private fun AccountRow(account: StoredAccount, active: Boolean, onSwitch: () -> 
                 Text(account.name ?: account.login ?: "GitHub account", fontWeight = FontWeight.Bold)
                 Text("@${account.login ?: "unknown"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (active) Icon(Icons.Default.CheckCircle, "Active", tint = MaterialTheme.colorScheme.primary)
+            if (active) Icon(RockIcon.CheckCircle.vector(), "Active", tint = MaterialTheme.colorScheme.primary)
             else TextButton(onClick = onSwitch) { Text("Switch") }
-            IconButton(onClick = onRemove) { Icon(Icons.Default.DeleteOutline, "Remove account") }
+            IconButton(onClick = onRemove) { Icon(RockIcon.DeleteOutline.vector(), "Remove account") }
         }
     }
 }
@@ -464,7 +456,7 @@ private fun OrganizationRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (active) Icon(Icons.Default.CheckCircle, "Active organization", tint = MaterialTheme.colorScheme.primary)
+            if (active) Icon(RockIcon.CheckCircle.vector(), "Active organization", tint = MaterialTheme.colorScheme.primary)
             else TextButton(onClick = onSelect) { Text("Use") }
             TextButton(onClick = onOpen) { Text("Open") }
         }
@@ -499,7 +491,7 @@ private fun Avatar(url: String?, fallback: String) {
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.primaryContainer
         ) {
-            Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.AccountCircle, null) }
+            Box(contentAlignment = Alignment.Center) { Icon(RockIcon.AccountCircle.vector(), null) }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -13,10 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -283,7 +280,7 @@ fun NativeProfileScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(RockIcon.ArrowBack.vector(), contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -297,11 +294,11 @@ fun NativeProfileScreen(
                                 context.startActivity(Intent.createChooser(share, "Share profile"))
                             }
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = "Share profile")
+                            Icon(RockIcon.Share.vector(), contentDescription = "Share profile")
                         }
                     }
                     IconButton(onClick = viewModel::refresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh profile")
+                        Icon(RockIcon.Refresh.vector(), contentDescription = "Refresh profile")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -362,7 +359,7 @@ fun NativeProfileScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(errorMessage, color = MaterialTheme.colorScheme.error)
                             OutlinedButton(onClick = viewModel::refresh) {
-                                Icon(Icons.Default.Refresh, contentDescription = null)
+                                Icon(RockIcon.Refresh.vector(), contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Retry")
                             }
