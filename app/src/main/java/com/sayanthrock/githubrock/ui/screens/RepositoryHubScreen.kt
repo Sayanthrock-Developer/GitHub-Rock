@@ -169,7 +169,7 @@ internal fun RepositoryWorkspaceTopBar(repository: GitHubRepositoryModel?, repos
         navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), contentDescription = "Back") } },
         actions = {
             repository?.let {
-                Icon(RockIcon.Public.vector(selected = !it.private), contentDescription = if (it.private) "Private repository" else "Public repository", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.then(Modifier))
+                Icon(if (it.private) RockIcon.Lock.vector() else RockIcon.Public.vector(selected = true), contentDescription = if (it.private) "Private repository" else "Public repository", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 IconButton(onClick = onOpenManager, enabled = repositoryReady) { Icon(RockIcon.Code.vector(), contentDescription = "Manage repository") }
                 IconButton(onClick = onOpenFiles, enabled = repositoryReady) { Icon(RockIcon.FolderOpen.vector(), contentDescription = "Browse repository files") }
                 IconButton(onClick = onOpenGitHub, enabled = repositoryReady) { Icon(RockIcon.OpenInNew.vector(), contentDescription = "Open on GitHub") }
