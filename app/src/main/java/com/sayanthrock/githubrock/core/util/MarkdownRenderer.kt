@@ -9,7 +9,9 @@ interface MarkdownBlockKind {
     data object Heading : MarkdownBlockKind
     data object Paragraph : MarkdownBlockKind
     data object Bullet : MarkdownBlockKind
+    data object Task : MarkdownBlockKind
     data object Quote : MarkdownBlockKind
+    data object Alert : MarkdownBlockKind
     data object Code : MarkdownBlockKind
     data object Divider : MarkdownBlockKind
     data object Image : MarkdownBlockKind
@@ -27,15 +29,19 @@ data class MarkdownBlock(
     val level: Int = 0,
     val url: String? = null,
     val table: MarkdownTable? = null,
-    val ordered: Boolean = false
+    val ordered: Boolean = false,
+    val checked: Boolean = false,
+    val codeLanguage: String? = null
 )
 
 /** GitHub-flavoured Markdown parser used by the native README/release renderer. */
 object MarkdownRenderer {
     private val headingPattern = Regex("^(#{1,6})\\s+(.+?)\\s*#*\\s*$")
     private val bulletPattern = Regex("^\\s*[-*+]\\s+(.+)$")
+    private val taskPattern = Regex("^\\s*[-*+]\\s+\\[([ xX])\\]\\s+(.+)$")
     private val orderedPattern = Regex("^\\s*(\\d+)[.)]\\s+(.+)$")
     private val quotePattern = Regex("^>\\s?(.*)$")
+    private val alertPattern = Regex("^\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE)
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
     private val imagePattern = Regex("""^\s*!\[(.*?)\]\((\S+?)(?:\s+\".*?\")?\)\s*$""")
     private val htmlImagePattern = Regex("""^\s*(?:<a\s+[^>]*>\s*)?<img\s+[^>]*\bsrc=[\"']([^\"']+)[\"'][^>]*>\s*(?:</a>\s*)?$""")
@@ -48,6 +54,7 @@ object MarkdownRenderer {
         val buffer = StringBuilder()
         val tableLines = mutableListOf<String>()
         var inCode = false
+        var codeLanguage: String? = null
         var inTable = false
 
         fun flushParagraph() {
@@ -94,8 +101,13 @@ object MarkdownRenderer {
 
             if (inCode) {
                 if (line.trimStart().startsWith("```") || line.trimStart().startsWith("~~~")) {
-                    blocks += MarkdownBlock(MarkdownBlockKind.Code, buffer.toString().trimEnd())
+                    blocks += MarkdownBlock(
+                        kind = MarkdownBlockKind.Code,
+                        text = buffer.toString().trimEnd(),
+                        codeLanguage = codeLanguage
+                    )
                     buffer.clear()
+                    codeLanguage = null
                     inCode = false
                 } else {
                     buffer.appendLine(line)
@@ -103,10 +115,12 @@ object MarkdownRenderer {
                 return@forEachIndexed
             }
 
-            if (line.trimStart().startsWith("```") || line.trimStart().startsWith("~~~")) {
+            val fence = line.trimStart().takeIf { it.startsWith("```") || it.startsWith("~~~") }
+            if (fence != null) {
                 flushParagraph()
                 flushTable()
                 inCode = true
+                codeLanguage = fence.drop(3).trim().ifBlank { null }
                 return@forEachIndexed
             }
 
@@ -132,6 +146,7 @@ object MarkdownRenderer {
             }
 
             val heading = headingPattern.matchEntire(line)
+            val task = taskPattern.matchEntire(line)
             val bullet = bulletPattern.matchEntire(line)
             val ordered = orderedPattern.matchEntire(line)
             val quote = quotePattern.matchEntire(line)
@@ -146,6 +161,14 @@ object MarkdownRenderer {
                 dividerPattern.matches(line) -> {
                     flushParagraph()
                     blocks += MarkdownBlock(MarkdownBlockKind.Divider, "")
+                }
+                task != null -> {
+                    flushParagraph()
+                    blocks += MarkdownBlock(
+                        kind = MarkdownBlockKind.Task,
+                        text = task.groupValues[2],
+                        checked = task.groupValues[1].equals("x", ignoreCase = true)
+                    )
                 }
                 bullet != null -> {
                     flushParagraph()
@@ -162,7 +185,15 @@ object MarkdownRenderer {
                 }
                 quote != null -> {
                     flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Quote, quote.groupValues[1])
+                    val alert = alertPattern.matchEntire(quote.groupValues[1].trim())
+                    if (alert != null) {
+                        blocks += MarkdownBlock(
+                            kind = MarkdownBlockKind.Alert,
+                            text = alert.groupValues[2].ifBlank { alert.groupValues[1].uppercase() }
+                        )
+                    } else {
+                        blocks += MarkdownBlock(MarkdownBlockKind.Quote, quote.groupValues[1])
+                    }
                 }
                 image != null -> {
                     flushParagraph()
@@ -184,7 +215,13 @@ object MarkdownRenderer {
             }
         }
 
-        if (inCode && buffer.isNotEmpty()) blocks += MarkdownBlock(MarkdownBlockKind.Code, buffer.toString().trimEnd())
+        if (inCode) {
+            blocks += MarkdownBlock(
+                kind = MarkdownBlockKind.Code,
+                text = buffer.toString().trimEnd(),
+                codeLanguage = codeLanguage
+            )
+        }
         flushTable()
         flushParagraph()
         return blocks
