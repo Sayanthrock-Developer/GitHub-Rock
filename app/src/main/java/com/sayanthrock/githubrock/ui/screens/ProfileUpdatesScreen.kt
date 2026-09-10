@@ -12,11 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sayanthrock.githubrock.core.model.GitHubNotification
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 enum class ProfileUpdateSection(val route: String, val title: String, val subtitle: String) {
     WhatsNew("whats-new", "What's new", "Recent GitHub Rock improvements"),
@@ -60,14 +56,14 @@ fun ProfileUpdatesScreen(section: ProfileUpdateSection, onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), contentDescription = "Back") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
         GlassCard(modifier = Modifier.padding(padding).padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(RockIcon.AutoAwesome.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Column { Text("GitHub Rock", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black); Text("Your app updates are shown here.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
@@ -84,8 +80,8 @@ private fun GitHubNotificationsScreen(onBack: () -> Unit, viewModel: GitHubNotif
         topBar = {
             TopAppBar(
                 title = { Column { Text("Notifications", fontWeight = FontWeight.Black); Text(if (state.unreadCount == 0) "All caught up" else "${state.unreadCount} unread", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
-                actions = { IconButton(onClick = viewModel::refresh) { Icon(Icons.Default.Refresh, contentDescription = "Refresh") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), contentDescription = "Back") } },
+                actions = { IconButton(onClick = viewModel::refresh) { Icon(RockIcon.Refresh.vector(), contentDescription = "Refresh") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
@@ -126,7 +122,7 @@ private fun NotificationCard(notification: GitHubNotification, onRead: () -> Uni
                     Text(notification.subject.type.replace('_', ' '), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     Text(notification.subject.title, style = MaterialTheme.typography.titleMedium, fontWeight = if (notification.unread) FontWeight.Black else FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                if (notification.unread) IconButton(onClick = onRead) { Icon(Icons.Default.Check, contentDescription = "Mark as read") }
+                if (notification.unread) IconButton(onClick = onRead) { Icon(RockIcon.Check.vector(), contentDescription = "Mark as read") }
             }
             Text(notification.repository.fullName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             Text(notification.reason.replace('_', ' '), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
