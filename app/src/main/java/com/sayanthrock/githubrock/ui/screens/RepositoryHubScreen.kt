@@ -7,13 +7,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import kotlinx.coroutines.launch
 
 /** Native repository workspace. GitHub browsing stays inside GitHub Rock; only the explicit external action opens GitHub. */
@@ -172,13 +166,13 @@ internal fun RepositoryWorkspaceTopBar(repository: GitHubRepositoryModel?, repos
                 Text(text = repository?.let { listOfNotNull(if (it.private) "Private" else "Public", it.defaultBranch, applicationStatus).joinToString(" · ") } ?: when { repositoryHasError -> "Repository unavailable"; repositoryLoading -> "Loading repository"; repositoryReady -> "Repository workspace"; else -> "Repository unavailable" }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         },
-        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
+        navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), contentDescription = "Back") } },
         actions = {
             repository?.let {
-                Icon(if (it.private) Icons.Default.Lock else Icons.Default.Public, contentDescription = if (it.private) "Private repository" else "Public repository", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                IconButton(onClick = onOpenManager, enabled = repositoryReady) { Icon(Icons.Default.Code, contentDescription = "Manage repository") }
-                IconButton(onClick = onOpenFiles, enabled = repositoryReady) { Icon(Icons.Default.FolderOpen, contentDescription = "Browse repository files") }
-                IconButton(onClick = onOpenGitHub, enabled = repositoryReady) { Icon(Icons.Default.OpenInNew, contentDescription = "Open on GitHub") }
+                Icon(RockIcon.Public.vector(selected = !it.private), contentDescription = if (it.private) "Private repository" else "Public repository", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.then(Modifier))
+                IconButton(onClick = onOpenManager, enabled = repositoryReady) { Icon(RockIcon.Code.vector(), contentDescription = "Manage repository") }
+                IconButton(onClick = onOpenFiles, enabled = repositoryReady) { Icon(RockIcon.FolderOpen.vector(), contentDescription = "Browse repository files") }
+                IconButton(onClick = onOpenGitHub, enabled = repositoryReady) { Icon(RockIcon.OpenInNew.vector(), contentDescription = "Open on GitHub") }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
