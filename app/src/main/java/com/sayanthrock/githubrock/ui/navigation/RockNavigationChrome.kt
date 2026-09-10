@@ -2,7 +2,6 @@ package com.sayanthrock.githubrock.ui.navigation
 
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
@@ -102,7 +101,8 @@ private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    Row(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+    val slideModifier = navigationSlideGesture(onDestinationSelected)
+    Row(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp).then(slideModifier), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         rockNavigationDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
             RockNavigationItem(destination, selected, selected && !compact, Modifier.weight(1f).height(if (compact) 48.dp else 54.dp), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, if (selected) 22.dp else 21.dp, true, 0.12f)
@@ -126,29 +126,29 @@ private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationS
 
 @Composable
 private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
-    val view = LocalView.current
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
-    val swipeModifier = Modifier.pointerInput(Unit) {
-        detectDragGesturesAfterLongPress(
-            onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
-            onDrag = { change, _ ->
-                change.consume()
-                if (size.width > 0) {
-                    val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt()
-                        .coerceIn(0, rockNavigationDestinations.lastIndex)
-                    onDestinationSelected(rockNavigationDestinations[index])
-                }
-            }
-        )
-    }
+    val slideModifier = navigationSlideGesture(onDestinationSelected)
     if (blurEnabled) {
-        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(swipeModifier), shape = shape) {
+        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape) {
             Surface(modifier = Modifier.fillMaxSize(), shape = shape, color = color.copy(alpha = 0f), contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
         }
     } else {
-        Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(swipeModifier), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
+        Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
     }
+}
+
+private fun navigationSlideGesture(onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
+    detectDragGesturesAfterLongPress(
+        onDragStart = { LocalView.current.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+        onDrag = { change, _ ->
+            if (size.width <= 0) return@detectDragGesturesAfterLongPress
+            change.consume()
+            val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt()
+                .coerceIn(0, rockNavigationDestinations.lastIndex)
+            onDestinationSelected(rockNavigationDestinations[index])
+        }
+    )
 }
 
 @Composable
@@ -161,7 +161,6 @@ private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected:
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
     val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = tween(durationMillis = duration), label = "navigation indicator color")
-    val pressScale by animateFloatAsState(targetValue = 1f, animationSpec = tween(durationMillis = 120), label = "navigation press scale")
     Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) {
         Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize))
