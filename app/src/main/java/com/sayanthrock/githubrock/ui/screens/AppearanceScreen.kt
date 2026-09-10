@@ -63,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -90,6 +91,11 @@ import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
+import com.sayanthrock.githubrock.ui.blur.ApplicationBlurMode
+import com.sayanthrock.githubrock.ui.blur.ApplicationBlurPreset
+import com.sayanthrock.githubrock.ui.blur.ApplicationBlurProfile
+import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
+import com.sayanthrock.githubrock.ui.blur.ApplicationBlurComponent
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -103,16 +109,86 @@ import com.sayanthrock.githubrock.ui.theme.parseAccentHex
 @Composable
 fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    AppearanceContent(state, onBack, viewModel::setThemeMode, viewModel::setAccentColor, viewModel::setDynamicColor, viewModel::setTrueBlack, viewModel::setCustomAccentHex, viewModel::setSystemDynamicAccent, viewModel::setThemeStyle, viewModel::setDisplaySize, viewModel::setFontSize, viewModel::setFontWeight, viewModel::setFontFamily, viewModel::setLoadingStyle, viewModel::setAnimationStyle, viewModel::setCodeColorStyle, viewModel::setLogDisplayStyle, viewModel::setShowImages, viewModel::setNavigationBarStyle, viewModel::resetAppearance)
+    val blurState by viewModel.blurState.collectAsStateWithLifecycle()
+    AppearanceContent(
+        state = state,
+        onBack = onBack,
+        onThemeMode = viewModel::setThemeMode,
+        onAccentColor = viewModel::setAccentColor,
+        onDynamicColor = viewModel::setDynamicColor,
+        onTrueBlack = viewModel::setTrueBlack,
+        onCustomAccentHex = viewModel::setCustomAccentHex,
+        onSystemDynamicAccent = viewModel::setSystemDynamicAccent,
+        onThemeStyle = viewModel::setThemeStyle,
+        onDisplaySize = viewModel::setDisplaySize,
+        onFontSize = viewModel::setFontSize,
+        onFontWeight = viewModel::setFontWeight,
+        onFontFamily = viewModel::setFontFamily,
+        onLoadingStyle = viewModel::setLoadingStyle,
+        onAnimationStyle = viewModel::setAnimationStyle,
+        onCodeColorStyle = viewModel::setCodeColorStyle,
+        onLogDisplayStyle = viewModel::setLogDisplayStyle,
+        onShowImages = viewModel::setShowImages,
+        onNavigationBarStyle = viewModel::setNavigationBarStyle,
+        onReset = viewModel::resetAppearance,
+        blurState = blurState,
+        onBlurMode = viewModel::setBlurMode,
+        onBlurPreset = viewModel::setBlurPreset,
+        onBlurProfile = viewModel::setBlurProfile,
+        onBlurCustomTint = viewModel::setBlurCustomTint,
+        onBlurComponentProfile = viewModel::setBlurComponentProfile,
+        onBlurReset = viewModel::resetBlurSettings,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppearanceContent(state: AppearancePreferences, onBack: () -> Unit, onThemeMode: (ThemeMode) -> Unit, onAccentColor: (AccentColor) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onCustomAccentHex: (String) -> Unit = {}, onSystemDynamicAccent: () -> Unit = {}, onThemeStyle: (ThemeStyle) -> Unit = {}, onDisplaySize: (DisplaySize) -> Unit = {}, onFontSize: (FontSize) -> Unit = {}, onFontWeight: (FontWeightStyle) -> Unit = {}, onFontFamily: (AppFontFamily) -> Unit = {}, onLoadingStyle: (LoadingStyle) -> Unit = {}, onAnimationStyle: (AnimationStyle) -> Unit = {}, onCodeColorStyle: (CodeColorStyle) -> Unit = {}, onLogDisplayStyle: (LogDisplayStyle) -> Unit = {}, onShowImages: (Boolean) -> Unit = {}, onNavigationBarStyle: (NavigationBarStyle) -> Unit = {}, onReset: () -> Unit = {}) {
+fun AppearanceContent(
+    state: AppearancePreferences,
+    onBack: () -> Unit,
+    onThemeMode: (ThemeMode) -> Unit,
+    onAccentColor: (AccentColor) -> Unit,
+    onDynamicColor: (Boolean) -> Unit,
+    onTrueBlack: (Boolean) -> Unit,
+    onCustomAccentHex: (String) -> Unit = {},
+    onSystemDynamicAccent: () -> Unit = {},
+    onThemeStyle: (ThemeStyle) -> Unit = {},
+    onDisplaySize: (DisplaySize) -> Unit = {},
+    onFontSize: (FontSize) -> Unit = {},
+    onFontWeight: (FontWeightStyle) -> Unit = {},
+    onFontFamily: (AppFontFamily) -> Unit = {},
+    onLoadingStyle: (LoadingStyle) -> Unit = {},
+    onAnimationStyle: (AnimationStyle) -> Unit = {},
+    onCodeColorStyle: (CodeColorStyle) -> Unit = {},
+    onLogDisplayStyle: (LogDisplayStyle) -> Unit = {},
+    onShowImages: (Boolean) -> Unit = {},
+    onNavigationBarStyle: (NavigationBarStyle) -> Unit = {},
+    onReset: () -> Unit = {},
+    blurState: ApplicationBlurSettings = ApplicationBlurPreset.Clean.toSettings(),
+    onBlurMode: (ApplicationBlurMode) -> Unit = {},
+    onBlurPreset: (ApplicationBlurPreset) -> Unit = {},
+    onBlurProfile: (ApplicationBlurProfile) -> Unit = {},
+    onBlurCustomTint: (String) -> Unit = {},
+    onBlurComponentProfile: (ApplicationBlurComponent, ApplicationBlurProfile?) -> Unit = { _, _ -> },
+    onBlurReset: () -> Unit = {},
+) {
     var confirmReset by remember { mutableStateOf(false) }
     var showAccentPicker by remember { mutableStateOf(false) }
-    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = { TopAppBar(title = { Text("Settings") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)) }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 48.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+            )
+        },
+    ) { padding ->
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 48.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             item { StandardScreenHeader("Customize your experience", "Choose the visual system, scale, typography, loading style, animation, and code presentation.") }
             item { StandardSectionHeader("Theme") }
             item { ThemePreview(state) }
@@ -121,6 +197,18 @@ fun AppearanceContent(state: AppearancePreferences, onBack: () -> Unit, onThemeM
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
             item { StandardSectionHeader("Navigation") }
             item { NavigationBarStyleControl(state.navigationBarStyle, onNavigationBarStyle) }
+            item { StandardSectionHeader("Application Blur") }
+            item {
+                ApplicationBlurEditor(
+                    settings = blurState,
+                    onMode = onBlurMode,
+                    onPreset = onBlurPreset,
+                    onProfile = onBlurProfile,
+                    onCustomTint = onBlurCustomTint,
+                    onComponentProfile = onBlurComponentProfile,
+                    onReset = onBlurReset,
+                )
+            }
             item { StandardSectionHeader("Display size") }
             item { ChoiceCard("Interface scale", "Changes controls, cards, spacing, and navigation app-wide", Icons.Default.ViewCompact, listOf(DisplaySize.Large to "Large", DisplaySize.Standard to "Standard", DisplaySize.Small to "Small"), state.displaySize, onDisplaySize) }
             item { StandardSectionHeader("Fonts") }
@@ -202,22 +290,7 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
     }
 
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Custom accent color") }, text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Canvas(
-            Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .onSizeChanged { pickerWidth = it.width; pickerHeight = it.height }
-                .pointerInput(hueColor, pickerWidth, pickerHeight) {
-                    detectTapGestures { point -> updateFromPoint(point) }
-                }
-                .pointerInput(hueColor, pickerWidth, pickerHeight) {
-                    detectDragGestures(
-                        onDragStart = { point -> updateFromPoint(point) },
-                        onDrag = { change, _ -> updateFromPoint(change.position); change.consume() }
-                    )
-                }
-                .semantics { contentDescription = "Saturation and brightness color picker" }
-        ) {
+        Canvas(Modifier.fillMaxWidth().height(180.dp).onSizeChanged { pickerWidth = it.width; pickerHeight = it.height }.pointerInput(hueColor, pickerWidth, pickerHeight) { detectTapGestures { point -> updateFromPoint(point) } }.pointerInput(hueColor, pickerWidth, pickerHeight) { detectDragGestures(onDragStart = { point -> updateFromPoint(point) }, onDrag = { change, _ -> updateFromPoint(change.position); change.consume() }) }.semantics { contentDescription = "Saturation and brightness color picker" }) {
             drawRect(Brush.horizontalGradient(listOf(Color.White, hueColor)))
             drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black)))
             val x = saturation.coerceIn(0f, 1f) * size.width
