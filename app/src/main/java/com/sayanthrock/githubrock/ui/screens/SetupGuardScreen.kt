@@ -21,12 +21,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 @Composable
 fun SetupGuardScreen(
@@ -101,7 +96,7 @@ fun SetupGuardScreen(
                     color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Security,
+                        imageVector = RockIcon.Security.vector(),
                         contentDescription = null,
                         modifier = Modifier.padding(12.dp),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -137,7 +132,7 @@ fun SetupGuardScreen(
             ) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp)) {
                     SetupPermissionRow(
-                        icon = Icons.Outlined.Notifications,
+                        icon = RockIcon.Notifications.vector(),
                         title = "Notifications",
                         description = "Builds, downloads and important activity.",
                         granted = notificationGranted,
@@ -150,7 +145,7 @@ fun SetupGuardScreen(
                     )
                     HorizontalDivider()
                     SetupPermissionRow(
-                        icon = Icons.Outlined.Download,
+                        icon = RockIcon.Download.vector(),
                         title = "Install downloaded apps",
                         description = "Let Android install APKs downloaded by GitHub Rock.",
                         granted = canInstallPackages,
@@ -181,7 +176,7 @@ fun SetupGuardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (ready) Icons.Outlined.CheckCircle else Icons.Outlined.Settings,
+                        imageVector = if (ready) RockIcon.Check.vector() else RockIcon.Settings.vector(),
                         contentDescription = null,
                         tint = if (ready) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -264,7 +259,7 @@ private fun SetupPermissionRow(
         }
         if (granted) {
             Icon(
-                imageVector = Icons.Outlined.CheckCircle,
+                imageVector = RockIcon.Check.vector(),
                 contentDescription = "Ready",
                 tint = MaterialTheme.colorScheme.primary
             )
