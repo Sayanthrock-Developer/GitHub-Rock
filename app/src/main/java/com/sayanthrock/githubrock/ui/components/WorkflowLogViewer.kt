@@ -19,9 +19,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +45,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.sayanthrock.githubrock.core.util.WorkflowLogHighlighter
 import com.sayanthrock.githubrock.core.util.WorkflowLogTokenKind
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 private val TerminalBackground = Color(0xFF0D1117)
 private val TerminalSurface = Color(0xFF161B22)
@@ -219,10 +217,10 @@ private fun LogHeader(
             )
         }
         IconButton(onClick = onCopy) {
-            Icon(Icons.Default.ContentCopy, contentDescription = "Copy complete log", tint = primary)
+            Icon(RockIcon.Copy.vector(), contentDescription = "Copy complete log", tint = primary)
         }
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Close logs", tint = primary)
+            Icon(RockIcon.Back.vector(), contentDescription = "Close logs", tint = primary)
         }
     }
 }
