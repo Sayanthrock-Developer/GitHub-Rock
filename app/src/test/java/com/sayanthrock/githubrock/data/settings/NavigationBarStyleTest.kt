@@ -24,5 +24,6 @@ class NavigationBarStyleTest {
     fun stored_ios_value_restores_ios_style() {
         assertEquals(NavigationBarStyle.Ios, NavigationBarStyle.fromStored("Ios"))
         assertTrue(NavigationBarStyle.fromStored("unknown") == NavigationBarStyle.FloatingCapsule)
+        assertTrue(NavigationBarStyle.fromStored("") == NavigationBarStyle.FloatingCapsule)
     }
 }
