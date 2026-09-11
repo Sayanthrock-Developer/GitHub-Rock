@@ -26,32 +26,72 @@ import javax.inject.Inject
 class BuildArtifactDetailsViewModel @Inject constructor(private val repository: GitHubRepository) : ViewModel() {
     private val _artifact = MutableStateFlow<WorkflowArtifact?>(null)
     val artifact = _artifact.asStateFlow()
+
     fun load(repo: GitHubRepositoryModel, runId: Long, artifactId: Long) = viewModelScope.launch {
         _artifact.value = repository.workflowArtifacts(repo.owner.login, repo.name, runId).firstOrNull { it.id == artifactId }
     }
 }
 
 @Composable
-fun BuildArtifactDetailsScreen(repository: GitHubRepositoryModel, runId: Long, artifactId: Long, onBack: () -> Unit, viewModel: BuildArtifactDetailsViewModel = hiltViewModel(), downloadsViewModel: DownloadsViewModel = hiltViewModel()) {
+fun BuildArtifactDetailsScreen(
+    repository: GitHubRepositoryModel,
+    runId: Long,
+    artifactId: Long,
+    onBack: () -> Unit,
+    viewModel: BuildArtifactDetailsViewModel = hiltViewModel(),
+    downloadsViewModel: DownloadsViewModel = hiltViewModel()
+) {
     val artifact by viewModel.artifact.collectAsState()
     LaunchedEffect(repository.id, runId, artifactId) { viewModel.load(repository, runId, artifactId) }
-    Column(Modifier.fillMaxSize().padding(StandardScreenPadding), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+    Column(
+        Modifier.fillMaxSize().padding(StandardScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") }
-            Column { Text("Artifact", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Column {
+                Text("Artifact", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         artifact?.let { item ->
             GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Icon(RockIcon.Archive.vector(), null, tint = MaterialTheme.colorScheme.primary)
-                    Text(item.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Size: ${item.sizeBytes} bytes")
-                    Text(if (item.expired) "Expired — this artifact can no longer be downloaded." else "Available for download")
-                    Button(onClick = { downloadsViewModel.enqueue(item.archiveDownloadUrl, "${repository.name}-${item.name}-${item.id}.zip") }, enabled = !item.expired, modifier = Modifier.fillMaxWidth()) {
-                        Icon(RockIcon.Archive.vector(), null); Spacer(Modifier.width(8.dp)); Text(if (item.expired) "Expired" else "Download artifact")
+                    Text("Verify Android summary", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("GitHub Actions API data", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    HorizontalDivider()
+                    ArtifactSummaryRow("Name", item.name)
+                    ArtifactSummaryRow("Size", formatArtifactSize(item.sizeBytes))
+                    ArtifactSummaryRow("Digest", item.digest ?: "Not provided by GitHub for this artifact")
+                    ArtifactSummaryRow("Status", if (item.expired) "Expired" else "Available")
+                    Button(
+                        onClick = { downloadsViewModel.enqueue(item.archiveDownloadUrl, "${repository.name}-${item.name}-${item.id}.zip") },
+                        enabled = !item.expired,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(RockIcon.Archive.vector(), null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (item.expired) "Expired" else "Download artifact")
                     }
                 }
             }
         } ?: Text("Artifact details are unavailable.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+@Composable
+private fun ArtifactSummaryRow(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value.ifBlank { "—" }, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+private fun formatArtifactSize(bytes: Long): String = when {
+    bytes >= 1_073_741_824L -> "%.2f GB".format(bytes / 1_073_741_824.0)
+    bytes >= 1_048_576L -> "%.2f MB".format(bytes / 1_048_576.0)
+    bytes >= 1_024L -> "%.1f KB".format(bytes / 1_024.0)
+    else -> "$bytes bytes"
 }
