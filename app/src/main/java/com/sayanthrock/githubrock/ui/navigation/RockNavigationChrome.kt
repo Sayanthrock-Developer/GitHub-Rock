@@ -3,7 +3,7 @@ package com.sayanthrock.githubrock.ui.navigation
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -84,6 +84,19 @@ private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarSty
         NavigationBarStyle.Minimal -> MinimalNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
         NavigationBarStyle.Glass -> GlassNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
         NavigationBarStyle.Compact -> CompactNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
+        NavigationBarStyle.Ios -> IosNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
+    }
+}
+
+@Composable
+private fun IosNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f), 0.55f, 10.dp, 620.dp, blurSettings, onDestinationSelected) {
+        NavigationRow(64.dp, 6.dp, 3.dp) {
+            rockNavigationDestinations.forEach { destination ->
+                val selected = selectedRoute == destination.route
+                RockNavigationItem(destination, selected, selected, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, iconSize = 22.dp, selectedContainerAlpha = 1f)
+            }
+        }
     }
 }
 
@@ -145,8 +158,9 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
 private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
     detectDragGesturesAfterLongPress(
         onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
-        onDrag = { change, _ ->
+        onDrag = { change, dragAmount ->
             if (size.width <= 0) return@detectDragGesturesAfterLongPress
+            if (kotlin.math.abs(dragAmount.x) < kotlin.math.abs(dragAmount.y)) return@detectDragGesturesAfterLongPress
             change.consume()
             val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt()
                 .coerceIn(0, rockNavigationDestinations.lastIndex)
@@ -164,7 +178,7 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f) {
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
-    val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = tween(durationMillis = duration), label = "navigation indicator color")
+    val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else spring(), label = "navigation indicator color")
     val iconTint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     val labelTint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
