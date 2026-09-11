@@ -45,6 +45,7 @@ class DownloadsRedesignTest {
     fun downloadRepositoryOwnerExtractsGitHubLogin() {
         assertEquals("Sayanthrock-Developer", downloadRepositoryOwner("Sayanthrock-Developer/GitHub-Rock"))
         assertEquals("example", downloadRepositoryOwner("example/project"))
+        assertEquals("example", downloadRepositoryOwner("  example/project  "))
         assertEquals(null, downloadRepositoryOwner(""))
         assertEquals(null, downloadRepositoryOwner("/project"))
     }
