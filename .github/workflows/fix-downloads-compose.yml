@@ -35,3 +35,5 @@ jobs:
           git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignScreen.kt .github/workflows/fix-downloads-compose.yml
           git commit -m 'fix: normalize download status helper annotation'
           git push
+
+# trigger workflow execution
