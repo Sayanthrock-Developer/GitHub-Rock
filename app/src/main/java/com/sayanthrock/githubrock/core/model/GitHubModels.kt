@@ -26,7 +26,6 @@ data class GitHubUser(
     val followers: Int = 0,
     val following: Int = 0
 )
-
 data class GitHubContributionDay(val date: String, val count: Int, val level: String)
 data class GitHubOrganization(val login: String, val name: String? = null, val avatarUrl: String = "", val url: String = "")
 data class GitHubSocialAccount(val displayName: String, val provider: String, val url: String)
@@ -106,9 +105,6 @@ fun Duration.formatRunTime(): String {
 }
 @Serializable data class WorkflowRuns(@SerialName("total_count") val totalCount: Int, @SerialName("workflow_runs") val runs: List<WorkflowRun>)
 @Serializable data class Release(val id: Long, @SerialName("tag_name") val tagName: String, val name: String? = null, val body: String? = null, val draft: Boolean = false, val prerelease: Boolean = false, @SerialName("published_at") val publishedAt: String? = null, val assets: List<ReleaseAsset> = emptyList())
-// The API asset URL is required for authenticated/private releases. Keep the browser URL too:
-// public releases can fall back to GitHub's normal download endpoint if an API asset redirect
-// is rejected by a network/provider while the same file is known to be publicly downloadable.
 @Serializable data class ReleaseAsset(
     val id: Long,
     val name: String,
@@ -119,7 +115,7 @@ fun Duration.formatRunTime(): String {
 @Serializable data class RateLimitResponse(val rate: RateLimit)
 @Serializable data class RateLimit(val limit: Int, val remaining: Int, val reset: Long)
 @Serializable data class DeviceCodeResponse(@SerialName("device_code") val deviceCode: String, @SerialName("user_code") val userCode: String, @SerialName("verification_uri") val verificationUri: String, @SerialName("expires_in") val expiresIn: Int, val interval: Int = 5)
-@Serializable data class DeviceTokenResponse(@SerialName("access_token") val accessToken: String? = null, @SerialName("token_type") val tokenType: String? = null, val scope: String? = null, @SerialName("expires_in") val expiresIn: Long? = null, @SerialName("refresh_token") val refreshToken: String? = null, @SerialName("refresh_token_expires_in") val refreshTokenExpiresIn: Long? = null, val error: String? = null, val errorDescription: String? = null)
+@Serializable data class DeviceTokenResponse(@SerialName("access_token") val accessToken: String? = null, @SerialName("token_type") val tokenType: String? = null, val scope: String? = null, @SerialName("expires_in") val expiresIn: Long? = null, @SerialName("refresh_token") val refreshToken: String? = null, val error: String? = null, val errorDescription: String? = null, @SerialName("refresh_token_expires_in") val refreshTokenExpiresIn: Long? = null)
 @Serializable data class CreateIssueRequest(val title: String, val body: String? = null)
 @Serializable data class UpdateIssueRequest(val state: String? = null, val title: String? = null, val body: String? = null, val labels: List<String>? = null, val assignees: List<String>? = null, val milestone: Int? = null)
 @Serializable data class IssueReactionRequest(val content: String)
@@ -140,7 +136,14 @@ fun Duration.formatRunTime(): String {
 @Serializable data class WorkflowJob(val id: Long, val name: String, val status: String, val conclusion: String? = null, val steps: List<WorkflowStep> = emptyList())
 @Serializable data class WorkflowStep(val name: String, val status: String, val conclusion: String? = null)
 @Serializable data class WorkflowJobsResponse(@SerialName("total_count") val totalCount: Int = 0, val jobs: List<WorkflowJob> = emptyList())
-@Serializable data class WorkflowArtifact(val id: Long, val name: String, @SerialName("archive_download_url") val archiveDownloadUrl: String, @SerialName("expired") val expired: Boolean = false, @SerialName("size_in_bytes") val sizeBytes: Long = 0)
+@Serializable data class WorkflowArtifact(
+    val id: Long,
+    val name: String,
+    @SerialName("archive_download_url") val archiveDownloadUrl: String,
+    @SerialName("expired") val expired: Boolean = false,
+    @SerialName("size_in_bytes") val sizeBytes: Long = 0,
+    @SerialName("digest") val digest: String? = null
+)
 @Serializable data class WorkflowArtifactsResponse(@SerialName("total_count") val totalCount: Int = 0, val artifacts: List<WorkflowArtifact> = emptyList())
 @Serializable data class MergeResponse(val sha: String? = null, val merged: Boolean, val message: String)
 enum class WorkflowDisplayState { Queued, Running, Success, Failed, Cancelled, Unknown }
