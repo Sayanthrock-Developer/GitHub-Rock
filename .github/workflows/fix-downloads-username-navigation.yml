@@ -1,5 +1,7 @@
 name: Fix Downloads username navigation
 
+# One-time source migration: keep the Downloads username fix in real source, then remove this workflow.
+
 on:
   push:
     branches:
