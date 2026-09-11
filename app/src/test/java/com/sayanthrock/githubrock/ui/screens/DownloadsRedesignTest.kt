@@ -16,33 +16,10 @@ class DownloadsRedesignTest {
             releaseUrl = "https://github.com/Sayanthrock-Developer/GitHub-Rock/releases/tag/v1",
             sha256 = "abc"
         ),
-        DownloadEntity(
-            id = 2,
-            fileName = "screenshots.zip",
-            sourceUrl = "https://github.com/example/project/releases/download/v1/screenshots.zip",
-            status = "downloading",
-            speedBytesPerSecond = 1024,
-            etaSeconds = 42
-        ),
-        DownloadEntity(
-            id = 3,
-            fileName = "notes.md",
-            sourceUrl = "https://raw.githubusercontent.com/example/project/main/notes.md",
-            status = "paused"
-        ),
-        DownloadEntity(
-            id = 4,
-            fileName = "queued.apk",
-            sourceUrl = "https://github.com/example/project/releases/download/v1/queued.apk",
-            status = "queued"
-        ),
-        DownloadEntity(
-            id = 5,
-            fileName = "broken.zip",
-            sourceUrl = "https://github.com/example/project/releases/download/v1/broken.zip",
-            status = "failed",
-            errorMessage = "Checksum verification failed"
-        )
+        DownloadEntity(id = 2, fileName = "screenshots.zip", sourceUrl = "https://github.com/example/project/releases/download/v1/screenshots.zip", status = "downloading", speedBytesPerSecond = 1024, etaSeconds = 42),
+        DownloadEntity(id = 3, fileName = "notes.md", sourceUrl = "https://raw.githubusercontent.com/example/project/main/notes.md", status = "paused"),
+        DownloadEntity(id = 4, fileName = "queued.apk", sourceUrl = "https://github.com/example/project/releases/download/v1/queued.apk", status = "queued"),
+        DownloadEntity(id = 5, fileName = "broken.zip", sourceUrl = "https://github.com/example/project/releases/download/v1/broken.zip", status = "failed", errorMessage = "Checksum verification failed")
     )
 
     @Test
@@ -62,5 +39,13 @@ class DownloadsRedesignTest {
         assertEquals("GitHub Rock", preferredApplicationName("GitHub-Rock.apk", "GitHub Rock"))
         assertEquals("GitHub Rock", preferredApplicationName("GitHub-Rock.apk", null))
         assertEquals("Komi Store", preferredApplicationName("Komi_Store.apk", "  "))
+    }
+
+    @Test
+    fun downloadRepositoryOwnerExtractsGitHubLogin() {
+        assertEquals("Sayanthrock-Developer", downloadRepositoryOwner("Sayanthrock-Developer/GitHub-Rock"))
+        assertEquals("example", downloadRepositoryOwner("example/project"))
+        assertEquals(null, downloadRepositoryOwner(""))
+        assertEquals(null, downloadRepositoryOwner("/project"))
     }
 }
