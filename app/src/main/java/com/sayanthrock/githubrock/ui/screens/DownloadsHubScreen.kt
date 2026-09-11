@@ -5,6 +5,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 /** Single download workspace for applications, files, and build artifacts. */
 @Composable
-fun DownloadsHubScreen(viewModel: DownloadsViewModel = hiltViewModel()) {
-    DownloadsRedesignScreen(viewModel = viewModel)
+fun DownloadsHubScreen(
+    viewModel: DownloadsViewModel = hiltViewModel(),
+    onOpenProfile: (String) -> Unit
+) {
+    DownloadsRedesignScreen(viewModel = viewModel, onOpenProfile = onOpenProfile)
 }
