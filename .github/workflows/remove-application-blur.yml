@@ -1,0 +1,92 @@
+name: Remove Application Blur
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  remove-application-blur:
+    if: ${{ github.event.head_commit.message != 'chore: remove application blur completely [cleanup]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Remove Application Blur
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import subprocess
+
+          root = Path('.')
+
+          def edit(path, patterns):
+              p = root / path
+              s = p.read_text()
+              for pattern, replacement in patterns:
+                  s, count = re.subn(pattern, replacement, s, flags=re.S | re.M)
+                  if count == 0:
+                      raise SystemExit(f'pattern not found in {path}: {pattern[:100]}')
+              p.write_text(s)
+
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceScreen.kt', [
+              (r'^import com\\.sayanthrock\\.githubrock\\.ui\\.blur\\..*\\n', ''),
+              (r'^    val blurState by viewModel\\.blurState\\.collectAsStateWithLifecycle\\(\\)\\n', ''),
+              (r'^        blurState = blurState,\\n        onBlurMode = viewModel::setBlurMode,\\n        onBlurPreset = viewModel::setBlurPreset,\\n        onBlurProfile = viewModel::setBlurProfile,\\n        onBlurCustomTint = viewModel::setBlurCustomTint,\\n        onBlurComponentProfile = viewModel::setBlurComponentProfile,\\n        onBlurReset = viewModel::resetBlurSettings,\\n', ''),
+              (r'^    blurState: ApplicationBlurSettings = ApplicationBlurPreset\\.Clean\\.toSettings\\(\\),\\n    onBlurMode: \\(ApplicationBlurMode\\) -> Unit = \\{\\},\\n    onBlurPreset: \\(ApplicationBlurPreset\\) -> Unit = \\{\\},\\n    onBlurProfile: \\(ApplicationBlurProfile\\) -> Unit = \\{\\},\\n    onBlurCustomTint: \\(String\\) -> Unit = \\{\\},\\n    onBlurComponentProfile: \\(ApplicationBlurComponent, ApplicationBlurProfile\\?\\) -> Unit = \\{ _, _ -> \\},\\n    onBlurReset: \\(\\) -> Unit = \\{\\},\\n', ''),
+              (r'    item \\{ StandardSectionHeader\\("Application Blur"\\) \\}\\n    item \\{\\n        ApplicationBlurEditor\\(.*?\\n    \\}\\n            item \\{ StandardSectionHeader\\("Display size"\\) \\}', '            item { StandardSectionHeader("Display size") }'),
+          ])
+
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceViewModel.kt', [
+              (r'^import com\\.sayanthrock\\.githubrock\\.data\\.settings\\.ApplicationBlurPreferences\\n', ''),
+              (r'^import com\\.sayanthrock\\.githubrock\\.ui\\.blur\\..*\\n', ''),
+              (r'    private val preferences: AppPreferences,\\n    private val blurPreferences: ApplicationBlurPreferences\\n', '    private val preferences: AppPreferences\\n'),
+              (r'^    val blurState: StateFlow<ApplicationBlurSettings> = .*\\n', ''),
+              (r'\\n    fun setBlurMode\\(mode: ApplicationBlurMode\\).*?\\n    fun resetBlurSettings\\(\\) = .*?\\n', '\\n'),
+          ])
+
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt', [
+              (r'^    val blurState by appearanceViewModel\\.blurState\\.collectAsStateWithLifecycle\\(\\)\\n', ''),
+              (r', blurSettings = blurState', ''),
+          ])
+
+          edit('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/RockNavigationChrome.kt', [
+              (r'^import com\\.sayanthrock\\.githubrock\\.ui\\.blur\\..*\\n', ''),
+              (r', blurSettings: ApplicationBlurSettings = ApplicationBlurSettings\\(\\)', ''),
+              (r', blurSettings: ApplicationBlurSettings', ''),
+              (r', blurSettings', ''),
+              (r'\\n@Composable\\nprivate fun NavigationSurface\\(.*?\\n\\}\\n\\nprivate fun navigationSlideGesture', '''\\n@Composable\\nprivate fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {\\n    val view = LocalView.current\\n    val slideModifier = navigationSlideGesture(view, onDestinationSelected)\\n    Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }\\n}\\n\\nprivate fun navigationSlideGesture'''),
+          ])
+
+          for path in [
+              'app/src/main/java/com/sayanthrock/githubrock/ui/blur/ApplicationBlur.kt',
+              'app/src/main/java/com/sayanthrock/githubrock/ui/screens/ApplicationBlurEditor.kt',
+              'app/src/main/java/com/sayanthrock/githubrock/ui/screens/ApplicationBlurDefaults.kt',
+              'app/src/main/java/com/sayanthrock/githubrock/data/settings/ApplicationBlurPreferences.kt',
+              'app/src/test/java/com/sayanthrock/githubrock/ui/blur/ApplicationBlurTest.kt',
+          ]:
+              subprocess.run(['git', 'rm', '-f', path], check=True)
+
+          residual = subprocess.run(['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur', 'app/src'], capture_output=True, text=True)
+          if residual.returncode == 0 and residual.stdout.strip():
+              raise SystemExit('Residual Application Blur references:\\n' + residual.stdout)
+
+      - name: Verify removal
+        run: |
+          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur' app/src; then
+            echo 'Application Blur references remain.'
+            exit 1
+          fi
+          ./gradlew :app:testDebugUnitTest --no-daemon
+
+      - name: Commit removal
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore: remove application blur completely [cleanup]'
+          git push
