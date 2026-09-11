@@ -1,0 +1,35 @@
+name: Fix Downloads composable helper
+
+on:
+  push:
+    branches:
+      - fix/navigation-ios-307-verification
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fix MaterialTheme helper annotation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignScreen.kt')
+          s = p.read_text()
+          old = 'private fun downloadStatusColor(state: DownloadState): Color = when (state) {'
+          new = '@Composable\nprivate fun downloadStatusColor(state: DownloadState): Color = when (state) {'
+          if old not in s:
+              raise SystemExit('target declaration not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Remove one-shot workflow and commit fix
+        run: |
+          rm .github/workflows/fix-downloads-compose.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/sayanthrock/githubrock/ui/screens/DownloadsRedesignScreen.kt .github/workflows/fix-downloads-compose.yml
+          git commit -m 'fix: mark download status color helper composable'
+          git push
