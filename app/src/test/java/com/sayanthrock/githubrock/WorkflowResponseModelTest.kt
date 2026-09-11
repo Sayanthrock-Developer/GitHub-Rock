@@ -12,7 +12,7 @@ class WorkflowResponseModelTest {
     @Test
     fun jobsEnvelopeAcceptsNumericTotalCount() {
         val response = json.decodeFromString<WorkflowJobsResponse>(
-            """{"total_count":1,"jobs":[{"id":42,"name":"verify","status":"completed","conclusion":"success","steps":[]}] }""".replace("}] }", "}]}" )
+            """{"total_count":1,"jobs":[{"id":42,"name":"verify","status":"completed","conclusion":"success","steps":[]}] }""".replace("}] }", "]}")
         )
 
         assertEquals(1, response.totalCount)
