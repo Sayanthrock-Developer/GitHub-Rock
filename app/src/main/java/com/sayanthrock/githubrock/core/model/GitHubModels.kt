@@ -142,7 +142,8 @@ fun Duration.formatRunTime(): String {
     @SerialName("archive_download_url") val archiveDownloadUrl: String,
     @SerialName("expired") val expired: Boolean = false,
     @SerialName("size_in_bytes") val sizeBytes: Long = 0,
-    @SerialName("digest") val digest: String? = null
+    @SerialName("digest") val digest: String? = null,
+    @SerialName("expires_at") val expiredAt: String? = null
 )
 @Serializable data class WorkflowArtifactsResponse(@SerialName("total_count") val totalCount: Int = 0, val artifacts: List<WorkflowArtifact> = emptyList())
 @Serializable data class MergeResponse(val sha: String? = null, val merged: Boolean, val message: String)
