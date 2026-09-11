@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.model.WorkflowArtifact
 import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
@@ -32,23 +33,89 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun BuildDetailsScreen(mode: AppMode, repository: GitHubRepositoryModel, runId: Long, onBack: () -> Unit, onOpenJob: (Long, Long) -> Unit = { _, _ -> }, onOpenArtifact: (Long, Long) -> Unit = { _, _ -> }, viewModel: BuildsViewModel = hiltViewModel(), appearanceViewModel: AppearanceViewModel = hiltViewModel()) {
-    val state by viewModel.state.collectAsStateWithLifecycle(); val preferences by appearanceViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val preferences by appearanceViewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(repository.id, runId, mode) { if (mode == AppMode.Connected) viewModel.loadAndroidBuild(repository, runId) else viewModel.resetBuild() }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = StandardScreenPadding, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") }; Column(Modifier.weight(1f)) { Text("Build details", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text(repository.fullName, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
-        state.error?.let { item { StatusCard(it, true) } }; state.message?.let { item { StatusCard(it, false) } }
+        state.error?.let { item { StatusCard(it, true) } }
+        state.message?.let { item { StatusCard(it, false) } }
         state.run?.let { run ->
             item { BuildRunHeader(run, state.workflow?.name, preferences) }
             item { BuildActionRow(run, !state.loading, { viewModel.loadAndroidBuild(repository, run.id) }, { viewModel.cancelRun(repository, run.id) }, { viewModel.rerunRun(repository, run.id) }) }
             item { BuildMetadata(run) }
+            item { AndroidCiSummary(run, state.workflow?.name, state.jobs, state.artifacts) }
             item { RunUsageCard(run) }
         } ?: item { GlassCard { Text(if (state.loading) "Loading build details…" else "Build run details are unavailable.") } }
         if (state.tracking) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         item { Text("Jobs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         if (state.jobs.isEmpty()) item { GlassCard { Text("No job details returned yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) } } else items(state.jobs, key = { it.id }) { job -> JobDetailsCard(job, preferences) { onOpenJob(runId, job.id) } }
         item { Text("Artifacts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-        if (state.artifacts.isEmpty()) item { GlassCard { Text("No downloadable artifacts were published for this run.", color = MaterialTheme.colorScheme.onSurfaceVariant) } } else items(state.artifacts, key = { it.id }) { artifact -> OutlinedButton(onClick = { onOpenArtifact(runId, artifact.id) }, modifier = Modifier.fillMaxWidth()) { Icon(RockIcon.Archive.vector(), null); Spacer(Modifier.width(8.dp)); Text(if (artifact.expired) "${artifact.name} expired" else artifact.name) } }
+        if (state.artifacts.isEmpty()) item { GlassCard { Text("No downloadable artifacts were published for this run.", color = MaterialTheme.colorScheme.onSurfaceVariant) } } else items(state.artifacts, key = { it.id }) { artifact -> ArtifactButton(artifact) { onOpenArtifact(runId, artifact.id) } }
     }
+}
+
+@Composable
+private fun AndroidCiSummary(run: WorkflowRun, workflowName: String?, jobs: List<WorkflowJob>, artifacts: List<WorkflowArtifact>) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Verify Android summary", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("GitHub Actions API data", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            HorizontalDivider()
+            SummaryField("Workflow", workflowName ?: run.name ?: "Android build")
+            SummaryField("Build outcome", run.conclusion ?: run.status)
+            jobs.firstOrNull()?.let { job ->
+                SummaryField("Job", job.name)
+                SummaryField("Job outcome", job.conclusion ?: job.status)
+            }
+            Text("Artifacts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            if (artifacts.isEmpty()) {
+                Text("No artifact data was returned by GitHub for this run.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                artifacts.forEach { artifact ->
+                    Surface(
+                        Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            SummaryField("Name", artifact.name)
+                            SummaryField("Size", formatArtifactSize(artifact.sizeBytes))
+                            SummaryField("Digest", artifact.digest ?: "Not provided")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryField(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value.ifBlank { "—" })
+    }
+}
+
+@Composable
+private fun ArtifactButton(artifact: WorkflowArtifact, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Icon(RockIcon.Archive.vector(), null)
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+            Text(if (artifact.expired) "${artifact.name} expired" else artifact.name)
+            Text("${formatArtifactSize(artifact.sizeBytes)} • ${artifact.digest ?: "digest unavailable"}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+private fun formatArtifactSize(bytes: Long): String = when {
+    bytes >= 1_073_741_824L -> "%.2f GB".format(bytes / 1_073_741_824.0)
+    bytes >= 1_048_576L -> "%.2f MB".format(bytes / 1_048_576.0)
+    bytes >= 1_024L -> "%.1f KB".format(bytes / 1_024.0)
+    else -> "$bytes bytes"
 }
 
 @Composable
