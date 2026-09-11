@@ -13,7 +13,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.NativeProfileDestination
@@ -21,7 +20,6 @@ import com.sayanthrock.githubrock.core.navigation.NativeProfileSection
 import com.sayanthrock.githubrock.ui.components.LocalOpenGitHubProfile
 import com.sayanthrock.githubrock.ui.navigation.MainNavigationV2
 import com.sayanthrock.githubrock.ui.navigation.RockNavigationChrome
-import com.sayanthrock.githubrock.ui.navigation.TopDestinationV2
 import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
 import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
@@ -84,6 +82,7 @@ private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.
     NavigationBarStyle.Glass -> 100.dp
     NavigationBarStyle.Minimal -> 72.dp
     NavigationBarStyle.Compact -> 74.dp
+    NavigationBarStyle.Ios -> 94.dp
 }
 
 @Composable
