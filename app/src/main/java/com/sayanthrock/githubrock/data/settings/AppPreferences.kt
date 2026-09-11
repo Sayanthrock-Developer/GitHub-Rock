@@ -18,11 +18,7 @@ private val Context.dataStore by preferencesDataStore(name = "github_rock_prefer
 
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
-enum class AccentColor {
-    DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Custom,
-    Violet, Emerald, Rose, Coral, Amber;
-    companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock }
-}
+enum class AccentColor { DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Custom, Violet, Emerald, Rose, Coral, Amber; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock } }
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
 enum class FontSize { Small, Default, Large; companion object { fun fromStored(value: String?): FontSize = entries.firstOrNull { it.name == value } ?: Default } }
 enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
@@ -31,7 +27,7 @@ enum class LoadingStyle { Spinner, Linear, Pulse, Skeleton, Liquid, Orbit, Shimm
 enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
 enum class CodeColorStyle { Classic, Ocean, Sunset, Monochrome, GitHub; companion object { fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic } }
 enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal } }
-enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compact; companion object { fun fromStored(value: String?): NavigationBarStyle = entries.firstOrNull { it.name == value } ?: FloatingCapsule } }
+enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compact, Ios; companion object { fun fromStored(value: String?): NavigationBarStyle = entries.firstOrNull { it.name == value } ?: FloatingCapsule } }
 
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
