@@ -12,7 +12,7 @@ class WorkflowResponseModelTest {
     @Test
     fun jobsEnvelopeAcceptsNumericTotalCount() {
         val response = json.decodeFromString<WorkflowJobsResponse>(
-            """{"total_count":1,"jobs":[{"id":42,"name":"verify","status":"completed","conclusion":"success","steps":[]}]}"""
+            """{"total_count":1,"jobs":[{"id":42,"name":"verify","status":"completed","conclusion":"success","steps":[]}] }""".replace("}] }", "}]}" )
         )
 
         assertEquals(1, response.totalCount)
@@ -20,12 +20,14 @@ class WorkflowResponseModelTest {
     }
 
     @Test
-    fun artifactsEnvelopeAcceptsNumericTotalCount() {
+    fun artifactsEnvelopeAcceptsNumericTotalCountAndDigest() {
         val response = json.decodeFromString<WorkflowArtifactsResponse>(
-            """{"total_count":1,"artifacts":[{"id":7,"name":"debug-apk","archive_download_url":"https://api.github.com/artifacts/7","expired":false,"size_in_bytes":2048}]}"""
+            """{"total_count":1,"artifacts":[{"id":7,"name":"debug-apk","archive_download_url":"https://api.github.com/artifacts/7","expired":false,"size_in_bytes":2048,"digest":"sha256:abc123"}]}"""
         )
 
         assertEquals(1, response.totalCount)
         assertEquals("debug-apk", response.artifacts.single().name)
+        assertEquals(2048, response.artifacts.single().sizeBytes)
+        assertEquals("sha256:abc123", response.artifacts.single().digest)
     }
 }
