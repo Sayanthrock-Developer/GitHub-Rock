@@ -17,7 +17,7 @@ fun AccountSwitcherScreen(
     onReplaceConnectedAccount: () -> Unit
 ) {
     val context = LocalContext.current
-    AccountSwitcherScreen(
+    AccountSwitcherHubScreen(
         mode = mode,
         connectedProfile = connectedProfile,
         onBack = onBack,
