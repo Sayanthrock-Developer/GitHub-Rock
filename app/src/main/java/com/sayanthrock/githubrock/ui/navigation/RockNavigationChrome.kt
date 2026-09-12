@@ -108,18 +108,7 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                     if (selected) {
                         Surface(modifier = Modifier.size(56.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f), tonalElevation = 0.dp, shadowElevation = 0.dp) {}
                     }
-                    RockNavigationItem(
-                        destination = destination,
-                        selected = selected,
-                        showLabel = true,
-                        modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale),
-                        selectedShape = 28.dp,
-                        animationStyle = animationStyle,
-                        reduceMotion = reduceMotion,
-                        onClick = { onDestinationSelected(destination) },
-                        iconSize = if (selected) 24.dp else 22.dp,
-                        selectedContainerAlpha = 0f
-                    )
+                    RockNavigationItem(destination, selected, true, Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale), 28.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, if (selected) 24.dp else 22.dp, selectedContainerAlpha = 0f)
                 }
             }
         }
@@ -172,34 +161,13 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
-    val surfaceModifier = modifier
-        .navigationBarsPadding()
-        .padding(horizontal = 12.dp, vertical = 10.dp)
-        .widthIn(max = maxWidth)
-        .wrapContentHeight()
-        .then(slideModifier)
-
+    val surfaceModifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).wrapContentHeight().then(slideModifier)
     if (blurEnabled) {
         ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = surfaceModifier, shape = shape) {
-            Surface(
-                shape = shape,
-                color = color,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
-            ) { content() }
+            Surface(shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
         }
     } else {
-        Surface(
-            modifier = surfaceModifier,
-            shape = shape,
-            color = color,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
-            tonalElevation = 2.dp,
-            shadowElevation = shadow
-        ) { content() }
+        Surface(modifier = surfaceModifier, shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
     }
 }
 
