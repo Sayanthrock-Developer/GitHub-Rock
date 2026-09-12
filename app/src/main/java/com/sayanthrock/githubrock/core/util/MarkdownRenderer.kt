@@ -22,7 +22,7 @@ object MarkdownRenderer {
 
         fun flushParagraph() {
             if (paragraph.isNotEmpty()) {
-                val text = paragraph.joinToString("\n").trim()
+                val text = paragraph.joinToString(" ").trim()
                 if (text.isNotEmpty()) blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, text)
                 paragraph.clear()
             }
@@ -140,7 +140,9 @@ object MarkdownRenderer {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Image, image.groupValues[1], image.groupValues[2]); continue
             }
 
-            paragraph += line.replace(Regex("<[^>]+>"), "")
+            // Keep inline Markdown intact for the native renderer. Strip ordinary
+            // HTML formatting tags, but leave script/style markup as literal text.
+            paragraph += line.replace(Regex("</?(?!script\\b|style\\b)[A-Za-z][^>]*>", RegexOption.IGNORE_CASE), "")
         }
 
         if (inFence) blocks += MarkdownBlock(MarkdownBlockKind.Code, fenceLines.joinToString("\n"), fenceLanguage)
@@ -149,17 +151,18 @@ object MarkdownRenderer {
         return blocks
     }
 
+    /** Compatibility helper for callers that explicitly need plain text. */
     fun cleanInline(text: String): String = text
-        .replace(Regex("""!\\[([^]]*)\\]\\(([^)]+)\\)""")) { it.groupValues[1] }
-        .replace(Regex("""\\[([^]]+)\\]\\(([^)]+)\\)""")) { it.groupValues[1] }
-        .replace(Regex("""<https?://[^>]+>""")) { it.value.removePrefix("<").removeSuffix(">") }
-        .replace(Regex("""`([^`]+)`""")) { it.groupValues[1] }
-        .replace(Regex("""\\*\\*([^*]+)\\*\\*""")) { it.groupValues[1] }
-        .replace(Regex("""__([^_]+)__""")) { it.groupValues[1] }
-        .replace(Regex("""~~([^~]+)~~""")) { it.groupValues[1] }
-        .replace(Regex("""(?<!\\*)\\*([^*]+)\\*(?!\\*)""")) { it.groupValues[1] }
-        .replace(Regex("""(?<!_)_([^_]+)_(?!_)""")) { it.groupValues[1] }
-        .replace(Regex("""<[^>]+>"""), "")
+        .replace(Regex("!\\[([^]]*)]\\(([^)]+)\\)")) { it.groupValues[1] }
+        .replace(Regex("\\[([^]]+)\\]\\(([^)]+)\\)")) { it.groupValues[1] }
+        .replace(Regex("<https?://[^>]+>")) { it.value.removePrefix("<").removeSuffix(">") }
+        .replace(Regex("`([^`]+)`")) { it.groupValues[1] }
+        .replace(Regex("\\*\\*([^*]+)\\*\\*")) { it.groupValues[1] }
+        .replace(Regex("__([^_]+)__")) { it.groupValues[1] }
+        .replace(Regex("~~([^~]+)~~")) { it.groupValues[1] }
+        .replace(Regex("(?<!\\*)\\*([^*]+)\\*(?!\\*)")) { it.groupValues[1] }
+        .replace(Regex("(?<!_)_([^_]+)_(?!_)")) { it.groupValues[1] }
+        .replace(Regex("</?(?!script\\b|style\\b)[A-Za-z][^>]*>", RegexOption.IGNORE_CASE), "")
 }
 
 class MarkdownBlockKind private constructor(private val name: String) {
