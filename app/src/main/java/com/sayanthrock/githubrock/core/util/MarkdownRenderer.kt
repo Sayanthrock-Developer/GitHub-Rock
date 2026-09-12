@@ -1,249 +1,142 @@
 package com.sayanthrock.githubrock.core.util
 
+import java.util.Locale
+
 /**
- * Markdown block kinds are intentionally open so renderers can safely ignore a
- * block introduced by a newer parser without requiring every UI surface to be
- * updated in lockstep.
+ * Small native GitHub-flavoured Markdown parser used by README screens.
+ *
+ * It intentionally keeps the parsed representation independent from Compose so the
+ * same parser can be exercised by JVM unit tests and rendered by the UI layer.
  */
-interface MarkdownBlockKind {
-    data object Heading : MarkdownBlockKind
-    data object Paragraph : MarkdownBlockKind
-    data object Bullet : MarkdownBlockKind
-    data object Task : MarkdownBlockKind
-    data object Quote : MarkdownBlockKind
-    data object Alert : MarkdownBlockKind
-    data object Code : MarkdownBlockKind
-    data object Divider : MarkdownBlockKind
-    data object Image : MarkdownBlockKind
-    data object Table : MarkdownBlockKind
-}
-
-data class MarkdownTable(
-    val headers: List<String>,
-    val rows: List<List<String>>
-)
-
-data class MarkdownBlock(
-    val kind: MarkdownBlockKind,
-    val text: String,
-    val level: Int = 0,
-    val url: String? = null,
-    val table: MarkdownTable? = null,
-    val ordered: Boolean = false,
-    val checked: Boolean = false,
-    val codeLanguage: String? = null
-)
-
-/** GitHub-flavoured Markdown parser used by the native README/release renderer. */
 object MarkdownRenderer {
-    private val headingPattern = Regex("^(#{1,6})\\s+(.+?)\\s*#*\\s*$")
-    private val bulletPattern = Regex("^\\s*[-*+]\\s+(.+)$")
-    private val taskPattern = Regex("^\\s*[-*+]\\s+\\[([ xX])\\]\\s+(.+)$")
-    private val orderedPattern = Regex("^\\s*(\\d+)[.)]\\s+(.+)$")
-    private val quotePattern = Regex("^>\\s?(.*)$")
-    private val alertPattern = Regex("^\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE)
-    private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
-    private val imagePattern = Regex("""^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\".*?\")?\\)\\s*$""")
-    private val htmlImageTagPattern = Regex("<img\\s+[^>]*\\bsrc=[\"']([^\"']+)[\"'][^>]*>", RegexOption.IGNORE_CASE)
-    private val htmlAltPattern = Regex("\\balt=[\"']([^\"']*)[\"']", RegexOption.IGNORE_CASE)
-    private val htmlBlockTagPattern = Regex(
-        "^\\s*</?(?:address|article|aside|center|details|div|figcaption|figure|footer|header|main|nav|p|section|summary)(?:\\s[^>]*)?>\\s*$",
-        RegexOption.IGNORE_CASE
-    )
-    private val htmlTagPattern = Regex("<[^>]+>")
-    private val tableSeparator = Regex("^\\s*\\|?\\s*:?-+:?\\s*(?:\\|\\s*:?-+:?\\s*)+\\|?\\s*$")
 
     fun render(markdown: String): List<MarkdownBlock> {
+        val source = markdown.replace("\r\n", "\n").replace('\r', '\n')
+        val lines = source.lines()
         val blocks = mutableListOf<MarkdownBlock>()
-        val lines = markdown.replace("\r\n", "\n").replace('\r', '\n').lines()
-        val buffer = StringBuilder()
-        val tableLines = mutableListOf<String>()
-        var inCode = false
-        var codeLanguage: String? = null
-        var inTable = false
+        val paragraph = mutableListOf<String>()
+        val table = mutableListOf<String>()
+        var inFence = false
+        var fenceLanguage: String? = null
+        val fenceLines = mutableListOf<String>()
 
         fun flushParagraph() {
-            if (buffer.isNotBlank()) {
-                blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, buffer.toString().trim())
-                buffer.clear()
+            if (paragraph.isNotEmpty()) {
+                val text = paragraph.joinToString("\n").trim()
+                if (text.isNotEmpty()) blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, text)
+                paragraph.clear()
             }
         }
-
-        fun splitTableRow(line: String): List<String> = line.trim()
-            .removePrefix("|")
-            .removeSuffix("|")
-            .replace("\\|", "\u0000")
-            .split('|')
-            .map { it.trim().replace("\u0000", "|") }
 
         fun flushTable() {
-            if (!inTable || tableLines.size < 2) {
-                inTable = false
-                tableLines.clear()
-                return
+            if (table.isEmpty()) return
+            val rows = table.map { it.split('|').dropWhile { cell -> cell.isBlank() }.dropLastWhile { cell -> cell.isBlank() }.map(String::trim) }
+            if (rows.size >= 2 && rows[1].all { row -> row.isNotEmpty() && row.all { cell -> cell.matches(Regex(":?-{3,}:?")) } }) {
+                blocks += MarkdownBlock(MarkdownBlockKind.Table, rows.drop(1).joinToString("\n") { it.joinToString(" | ") })
+            } else {
+                paragraph += table
             }
-            val headers = splitTableRow(tableLines.first())
-            val rows = tableLines.drop(2).map(::splitTableRow).map { row ->
-                if (row.size < headers.size) row + List(headers.size - row.size) { "" } else row.take(headers.size)
-            }
-            blocks += MarkdownBlock(
-                kind = MarkdownBlockKind.Table,
-                text = "",
-                table = MarkdownTable(headers = headers, rows = rows)
-            )
-            inTable = false
-            tableLines.clear()
+            table.clear()
         }
 
-        fun isTableRow(line: String): Boolean {
-            if (!line.contains('|')) return false
-            val headers = tableLines.firstOrNull()?.let(::splitTableRow) ?: return false
-            return splitTableRow(line).size == headers.size
-        }
+        fun isBlockHtmlWrapper(line: String): Boolean =
+            line.trim().matches(Regex("</?(div|p|center|section|article|aside|header|footer|main|figure|figcaption)(\\s[^>]*)?/?>", RegexOption.IGNORE_CASE))
 
-        lines.forEachIndexed { index, rawLine ->
+        for (rawLine in lines) {
             val line = rawLine.trimEnd()
-
-            if (inCode) {
-                if (line.trimStart().startsWith("```") || line.trimStart().startsWith("~~~")) {
-                    blocks += MarkdownBlock(
-                        kind = MarkdownBlockKind.Code,
-                        text = buffer.toString().trimEnd(),
-                        codeLanguage = codeLanguage
-                    )
-                    buffer.clear()
-                    codeLanguage = null
-                    inCode = false
-                } else {
-                    buffer.appendLine(line)
-                }
-                return@forEachIndexed
+            if (inFence) {
+                if (line.trim().startsWith("```")) {
+                    blocks += MarkdownBlock(MarkdownBlockKind.Code, fenceLines.joinToString("\n"), fenceLanguage)
+                    fenceLines.clear()
+                    inFence = false
+                    fenceLanguage = null
+                } else fenceLines += line
+                continue
             }
 
-            val fence = line.trimStart().takeIf { it.startsWith("```") || it.startsWith("~~~") }
+            val fence = Regex("^\\s*```(.*)$").find(line)
             if (fence != null) {
-                flushParagraph()
-                flushTable()
-                inCode = true
-                codeLanguage = fence.drop(3).trim().ifBlank { null }
-                return@forEachIndexed
+                flushTable(); flushParagraph()
+                inFence = true
+                fenceLanguage = fence.groupValues[1].trim().ifBlank { null }
+                continue
             }
 
             if (line.isBlank()) {
-                flushParagraph()
-                flushTable()
-                return@forEachIndexed
+                flushTable(); flushParagraph(); continue
+            }
+            if (isBlockHtmlWrapper(line)) continue
+
+            val heading = Regex("^\\s*(#{1,6})\\s+(.+?)\\s*$").find(line)
+            if (heading != null) {
+                flushTable(); flushParagraph()
+                blocks += MarkdownBlock(MarkdownBlockKind.Heading, heading.groupValues[2], heading.groupValues[1].length)
+                continue
             }
 
-            // GitHub READMEs commonly use HTML layout wrappers such as
-            // <div align="center"> ... </div>. These are presentation markup,
-            // not documentation text, so do not render the tags themselves.
-            if (htmlBlockTagPattern.matches(line)) {
-                flushParagraph()
-                flushTable()
-                return@forEachIndexed
+            if (line.matches(Regex("^\\s*((\\*\\s*){3,}|(-\\s*){3,}|(_\\s*){3,})$"))) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Divider, ""); continue
             }
 
-            if (!inTable && line.contains('|') && index + 1 < lines.size && tableSeparator.matches(lines[index + 1])) {
-                flushParagraph()
-                inTable = true
-                tableLines += line
-                return@forEachIndexed
+            val task = Regex("^\\s*[-*+]\\s+\\[([ xX])\\]\\s+(.+)$").find(line)
+            if (task != null) {
+                flushTable(); flushParagraph()
+                blocks += MarkdownBlock(MarkdownBlockKind.Task, task.groupValues[2], if (task.groupValues[1].equals("x", true)) 1 else 0)
+                continue
             }
 
-            if (inTable) {
-                if (isTableRow(line)) {
-                    tableLines += line
-                    return@forEachIndexed
-                }
-                flushTable()
+            val unordered = Regex("^\\s*[-*+]\\s+(.+)$").find(line)
+            if (unordered != null) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.UnorderedList, unordered.groupValues[1]); continue
             }
 
-            val heading = headingPattern.matchEntire(line)
-            val task = taskPattern.matchEntire(line)
-            val bullet = bulletPattern.matchEntire(line)
-            val ordered = orderedPattern.matchEntire(line)
-            val quote = quotePattern.matchEntire(line)
-            val image = imagePattern.matchEntire(line)
-            val htmlImages = htmlImageTagPattern.findAll(line).toList()
+            val ordered = Regex("^\\s*\\d+[.)]\\s+(.+)$").find(line)
+            if (ordered != null) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.OrderedList, ordered.groupValues[1]); continue
+            }
 
-            when {
-                heading != null -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Heading, heading.groupValues[2], heading.groupValues[1].length)
-                }
-                dividerPattern.matches(line) -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Divider, "")
-                }
-                task != null -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(
-                        kind = MarkdownBlockKind.Task,
-                        text = task.groupValues[2],
-                        checked = task.groupValues[1].equals("x", ignoreCase = true)
-                    )
-                }
-                bullet != null -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Bullet, bullet.groupValues[1])
-                }
-                ordered != null -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(
-                        kind = MarkdownBlockKind.Bullet,
-                        text = ordered.groupValues[2],
-                        ordered = true,
-                        level = ordered.groupValues[1].toIntOrNull() ?: 1
-                    )
-                }
-                quote != null -> {
-                    flushParagraph()
-                    val alert = alertPattern.matchEntire(quote.groupValues[1].trim())
-                    if (alert != null) {
-                        blocks += MarkdownBlock(
-                            kind = MarkdownBlockKind.Alert,
-                            text = alert.groupValues[2].ifBlank { alert.groupValues[1].uppercase() }
-                        )
-                    } else {
-                        blocks += MarkdownBlock(MarkdownBlockKind.Quote, quote.groupValues[1])
+            val quote = Regex("^\\s*>\\s?(.*)$").find(line)
+            if (quote != null) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Quote, cleanInline(quote.groupValues[1])); continue
+            }
+
+            val alert = Regex("^\\s*>\\s*\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE).find(line)
+            if (alert != null) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Alert, alert.groupValues[2], alert.groupValues[1].uppercase(Locale.ROOT)); continue
+            }
+
+            val htmlImages = Regex("<img\\b[^>]*>", RegexOption.IGNORE_CASE).findAll(line).toList()
+            if (htmlImages.isNotEmpty()) {
+                flushTable(); flushParagraph()
+                htmlImages.forEach { match ->
+                    val tag = match.value
+                    val src = Regex("\\bsrc\\s*=\\s*[\\\"']([^\\\"']+)[\\\"']", RegexOption.IGNORE_CASE).find(tag)?.groupValues?.get(1)
+                    if (src != null) {
+                        val alt = Regex("\\balt\\s*=\\s*[\\\"']([^\\\"']*)[\\\"']", RegexOption.IGNORE_CASE).find(tag)?.groupValues?.get(1).orEmpty()
+                        blocks += MarkdownBlock(MarkdownBlockKind.Image, alt, src)
                     }
                 }
-                image != null -> {
-                    flushParagraph()
-                    blocks += MarkdownBlock(MarkdownBlockKind.Image, image.groupValues[1], url = image.groupValues[2])
-                }
-                htmlImages.isNotEmpty() -> {
-                    flushParagraph()
-                    htmlImages.forEach { match ->
-                        val tag = match.value
-                        val alt = htmlAltPattern.find(tag)?.groupValues?.getOrNull(1).orEmpty()
-                        blocks += MarkdownBlock(
-                            kind = MarkdownBlockKind.Image,
-                            text = alt.ifBlank { "Image" },
-                            url = match.groupValues[1]
-                        )
-                    }
-                }
-                else -> {
-                    // Preserve ordinary Markdown inline syntax exactly as supplied.
-                    // HTML tags are removed only when they are actually present.
-                    val text = htmlTagPattern.replace(line, "")
-                    if (text.isNotBlank()) {
-                        if (buffer.isNotEmpty()) buffer.append(' ')
-                        buffer.append(text)
-                    }
-                }
+                val remaining = line.replace(Regex("<img\\b[^>]*>", RegexOption.IGNORE_CASE), "").trim()
+                if (remaining.isNotBlank()) paragraph += cleanInline(remaining)
+                continue
             }
+
+            if (line.contains('|')) {
+                flushParagraph()
+                table += line
+                continue
+            }
+
+            val image = Regex("!\\[([^]]*)]\\(([^)]+)\\)").find(line)
+            if (image != null && image.range.first == 0 && image.range.last == line.lastIndex) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Image, image.groupValues[1], image.groupValues[2]); continue
+            }
+
+            // Preserve inline Markdown for the renderer; only remove HTML tags.
+            paragraph += line.replace(Regex("<[^>]+>"), "")
         }
 
-        if (inCode) {
-            blocks += MarkdownBlock(
-                kind = MarkdownBlockKind.Code,
-                text = buffer.toString().trimEnd(),
-                codeLanguage = codeLanguage
-            )
-        }
+        if (inFence) blocks += MarkdownBlock(MarkdownBlockKind.Code, fenceLines.joinToString("\n"), fenceLanguage)
         flushTable()
         flushParagraph()
         return blocks
@@ -261,3 +154,24 @@ object MarkdownRenderer {
         .replace(Regex("""(?<!\\*)\\*([^*]+)\\*(?!\\*)""")) { it.groupValues[1] }
         .replace(Regex("""(?<!_)_([^_]+)_(?!_)""")) { it.groupValues[1] }
         .replace(Regex("""<[^>]+>"""), "")
+}
+
+enum class MarkdownBlockKind {
+    Paragraph,
+    Heading,
+    UnorderedList,
+    OrderedList,
+    Task,
+    Quote,
+    Alert,
+    Divider,
+    Code,
+    Table,
+    Image
+}
+
+data class MarkdownBlock(
+    val kind: MarkdownBlockKind,
+    val text: String,
+    val metadata: Any? = null
+)
