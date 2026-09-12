@@ -8,7 +8,7 @@ class MarkdownRendererTest {
     @Test fun `render heading blocks`() {
         val result = MarkdownRenderer.render("# Heading 1\n## Heading 2\n###### Heading 6")
         assertEquals(3, result.size)
-        assertEquals(MarkdownBlock("Heading".let { MarkdownBlockKind.Heading }, "Heading 1", 1), result[0])
+        assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 1", 1), result[0])
         assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 2", 2), result[1])
         assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 6", 6), result[2])
     }
@@ -99,6 +99,28 @@ class MarkdownRendererTest {
         assertEquals(MarkdownBlockKind.Image, result[0].kind)
         assertEquals("https://example.com/logo.png", result[0].url)
         assertEquals("GitHub Rock", result[0].text)
+    }
+
+    @Test fun `render README html wrappers without exposing tags`() {
+        val markdown = "<div align=\"center\">\n<img src=\"https://example.com/logo.png\" alt=\"Logo\" />\n</div>\n\n# GitHub Rock\n\n<strong>Native GitHub client</strong>"
+        val result = MarkdownRenderer.render(markdown)
+        assertEquals(3, result.size)
+        assertEquals(MarkdownBlockKind.Image, result[0].kind)
+        assertEquals("https://example.com/logo.png", result[0].url)
+        assertEquals(MarkdownBlockKind.Heading, result[1].kind)
+        assertEquals("GitHub Rock", result[1].text)
+        assertEquals(MarkdownBlockKind.Paragraph, result[2].kind)
+        assertEquals("Native GitHub client", result[2].text)
+    }
+
+    @Test fun `render multiple html images from README line`() {
+        val markdown = "<p><a href=\"https://example.com/release\"><img src=\"https://example.com/release.png\" alt=\"Release\"></a><a href=\"https://example.com/build\"><img src=\"https://example.com/build.png\" alt=\"Build\"></a></p>"
+        val result = MarkdownRenderer.render(markdown)
+        assertEquals(2, result.size)
+        assertEquals("https://example.com/release.png", result[0].url)
+        assertEquals("Release", result[0].text)
+        assertEquals("https://example.com/build.png", result[1].url)
+        assertEquals("Build", result[1].text)
     }
 
     @Test fun `normalize CRLF and CR line endings`() {
