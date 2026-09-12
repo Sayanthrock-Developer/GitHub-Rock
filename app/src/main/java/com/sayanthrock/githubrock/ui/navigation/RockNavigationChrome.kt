@@ -3,11 +3,13 @@ package com.sayanthrock.githubrock.ui.navigation
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -84,17 +87,44 @@ private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarSty
         NavigationBarStyle.Minimal -> MinimalNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
         NavigationBarStyle.Glass -> GlassNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
         NavigationBarStyle.Compact -> CompactNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
-        NavigationBarStyle.Ios -> IosNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
+        NavigationBarStyle.Ios -> FuturisticNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
     }
 }
 
 @Composable
-private fun IosNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 10.dp, 620.dp, blurSettings, onDestinationSelected) {
-        NavigationRow(64.dp, 6.dp, 3.dp) {
+private fun FuturisticNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, blurSettings, onDestinationSelected) {
+        NavigationRow(76.dp, 8.dp, 2.dp) {
             rockNavigationDestinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
-                RockNavigationItem(destination, selected, selected, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, iconSize = 22.dp, selectedContainerAlpha = 1f)
+                val scale by animateFloatAsState(
+                    targetValue = if (selected) 1.16f else 1f,
+                    animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(RockMotion.duration(true, RockMotion.Navigation)) else spring(stiffness = 500f, dampingRatio = 0.78f),
+                    label = "futuristic navigation scale"
+                )
+                Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
+                    if (selected) {
+                        Surface(
+                            modifier = Modifier.size(56.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {}
+                    }
+                    RockNavigationItem(
+                        destination = destination,
+                        selected = selected,
+                        showLabel = true,
+                        modifier = Modifier.fillMaxSize().then(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)),
+                        selectedShape = 28.dp,
+                        animationStyle = animationStyle,
+                        reduceMotion = reduceMotion,
+                        onClick = { onDestinationSelected(destination) },
+                        iconSize = if (selected) 24.dp else 22.dp,
+                        selectedContainerAlpha = 0f
+                    )
+                }
             }
         }
     }
