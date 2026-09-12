@@ -226,7 +226,9 @@ object MarkdownRenderer {
                     }
                 }
                 else -> {
-                    val text = htmlTagPattern.replace(line.trimStart(), "")
+                    // Preserve ordinary Markdown inline syntax exactly as supplied.
+                    // HTML tags are removed only when they are actually present.
+                    val text = htmlTagPattern.replace(line, "")
                     if (text.isNotBlank()) {
                         if (buffer.isNotEmpty()) buffer.append(' ')
                         buffer.append(text)
@@ -249,14 +251,13 @@ object MarkdownRenderer {
 
     /** Compatibility helper for callers that explicitly need plain text. */
     fun cleanInline(text: String): String = text
-        .replace(Regex("""!\\[([^]]*)\\]\\(([^)]+)\\)"""), "$1")
-        .replace(Regex("""\\[([^]]+)\\]\\(([^)]+)\\)"""), "$1")
+        .replace(Regex("""!\\[([^]]*)\\]\\(([^)]+)\\)""")) { it.groupValues[1] }
+        .replace(Regex("""\\[([^]]+)\\]\\(([^)]+)\\)""")) { it.groupValues[1] }
         .replace(Regex("""<https?://[^>]+>""")) { it.value.removePrefix("<").removeSuffix(">") }
-        .replace(Regex("""`([^`]+)`"""), "$1")
-        .replace(Regex("""\\*\\*([^*]+)\\*\\*"""), "$1")
-        .replace(Regex("""__([^_]+)__"""), "$1")
-        .replace(Regex("""~~([^~]+)~~"""), "$1")
-        .replace(Regex("""(?<!\\*)\\*([^*]+)\\*(?!\\*)"""), "$1")
-        .replace(Regex("""(?<!_)_([^_]+)_(?!_)"""), "$1")
+        .replace(Regex("""`([^`]+)`""")) { it.groupValues[1] }
+        .replace(Regex("""\\*\\*([^*]+)\\*\\*""")) { it.groupValues[1] }
+        .replace(Regex("""__([^_]+)__""")) { it.groupValues[1] }
+        .replace(Regex("""~~([^~]+)~~""")) { it.groupValues[1] }
+        .replace(Regex("""(?<!\\*)\\*([^*]+)\\*(?!\\*)""")) { it.groupValues[1] }
+        .replace(Regex("""(?<!_)_([^_]+)_(?!_)""")) { it.groupValues[1] }
         .replace(Regex("""<[^>]+>"""), "")
-}
