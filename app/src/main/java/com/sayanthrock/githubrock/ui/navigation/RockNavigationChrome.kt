@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -217,7 +216,7 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 }
 
 @Composable
-private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f, label: String = destination.accessibilityLabel, verticalLabelLayout: Boolean = false) {
+private fun RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f, label: String = destination.accessibilityLabel, verticalLabelLayout: Boolean = false) {
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
     val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else spring(), label = "navigation indicator color")
