@@ -1,5 +1,7 @@
 name: Remove Application Blur
 
+# One-time cleanup workflow. It self-removes the feature and then stops running.
+
 on:
   push:
     branches: [main]
@@ -19,7 +21,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
           import subprocess
 
           def edit(path, replacements):
@@ -127,13 +128,13 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
           ]:
               subprocess.run(['git', 'rm', '-f', path], check=True)
 
-          residual = subprocess.run(['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\.blur', 'app/src'], capture_output=True, text=True)
+          residual = subprocess.run(['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur', 'app/src'], capture_output=True, text=True)
           if residual.returncode == 0 and residual.stdout.strip():
               raise SystemExit('Residual Application Blur references:\n' + residual.stdout)
 
       - name: Verify removal
         run: |
-          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\.blur' app/src; then
+          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur' app/src; then
             echo 'Application Blur references remain.'
             exit 1
           fi
