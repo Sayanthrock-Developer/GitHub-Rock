@@ -22,7 +22,8 @@ class DownloadsScreenUiTest {
                     selectedFilter = DownloadListFilter.All,
                     onSelectFilter = {},
                     onPrimaryAction = {},
-                    onOpenActions = {}
+                    onOpenActions = {},
+                    onOpenProfile = {}
                 )
             }
         }
