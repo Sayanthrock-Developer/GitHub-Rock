@@ -173,7 +173,7 @@ fun MainNavigationV2(
                 exitTransition = { topLevelForwardExit() },
                 popEnterTransition = { topLevelBackEnter() },
                 popExitTransition = { topLevelBackExit() }
-            ) { DownloadsHubScreen() }
+            ) { DownloadsHubScreen(onOpenProfile = openAccountProfile) }
             composable(
                 TopDestinationV2.Profile.route,
                 enterTransition = { topLevelForwardEnter() },
@@ -211,7 +211,7 @@ fun MainNavigationV2(
             composable("repo/{owner}/{repo}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://repo/{owner}/{repo}" }, navDeepLink { uriPattern = "https://github.com/{owner}/{repo}" })) { e ->
                 RepositoryHubScreen(buildRepositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, navController::navigateUp)
             }
-            composable("build/{owner}/{repo}/{runId}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("runId") { type = NavType.LongType }), deepLinks = listOf(navDeepLink { uriPattern = "githubrock://build/{owner}/{repo}/{runId}" })) { e ->
+            composable("build/{owner}/{repo}/{runId}", arguments = listOf(navArgument("owner") { type = NavType.StringType }, navArgument("repo") { type = NavType.StringType }, navArgument("runId") { type = NavType.LongType })) { e ->
                 BuildsScreen(mode, buildRepositories, state.workflowRuns, selectBuildRepository, onOpenRepository = openRepo,
                     initialRepository = buildRepositories.firstOrNull { it.owner.login == e.arguments?.getString("owner") && it.name == e.arguments?.getString("repo") }, initialRunId = e.arguments?.getLong("runId"))
             }
