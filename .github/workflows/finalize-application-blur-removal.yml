@@ -1,4 +1,4 @@
-name: Finalize Application Blur Removal
+name: Finalize Application Blur Removal (one-time)
 
 on:
   push:
