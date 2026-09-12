@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -99,15 +100,15 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
             rockNavigationDestinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
                 val scale by animateFloatAsState(
-                    targetValue = if (selected) 1.08f else 1f,
+                    targetValue = if (selected) 1.05f else 1f,
                     animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(RockMotion.duration(true, RockMotion.Navigation)) else spring(stiffness = 500f, dampingRatio = 0.78f),
                     label = "futuristic navigation scale"
                 )
                 Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
                     if (selected) {
                         Surface(
-                            modifier = Modifier.size(56.dp),
-                            shape = CircleShape,
+                            modifier = Modifier.size(60.dp),
+                            shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             tonalElevation = 0.dp,
@@ -118,18 +119,25 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                         destination = destination,
                         selected = selected,
                         showLabel = true,
+                        label = futuristicNavigationLabel(destination),
                         modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale),
-                        selectedShape = 28.dp,
+                        selectedShape = 20.dp,
                         animationStyle = animationStyle,
                         reduceMotion = reduceMotion,
                         onClick = { onDestinationSelected(destination) },
-                        iconSize = if (selected) 24.dp else 22.dp,
-                        selectedContainerAlpha = 0f
+                        iconSize = if (selected) 23.dp else 21.dp,
+                        selectedContainerAlpha = 0f,
+                        verticalLabelLayout = true
                     )
                 }
             }
         }
     }
+}
+
+private fun futuristicNavigationLabel(destination: TopDestinationV2): String = when (destination) {
+    TopDestinationV2.Repositories -> "Repos"
+    else -> destination.accessibilityLabel
 }
 
 @Composable
@@ -209,16 +217,23 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 }
 
 @Composable
-private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f) {
+private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f, label: String = destination.accessibilityLabel, verticalLabelLayout: Boolean = false) {
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
     val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else spring(), label = "navigation indicator color")
     val iconTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     val labelTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
-        Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 6.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize), tint = iconTint)
-            if (showLabel) Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 5.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelTint)
+        if (showLabel && verticalLabelLayout) {
+            Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize), tint = iconTint)
+                Text(label, modifier = Modifier.padding(top = 2.dp), maxLines = 1, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = labelTint)
+            }
+        } else {
+            Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 6.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize), tint = iconTint)
+                if (showLabel) Text(label, modifier = Modifier.padding(start = 5.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelTint)
+            }
         }
     }
 }
