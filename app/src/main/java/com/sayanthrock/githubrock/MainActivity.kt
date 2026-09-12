@@ -69,11 +69,16 @@ class MainActivity : ComponentActivity() {
             ) {
                 val systemBarColor = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect {
-                    window.statusBarColor = systemBarColor
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) window.navigationBarColor = systemBarColor
+                    // Edge-to-edge owns the system navigation region. Keep it transparent so Android
+                    // cannot paint a separate white navigation strip behind the app's navigation UI.
+                    window.statusBarColor = android.graphics.Color.TRANSPARENT
+                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
                     window.decorView.setBackgroundColor(systemBarColor)
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !useDarkTheme
+                        // Light mode needs dark system navigation icons; dark mode needs light icons.
+                        // This is intentionally derived from the resolved app theme rather than a
+                        // hard-coded white navigation color.
                         isAppearanceLightNavigationBars = !useDarkTheme
                     }
                 }
