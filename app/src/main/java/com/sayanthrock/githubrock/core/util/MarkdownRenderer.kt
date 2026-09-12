@@ -161,8 +161,8 @@ object MarkdownRenderer {
         .replace(Regex("__([^_]+)__")) { it.groupValues[1] }
         .replace(Regex("~~([^~]+)~~")) { it.groupValues[1] }
         .replace(Regex("(?<!\\*)\\*([^*]+)\\*(?!\\*)")) { it.groupValues[1] }
-        .replace(Regex("(?<!_)_([^_]+)_(?!_)")) { it.groupValues[1] }
-        .replace(Regex("</?(?!script\\b|style\\b)[A-Za-z][^>]*>", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("(?<!_)_([^_]+)_(?!_)") ) { it.groupValues[1] }
+        .replace(Regex("<[^>]+>"), "")
 }
 
 class MarkdownBlockKind private constructor(private val name: String) {
