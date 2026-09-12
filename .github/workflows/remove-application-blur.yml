@@ -2,6 +2,7 @@ name: Remove Application Blur
 
 # One-time cleanup workflow. It self-removes the feature and then stops running.
 # Triggered to complete the requested removal from the live main branch.
+# Cleanup execution is intentionally isolated from normal application CI.
 
 on:
   pull_request:
