@@ -99,7 +99,7 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
             rockNavigationDestinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
                 val scale by animateFloatAsState(
-                    targetValue = if (selected) 1.16f else 1f,
+                    targetValue = if (selected) 1.08f else 1f,
                     animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(RockMotion.duration(true, RockMotion.Navigation)) else spring(stiffness = 500f, dampingRatio = 0.78f),
                     label = "futuristic navigation scale"
                 )
@@ -108,7 +108,8 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                         Surface(
                             modifier = Modifier.size(56.dp),
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             tonalElevation = 0.dp,
                             shadowElevation = 0.dp
                         ) {}
@@ -177,12 +178,13 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
+    val surfaceModifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier)
     if (blurEnabled) {
-        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape) {
+        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = surfaceModifier, shape = shape) {
             Surface(modifier = Modifier.fillMaxSize(), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
         }
     } else {
-        Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
+        Surface(modifier = surfaceModifier, shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
     }
 }
 
@@ -191,7 +193,9 @@ private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestin
         onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
         onDrag = { change, dragAmount ->
             if (size.width <= 0) return@detectDragGesturesAfterLongPress
-            if (kotlin.math.abs(dragAmount.x) < kotlin.math.abs(dragAmount.y)) return@detectDragGesturesAfterLongPress
+            val horizontalDistance = kotlin.math.abs(dragAmount.x)
+            val verticalDistance = kotlin.math.abs(dragAmount.y)
+            if (horizontalDistance <= verticalDistance) return@detectDragGesturesAfterLongPress
             change.consume()
             val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt().coerceIn(0, rockNavigationDestinations.lastIndex)
             onDestinationSelected(rockNavigationDestinations[index])
@@ -212,9 +216,9 @@ private fun RowScope.RockNavigationItem(destination: TopDestinationV2, selected:
     val iconTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     val labelTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
-        Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 8.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxSize().padding(horizontal = if (showLabel) 6.dp else 0.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize), tint = iconTint)
-            if (showLabel) Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 6.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelTint)
+            if (showLabel) Text(destination.accessibilityLabel, modifier = Modifier.padding(start = 5.dp), maxLines = 1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelTint)
         }
     }
 }
