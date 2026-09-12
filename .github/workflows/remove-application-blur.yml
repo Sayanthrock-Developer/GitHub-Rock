@@ -4,7 +4,7 @@ name: Remove Application Blur
 # Triggered to complete the requested removal from the live main branch.
 
 on:
-  push:
+  pull_request:
     branches: [main]
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   remove-application-blur:
-    if: ${{ github.event.head_commit.message != 'chore: remove application blur completely [cleanup]' }}
+    if: ${{ github.event.pull_request.head.ref != 'cleanup/remove-application-blur-cleanup' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
