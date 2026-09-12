@@ -1,0 +1,1 @@
+Temporary trigger for the Application Blur cleanup workflow. This file should be removed after cleanup verification.
