@@ -43,11 +43,11 @@ object MarkdownRenderer {
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val alertPattern = Regex("^\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE)
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
-    private val imagePattern = Regex("""^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\\".*?\\")?\\)\\s*$""")
-    private val htmlImageTagPattern = Regex("""<img\\s+[^>]*\\bsrc=[\\\"']([^\\\"']+)[\\\"'][^>]*>""", RegexOption.IGNORE_CASE)
-    private val htmlAltPattern = Regex("""\\balt=[\\\"']([^\\\"']*)[\\\"']""", RegexOption.IGNORE_CASE)
+    private val imagePattern = Regex("""^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\".*?\")?\\)\\s*$""")
+    private val htmlImageTagPattern = Regex("<img\\s+[^>]*\\bsrc=[\"']([^\"']+)[\"'][^>]*>", RegexOption.IGNORE_CASE)
+    private val htmlAltPattern = Regex("\\balt=[\"']([^\"']*)[\"']", RegexOption.IGNORE_CASE)
     private val htmlBlockTagPattern = Regex(
-        """^\\s*</?(?:address|article|aside|center|details|div|figcaption|figure|footer|header|main|nav|p|section|summary)(?:\\s[^>]*)?>\\s*$""",
+        "^\\s*</?(?:address|article|aside|center|details|div|figcaption|figure|footer|header|main|nav|p|section|summary)(?:\\s[^>]*)?>\\s*$",
         RegexOption.IGNORE_CASE
     )
     private val htmlTagPattern = Regex("<[^>]+>")
@@ -55,7 +55,7 @@ object MarkdownRenderer {
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
-        val lines = markdown.replace("\\r\\n", "\\n").replace('\\r', '\\n').lines()
+        val lines = markdown.replace("\r\n", "\n").replace('\r', '\n').lines()
         val buffer = StringBuilder()
         val tableLines = mutableListOf<String>()
         var inCode = false
@@ -72,7 +72,7 @@ object MarkdownRenderer {
         fun splitTableRow(line: String): List<String> = line.trim()
             .removePrefix("|")
             .removeSuffix("|")
-            .replace("\\\\|", "\u0000")
+            .replace("\\|", "\u0000")
             .split('|')
             .map { it.trim().replace("\u0000", "|") }
 
