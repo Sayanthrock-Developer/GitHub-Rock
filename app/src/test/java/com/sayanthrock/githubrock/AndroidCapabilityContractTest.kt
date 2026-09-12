@@ -20,7 +20,7 @@ class AndroidCapabilityContractTest {
         assertTrue("android.permission.RECEIVE_BOOT_COMPLETED" in manifest)
         assertTrue("android.permission.REQUEST_INSTALL_PACKAGES" in manifest)
         assertTrue("android.permission.REQUEST_DELETE_PACKAGES" in manifest)
-        assertTrue("com.termux.permission.RUN_COMMAND" in manifest)
+        assertFalse("com.termux.permission.RUN_COMMAND" in manifest)
     }
 
     @Test fun installedAppControlsUseTargetedLauncherVisibility() {
@@ -29,7 +29,7 @@ class AndroidCapabilityContractTest {
         assertTrue("android.intent.action.MAIN" in manifest)
         assertTrue("android.intent.category.LAUNCHER" in manifest)
         assertFalse("android.permission.QUERY_ALL_PACKAGES" in manifest)
-        assertTrue("<package android:name=\"com.termux\" />" in manifest)
+        assertFalse("<package android:name=\"com.termux\" />" in manifest)
     }
 
     @Test fun broadOrUnimplementedPrivilegesRemainAbsent() {
