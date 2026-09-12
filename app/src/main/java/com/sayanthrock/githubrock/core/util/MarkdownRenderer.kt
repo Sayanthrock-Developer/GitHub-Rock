@@ -30,9 +30,17 @@ object MarkdownRenderer {
 
         fun flushTable() {
             if (table.isEmpty()) return
-            val rows = table.map { it.split('|').dropWhile { cell -> cell.isBlank() }.dropLastWhile { cell -> cell.isBlank() }.map(String::trim) }
-            if (rows.size >= 2 && rows[1].all { row -> row.isNotEmpty() && row.all { cell -> cell.matches(Regex(":?-{3,}:?")) } }) {
-                blocks += MarkdownBlock(MarkdownBlockKind.Table, rows.drop(1).joinToString("\n") { it.joinToString(" | ") })
+            val rows = table.map { line ->
+                line.trim().removePrefix("|").removeSuffix("|").split('|').map(String::trim)
+            }
+            val separator = rows.getOrNull(1)
+            val isSeparator = separator != null && separator.isNotEmpty() &&
+                separator.all { cell -> Regex(":?-{3,}:?").matches(cell) }
+            if (rows.size >= 2 && isSeparator) {
+                val headers = rows.first()
+                val body = rows.drop(2)
+                val parsed = MarkdownTable(headers = headers, rows = body)
+                blocks += MarkdownBlock(MarkdownBlockKind.Table, "", parsed)
             } else {
                 paragraph += table
             }
@@ -81,28 +89,28 @@ object MarkdownRenderer {
             val task = Regex("^\\s*[-*+]\\s+\\[([ xX])\\]\\s+(.+)$").find(line)
             if (task != null) {
                 flushTable(); flushParagraph()
-                blocks += MarkdownBlock(MarkdownBlockKind.Task, task.groupValues[2], if (task.groupValues[1].equals("x", true)) 1 else 0)
+                blocks += MarkdownBlock(MarkdownBlockKind.Task, task.groupValues[2], task.groupValues[1].equals("x", true))
                 continue
             }
 
             val unordered = Regex("^\\s*[-*+]\\s+(.+)$").find(line)
             if (unordered != null) {
-                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.UnorderedList, unordered.groupValues[1]); continue
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Bullet, unordered.groupValues[1], ListMetadata(ordered = false, level = 1)); continue
             }
 
-            val ordered = Regex("^\\s*\\d+[.)]\\s+(.+)$").find(line)
+            val ordered = Regex("^\\s*(\\d+)[.)]\\s+(.+)$").find(line)
             if (ordered != null) {
-                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.OrderedList, ordered.groupValues[1]); continue
-            }
-
-            val quote = Regex("^\\s*>\\s?(.*)$").find(line)
-            if (quote != null) {
-                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Quote, cleanInline(quote.groupValues[1])); continue
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Bullet, ordered.groupValues[2], ListMetadata(ordered = true, level = ordered.groupValues[1].toIntOrNull() ?: 1)); continue
             }
 
             val alert = Regex("^\\s*>\\s*\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE).find(line)
             if (alert != null) {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Alert, alert.groupValues[2], alert.groupValues[1].uppercase(Locale.ROOT)); continue
+            }
+
+            val quote = Regex("^\\s*>\\s?(.*)$").find(line)
+            if (quote != null) {
+                flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Quote, cleanInline(quote.groupValues[1])); continue
             }
 
             val htmlImages = Regex("<img\\b[^>]*>", RegexOption.IGNORE_CASE).findAll(line).toList()
@@ -132,7 +140,6 @@ object MarkdownRenderer {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Image, image.groupValues[1], image.groupValues[2]); continue
             }
 
-            // Preserve inline Markdown for the renderer; only remove HTML tags.
             paragraph += line.replace(Regex("<[^>]+>"), "")
         }
 
@@ -142,7 +149,6 @@ object MarkdownRenderer {
         return blocks
     }
 
-    /** Compatibility helper for callers that explicitly need plain text. */
     fun cleanInline(text: String): String = text
         .replace(Regex("""!\\[([^]]*)\\]\\(([^)]+)\\)""")) { it.groupValues[1] }
         .replace(Regex("""\\[([^]]+)\\]\\(([^)]+)\\)""")) { it.groupValues[1] }
@@ -159,8 +165,7 @@ object MarkdownRenderer {
 enum class MarkdownBlockKind {
     Paragraph,
     Heading,
-    UnorderedList,
-    OrderedList,
+    Bullet,
     Task,
     Quote,
     Alert,
@@ -170,8 +175,26 @@ enum class MarkdownBlockKind {
     Image
 }
 
+data class ListMetadata(val ordered: Boolean, val level: Int)
+
+data class MarkdownTable(
+    val headers: List<String>,
+    val rows: List<List<String>>
+)
+
 data class MarkdownBlock(
     val kind: MarkdownBlockKind,
     val text: String,
     val metadata: Any? = null
-)
+) {
+    val level: Int get() = when (val value = metadata) {
+        is Int -> value
+        is ListMetadata -> value.level
+        else -> 1
+    }
+    val ordered: Boolean get() = (metadata as? ListMetadata)?.ordered ?: false
+    val checked: Boolean get() = metadata as? Boolean ?: false
+    val codeLanguage: String? get() = metadata as? String
+    val url: String? get() = if (kind == MarkdownBlockKind.Image) metadata as? String else null
+    val table: MarkdownTable? get() = metadata as? MarkdownTable
+}
