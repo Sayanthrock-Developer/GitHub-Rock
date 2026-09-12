@@ -43,14 +43,19 @@ object MarkdownRenderer {
     private val quotePattern = Regex("^>\\s?(.*)$")
     private val alertPattern = Regex("^\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE)
     private val dividerPattern = Regex("^\\s*([-*_])(?:\\s*\\1){2,}\\s*$")
-    private val imagePattern = Regex("""^\s*!\[(.*?)\]\((\S+?)(?:\s+\".*?\")?\)\s*$""")
-    private val htmlImagePattern = Regex("""^\s*(?:<a\s+[^>]*>\s*)?<img\s+[^>]*\bsrc=[\"']([^\"']+)[\"'][^>]*>\s*(?:</a>\s*)?$""")
-    private val htmlAltPattern = Regex("""\balt=[\"']([^\"']*)[\"']""")
+    private val imagePattern = Regex("""^\\s*!\\[(.*?)\\]\\((\\S+?)(?:\\s+\\".*?\\")?\\)\\s*$""")
+    private val htmlImageTagPattern = Regex("""<img\\s+[^>]*\\bsrc=[\\\"']([^\\\"']+)[\\\"'][^>]*>""", RegexOption.IGNORE_CASE)
+    private val htmlAltPattern = Regex("""\\balt=[\\\"']([^\\\"']*)[\\\"']""", RegexOption.IGNORE_CASE)
+    private val htmlBlockTagPattern = Regex(
+        """^\\s*</?(?:address|article|aside|center|details|div|figcaption|figure|footer|header|main|nav|p|section|summary)(?:\\s[^>]*)?>\\s*$""",
+        RegexOption.IGNORE_CASE
+    )
+    private val htmlTagPattern = Regex("<[^>]+>")
     private val tableSeparator = Regex("^\\s*\\|?\\s*:?-+:?\\s*(?:\\|\\s*:?-+:?\\s*)+\\|?\\s*$")
 
     fun render(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
-        val lines = markdown.replace("\r\n", "\n").replace('\r', '\n').lines()
+        val lines = markdown.replace("\\r\\n", "\\n").replace('\\r', '\\n').lines()
         val buffer = StringBuilder()
         val tableLines = mutableListOf<String>()
         var inCode = false
@@ -67,7 +72,7 @@ object MarkdownRenderer {
         fun splitTableRow(line: String): List<String> = line.trim()
             .removePrefix("|")
             .removeSuffix("|")
-            .replace("\\|", "\u0000")
+            .replace("\\\\|", "\u0000")
             .split('|')
             .map { it.trim().replace("\u0000", "|") }
 
@@ -130,6 +135,15 @@ object MarkdownRenderer {
                 return@forEachIndexed
             }
 
+            // GitHub READMEs commonly use HTML layout wrappers such as
+            // <div align="center"> ... </div>. These are presentation markup,
+            // not documentation text, so do not render the tags themselves.
+            if (htmlBlockTagPattern.matches(line)) {
+                flushParagraph()
+                flushTable()
+                return@forEachIndexed
+            }
+
             if (!inTable && line.contains('|') && index + 1 < lines.size && tableSeparator.matches(lines[index + 1])) {
                 flushParagraph()
                 inTable = true
@@ -151,7 +165,7 @@ object MarkdownRenderer {
             val ordered = orderedPattern.matchEntire(line)
             val quote = quotePattern.matchEntire(line)
             val image = imagePattern.matchEntire(line)
-            val htmlImage = htmlImagePattern.matchEntire(line)
+            val htmlImages = htmlImageTagPattern.findAll(line).toList()
 
             when {
                 heading != null -> {
@@ -199,18 +213,24 @@ object MarkdownRenderer {
                     flushParagraph()
                     blocks += MarkdownBlock(MarkdownBlockKind.Image, image.groupValues[1], url = image.groupValues[2])
                 }
-                htmlImage != null -> {
+                htmlImages.isNotEmpty() -> {
                     flushParagraph()
-                    val alt = htmlAltPattern.find(line)?.groupValues?.getOrNull(1).orEmpty()
-                    blocks += MarkdownBlock(
-                        MarkdownBlockKind.Image,
-                        alt.ifBlank { "Image" },
-                        url = htmlImage.groupValues[1]
-                    )
+                    htmlImages.forEach { match ->
+                        val tag = match.value
+                        val alt = htmlAltPattern.find(tag)?.groupValues?.getOrNull(1).orEmpty()
+                        blocks += MarkdownBlock(
+                            kind = MarkdownBlockKind.Image,
+                            text = alt.ifBlank { "Image" },
+                            url = match.groupValues[1]
+                        )
+                    }
                 }
                 else -> {
-                    if (buffer.isNotEmpty()) buffer.append(' ')
-                    buffer.append(line.trimStart())
+                    val text = htmlTagPattern.replace(line.trimStart(), "")
+                    if (text.isNotBlank()) {
+                        if (buffer.isNotEmpty()) buffer.append(' ')
+                        buffer.append(text)
+                    }
                 }
             }
         }
@@ -229,14 +249,14 @@ object MarkdownRenderer {
 
     /** Compatibility helper for callers that explicitly need plain text. */
     fun cleanInline(text: String): String = text
-        .replace(Regex("""!\[([^]]*)\]\(([^)]+)\)"""), "$1")
-        .replace(Regex("""\[([^]]+)\]\(([^)]+)\)"""), "$1")
+        .replace(Regex("""!\\[([^]]*)\\]\\(([^)]+)\\)"""), "$1")
+        .replace(Regex("""\\[([^]]+)\\]\\(([^)]+)\\)"""), "$1")
         .replace(Regex("""<https?://[^>]+>""")) { it.value.removePrefix("<").removeSuffix(">") }
         .replace(Regex("""`([^`]+)`"""), "$1")
-        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
+        .replace(Regex("""\\*\\*([^*]+)\\*\\*"""), "$1")
         .replace(Regex("""__([^_]+)__"""), "$1")
         .replace(Regex("""~~([^~]+)~~"""), "$1")
-        .replace(Regex("""(?<!\*)\*([^*]+)\*(?!\*)"""), "$1")
+        .replace(Regex("""(?<!\\*)\\*([^*]+)\\*(?!\\*)"""), "$1")
         .replace(Regex("""(?<!_)_([^_]+)_(?!_)"""), "$1")
         .replace(Regex("""<[^>]+>"""), "")
 }
