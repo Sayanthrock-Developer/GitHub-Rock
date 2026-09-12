@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -105,13 +106,7 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                 )
                 Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
                     if (selected) {
-                        Surface(
-                            modifier = Modifier.size(56.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
-                        ) {}
+                        Surface(modifier = Modifier.size(56.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f), tonalElevation = 0.dp, shadowElevation = 0.dp) {}
                     }
                     RockNavigationItem(
                         destination = destination,
@@ -177,12 +172,34 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
     val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
     val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
+    val surfaceModifier = modifier
+        .navigationBarsPadding()
+        .padding(horizontal = 12.dp, vertical = 10.dp)
+        .widthIn(max = maxWidth)
+        .wrapContentHeight()
+        .then(slideModifier)
+
     if (blurEnabled) {
-        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape) {
-            Surface(modifier = Modifier.fillMaxSize(), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
+        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = surfaceModifier, shape = shape) {
+            Surface(
+                shape = shape,
+                color = color,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) { content() }
         }
     } else {
-        Surface(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).then(slideModifier), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
+        Surface(
+            modifier = surfaceModifier,
+            shape = shape,
+            color = color,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
+            tonalElevation = 2.dp,
+            shadowElevation = shadow
+        ) { content() }
     }
 }
 
@@ -191,7 +208,7 @@ private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestin
         onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
         onDrag = { change, dragAmount ->
             if (size.width <= 0) return@detectDragGesturesAfterLongPress
-            if (kotlin.math.abs(dragAmount.x) < kotlin.math.abs(dragAmount.y)) return@detectDragGesturesAfterLongPress
+            if (kotlin.math.abs(dragAmount.x) <= kotlin.math.abs(dragAmount.y)) return@detectDragGesturesAfterLongPress
             change.consume()
             val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt().coerceIn(0, rockNavigationDestinations.lastIndex)
             onDestinationSelected(rockNavigationDestinations[index])
