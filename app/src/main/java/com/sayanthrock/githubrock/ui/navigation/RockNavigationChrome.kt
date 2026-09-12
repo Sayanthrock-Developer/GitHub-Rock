@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
@@ -116,7 +117,7 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                         destination = destination,
                         selected = selected,
                         showLabel = true,
-                        modifier = Modifier.fillMaxSize().then(Modifier.graphicsLayer(scaleX = scale, scaleY = scale)),
+                        modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale),
                         selectedShape = 28.dp,
                         animationStyle = animationStyle,
                         reduceMotion = reduceMotion,
