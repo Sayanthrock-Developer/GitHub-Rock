@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,6 +57,7 @@ import com.sayanthrock.githubrock.ui.icons.vector
 private enum class AccountHubAction {
     Switch,
     Add,
+    SignUp,
     Organizations,
     Access,
     Remove
@@ -259,12 +259,22 @@ private fun ActionGrid(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             AccountActionCard(
                 modifier = Modifier.weight(1f),
+                icon = RockIcon.PersonAdd,
+                title = "Sign up",
+                subtitle = "Create a GitHub account",
+                selected = selected == AccountHubAction.SignUp,
+                onClick = { onSelect(AccountHubAction.SignUp) }
+            )
+            AccountActionCard(
+                modifier = Modifier.weight(1f),
                 icon = RockIcon.Repositories,
                 title = "Organizations",
                 subtitle = "Choose context",
                 selected = selected == AccountHubAction.Organizations,
                 onClick = { onSelect(AccountHubAction.Organizations) }
             )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             AccountActionCard(
                 modifier = Modifier.weight(1f),
                 icon = RockIcon.Security,
@@ -273,15 +283,15 @@ private fun ActionGrid(
                 selected = selected == AccountHubAction.Access,
                 onClick = { onSelect(AccountHubAction.Access) }
             )
+            AccountActionCard(
+                modifier = Modifier.weight(1f),
+                icon = RockIcon.PersonRemove,
+                title = "Remove account",
+                subtitle = "Remove a saved session",
+                selected = selected == AccountHubAction.Remove,
+                onClick = { onSelect(AccountHubAction.Remove) }
+            )
         }
-        AccountActionCard(
-            modifier = Modifier.fillMaxWidth(),
-            icon = RockIcon.PersonRemove,
-            title = "Remove account",
-            subtitle = "Remove a saved session",
-            selected = selected == AccountHubAction.Remove,
-            onClick = { onSelect(AccountHubAction.Remove) }
-        )
     }
 }
 
@@ -332,6 +342,7 @@ private fun ActionPanel(
     when (action) {
         AccountHubAction.Switch -> AccountSwitchPanel(state, onSwitch)
         AccountHubAction.Add -> AddAccountPanel(onAdd, state)
+        AccountHubAction.SignUp -> SignUpPanel(onOpenGitHubUrl, onAdd)
         AccountHubAction.Organizations -> OrganizationPanel(state, onSelectOrganization, onOpenProfile, onRetry)
         AccountHubAction.Access -> AccessPanel(onOpenGitHubUrl)
         AccountHubAction.Remove -> RemoveAccountPanel(state, connected, onRemove, onLogout)
@@ -375,6 +386,39 @@ private fun AddAccountPanel(onAdd: () -> Unit, state: AccountSwitcherUiState) {
                 Icon(RockIcon.PersonAdd.vector(), null)
                 Spacer(Modifier.width(8.dp))
                 Text(if (state.auth.status == null) "Continue with GitHub" else "Authorization in progress")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SignUpPanel(onOpenGitHubUrl: (String) -> Unit, onSignIn: () -> Unit) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            PanelTitle(RockIcon.PersonAdd, "Create your GitHub account", "Join GitHub to manage repositories, organizations, Actions, releases, and more.")
+            Text(
+                "GitHub Rock uses GitHub's official account creation experience. No GitHub password or separate signup system is stored in the app.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(
+                onClick = { onOpenGitHubUrl("https://github.com/signup") },
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Icon(RockIcon.PersonAdd.vector(), null)
+                Spacer(Modifier.width(8.dp))
+                Text("Continue with GitHub")
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "Already have an account?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(onClick = onSignIn) { Text("Sign in") }
             }
         }
     }
