@@ -22,7 +22,7 @@ import com.sayanthrock.githubrock.ui.navigation.MainNavigationV2
 import com.sayanthrock.githubrock.ui.navigation.RockNavigationChrome
 import com.sayanthrock.githubrock.ui.screens.AppearanceViewModel
 import com.sayanthrock.githubrock.ui.screens.LoginScreenV2
-import com.sayanthrock.githubrock.ui.screens.SetupGuardScreen
+import com.sayanthrock.githubrock.ui.screens.PremiumSetupScreen
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import kotlinx.coroutines.launch
 
@@ -36,7 +36,16 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     val navController = rememberNavController()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    if (!setupComplete) { SetupGuardScreen(onSetupComplete = setupViewModel::completeSetup); return }
+    if (!setupComplete) {
+        PremiumSetupScreen(
+            appearance = appearanceState,
+            onThemeMode = appearanceViewModel::setThemeMode,
+            onThemeStyle = appearanceViewModel::setThemeStyle,
+            onTrueBlack = appearanceViewModel::setTrueBlack,
+            onSetupComplete = setupViewModel::completeSetup
+        )
+        return
+    }
     val verificationUri = state.auth.code?.verificationUri
     val authorizationUrl = state.auth.authorizationUrl
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
