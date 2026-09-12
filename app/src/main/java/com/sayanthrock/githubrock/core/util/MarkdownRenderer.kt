@@ -162,17 +162,21 @@ object MarkdownRenderer {
         .replace(Regex("""<[^>]+>"""), "")
 }
 
-enum class MarkdownBlockKind {
-    Paragraph,
-    Heading,
-    Bullet,
-    Task,
-    Quote,
-    Alert,
-    Divider,
-    Code,
-    Table,
-    Image
+class MarkdownBlockKind private constructor(private val name: String) {
+    override fun toString(): String = name
+
+    companion object {
+        val Paragraph = MarkdownBlockKind("Paragraph")
+        val Heading = MarkdownBlockKind("Heading")
+        val Bullet = MarkdownBlockKind("Bullet")
+        val Task = MarkdownBlockKind("Task")
+        val Quote = MarkdownBlockKind("Quote")
+        val Alert = MarkdownBlockKind("Alert")
+        val Divider = MarkdownBlockKind("Divider")
+        val Code = MarkdownBlockKind("Code")
+        val Table = MarkdownBlockKind("Table")
+        val Image = MarkdownBlockKind("Image")
+    }
 }
 
 data class ListMetadata(val ordered: Boolean, val level: Int)
