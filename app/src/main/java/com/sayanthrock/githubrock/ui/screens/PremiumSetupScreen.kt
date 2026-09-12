@@ -31,8 +31,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -124,7 +122,7 @@ fun PremiumSetupScreen(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                 ) {
                     Icon(
-                        imageVector = RockIcon.GitHub.vector(),
+                        imageVector = RockIcon.Palette.vector(),
                         contentDescription = null,
                         modifier = Modifier.padding(10.dp),
                         tint = MaterialTheme.colorScheme.primary
