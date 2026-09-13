@@ -15,69 +15,76 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Remove Application Blur everywhere
+      - name: Remove Application Blur
         shell: python
         run: |
           from pathlib import Path
           import re
           import subprocess
 
-          def edit(path, replacements):
+          def replace(path, old, new):
               p = Path(path)
               s = p.read_text()
-              for pattern, replacement in replacements:
-                  s2, count = re.subn(pattern, replacement, s, flags=re.MULTILINE | re.DOTALL)
-                  if count == 0:
-                      raise SystemExit(f'Expected pattern not found in {path}: {pattern}')
-                  s = s2
-              p.write_text(s)
+              if old not in s:
+                  raise SystemExit(f'Pattern not found: {path}: {old[:80]!r}')
+              p.write_text(s.replace(old, new, 1))
 
-          edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceScreen.kt', [
-              (r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', ''),
-              (r'^    val blurState by viewModel\.blurState\.collectAsStateWithLifecycle\(\)\n', ''),
-              (r'^        blurState = blurState,\n        onBlurMode = viewModel::setBlurMode,\n        onBlurPreset = viewModel::setBlurPreset,\n        onBlurProfile = viewModel::setBlurProfile,\n        onBlurCustomTint = viewModel::setBlurCustomTint,\n        onBlurComponentProfile = viewModel::setBlurComponentProfile,\n        onBlurReset = viewModel::resetBlurSettings,\n', ''),
-              (r'^    blurState: ApplicationBlurSettings.*?\n    onBlurReset: \(\) -> Unit = \{\},\n', ''),
-              (r'            item \{ StandardSectionHeader\("Application Blur"\) \}\n            item \{\n                ApplicationBlurEditor\(.*?\n            \}\n', ''),
-          ])
+          # Appearance UI: remove the complete Application Blur settings section.
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceScreen.kt')
+          s = p.read_text()
+          s = re.sub(r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', '', s, flags=re.M)
+          s = re.sub(r'^    val blurState by viewModel\.blurState\.collectAsStateWithLifecycle\(\)\n', '', s, flags=re.M)
+          s = re.sub(r'        blurState = blurState,\n        onBlurMode = viewModel::setBlurMode,\n        onBlurPreset = viewModel::setBlurPreset,\n        onBlurProfile = viewModel::setBlurProfile,\n        onBlurCustomTint = viewModel::setBlurCustomTint,\n        onBlurComponentProfile = viewModel::setBlurComponentProfile,\n        onBlurReset = viewModel::resetBlurSettings,\n', '', s)
+          s = re.sub(r'    blurState: ApplicationBlurSettings.*?\n    onBlurReset: \(\) -> Unit = \{\},\n', '', s, flags=re.S)
+          s = re.sub(r'            item \{ StandardSectionHeader\("Application Blur"\) \}.*?(?=            item \{ StandardSectionHeader\("Display size"\) \})', '', s, flags=re.S)
+          p.write_text(s)
 
-          edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceViewModel.kt', [
-              (r'^import com\.sayanthrock\.githubrock\.data\.settings\.ApplicationBlurPreferences\n', ''),
-              (r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', ''),
-              (r'    private val preferences: AppPreferences,\n    private val blurPreferences: ApplicationBlurPreferences\n', '    private val preferences: AppPreferences\n'),
-              (r'^    val blurState: StateFlow<ApplicationBlurSettings> = .*\n', ''),
-              (r'\n    fun setBlurMode\(mode: ApplicationBlurMode\).*?(?=\n    fun resetAppearance\(\))', '\n'),
-          ])
+          # Appearance ViewModel: remove storage and all blur mutators.
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceViewModel.kt')
+          s = p.read_text()
+          s = re.sub(r'^import com\.sayanthrock\.githubrock\.data\.settings\.ApplicationBlurPreferences\n', '', s, flags=re.M)
+          s = re.sub(r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', '', s, flags=re.M)
+          s = s.replace('    private val preferences: AppPreferences,\n    private val blurPreferences: ApplicationBlurPreferences\n', '    private val preferences: AppPreferences\n')
+          s = re.sub(r'^    val blurState: StateFlow<ApplicationBlurSettings> = .*\n', '', s, flags=re.M)
+          s = re.sub(r'\n    fun setBlurMode\(mode: ApplicationBlurMode\).*?(?=\n    fun resetAppearance\(\))', '\n', s, flags=re.S)
+          p.write_text(s)
 
-          edit('app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt', [
-              (r'^    val blurState by appearanceViewModel\.blurState\.collectAsStateWithLifecycle\(\)\n', ''),
-              (r', blurSettings = blurState', ''),
-          ])
+          # Root: stop collecting/passing blur settings.
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/GitHubRockRoot.kt')
+          s = p.read_text()
+          s = re.sub(r'^    val blurState by appearanceViewModel\.blurState\.collectAsStateWithLifecycle\(\)\n', '', s, flags=re.M)
+          s = s.replace(', blurSettings = blurState', '')
+          p.write_text(s)
 
-          nav = Path('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/RockNavigationChrome.kt')
-          s = nav.read_text()
+          # Navigation: remove all blur plumbing while preserving the existing navigation styles/interaction.
+          p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/RockNavigationChrome.kt')
+          s = p.read_text()
           s = re.sub(r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', '', s, flags=re.M)
           s = re.sub(r', blurSettings: ApplicationBlurSettings(?: = ApplicationBlurSettings\(\))?', '', s)
           s = re.sub(r', blurSettings(?=[,)])', '', s)
           start = s.index('@Composable\nprivate fun NavigationSurface(')
           end = s.index('\nprivate fun navigationSlideGesture', start)
-          replacement = '''@Composable
-private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
-    val view = LocalView.current
-    val slideModifier = navigationSlideGesture(view, onDestinationSelected)
-    Surface(
-        modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier),
-        shape = shape,
-        color = color,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
-        tonalElevation = 2.dp,
-        shadowElevation = shadow,
-    ) { content() }
-}
-'''
-          s = s[:start] + replacement + s[end:]
-          nav.write_text(s)
+          surface = '\n'.join([
+              '@Composable',
+              'private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {',
+              '    val view = LocalView.current',
+              '    val slideModifier = navigationSlideGesture(view, onDestinationSelected)',
+              '    Surface(',
+              '        modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier),',
+              '        shape = shape,',
+              '        color = color,',
+              '        contentColor = MaterialTheme.colorScheme.onSurface,',
+              '        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),',
+              '        tonalElevation = 2.dp,',
+              '        shadowElevation = shadow,',
+              '    ) { content() }',
+              '}',
+              ''
+          ])
+          s = s[:start] + surface + s[end:]
+          p.write_text(s)
 
+          # Delete every Application Blur implementation, editor, defaults, preferences, and tests.
           for path in [
               'app/src/main/java/com/sayanthrock/githubrock/ui/blur/ApplicationBlur.kt',
               'app/src/main/java/com/sayanthrock/githubrock/ui/screens/ApplicationBlurEditor.kt',
@@ -87,22 +94,16 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
           ]:
               subprocess.run(['git', 'rm', '-f', path], check=True)
 
-          residual = subprocess.run(
-              ['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur', 'app/src'],
-              capture_output=True, text=True
-          )
+          residual = subprocess.run(['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur', 'app/src'], capture_output=True, text=True)
           if residual.returncode == 0 and residual.stdout.strip():
               raise SystemExit('Residual Application Blur references:\n' + residual.stdout)
 
-      - name: Verify removal
+      - name: Verify
         run: |
-          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur' app/src; then
-            echo 'Application Blur references remain.'
-            exit 1
-          fi
+          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur' app/src; then exit 1; fi
           ./gradlew :app:testDebugUnitTest --no-daemon
 
-      - name: Commit removal and delete cleanup workflow
+      - name: Commit and remove cleanup workflow
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
