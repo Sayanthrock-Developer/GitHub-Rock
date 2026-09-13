@@ -3,6 +3,7 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,7 +64,7 @@ fun RepositoryTranslationScreen(
                         if (state.languagesLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             state.languages.take(40).chunked(2).forEach { row ->
-                                androidx.compose.foundation.layout.Row(
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
@@ -98,7 +100,7 @@ fun RepositoryTranslationScreen(
             item {
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        androidx.compose.foundation.layout.Row(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
