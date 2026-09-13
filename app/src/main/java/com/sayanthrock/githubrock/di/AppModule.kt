@@ -10,6 +10,7 @@ import com.sayanthrock.githubrock.core.network.GitHubGraphQlApi
 import com.sayanthrock.githubrock.core.network.GitHubRestApi
 import com.sayanthrock.githubrock.core.network.NetworkRetryInterceptor
 import com.sayanthrock.githubrock.core.network.RepositoryCreationApi
+import com.sayanthrock.githubrock.core.network.TranslationApi
 import com.sayanthrock.githubrock.core.security.KeystoreTokenStore
 import com.sayanthrock.githubrock.core.security.TokenStore
 import com.sayanthrock.githubrock.data.local.AppDatabase
@@ -76,6 +77,19 @@ object AppModule {
 
     @Provides
     @Singleton
+    @Named("translationClient")
+    fun translationClient(): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
+
+    @Provides
+    @Singleton
     @Named("downloadClient")
     fun downloadClient(authInterceptor: AuthInterceptor): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
@@ -110,6 +124,15 @@ object AppModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(GitHubRestApi::class.java)
+
+    @Provides
+    @Singleton
+    fun translationApi(json: Json, @Named("translationClient") client: OkHttpClient): TranslationApi = Retrofit.Builder()
+        .baseUrl("https://libretranslate.com/")
+        .client(client)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(TranslationApi::class.java)
 
     @Provides
     @Singleton
