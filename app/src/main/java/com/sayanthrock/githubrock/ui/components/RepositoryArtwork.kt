@@ -33,6 +33,11 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
+import com.sayanthrock.githubrock.ui.theme.RockShapes
+import com.sayanthrock.githubrock.ui.theme.RockSurfaceAlpha
+import com.sayanthrock.githubrock.ui.theme.RockSurfaceRole
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceBorder
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceColor
 
 /** Opens a repository owner's profile inside GitHub Rock when a host navigation graph provides it. */
 val LocalOpenGitHubProfile = staticCompositionLocalOf<((String) -> Unit)?> { null }
@@ -66,8 +71,8 @@ fun RepositoryArtwork(
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = .72f),
-                        MaterialTheme.colorScheme.secondary.copy(alpha = .46f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = RockSurfaceAlpha.Medium),
+                        MaterialTheme.colorScheme.secondary.copy(alpha = RockSurfaceAlpha.Low),
                         MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
@@ -90,7 +95,7 @@ fun RepositoryArtwork(
                                 model = ownerAvatar,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().alpha(.22f)
+                                modifier = Modifier.fillMaxSize().alpha(RockSurfaceAlpha.Low)
                             )
                         } else {
                             RepositoryArtworkFallback(repository)
@@ -102,7 +107,7 @@ fun RepositoryArtwork(
                                 model = ownerAvatar,
                                 contentDescription = previewDescription,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().alpha(.28f)
+                                modifier = Modifier.fillMaxSize().alpha(RockSurfaceAlpha.Medium)
                             )
                         } else {
                             RepositoryArtworkFallback(repository)
@@ -120,9 +125,9 @@ fun RepositoryArtwork(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.background.copy(alpha = .03f),
                                 Color.Transparent,
-                                MaterialTheme.colorScheme.background.copy(alpha = .46f)
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background.copy(alpha = RockSurfaceAlpha.Low)
                             )
                         )
                     )
@@ -149,11 +154,9 @@ fun RepositoryArtwork(
                 ) {
                     openProfile?.invoke(repository.owner.login)
                 },
-            color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .96f),
-            border = BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .72f)
-            )
+            shape = RoundedCornerShape(RockShapes.SmallCard),
+            color = rockSurfaceColor(RockSurfaceRole.Card),
+            border = rockSurfaceBorder()
         ) {
             Row(
                 modifier = Modifier
@@ -167,7 +170,7 @@ fun RepositoryArtwork(
                     fallbackText = repository.owner.login,
                     contentDescription = "@${repository.owner.login} GitHub account profile image",
                     modifier = Modifier.size(if (compact) 28.dp else 32.dp),
-                    shape = RoundedCornerShape(if (compact) 9.dp else 10.dp)
+                    shape = RoundedCornerShape(RockShapes.Control)
                 )
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -196,7 +199,7 @@ fun RepositoryArtwork(
 @Composable
 private fun RepositoryArtworkFallback(repository: GitHubRepositoryModel) {
     Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = .08f)),
+        modifier = Modifier.fillMaxSize().background(rockSurfaceColor(RockSurfaceRole.Interactive)),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -213,9 +216,9 @@ private fun RepositoryArtworkFallback(repository: GitHubRepositoryModel) {
 @Composable
 private fun RepositoryArtworkBadge(label: String) {
     Surface(
-        shape = RoundedCornerShape(999.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = .92f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .58f))
+        shape = RoundedCornerShape(RockShapes.Pill),
+        color = rockSurfaceColor(RockSurfaceRole.Interactive),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = RockSurfaceAlpha.Border))
     ) {
         Text(
             label,
