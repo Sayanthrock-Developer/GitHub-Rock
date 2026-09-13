@@ -19,6 +19,8 @@ import com.sayanthrock.githubrock.data.local.MIGRATION_1_4
 import com.sayanthrock.githubrock.data.local.MIGRATION_4_5
 import com.sayanthrock.githubrock.data.local.MIGRATION_5_6
 import com.sayanthrock.githubrock.data.local.RepositoryDao
+import com.sayanthrock.githubrock.data.translation.LibreTranslateProvider
+import com.sayanthrock.githubrock.data.translation.TranslationProvider
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -40,6 +42,10 @@ abstract class SecurityModule {
     @Binds
     @Singleton
     abstract fun bindTokenStore(implementation: KeystoreTokenStore): TokenStore
+
+    @Binds
+    @Singleton
+    abstract fun bindTranslationProvider(implementation: LibreTranslateProvider): TranslationProvider
 }
 
 @Module
