@@ -20,9 +20,6 @@ jobs:
           import re
           import subprocess
 
-          if Path('.git/COMMIT_EDITMSG').read_text().strip() == 'chore: remove application blur completely [cleanup]':
-              raise SystemExit(0)
-
           def edit(path, patterns):
               p = Path(path)
               s = p.read_text()
@@ -34,7 +31,7 @@ jobs:
               p.write_text(s)
 
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceScreen.kt', [
-              (r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', ''),
+              (r'^import com\.sayanthrock\.githubrock\.ui\.blur\.[^\n]*\n', ''),
               (r'^    val blurState by viewModel\.blurState\.collectAsStateWithLifecycle\(\)\n', ''),
               (r'        blurState = blurState,\n        onBlurMode = viewModel::setBlurMode,\n        onBlurPreset = viewModel::setBlurPreset,\n        onBlurProfile = viewModel::setBlurProfile,\n        onBlurCustomTint = viewModel::setBlurCustomTint,\n        onBlurComponentProfile = viewModel::setBlurComponentProfile,\n        onBlurReset = viewModel::resetBlurSettings,\n', ''),
               (r'    blurState: ApplicationBlurSettings.*?\n    onBlurReset: \(\) -> Unit = \{\},\n', ''),
@@ -43,7 +40,7 @@ jobs:
 
           edit('app/src/main/java/com/sayanthrock/githubrock/ui/screens/AppearanceViewModel.kt', [
               (r'^import com\.sayanthrock\.githubrock\.data\.settings\.ApplicationBlurPreferences\n', ''),
-              (r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', ''),
+              (r'^import com\.sayanthrock\.githubrock\.ui\.blur\.[^\n]*\n', ''),
               (r'    private val preferences: AppPreferences,\n    private val blurPreferences: ApplicationBlurPreferences\n', '    private val preferences: AppPreferences\n'),
               (r'^    val blurState: StateFlow<ApplicationBlurSettings> = .*\n', ''),
               (r'\n    fun setBlurMode\(mode: ApplicationBlurMode\).*?(?=\n    fun resetAppearance\(\))', '\n'),
@@ -56,7 +53,7 @@ jobs:
 
           p = Path('app/src/main/java/com/sayanthrock/githubrock/ui/navigation/RockNavigationChrome.kt')
           s = p.read_text()
-          s = re.sub(r'^import com\.sayanthrock\.githubrock\.ui\.blur\..*\n', '', s, flags=re.M)
+          s = re.sub(r'^import com\.sayanthrock\.githubrock\.ui\.blur\.[^\n]*\n', '', s, flags=re.M)
           s = re.sub(r', blurSettings: ApplicationBlurSettings(?: = ApplicationBlurSettings\(\))?', '', s)
           s = re.sub(r', blurSettings(?=[,)])', '', s)
           start = s.index('@Composable\nprivate fun NavigationSurface(')
@@ -88,21 +85,21 @@ private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, col
           ]:
               subprocess.run(['git', 'rm', '-f', path], check=True)
 
-          residual = subprocess.run(['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur', 'app/src'], capture_output=True, text=True)
+          residual = subprocess.run(['grep', '-RInE', 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\.blur', 'app/src'], capture_output=True, text=True)
           if residual.returncode == 0 and residual.stdout.strip():
               raise SystemExit('Residual Application Blur references:\n' + residual.stdout)
           PY
 
       - name: Verify removal
         run: |
-          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\\.blur' app/src; then exit 1; fi
+          if grep -RInE 'ApplicationBlur|applicationBlur|github_rock_blur_preferences|ui\.blur' app/src; then exit 1; fi
           ./gradlew :app:testDebugUnitTest --no-daemon
 
-      - name: Commit removal and delete cleanup workflow
+      - name: Commit removal and delete cleanup artifacts
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm -f .github/workflows/remove-application-blur.yml
+          git rm -f .github/workflows/remove-application-blur.yml .github/application-blur-cleanup-trigger
           git add -A
           git commit -m 'chore: remove application blur completely [cleanup]'
           git push
