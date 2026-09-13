@@ -3,11 +3,11 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.network.TranslationLanguage
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import com.sayanthrock.githubrock.data.translation.TranslationRepository
-import com.sayanthrock.githubrock.core.network.TranslationLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-internal data class RepositoryTranslationState(
+data class RepositoryTranslationState(
     val source: String? = null,
     val translated: String? = null,
     val targetLanguage: String = "en",
@@ -48,7 +48,7 @@ class RepositoryTranslationViewModel @Inject constructor(
             try {
                 val languageList = translations.languages()
                 _state.update { it.copy(languages = languageList, languagesLoading = false) }
-            } catch (error: Throwable) {
+            } catch (_: Throwable) {
                 _state.update { it.copy(languagesLoading = false, error = "Translation service is unavailable. Check the connection and try again.") }
             }
             try {
