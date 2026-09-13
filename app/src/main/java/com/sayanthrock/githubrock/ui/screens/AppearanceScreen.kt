@@ -91,11 +91,6 @@ import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurMode
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurPreset
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurProfile
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurComponent
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.StandardScreenHeader
@@ -109,7 +104,6 @@ import com.sayanthrock.githubrock.ui.theme.parseAccentHex
 @Composable
 fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val blurState by viewModel.blurState.collectAsStateWithLifecycle()
     AppearanceContent(
         state = state,
         onBack = onBack,
@@ -131,13 +125,6 @@ fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltVi
         onShowImages = viewModel::setShowImages,
         onNavigationBarStyle = viewModel::setNavigationBarStyle,
         onReset = viewModel::resetAppearance,
-        blurState = blurState,
-        onBlurMode = viewModel::setBlurMode,
-        onBlurPreset = viewModel::setBlurPreset,
-        onBlurProfile = viewModel::setBlurProfile,
-        onBlurCustomTint = viewModel::setBlurCustomTint,
-        onBlurComponentProfile = viewModel::setBlurComponentProfile,
-        onBlurReset = viewModel::resetBlurSettings,
     )
 }
 
@@ -164,13 +151,6 @@ fun AppearanceContent(
     onShowImages: (Boolean) -> Unit = {},
     onNavigationBarStyle: (NavigationBarStyle) -> Unit = {},
     onReset: () -> Unit = {},
-    blurState: ApplicationBlurSettings = ApplicationBlurPreset.Clean.toSettings(),
-    onBlurMode: (ApplicationBlurMode) -> Unit = {},
-    onBlurPreset: (ApplicationBlurPreset) -> Unit = {},
-    onBlurProfile: (ApplicationBlurProfile) -> Unit = {},
-    onBlurCustomTint: (String) -> Unit = {},
-    onBlurComponentProfile: (ApplicationBlurComponent, ApplicationBlurProfile?) -> Unit = { _, _ -> },
-    onBlurReset: () -> Unit = {},
 ) {
     var confirmReset by remember { mutableStateOf(false) }
     var showAccentPicker by remember { mutableStateOf(false) }
@@ -197,18 +177,6 @@ fun AppearanceContent(
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
             item { StandardSectionHeader("Navigation") }
             item { NavigationBarStyleControl(state.navigationBarStyle, onNavigationBarStyle) }
-            item { StandardSectionHeader("Application Blur") }
-            item {
-                ApplicationBlurEditor(
-                    settings = blurState,
-                    onMode = onBlurMode,
-                    onPreset = onBlurPreset,
-                    onProfile = onBlurProfile,
-                    onCustomTint = onBlurCustomTint,
-                    onComponentProfile = onBlurComponentProfile,
-                    onReset = onBlurReset,
-                )
-            }
             item { StandardSectionHeader("Display size") }
             item { ChoiceCard("Interface scale", "Changes controls, cards, spacing, and navigation app-wide", Icons.Default.ViewCompact, listOf(DisplaySize.Large to "Large", DisplaySize.Standard to "Standard", DisplaySize.Small to "Small"), state.displaySize, onDisplaySize) }
             item { StandardSectionHeader("Fonts") }
@@ -270,32 +238,11 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
     val selected = Color.hsv(hue, saturation, brightness)
     val hueColor = Color.hsv(hue, 1f, 1f)
     val valid = parseAccentHex(hexText) != null
-
-    fun updateFromPoint(point: Offset) {
-        if (pickerWidth <= 0 || pickerHeight <= 0) return
-        saturation = (point.x / pickerWidth.toFloat()).coerceIn(0f, 1f)
-        brightness = (1f - point.y / pickerHeight.toFloat()).coerceIn(0f, 1f)
-        hexText = selectedHex(hue, saturation, brightness)
-    }
-
-    fun updateFromHex(text: String) {
-        val normalized = text.take(9).uppercase()
-        hexText = normalized
-        val color = parseAccentHex(normalized) ?: return
-        val next = FloatArray(3)
-        android.graphics.Color.colorToHSV(color.toArgb(), next)
-        hue = next[0]
-        saturation = next[1]
-        brightness = next[2]
-    }
-
+    fun updateFromPoint(point: Offset) { if (pickerWidth <= 0 || pickerHeight <= 0) return; saturation = (point.x / pickerWidth.toFloat()).coerceIn(0f, 1f); brightness = (1f - point.y / pickerHeight.toFloat()).coerceIn(0f, 1f); hexText = selectedHex(hue, saturation, brightness) }
+    fun updateFromHex(text: String) { val normalized = text.take(9).uppercase(); hexText = normalized; val color = parseAccentHex(normalized) ?: return; val next = FloatArray(3); android.graphics.Color.colorToHSV(color.toArgb(), next); hue = next[0]; saturation = next[1]; brightness = next[2] }
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Custom accent color") }, text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Canvas(Modifier.fillMaxWidth().height(180.dp).onSizeChanged { pickerWidth = it.width; pickerHeight = it.height }.pointerInput(hueColor, pickerWidth, pickerHeight) { detectTapGestures { point -> updateFromPoint(point) } }.pointerInput(hueColor, pickerWidth, pickerHeight) { detectDragGestures(onDragStart = { point -> updateFromPoint(point) }, onDrag = { change, _ -> updateFromPoint(change.position); change.consume() }) }.semantics { contentDescription = "Saturation and brightness color picker" }) {
-            drawRect(Brush.horizontalGradient(listOf(Color.White, hueColor)))
-            drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black)))
-            val x = saturation.coerceIn(0f, 1f) * size.width
-            val y = (1f - brightness.coerceIn(0f, 1f)) * size.height
-            drawCircle(Color.White, 9.dp.toPx(), center = Offset(x, y))
+            drawRect(Brush.horizontalGradient(listOf(Color.White, hueColor))); drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))); val x = saturation.coerceIn(0f, 1f) * size.width; val y = (1f - brightness.coerceIn(0f, 1f)) * size.height; drawCircle(Color.White, 9.dp.toPx(), center = Offset(x, y))
         }
         Slider(value = hue, onValueChange = { hue = it; hexText = selectedHex(it, saturation, brightness) }, valueRange = 0f..360f, modifier = Modifier.semantics { contentDescription = "Hue slider" })
         TextField(value = hexText, onValueChange = ::updateFromHex, label = { Text("HEX") }, singleLine = true, supportingText = { Text("Use #RRGGBB or #AARRGGBB") }, isError = hexText.isNotBlank() && !valid, modifier = Modifier.fillMaxWidth())
@@ -304,10 +251,7 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
     } }, confirmButton = { Button(onClick = { if (valid) onApply(hexText) }, enabled = valid) { Text("Apply") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
-private fun selectedHex(hue: Float, saturation: Float, brightness: Float): String {
-    val color = Color.hsv(hue, saturation, brightness)
-    return "#%02X%02X%02X".format((color.red * 255f).toInt().coerceIn(0, 255), (color.green * 255f).toInt().coerceIn(0, 255), (color.blue * 255f).toInt().coerceIn(0, 255))
-}
+private fun selectedHex(hue: Float, saturation: Float, brightness: Float): String { val color = Color.hsv(hue, saturation, brightness); return "#%02X%02X%02X".format((color.red * 255f).toInt().coerceIn(0, 255), (color.green * 255f).toInt().coerceIn(0, 255), (color.blue * 255f).toInt().coerceIn(0, 255)) }
 
 @Composable private fun ThemeControls(state: AppearancePreferences, onThemeMode: (ThemeMode) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onShowImages: (Boolean) -> Unit) = StandardSettingsGroup {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary); Column { Text("Color mode", style = MaterialTheme.typography.titleSmall); Text("Follow the system, stay light, or stay dark", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { ThemeMode.entries.forEach { mode -> FilterChip(state.themeMode == mode, { onThemeMode(mode) }, label = { Text(mode.name) }, modifier = Modifier.weight(1f)) } } }
