@@ -64,6 +64,11 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
             RepositoryFileManagerScreen(repository = displayedRepository, onBack = { workspacePage = "overview" })
             return
         }
+        "translation" -> {
+            BackHandler { workspacePage = "overview" }
+            displayedRepository?.let { RepositoryTranslationScreen(repository = it, onBack = { workspacePage = "overview" }) }
+            return
+        }
     }
 
     val openUrl: (String) -> Unit = { url ->
@@ -96,7 +101,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            RepositoryWorkspaceTopBar(repository = displayedRepository, repositoryReady = repositoryReady, repositoryLoading = state.loading, repositoryHasError = state.error != null, onBack = onBack, onOpenManager = { nativeSection = RepoSection.Overview; workspacePage = "manager" }, onOpenFiles = { workspacePage = "files" }, onOpenGitHub = openGitHub, applicationStatus = appState?.statusLabel)
+            RepositoryWorkspaceTopBar(repository = displayedRepository, repositoryReady = repositoryReady, repositoryLoading = state.loading, repositoryHasError = state.error != null, onBack = onBack, onOpenManager = { nativeSection = RepoSection.Overview; workspacePage = "manager" }, onOpenFiles = { workspacePage = "files" }, onOpenTranslation = { workspacePage = "translation" }, onOpenGitHub = openGitHub, applicationStatus = appState?.statusLabel)
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -158,7 +163,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun RepositoryWorkspaceTopBar(repository: GitHubRepositoryModel?, repositoryReady: Boolean, repositoryLoading: Boolean, repositoryHasError: Boolean, onBack: () -> Unit, onOpenManager: () -> Unit, onOpenFiles: () -> Unit, onOpenGitHub: () -> Unit = {}, applicationStatus: String? = null) {
+internal fun RepositoryWorkspaceTopBar(repository: GitHubRepositoryModel?, repositoryReady: Boolean, repositoryLoading: Boolean, repositoryHasError: Boolean, onBack: () -> Unit, onOpenManager: () -> Unit, onOpenFiles: () -> Unit, onOpenTranslation: () -> Unit = {}, onOpenGitHub: () -> Unit = {}, applicationStatus: String? = null) {
     TopAppBar(
         title = {
             Column {
@@ -172,6 +177,7 @@ internal fun RepositoryWorkspaceTopBar(repository: GitHubRepositoryModel?, repos
                 Icon(if (it.private) RockIcon.Lock.vector() else RockIcon.Public.vector(selected = true), contentDescription = if (it.private) "Private repository" else "Public repository", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 IconButton(onClick = onOpenManager, enabled = repositoryReady) { Icon(RockIcon.Code.vector(), contentDescription = "Manage repository") }
                 IconButton(onClick = onOpenFiles, enabled = repositoryReady) { Icon(RockIcon.FolderOpen.vector(), contentDescription = "Browse repository files") }
+                IconButton(onClick = onOpenTranslation, enabled = repositoryReady) { Icon(RockIcon.Language.vector(), contentDescription = "Translate repository") }
                 IconButton(onClick = onOpenGitHub, enabled = repositoryReady) { Icon(RockIcon.OpenInNew.vector(), contentDescription = "Open on GitHub") }
             }
         },
