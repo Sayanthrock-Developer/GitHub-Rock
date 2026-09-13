@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -50,6 +49,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
 import com.sayanthrock.githubrock.ui.motion.RockMotion
+import com.sayanthrock.githubrock.ui.theme.RockShapes
+import com.sayanthrock.githubrock.ui.theme.RockSurfaceAlpha
+import com.sayanthrock.githubrock.ui.theme.RockSurfaceRole
+import com.sayanthrock.githubrock.ui.theme.rockContentColor
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceBorder
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceColor
 
 private val rockNavigationDestinations = listOf(
     TopDestinationV2.Home,
@@ -91,7 +96,7 @@ private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarSty
 
 @Composable
 private fun FuturisticNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, onDestinationSelected) {
+    NavigationSurface(modifier, RockShapes.Navigation, RockSurfaceRole.Navigation, 18.dp, 700.dp, onDestinationSelected) {
         NavigationRow(76.dp, 8.dp, 2.dp) {
             rockNavigationDestinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
@@ -102,9 +107,9 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                 )
                 Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
                     if (selected) {
-                        Surface(modifier = Modifier.size(60.dp), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, tonalElevation = 0.dp, shadowElevation = 0.dp) {}
+                        Surface(modifier = Modifier.size(60.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(RockShapes.SmallCard), color = rockSurfaceColor(RockSurfaceRole.Selected), contentColor = rockContentColor(RockSurfaceRole.Selected), tonalElevation = 0.dp, shadowElevation = 0.dp) {}
                     }
-                    RockNavigationItem(destination = destination, selected = selected, showLabel = true, label = futuristicNavigationLabel(destination), modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale), selectedShape = 20.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) }, iconSize = if (selected) 23.dp else 21.dp, selectedContainerAlpha = 0f, verticalLabelLayout = true)
+                    RockNavigationItem(destination = destination, selected = selected, showLabel = true, label = futuristicNavigationLabel(destination), modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale), selectedShape = RockShapes.SmallCard, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) }, iconSize = if (selected) 23.dp else 21.dp, selectedContainerAlpha = 0f, verticalLabelLayout = true)
                 }
             }
         }
@@ -118,15 +123,15 @@ private fun futuristicNavigationLabel(destination: TopDestinationV2): String = w
 
 @Composable
 private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, onDestinationSelected) {
-        NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), 26.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
+    NavigationSurface(modifier, RockShapes.Navigation, RockSurfaceRole.Navigation, 18.dp, 700.dp, onDestinationSelected) {
+        NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), RockShapes.Control, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
 private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier.fillMaxWidth(), RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainer, 0.5f, 12.dp, 700.dp, onDestinationSelected) {
-        NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, true, Modifier.weight(1f), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
+    NavigationSurface(modifier.fillMaxWidth(), RockShapes.Navigation, RockSurfaceRole.Elevated, 12.dp, 700.dp, onDestinationSelected) {
+        NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, true, Modifier.weight(1f), RockShapes.Control, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
@@ -137,36 +142,36 @@ private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animatio
     Row(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp).then(slideModifier), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         rockNavigationDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
-            RockNavigationItem(destination, selected, selected && !compact, Modifier.weight(1f).height(if (compact) 48.dp else 54.dp), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, if (selected) 22.dp else 21.dp, true, 0.18f)
+            RockNavigationItem(destination, selected, selected && !compact, Modifier.weight(1f).height(if (compact) 48.dp else 54.dp), RockShapes.Control, animationStyle, reduceMotion, { onDestinationSelected(destination) }, if (selected) 22.dp else 21.dp, true, RockSurfaceAlpha.Medium)
         }
     }
 }
 
 @Composable
 private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface, 0.65f, 14.dp, 700.dp, onDestinationSelected) {
-        NavigationRow(70.dp, 6.dp, 3.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
+    NavigationSurface(modifier, RockShapes.Navigation, RockSurfaceRole.Navigation, 14.dp, 700.dp, onDestinationSelected) {
+        NavigationRow(70.dp, 6.dp, 3.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), RockShapes.Control, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
 private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.5f, 12.dp, 500.dp, onDestinationSelected) {
-        NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, false, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, 22.dp) } }
+    NavigationSurface(modifier, RockShapes.Control, RockSurfaceRole.Elevated, 12.dp, 500.dp, onDestinationSelected) {
+        NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, false, Modifier.weight(1f), RockShapes.Control, animationStyle, reduceMotion, { onDestinationSelected(destination) }, 22.dp) } }
     }
 }
 
 @Composable
-private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
+private fun NavigationSurface(modifier: Modifier, shape: Dp, role: RockSurfaceRole, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
     val view = LocalView.current
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
     Surface(
         modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier),
-        shape = shape,
-        color = color,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
-        tonalElevation = 2.dp,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(shape),
+        color = rockSurfaceColor(role),
+        contentColor = rockContentColor(role),
+        border = rockSurfaceBorder(),
+        tonalElevation = 0.dp,
         shadowElevation = shadow,
     ) { content() }
 }
@@ -198,7 +203,7 @@ private fun RockNavigationItem(destination: TopDestinationV2, selected: Boolean,
     val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else spring(), label = "navigation indicator color")
     val iconTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     val labelTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-    Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
+    Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = androidx.compose.foundation.shape.RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
         if (showLabel && verticalLabelLayout) {
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = destination.accessibilityLabel, modifier = Modifier.size(iconSize), tint = iconTint)
