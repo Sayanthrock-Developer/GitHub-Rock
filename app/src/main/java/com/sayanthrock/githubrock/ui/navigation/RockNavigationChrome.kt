@@ -49,9 +49,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurComponent
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSurface
 import com.sayanthrock.githubrock.ui.motion.RockMotion
 
 private val rockNavigationDestinations = listOf(
@@ -63,12 +60,12 @@ private val rockNavigationDestinations = listOf(
 )
 
 @Composable
-fun RockNavigationChrome(navController: NavHostController, style: NavigationBarStyle = NavigationBarStyle.FloatingCapsule, animationStyle: AnimationStyle = AnimationStyle.Spring, reduceMotion: Boolean = false, blurSettings: ApplicationBlurSettings = ApplicationBlurSettings(), modifier: Modifier = Modifier) {
+fun RockNavigationChrome(navController: NavHostController, style: NavigationBarStyle = NavigationBarStyle.FloatingCapsule, animationStyle: AnimationStyle = AnimationStyle.Spring, reduceMotion: Boolean = false, modifier: Modifier = Modifier) {
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
     if (rockNavigationDestinations.none { it.route == selectedRoute }) return
     BoxWithConstraints(modifier.fillMaxSize().zIndex(10f)) {
-        RockBottomNavigation(selectedRoute, style, maxWidth < 360.dp, animationStyle, reduceMotion, blurSettings, { navigateToTopLevel(navController, it) }, Modifier.align(Alignment.BottomCenter).zIndex(10f))
+        RockBottomNavigation(selectedRoute, style, maxWidth < 360.dp, animationStyle, reduceMotion, { navigateToTopLevel(navController, it) }, Modifier.align(Alignment.BottomCenter).zIndex(10f))
     }
 }
 
@@ -81,20 +78,20 @@ private fun navigateToTopLevel(navController: NavHostController, destination: To
 }
 
 @Composable
-private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarStyle, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier = Modifier) {
+private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarStyle, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier = Modifier) {
     when (style) {
-        NavigationBarStyle.FloatingCapsule -> FloatingCapsuleNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
-        NavigationBarStyle.Classic -> ClassicNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
-        NavigationBarStyle.Minimal -> MinimalNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
-        NavigationBarStyle.Glass -> GlassNavigation(selectedRoute, compact, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
-        NavigationBarStyle.Compact -> CompactNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
-        NavigationBarStyle.Ios -> FuturisticNavigation(selectedRoute, animationStyle, reduceMotion, blurSettings, onDestinationSelected, modifier)
+        NavigationBarStyle.FloatingCapsule -> FloatingCapsuleNavigation(selectedRoute, compact, animationStyle, reduceMotion, onDestinationSelected, modifier)
+        NavigationBarStyle.Classic -> ClassicNavigation(selectedRoute, animationStyle, reduceMotion, onDestinationSelected, modifier)
+        NavigationBarStyle.Minimal -> MinimalNavigation(selectedRoute, compact, animationStyle, reduceMotion, onDestinationSelected, modifier)
+        NavigationBarStyle.Glass -> GlassNavigation(selectedRoute, compact, animationStyle, reduceMotion, onDestinationSelected, modifier)
+        NavigationBarStyle.Compact -> CompactNavigation(selectedRoute, animationStyle, reduceMotion, onDestinationSelected, modifier)
+        NavigationBarStyle.Ios -> FuturisticNavigation(selectedRoute, animationStyle, reduceMotion, onDestinationSelected, modifier)
     }
 }
 
 @Composable
-private fun FuturisticNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, blurSettings, onDestinationSelected) {
+private fun FuturisticNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, onDestinationSelected) {
         NavigationRow(76.dp, 8.dp, 2.dp) {
             rockNavigationDestinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
@@ -105,29 +102,9 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                 )
                 Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
                     if (selected) {
-                        Surface(
-                            modifier = Modifier.size(60.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
-                        ) {}
+                        Surface(modifier = Modifier.size(60.dp), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, tonalElevation = 0.dp, shadowElevation = 0.dp) {}
                     }
-                    RockNavigationItem(
-                        destination = destination,
-                        selected = selected,
-                        showLabel = true,
-                        label = futuristicNavigationLabel(destination),
-                        modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale),
-                        selectedShape = 20.dp,
-                        animationStyle = animationStyle,
-                        reduceMotion = reduceMotion,
-                        onClick = { onDestinationSelected(destination) },
-                        iconSize = if (selected) 23.dp else 21.dp,
-                        selectedContainerAlpha = 0f,
-                        verticalLabelLayout = true
-                    )
+                    RockNavigationItem(destination = destination, selected = selected, showLabel = true, label = futuristicNavigationLabel(destination), modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale), selectedShape = 20.dp, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) }, iconSize = if (selected) 23.dp else 21.dp, selectedContainerAlpha = 0f, verticalLabelLayout = true)
                 }
             }
         }
@@ -140,21 +117,21 @@ private fun futuristicNavigationLabel(destination: TopDestinationV2): String = w
 }
 
 @Composable
-private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, blurSettings, onDestinationSelected) {
+private fun FloatingCapsuleNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier, RoundedCornerShape(32.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.55f, 18.dp, 700.dp, onDestinationSelected) {
         NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), 26.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
-private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier.fillMaxWidth(), RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainer, 0.5f, 12.dp, 700.dp, blurSettings, onDestinationSelected) {
+private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier.fillMaxWidth(), RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainer, 0.5f, 12.dp, 700.dp, onDestinationSelected) {
         NavigationRow(72.dp, 7.dp, 4.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, true, Modifier.weight(1f), 18.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
-private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
     val view = LocalView.current
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
     Row(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp).then(slideModifier), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -166,33 +143,32 @@ private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animatio
 }
 
 @Composable
-private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface, 0.65f, 14.dp, 700.dp, blurSettings, onDestinationSelected) {
+private fun GlassNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier, RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surface, 0.65f, 14.dp, 700.dp, onDestinationSelected) {
         NavigationRow(70.dp, 6.dp, 3.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, selectedRoute == destination.route && !compact, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }) } }
     }
 }
 
 @Composable
-private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.5f, 12.dp, 500.dp, blurSettings, onDestinationSelected) {
+private fun CompactNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
+    NavigationSurface(modifier, RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainerHigh, 0.5f, 12.dp, 500.dp, onDestinationSelected) {
         NavigationRow(54.dp, 4.dp, 2.dp) { rockNavigationDestinations.forEach { destination -> RockNavigationItem(destination, selectedRoute == destination.route, false, Modifier.weight(1f), 22.dp, animationStyle, reduceMotion, { onDestinationSelected(destination) }, 22.dp) } }
     }
 }
 
 @Composable
-private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, blurSettings: ApplicationBlurSettings, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
+private fun NavigationSurface(modifier: Modifier, shape: RoundedCornerShape, color: Color, borderAlpha: Float, shadow: Dp, maxWidth: Dp, onDestinationSelected: (TopDestinationV2) -> Unit, content: @Composable () -> Unit) {
     val view = LocalView.current
-    val blurProfile = blurSettings.profileFor(ApplicationBlurComponent.NavigationBar)
-    val blurEnabled = blurSettings.mode.name != "Off" && blurProfile.enabled && blurProfile.intensity > 0f
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
-    val surfaceModifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier)
-    if (blurEnabled) {
-        ApplicationBlurSurface(settings = blurSettings, component = ApplicationBlurComponent.NavigationBar, modifier = surfaceModifier, shape = shape) {
-            Surface(modifier = Modifier.fillMaxSize(), shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 0.dp, shadowElevation = 0.dp) { content() }
-        }
-    } else {
-        Surface(modifier = surfaceModifier, shape = shape, color = color, contentColor = MaterialTheme.colorScheme.onSurface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)), tonalElevation = 2.dp, shadowElevation = shadow) { content() }
-    }
+    Surface(
+        modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier),
+        shape = shape,
+        color = color,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = borderAlpha)),
+        tonalElevation = 2.dp,
+        shadowElevation = shadow,
+    ) { content() }
 }
 
 private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
