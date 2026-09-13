@@ -7,7 +7,6 @@ import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.AppFontFamily
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
-import com.sayanthrock.githubrock.data.settings.ApplicationBlurPreferences
 import com.sayanthrock.githubrock.data.settings.CodeColorStyle
 import com.sayanthrock.githubrock.data.settings.DisplaySize
 import com.sayanthrock.githubrock.data.settings.FontSize
@@ -24,12 +23,6 @@ import com.sayanthrock.githubrock.data.settings.RemoteImageShape
 import com.sayanthrock.githubrock.data.settings.RemoteImageSize
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurComponent
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurMode
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurPreset
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurProfile
-import com.sayanthrock.githubrock.ui.blur.ApplicationBlurSettings
-import com.sayanthrock.githubrock.ui.blur.toSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,11 +32,9 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AppearanceViewModel @Inject constructor(
-    private val preferences: AppPreferences,
-    private val blurPreferences: ApplicationBlurPreferences
+    private val preferences: AppPreferences
 ) : ViewModel() {
     val state: StateFlow<AppearancePreferences> = preferences.appearance.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppearancePreferences())
-    val blurState: StateFlow<ApplicationBlurSettings> = blurPreferences.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ApplicationBlurPreset.Clean.toSettings())
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
@@ -82,13 +73,6 @@ class AppearanceViewModel @Inject constructor(
     fun setFileTools(enabled: Boolean) = viewModelScope.launch { preferences.setFileTools(enabled) }
     fun setCompactCards(enabled: Boolean) = viewModelScope.launch { preferences.setCompactCards(enabled) }
     fun setReduceMotion(enabled: Boolean) = viewModelScope.launch { preferences.setReduceMotion(enabled) }
-
-    fun setBlurMode(mode: ApplicationBlurMode) = viewModelScope.launch { blurPreferences.setMode(mode) }
-    fun setBlurPreset(preset: ApplicationBlurPreset) = viewModelScope.launch { blurPreferences.setPreset(preset) }
-    fun setBlurProfile(profile: ApplicationBlurProfile) = viewModelScope.launch { blurPreferences.setProfile(profile) }
-    fun setBlurCustomTint(hex: String) = viewModelScope.launch { blurPreferences.setCustomTint(hex) }
-    fun setBlurComponentProfile(component: ApplicationBlurComponent, profile: ApplicationBlurProfile?) = viewModelScope.launch { blurPreferences.setComponentProfile(component, profile) }
-    fun resetBlurSettings() = viewModelScope.launch { blurPreferences.reset() }
 
     fun resetAppearance() = viewModelScope.launch { preferences.resetAppearance() }
 }
