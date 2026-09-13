@@ -30,7 +30,6 @@ import kotlinx.coroutines.launch
 fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewModel: AppearanceViewModel = hiltViewModel(), setupViewModel: GitHubRockSetupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val appearanceState by appearanceViewModel.state.collectAsStateWithLifecycle()
-    val blurState by appearanceViewModel.blurState.collectAsStateWithLifecycle()
     val setupComplete by setupViewModel.setupComplete.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val navController = rememberNavController()
@@ -76,7 +75,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
                     NavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle)) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
-                    RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, blurSettings = blurState, modifier = Modifier.fillMaxSize())
+                    RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, modifier = Modifier.fillMaxSize())
                 }
             }
         }
