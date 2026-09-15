@@ -27,6 +27,7 @@ import com.sayanthrock.githubrock.ui.AppMode
 import com.sayanthrock.githubrock.ui.MainUiState
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.icons.vector
+import com.sayanthrock.githubrock.ui.motion.RockMotion
 import com.sayanthrock.githubrock.ui.screens.*
 
 sealed class TopDestinationV2(
@@ -57,35 +58,31 @@ private const val BUILD_ARTIFACT_DETAILS_ROUTE = "build-details/{owner}/{repo}/{
 private const val BUILD_STATUS_ROUTE = "builds/status/{filter}"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
-private const val TOP_LEVEL_SLIDE_DURATION_MS = 280
-
-private val TopLevelSlideEasing = FastOutSlowInEasing
-
 private fun topLevelEnterTransition(): EnterTransition = EnterTransition.None
 private fun topLevelExitTransition(): ExitTransition = ExitTransition.None
 
 private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelForwardEnter(): EnterTransition =
     slideIntoContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+        animationSpec = RockMotion.page(reduceMotion = false)
     )
 
 private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelForwardExit(): ExitTransition =
     slideOutOfContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+        animationSpec = RockMotion.page(reduceMotion = false)
     )
 
 private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelBackEnter(): EnterTransition =
     slideIntoContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Right,
-        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+        animationSpec = RockMotion.page(reduceMotion = false)
     )
 
 private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelBackExit(): ExitTransition =
     slideOutOfContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Right,
-        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+        animationSpec = RockMotion.page(reduceMotion = false)
     )
 
 @Composable
