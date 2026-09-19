@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.translation.GoogleTranslationService
 import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
@@ -78,6 +80,12 @@ fun RepositoryShowcaseScreen(
             onRetry = viewModel::retry,
             onOpenGitHub = { displayedRepository?.htmlUrl?.let { openHttpsBrowser(context, it) } },
             onOpenNativeLink = onOpenNativeLink,
+            translationTarget = state.translationTarget,
+            translatedBlocks = state.translatedBlocks,
+            translationLoading = state.translationLoading,
+            translationError = state.translationError,
+            onTranslate = viewModel::translateReadme,
+            onClearTranslation = viewModel::clearTranslation,
             modifier = Modifier.padding(padding)
         )
     }
@@ -94,10 +102,17 @@ fun RepositoryShowcaseContent(
     onRetry: () -> Unit,
     onOpenGitHub: () -> Unit,
     onOpenNativeLink: (String) -> Boolean = { false },
+    translationTarget: String? = null,
+    translatedBlocks: Map<Int, String> = emptyMap(),
+    translationLoading: Boolean = false,
+    translationError: String? = null,
+    onTranslate: (List<MarkdownBlock>, String) -> Unit = { _, _ -> },
+    onClearTranslation: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val blocks = remember(readme) { readme?.let(MarkdownRenderer::render).orEmpty() }
     val context = LocalContext.current
+    var showTranslationPicker by remember { mutableStateOf(false) }
     val openLink: (String) -> Unit = remember(context, repository, onOpenNativeLink) {
         { raw ->
             val resolved = resolveReadmeUrl(raw, repository)
@@ -132,16 +147,41 @@ fun RepositoryShowcaseContent(
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("README.md", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("Project documentation", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
+                    Text("README.md", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        translationTarget?.let { "Translated with Google • $it" } ?: "Project documentation",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick = { showTranslationPicker = true }, enabled = readme != null && !translationLoading) {
+                    Text(if (translationTarget == null) "Translate" else "Change")
+                }
+            }
+        }
+        if (translationLoading) {
+            item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        }
+        translationError?.let { message ->
+            item {
+                GlassCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Translation unavailable", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         }
         when {
             readmeLoading -> item { GlassCard { LinearProgressIndicator(Modifier.fillMaxWidth()) } }
             readme != null && blocks.isNotEmpty() -> {
-                itemsIndexed(blocks, key = { index, _ -> index }) { _, block ->
-                    RenderMarkdownBlock(block, openLink, repository)
+                itemsIndexed(blocks, key = { index, _ -> index }) { index, block ->
+                    RenderMarkdownBlock(block, openLink, repository, translatedBlocks[index] ?: block.text)
                 }
             }
             readme != null -> item {
@@ -160,13 +200,66 @@ fun RepositoryShowcaseContent(
             }
         }
     }
+    if (showTranslationPicker) {
+        TranslationPickerDialog(
+            selectedLanguage = translationTarget,
+            onDismiss = { showTranslationPicker = false },
+            onSelect = { language ->
+                if (language == null) onClearTranslation() else onTranslate(blocks, language)
+                showTranslationPicker = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun TranslationPickerDialog(
+    selectedLanguage: String?,
+    onDismiss: () -> Unit,
+    onSelect: (String?) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Translate README") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Google translation runs on-device after the language model is downloaded.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    item {
+                        TextButton(onClick = { onSelect(null) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Original", modifier = Modifier.weight(1f))
+                            if (selectedLanguage == null) Text("✓")
+                        }
+                    }
+                    items(
+                        GoogleTranslationService.supportedLanguages,
+                        key = { it.code }
+                    ) { language ->
+                        TextButton(onClick = { onSelect(language.code) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(language.label, modifier = Modifier.weight(1f))
+                            if (selectedLanguage == language.code) Text("✓")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
 
 @Composable
 private fun RenderMarkdownBlock(
     block: MarkdownBlock,
     openLink: (String) -> Unit,
-    repository: GitHubRepositoryModel?
+    repository: GitHubRepositoryModel?,
+    displayText: String = block.text
 ) {
     when (block.kind) {
         MarkdownBlockKind.Heading -> {
@@ -178,25 +271,25 @@ private fun RenderMarkdownBlock(
                 5 -> MaterialTheme.typography.titleMedium
                 else -> MaterialTheme.typography.titleSmall
             }
-            InlineMarkdownText(block.text, style.copy(fontWeight = FontWeight.Bold), openLink)
+            InlineMarkdownText(displayText, style.copy(fontWeight = FontWeight.Bold), openLink)
         }
-        MarkdownBlockKind.Paragraph -> InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, openLink)
+        MarkdownBlockKind.Paragraph -> InlineMarkdownText(displayText, MaterialTheme.typography.bodyLarge, openLink)
         MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(if (block.ordered) "${block.level}." else "•")
-            InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
         }
         MarkdownBlockKind.Task -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
             Icon(
                 imageVector = if (block.checked) RockIcon.CheckBox.vector() else RockIcon.CheckBoxOutlineBlank.vector(),
                 contentDescription = if (block.checked) "Completed task" else "Task"
             )
-            InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
         }
         MarkdownBlockKind.Quote -> Surface(
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surfaceVariant
         ) {
-            InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, openLink, Modifier.padding(12.dp))
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium, openLink, Modifier.padding(12.dp))
         }
         MarkdownBlockKind.Alert -> Surface(
             shape = RoundedCornerShape(16.dp),
@@ -205,7 +298,7 @@ private fun RenderMarkdownBlock(
         ) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("GitHub alert", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                InlineMarkdownText(block.text, MaterialTheme.typography.bodyMedium, openLink)
+                InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium, openLink)
             }
         }
         MarkdownBlockKind.Code -> CodeBlock(block, repository)
