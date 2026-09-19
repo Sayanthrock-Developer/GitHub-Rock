@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -221,20 +222,30 @@ private fun TranslationPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Translate README") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "Google translation runs on-device after the language model is downloaded.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
-                TextButton(onClick = { onSelect(null) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Original", modifier = Modifier.weight(1f))
-                    if (selectedLanguage == null) Text("✓")
-                }
-                GoogleTranslationService.supportedLanguages.forEach { language ->
-                    TextButton(onClick = { onSelect(language.code) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(language.label, modifier = Modifier.weight(1f))
-                        if (selectedLanguage == language.code) Text("✓")
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    item {
+                        TextButton(onClick = { onSelect(null) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Original", modifier = Modifier.weight(1f))
+                            if (selectedLanguage == null) Text("✓")
+                        }
+                    }
+                    items(
+                        GoogleTranslationService.supportedLanguages,
+                        key = { it.code }
+                    ) { language ->
+                        TextButton(onClick = { onSelect(language.code) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(language.label, modifier = Modifier.weight(1f))
+                            if (selectedLanguage == language.code) Text("✓")
+                        }
                     }
                 }
             }
