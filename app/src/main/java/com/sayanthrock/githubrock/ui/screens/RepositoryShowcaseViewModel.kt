@@ -218,6 +218,7 @@ class RepositoryShowcaseViewModel @Inject constructor(
             MarkdownBlockKind.Divider,
             MarkdownBlockKind.Image,
             MarkdownBlockKind.Table -> false
+            else -> false
         }
 
         val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
