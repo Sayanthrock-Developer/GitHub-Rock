@@ -283,7 +283,7 @@ private fun RenderMarkdownBlock(
                 imageVector = if (block.checked) RockIcon.CheckBox.vector() else RockIcon.CheckBoxOutlineBlank.vector(),
                 contentDescription = if (block.checked) "Completed task" else "Task"
             )
-            InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyLarge, openLink, Modifier.weight(1f))
         }
         MarkdownBlockKind.Quote -> Surface(
             shape = RoundedCornerShape(12.dp),
