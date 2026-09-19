@@ -114,6 +114,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.security)
     implementation(libs.androidx.browser)
+    implementation(libs.mlkit.translate)
+    implementation(libs.mlkit.language.id)
     implementation("androidx.documentfile:documentfile:1.0.1")
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
