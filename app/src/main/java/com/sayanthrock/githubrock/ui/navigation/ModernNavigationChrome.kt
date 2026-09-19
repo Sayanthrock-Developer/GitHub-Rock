@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.sayanthrock.githubrock.ui.motion.RockMotion
+import com.sayanthrock.githubrock.ui.theme.LocalReduceMotion
 
 /** Single adaptive navigation chrome. Uses the shared destination model. */
 @Composable
@@ -55,6 +58,7 @@ fun ModernNavigationChrome(
 ) {
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
+    val reduceMotion = LocalReduceMotion.current
     if (modernTopDestinations.none { it.route == selectedRoute }) return
 
     Box(modifier.fillMaxSize()) {
@@ -69,6 +73,7 @@ fun ModernNavigationChrome(
                 ModernNavigationBottomBar(
                     selectedRoute = selectedRoute,
                     compact = maxWidth.value < 360f,
+                    reduceMotion = reduceMotion,
                     onDestinationSelected = { navigate(navController, it) },
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
@@ -89,6 +94,7 @@ private fun navigate(navController: NavHostController, destination: TopDestinati
 internal fun ModernNavigationBottomBar(
     selectedRoute: String?,
     compact: Boolean,
+    reduceMotion: Boolean,
     onDestinationSelected: (TopDestinationV2) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -113,7 +119,7 @@ internal fun ModernNavigationBottomBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             modernTopDestinations.forEach { destination ->
-                ModernBottomItem(destination, selectedRoute == destination.route, compact) {
+                ModernBottomItem(destination, selectedRoute == destination.route, compact, reduceMotion) {
                     onDestinationSelected(destination)
                 }
             }
@@ -126,17 +132,18 @@ private fun RowScope.ModernBottomItem(
     destination: TopDestinationV2,
     selected: Boolean,
     compact: Boolean,
+    reduceMotion: Boolean,
     onClick: () -> Unit
 ) {
     val indicatorColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer
         else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0f),
-        animationSpec = tween(220),
+        animationSpec = RockMotion.selection(reduceMotion),
         label = "navigation indicator color"
     )
     val iconSize by animateDpAsState(
         targetValue = if (selected) 24.dp else 22.dp,
-        animationSpec = tween(180),
+        animationSpec = RockMotion.selection(reduceMotion),
         label = "navigation icon size"
     )
     val iconColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
@@ -168,8 +175,8 @@ private fun RowScope.ModernBottomItem(
             )
             AnimatedVisibility(
                 visible = selected && !compact,
-                enter = fadeIn(tween(140)) + expandHorizontally(tween(180)),
-                exit = fadeOut(tween(90)) + shrinkHorizontally(tween(120))
+                enter = if (reduceMotion) EnterTransition.None else fadeIn(RockMotion.selection(false)) + expandHorizontally(RockMotion.selection(false)),
+                exit = if (reduceMotion) ExitTransition.None else fadeOut(RockMotion.close()) + shrinkHorizontally(RockMotion.close())
             ) {
                 Text(
                     destination.accessibilityLabel,
