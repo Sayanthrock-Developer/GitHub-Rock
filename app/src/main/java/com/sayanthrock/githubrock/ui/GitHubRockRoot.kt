@@ -50,6 +50,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
     var authorizationUrlConsumed by rememberSaveable { mutableStateOf<String?>(null) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val navigationContentBottomPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
     LaunchedEffect(authorizationUrl) {
         val url = authorizationUrl ?: return@LaunchedEffect
         if (authorizationUrlConsumed == url) return@LaunchedEffect
@@ -72,7 +73,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
-                    NavigationContent(navController = navController, bottomContentPadding = navigationContentInset(appearanceState.navigationBarStyle)) {
+                    NavigationContent(navController = navController, bottomContentPadding = navigationContentBottomPadding) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
                     RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, modifier = Modifier.fillMaxSize())
@@ -83,14 +84,17 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     }
 }
 
-/** Reserve space for the fixed navigation chrome without changing the scroll direction or page content gestures. */
-private fun navigationContentInset(style: NavigationBarStyle): androidx.compose.ui.unit.Dp = when (style) {
-    NavigationBarStyle.FloatingCapsule -> 102.dp
-    NavigationBarStyle.Classic -> 102.dp
-    NavigationBarStyle.Glass -> 100.dp
-    NavigationBarStyle.Minimal -> 72.dp
-    NavigationBarStyle.Compact -> 74.dp
-    NavigationBarStyle.Ios -> 94.dp
+/** Reserve the exact bottom footprint of the overlay navigation plus the system navigation inset. */
+private fun navigationContentInset(style: NavigationBarStyle, systemBottomInset: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp {
+    val chromeFootprint = when (style) {
+        NavigationBarStyle.FloatingCapsule -> 92.dp
+        NavigationBarStyle.Classic -> 92.dp
+        NavigationBarStyle.Glass -> 90.dp
+        NavigationBarStyle.Minimal -> 72.dp
+        NavigationBarStyle.Compact -> 74.dp
+        NavigationBarStyle.Ios -> 96.dp
+    }
+    return chromeFootprint + systemBottomInset
 }
 
 @Composable
