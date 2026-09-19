@@ -20,8 +20,10 @@ object RockMotion {
     const val SheetOpen = 180
     const val SheetClose = 140
     const val Menu = 120
-    const val Navigation = 150
+    const val Navigation = 280
     const val Press = 90
+    const val List = 180
+    const val Selection = 140
 
     fun <T> open(durationMillis: Int = Standard): AnimationSpec<T> =
         tween(durationMillis = durationMillis, easing = FastOutSlowInEasing)
@@ -37,4 +39,13 @@ object RockMotion {
 
     fun duration(reduceMotion: Boolean, durationMillis: Int): Int =
         if (reduceMotion) 0 else durationMillis
+
+    fun <T> navigation(reduceMotion: Boolean): AnimationSpec<T> =
+        fastOrZero(reduceMotion, Navigation)
+
+    fun <T> selection(reduceMotion: Boolean): AnimationSpec<T> =
+        fastOrZero(reduceMotion, Selection)
+
+    fun <T> list(reduceMotion: Boolean): AnimationSpec<T> =
+        fastOrZero(reduceMotion, List)
 }
