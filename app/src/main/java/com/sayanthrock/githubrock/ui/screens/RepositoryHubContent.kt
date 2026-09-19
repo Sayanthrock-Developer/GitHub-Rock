@@ -206,6 +206,17 @@ fun RepositoryHubContent(
             }
         }
     }
+    if (showTranslationPicker) {
+        val blocks = readme?.let(MarkdownRenderer::render).orEmpty()
+        TranslationPickerDialog(
+            selectedLanguage = translationTarget,
+            onDismiss = { showTranslationPicker = false },
+            onSelect = { language ->
+                if (language == null) onClearTranslation() else onTranslate(blocks, language)
+                showTranslationPicker = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -1096,7 +1107,7 @@ private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.
                 }
             } else {
                 Text(
-                    text,
+                    displayText,
                     style = style,
                     fontWeight = FontWeight.Bold
                 )
@@ -1156,16 +1167,6 @@ private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.
             contentScale = ContentScale.FillWidth
         )
         MarkdownBlockKind.Paragraph -> Text(displayText, style = MaterialTheme.typography.bodyMedium)
-    }
-    if (showTranslationPicker) {
-        TranslationPickerDialog(
-            selectedLanguage = translationTarget,
-            onDismiss = { showTranslationPicker = false },
-            onSelect = { language ->
-                if (language == null) onClearTranslation() else onTranslate(blocks, language)
-                showTranslationPicker = false
-            }
-        )
     }
 }
 
