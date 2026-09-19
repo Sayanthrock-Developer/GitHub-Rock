@@ -4,12 +4,18 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
+import com.sayanthrock.githubrock.core.translation.GoogleTranslationService
+import com.sayanthrock.githubrock.core.util.MarkdownBlock
+import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.RepositoryReadmePolicy
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,13 +29,18 @@ data class RepositoryShowcaseState(
     val loading: Boolean = true,
     val readmeLoading: Boolean = true,
     val error: String? = null,
-    val readmeError: String? = null
+    val readmeError: String? = null,
+    val translationTarget: String? = null,
+    val translatedBlocks: Map<Int, String> = emptyMap(),
+    val translationLoading: Boolean = false,
+    val translationError: String? = null
 )
 
 @HiltViewModel
 class RepositoryShowcaseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val githubRepository: GitHubRepository
+    private val githubRepository: GitHubRepository,
+    private val translationService: GoogleTranslationService
 ) : ViewModel() {
     private val owner: String = checkNotNull(savedStateHandle["owner"])
     private val repoName: String = checkNotNull(savedStateHandle["repo"])
@@ -39,6 +50,7 @@ class RepositoryShowcaseViewModel @Inject constructor(
 
     private var loadJob: Job? = null
     private var currentRepositoryId: Long? = null
+    private var translationJob: Job? = null
 
     /** Supplies the selected repository for instant first paint, then refreshes its metadata and README. */
     fun start(initialRepository: GitHubRepositoryModel?) {
@@ -57,6 +69,72 @@ class RepositoryShowcaseViewModel @Inject constructor(
     fun retry() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch { load(_state.value.repository) }
+    }
+
+    fun retry() {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { load(_state.value.repository) }
+    }
+
+    fun translateReadme(blocks: List<MarkdownBlock>, targetLanguage: String) {
+        if (targetLanguage.isBlank()) return
+        translationJob?.cancel()
+        translationJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    translationTarget = targetLanguage,
+                    translationLoading = true,
+                    translationError = null,
+                    translatedBlocks = emptyMap()
+                )
+            }
+            runCatchingPreservingCancellation {
+                val translatable = blocks.mapIndexedNotNull { index, block ->
+                    if (block.kind.isTranslatable()) index to block.text else null
+                }.filter { it.second.isNotBlank() }
+                if (translatable.isEmpty()) return@runCatchingPreservingCancellation emptyMap()
+                val source = translationService.detectLanguage(translatable.first().second)
+                coroutineScope {
+                    translatable.map { (index, text) ->
+                        async {
+                            index to translationService.translate(
+                                text = text,
+                                targetLanguage = targetLanguage,
+                                sourceLanguage = source
+                            )
+                        }
+                    }.awaitAll().toMap()
+                }
+            }.onSuccess { translated ->
+                _state.update {
+                    it.copy(
+                        translationLoading = false,
+                        translatedBlocks = translated,
+                        translationError = null
+                    )
+                }
+            }.onFailure { failure ->
+                _state.update {
+                    it.copy(
+                        translationLoading = false,
+                        translatedBlocks = emptyMap(),
+                        translationError = failure.message ?: "Google translation is unavailable right now."
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearTranslation() {
+        translationJob?.cancel()
+        _state.update {
+            it.copy(
+                translationTarget = null,
+                translatedBlocks = emptyMap(),
+                translationLoading = false,
+                translationError = null
+            )
+        }
     }
 
     private suspend fun load(initialRepository: GitHubRepositoryModel?) {
@@ -137,6 +215,19 @@ class RepositoryShowcaseViewModel @Inject constructor(
     }
 
     private companion object {
+        fun MarkdownBlockKind.isTranslatable(): Boolean = when (this) {
+            MarkdownBlockKind.Heading,
+            MarkdownBlockKind.Paragraph,
+            MarkdownBlockKind.Bullet,
+            MarkdownBlockKind.Task,
+            MarkdownBlockKind.Quote,
+            MarkdownBlockKind.Alert -> true
+            MarkdownBlockKind.Code,
+            MarkdownBlockKind.Divider,
+            MarkdownBlockKind.Image,
+            MarkdownBlockKind.Table -> false
+        }
+
         val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
     }
 }
