@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,6 +73,7 @@ import coil.compose.AsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
+import com.sayanthrock.githubrock.core.translation.GoogleTranslationService
 import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
@@ -114,11 +116,18 @@ fun RepositoryHubContent(
     releasesError: String?,
     readmeError: String?,
     initialTag: String? = null,
+    translationTarget: String? = null,
+    translatedBlocks: Map<Int, String> = emptyMap(),
+    translationLoading: Boolean = false,
+    translationError: String? = null,
+    onTranslate: (List<MarkdownBlock>, String) -> Unit = { _, _ -> },
+    onClearTranslation: () -> Unit = {},
     onRetry: () -> Unit,
     onOpenUrl: (String) -> Unit,
     onDownload: (ReleaseAsset) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showTranslationPicker by rememberSaveable { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
@@ -151,7 +160,27 @@ fun RepositoryHubContent(
             }
         }
 
-        item(key = "readme_title") { ReadmeTitle() }
+        item(key = "readme_title") {
+            ReadmeTitle(
+                translationTarget = translationTarget,
+                translationLoading = translationLoading,
+                readmeAvailable = readme != null,
+                onTranslateClick = { showTranslationPicker = true }
+            )
+        }
+        if (translationLoading) {
+            item(key = "translation_loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        }
+        translationError?.let { message ->
+            item(key = "translation_error") {
+                GlassCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Translation unavailable", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
         when {
             readmeLoading -> item(key = "readme_loading") {
                 GlassCard {
@@ -161,7 +190,9 @@ fun RepositoryHubContent(
                     }
                 }
             }
-            readme != null -> item(key = "readme_content") { RepositoryMarkdownCard(readme) }
+            readme != null -> item(key = "readme_content") {
+                RepositoryMarkdownCard(readme, translatedBlocks)
+            }
             readmeError != null -> item(key = "readme_error") {
                 GlassCard {
                     Row(
@@ -175,6 +206,45 @@ fun RepositoryHubContent(
             }
         }
     }
+}
+
+@Composable
+private fun TranslationPickerDialog(
+    selectedLanguage: String?,
+    onDismiss: () -> Unit,
+    onSelect: (String?) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Translate README") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Google translation runs on-device after the language model is downloaded.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    item {
+                        TextButton(onClick = { onSelect(null) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Original", modifier = Modifier.weight(1f))
+                            if (selectedLanguage == null) Text("✓")
+                        }
+                    }
+                    items(GoogleTranslationService.supportedLanguages, key = { it.code }) { language ->
+                        TextButton(onClick = { onSelect(language.code) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(language.label, modifier = Modifier.weight(1f))
+                            if (selectedLanguage == language.code) Text("✓")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
 
 @Composable
@@ -939,7 +1009,12 @@ private fun WhatsNewCard(release: Release) {
 }
 
 @Composable
-private fun ReadmeTitle() {
+private fun ReadmeTitle(
+    translationTarget: String?,
+    translationLoading: Boolean,
+    readmeAvailable: Boolean,
+    onTranslateClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -963,30 +1038,29 @@ private fun ReadmeTitle() {
             shape = RoundedCornerShape(999.dp),
             color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
         ) {
-            Text(
-                "Rendered",
-                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
-            )
+            TextButton(
+                onClick = onTranslateClick,
+                enabled = readmeAvailable && !translationLoading
+            ) {
+                Text(if (translationTarget == null) "Translate" else "Change")
+            }
         }
     }
 }
 
 @Composable
-private fun RepositoryMarkdownCard(markdown: String) {
+private fun RepositoryMarkdownCard(markdown: String, translatedBlocks: Map<Int, String>) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            blocks.forEach { MarkdownBlockView(it) }
+            blocks.forEachIndexed { index, block -> MarkdownBlockView(block, translatedBlocks[index] ?: block.text) }
 
         }
     }
 }
 
 @Composable
-private fun MarkdownBlockView(block: MarkdownBlock) {
+private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.text) {
     when (block.kind) {
         MarkdownBlockKind.Heading -> {
             val text = block.text
@@ -1015,7 +1089,7 @@ private fun MarkdownBlockView(block: MarkdownBlock) {
                         )
                     }
                     Text(
-                        text = match.groupValues[2],
+                        text = displayText.substringAfter(match.groupValues[1]).trim(),
                         style = style,
                         fontWeight = FontWeight.Bold
                     )
@@ -1030,14 +1104,14 @@ private fun MarkdownBlockView(block: MarkdownBlock) {
         }
         MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(block.text, modifier = Modifier.weight(1f))
+            Text(displayText, modifier = Modifier.weight(1f))
         }
         MarkdownBlockKind.Quote -> Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.primary.copy(alpha = .08f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f))
         ) {
-            Text(block.text, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(displayText, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         MarkdownBlockKind.Code -> Surface(
             shape = RoundedCornerShape(16.dp),
@@ -1081,7 +1155,17 @@ private fun MarkdownBlockView(block: MarkdownBlock) {
             modifier = Modifier.fillMaxWidth(),
             contentScale = ContentScale.FillWidth
         )
-        MarkdownBlockKind.Paragraph -> Text(block.text, style = MaterialTheme.typography.bodyMedium)
+        MarkdownBlockKind.Paragraph -> Text(displayText, style = MaterialTheme.typography.bodyMedium)
+    }
+    if (showTranslationPicker) {
+        TranslationPickerDialog(
+            selectedLanguage = translationTarget,
+            onDismiss = { showTranslationPicker = false },
+            onSelect = { language ->
+                if (language == null) onClearTranslation() else onTranslate(blocks, language)
+                showTranslationPicker = false
+            }
+        )
     }
 }
 
