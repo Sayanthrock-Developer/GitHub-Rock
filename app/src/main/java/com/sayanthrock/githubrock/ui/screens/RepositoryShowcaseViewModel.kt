@@ -13,9 +13,6 @@ import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,17 +86,16 @@ class RepositoryShowcaseViewModel @Inject constructor(
                     if (block.kind.isTranslatable()) index to block.text else null
                 }.filter { it.second.isNotBlank() }
                 if (translatable.isEmpty()) return@runCatchingPreservingCancellation emptyMap()
-                val source = translationService.detectLanguage(translatable.first().second)
-                coroutineScope {
-                    translatable.map { (index, text) ->
-                        async {
-                            index to translationService.translate(
+                buildMap {
+                    translatable.forEach { (index, text) ->
+                        put(
+                            index,
+                            translationService.translate(
                                 text = text,
-                                targetLanguage = targetLanguage,
-                                sourceLanguage = source
+                                targetLanguage = targetLanguage
                             )
-                        }
-                    }.awaitAll().toMap()
+                        )
+                    }
                 }
             }.onSuccess { translated ->
                 _state.update {
