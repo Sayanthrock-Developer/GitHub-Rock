@@ -5,6 +5,8 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import com.sayanthrock.githubrock.ui.motion.RockMotion
+import com.sayanthrock.githubrock.ui.theme.LocalReduceMotion
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -57,8 +59,6 @@ private const val BUILD_ARTIFACT_DETAILS_ROUTE = "build-details/{owner}/{repo}/{
 private const val BUILD_STATUS_ROUTE = "builds/status/{filter}"
 private const val NATIVE_PROFILE_ROUTE = "native-profile/{login}/{section}"
 
-private const val TOP_LEVEL_SLIDE_DURATION_MS = 280
-
 private val TopLevelSlideEasing = FastOutSlowInEasing
 
 private fun topLevelEnterTransition(): EnterTransition = EnterTransition.None
@@ -67,7 +67,7 @@ private fun topLevelExitTransition(): ExitTransition = ExitTransition.None
 private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelForwardEnter(): EnterTransition =
     slideIntoContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(TOP_LEVEL_SLIDE_DURATION_MS, easing = TopLevelSlideEasing)
+        animationSpec = tween(RockMotion.Navigation, easing = TopLevelSlideEasing)
     )
 
 private fun AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.topLevelForwardExit(): ExitTransition =
@@ -100,6 +100,7 @@ fun MainNavigationV2(
     onLogout: () -> Unit
 ) {
     val mode = requireNotNull(state.mode)
+    val reduceMotion = LocalReduceMotion.current
     val recentViewModel: RecentRepositoriesViewModel = hiltViewModel()
     val recentRepositories by recentViewModel.repositories.collectAsStateWithLifecycle()
     val ownRepositories = state.profile?.login?.let { login ->
@@ -124,10 +125,10 @@ fun MainNavigationV2(
         NavHost(navController, TopDestinationV2.Home.route, Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
             composable(
                 TopDestinationV2.Home.route,
-                enterTransition = { topLevelForwardEnter() },
-                exitTransition = { topLevelForwardExit() },
-                popEnterTransition = { topLevelBackEnter() },
-                popExitTransition = { topLevelBackExit() }
+                enterTransition = { if (reduceMotion) EnterTransition.None else topLevelForwardEnter() },
+                exitTransition = { if (reduceMotion) ExitTransition.None else topLevelForwardExit() },
+                popEnterTransition = { if (reduceMotion) EnterTransition.None else topLevelBackEnter() },
+                popExitTransition = { if (reduceMotion) ExitTransition.None else topLevelBackExit() }
             ) { HomeScreen(state.repositories, openRepo, state.isLoading, state.isRefreshing, onRefresh) }
             composable(TopDestinationV2.Explore.route) { ExploreScreen(onOpenRepo = openRepo, onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) }) }
             composable(
