@@ -71,10 +71,6 @@ class RepositoryShowcaseViewModel @Inject constructor(
         loadJob = viewModelScope.launch { load(_state.value.repository) }
     }
 
-    fun retry() {
-        loadJob?.cancel()
-        loadJob = viewModelScope.launch { load(_state.value.repository) }
-    }
 
     fun translateReadme(blocks: List<MarkdownBlock>, targetLanguage: String) {
         if (targetLanguage.isBlank()) return
