@@ -254,10 +254,47 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
 private fun selectedHex(hue: Float, saturation: Float, brightness: Float): String { val color = Color.hsv(hue, saturation, brightness); return "#%02X%02X%02X".format((color.red * 255f).toInt().coerceIn(0, 255), (color.green * 255f).toInt().coerceIn(0, 255), (color.blue * 255f).toInt().coerceIn(0, 255)) }
 
 @Composable private fun ThemeControls(state: AppearancePreferences, onThemeMode: (ThemeMode) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onShowImages: (Boolean) -> Unit) = StandardSettingsGroup {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary); Column { Text("Color mode", style = MaterialTheme.typography.titleSmall); Text("Follow the system, stay light, or stay dark", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { ThemeMode.entries.forEach { mode -> FilterChip(state.themeMode == mode, { onThemeMode(mode) }, label = { Text(mode.name) }, modifier = Modifier.weight(1f)) } } }
-    StandardSettingsDivider(); ToggleRow(Icons.Default.Image, "Show remote images", "Avatars and repository artwork", state.showImages, onShowImages); StandardSettingsDivider(); ToggleRow(Icons.Default.ColorLens, "System dynamic color", "Use the Android wallpaper palette", state.dynamicColor, onDynamicColor); StandardSettingsDivider(); ToggleRow(Icons.Default.DarkMode, "True black", "Pure black in dark mode", state.trueBlack, onTrueBlack)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f)) {
+                Text("Color mode", style = MaterialTheme.typography.titleSmall)
+                Text("System follows Android. Light and Dark stay fixed.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ThemeMode.entries.forEach { mode ->
+                val selected = state.themeMode == mode
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                    border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                ) {
+                    FilterChip(
+                        selected = selected,
+                        onClick = {
+                            onThemeMode(mode)
+                            if (mode != ThemeMode.Dark) onTrueBlack(false)
+                        },
+                        label = { Text(mode.name, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
+                        leadingIcon = if (selected) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+        if (state.themeMode == ThemeMode.System) {
+            Text("System selected", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+        }
+    }
+    StandardSettingsDivider()
+    ToggleRow(Icons.Default.Image, "Show remote images", "Avatars and repository artwork", state.showImages, onShowImages)
+    StandardSettingsDivider()
+    ToggleRow(Icons.Default.ColorLens, "System dynamic color", "Use the Android wallpaper palette", state.dynamicColor, onDynamicColor)
+    StandardSettingsDivider()
+    ToggleRow(Icons.Default.DarkMode, "True black", "Pure black in dark mode only", state.trueBlack && state.themeMode == ThemeMode.Dark, onTrueBlack)
 }
-
 @Composable private fun TypographyPreview() = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { Text("Interface preview", style = MaterialTheme.typography.headlineSmall); Text("Clean typography preview", style = MaterialTheme.typography.titleMedium); Text("Repositories, workflows, releases, and code remain readable at every selected size.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
 @Composable private fun CodeColorPreview() { val colors = LocalCodeColors.current; val code = buildAnnotatedString { withStyle(SpanStyle(color = colors.keyword, fontWeight = FontWeight.Bold)) { append("fun ") }; withStyle(SpanStyle(color = colors.type)) { append("publishRelease") }; append("() {\n  "); withStyle(SpanStyle(color = colors.keyword)) { append("val ") }; withStyle(SpanStyle(color = colors.property)) { append("version") }; append(" = "); withStyle(SpanStyle(color = colors.string)) { append("\"1.0.0\"") }; append("\n  "); withStyle(SpanStyle(color = colors.comment)) { append("// Signed and verified") }; append("\n  "); withStyle(SpanStyle(color = colors.type)) { append("release") }; append("("); withStyle(SpanStyle(color = colors.number)) { append("100") }; append(")\n}") }; GlassCard { Text(code, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium) } }
 @Composable private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) { StandardSettingsRow(icon, title, subtitle) { Switch(checked, onCheckedChange) } }
