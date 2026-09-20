@@ -34,6 +34,9 @@
 
 GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpack Compose, designed for fast, clear, mobile-first GitHub workflows.
 
+> [!NOTE]
+> GitHub Rock keeps supported workflows native and uses real GitHub data. Availability can vary with authentication, repository permissions, GitHub API limits, asset availability, and Android platform rules.
+
 ### Project principles
 
 - **Native first** — GitHub workflows should feel like an Android application, not a website wrapper.
@@ -43,6 +46,17 @@ GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpa
 The authoritative implementation state is maintained in [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md).
 
 ## Features
+
+| Area | Supported capabilities |
+|---|---|
+| **Accounts & profile** | Authentication foundation, protected sessions, profiles, repositories, organizations and contributions |
+| **Home** | Account overview, activity, recent repositories, issues, pull requests, builds, downloads and releases |
+| **Repositories** | Search, details, README/files, branches, releases, issues, PRs, commits and Actions |
+| **Issues & PRs** | States, labels, assignees, comments, diffs, reviews and supported actions |
+| **Actions & Builds** | Workflows, runs, jobs, steps, logs, artifacts, dispatch, cancellation and reruns |
+| **Releases & downloads** | Release assets, supported downloads, progress, recovery and SHA-256 verification |
+| **Application discovery** | Real repository/release discovery with platform-aware asset selection |
+| **Search & services** | Repository, content, issue/PR search and supported GitHub destinations |
 
 ### Accounts & profile
 
@@ -113,7 +127,8 @@ Repository browsing stays inside GitHub Rock whenever the required GitHub data i
 - Android APK/package/signature inspection foundation
 - Android system-installer integration for APK installation
 
-Download behavior depends on GitHub permissions, asset availability, Android package rules, and the capability of the current build.
+> [!WARNING]
+> Download behavior depends on GitHub permissions, asset availability, Android package rules, and the capability of the current build.
 
 ### Application discovery
 
@@ -162,7 +177,8 @@ GitHub Rock uses a modern native Android design language focused on clarity, pro
 - Efficient full-screen/lazy presentation for large documents and logs
 - Explicit loading, empty, error, offline, permission, and recovery states
 
-Visual styling can evolve without changing the product contract. UI changes must not introduce fake functionality or duplicate data/API systems.
+> [!IMPORTANT]
+> Visual styling can evolve without changing the product contract. UI changes must not introduce fake functionality or duplicate data/API systems.
 
 ---
 
@@ -200,6 +216,15 @@ The Android app uses the existing authenticated networking/data layers rather th
 ---
 
 ## Data, security & reliability
+
+| Layer | Responsibility |
+|---|---|
+| GitHub API | Live repository, issue, PR, Actions, release and profile data |
+| Room | Supported local caching |
+| DataStore | Preferences and lightweight persisted state |
+| WorkManager | Supported background work |
+| Android Keystore | Authentication secret protection |
+| Verification | SHA-256 checks and explicit failure states where supported |
 
 - GitHub REST and supported GraphQL data
 - Room caching
@@ -289,7 +314,8 @@ For release signing and complete build configuration, see [`BUILD.md`](BUILD.md)
 
 GitHub Rock follows a verification-first workflow:
 
-**Audit → Root Cause → Fix → Build/Test → Verify → Commit → CI → Next issue**
+> [!TIP]
+> **Audit → Root Cause → Fix → Build/Test → Verify → Commit → CI → Next issue**
 
 A capability is supported only when the implementation is real and relevant verification evidence exists.
 
