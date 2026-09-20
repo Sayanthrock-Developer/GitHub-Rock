@@ -143,5 +143,6 @@ class GoogleTranslationService @Inject constructor() {
             TranslationLanguage("ur", "Urdu"),
             TranslationLanguage("vi", "Vietnamese"),
             TranslationLanguage("cy", "Welsh")
+        )
     }
 }
