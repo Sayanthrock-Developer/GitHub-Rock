@@ -109,14 +109,7 @@ fun ProfileUpdatesScreen(
                     selectedLanguage = selectedLanguage,
                     loading = translationState.loading,
                     error = translationState.error,
-                    onSelectLanguage = { language ->
-                        translationViewModel.translate(
-                            sourceTitle,
-                            sourceSubtitle,
-                            sourceDescription,
-                            language
-                        )
-                    },
+                    onSelectLanguage = translationViewModel::selectLanguage,
                     onTranslate = {
                         translationViewModel.translate(
                             sourceTitle,
