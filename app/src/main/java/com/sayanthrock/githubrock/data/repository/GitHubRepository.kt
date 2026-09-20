@@ -5,6 +5,7 @@ import com.sayanthrock.githubrock.core.model.*
 import com.sayanthrock.githubrock.core.network.GitHubRestApi
 import com.sayanthrock.githubrock.core.util.BuildRunTracker
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
+import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.data.local.RepositoryDao
 import com.sayanthrock.githubrock.data.local.RepositoryEntity
 import java.util.Locale
@@ -124,6 +125,10 @@ class GitHubRepository @Inject constructor(
             updatedAt = repository.updatedAt
         )
     )
+
+    suspend fun readme(owner: String, repo: String, ref: String?): String = withContext(Dispatchers.IO) {
+        SourceFileDecoder.decode(api.readme(owner, repo, ref))
+    }
 
     suspend fun contents(owner: String, repo: String, path: String, ref: String?) = api.contents(owner, repo, path, ref)
     suspend fun file(owner: String, repo: String, path: String, ref: String?) = api.file(owner, repo, path, ref)
