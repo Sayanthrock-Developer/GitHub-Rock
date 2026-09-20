@@ -44,7 +44,7 @@ If a capability is unavailable because of permissions, API limits, platform rest
 | Surface | GitHub Rock |
 |---|---|
 | **Home** | Account overview, activity, recent repositories, issues, PRs, builds, downloads and releases |
-| **Repositories** | Search, browse, files, README, branches, releases, issues, PRs, commits and Actions |
+| **Repositories** | Search, browse, files, README, translation, branches, releases, issues, PRs, commits and Actions |
 | **Issues** | States, labels, assignees, comments, metadata and supported actions |
 | **Pull requests** | Diffs, changed files, reviews, comments, reactions and supported actions |
 | **Actions / Builds** | Workflows, runs, jobs, steps, logs, artifacts, dispatch, cancellation and reruns |
@@ -76,6 +76,20 @@ GitHub Rock follows a **Liquid GitHub Luxury** direction:
 - No visual effect used as a substitute for functionality
 
 The visual system can evolve independently from the product contract.
+
+### README translation
+
+Repository README content can be translated directly inside the native README viewer:
+
+- Language picker with the supported Google ML Kit on-device translation languages
+- Automatic source-language detection, including README-context fallback for short headings and labels
+- Translated headings, paragraphs, bullets, tasks, quotes and supported alerts
+- Code blocks, images and tables remain unchanged
+- The original README is never replaced by translated content
+- Model download, loading, error and retry states are surfaced honestly
+- Switching back to **Original** restores the source README immediately
+
+Translation is performed with the existing Google ML Kit integration; GitHub Rock does not use hard-coded or simulated translations.
 
 ---
 
