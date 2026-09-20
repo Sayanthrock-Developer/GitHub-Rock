@@ -8,9 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,12 +30,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         if (consumeOAuthCallback(intent)) setIntent(Intent())
         if (redirectNonRepositoryGitHubUrl(intent)) {
             finish()
             return
         }
-        enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
         setContent {
             val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
@@ -67,18 +65,12 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = appearance.reduceMotion,
                 showImages = appearance.showImages
             ) {
-                val systemBarColor = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect {
-                    // Edge-to-edge owns the system navigation region. Keep it transparent so Android
-                    // cannot paint a separate white navigation strip behind the app's navigation UI.
-                    window.statusBarColor = android.graphics.Color.TRANSPARENT
-                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                    window.decorView.setBackgroundColor(systemBarColor)
+                    // enableEdgeToEdge() owns transparent system bars. Only the icon appearance is
+                    // updated here so explicit Light/Dark/AMOLED choices remain synchronized with
+                    // the resolved Compose theme without painting a separate system-bar surface.
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !useDarkTheme
-                        // Light mode needs dark system navigation icons; dark mode needs light icons.
-                        // This is intentionally derived from the resolved app theme rather than a
-                        // hard-coded white navigation color.
                         isAppearanceLightNavigationBars = !useDarkTheme
                     }
                 }
