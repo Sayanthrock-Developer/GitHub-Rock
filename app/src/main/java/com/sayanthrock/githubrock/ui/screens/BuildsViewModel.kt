@@ -109,6 +109,14 @@ class BuildsViewModel @Inject constructor(
 
     fun cancelRun(selected: GitHubRepositoryModel, runId: Long) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, message = null) }
+        val current = runCatching { repository.run(selected.owner.login, selected.name, runId) }.getOrElse {
+            _state.update { it.copy(loading = false, error = it.message ?: "Unable to load the build before cancellation") }
+            return@launch
+        }
+        if (!BuildRunTracker.isActive(current)) {
+            _state.update { it.copy(loading = false, run = current, error = "This build is no longer active and cannot be cancelled.") }
+            return@launch
+        }
         runCatching { check(repository.cancel(selected.owner.login, selected.name, runId)) { "GitHub rejected the cancellation" }; repository.run(selected.owner.login, selected.name, runId) }
             .onSuccess { run -> trackingJob?.cancel(); _state.update { it.copy(loading = false, tracking = false, run = run, recentRuns = it.recentRuns.upsertRun(run), message = "Build cancelled") }; loadRunDetails(selected, run.id) }
             .onFailure { error -> _state.update { it.copy(loading = false, error = error.message ?: "Unable to cancel the build") } }
@@ -116,6 +124,14 @@ class BuildsViewModel @Inject constructor(
 
     fun rerunRun(selected: GitHubRepositoryModel, runId: Long) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, message = null) }
+        val current = runCatching { repository.run(selected.owner.login, selected.name, runId) }.getOrElse {
+            _state.update { it.copy(loading = false, error = it.message ?: "Unable to load the build before re-running") }
+            return@launch
+        }
+        if (current.status != "completed") {
+            _state.update { it.copy(loading = false, run = current, error = "This build is not completed and cannot be re-run yet.") }
+            return@launch
+        }
         runCatching { check(repository.rerun(selected.owner.login, selected.name, runId)) { "GitHub rejected the re-run" }; repository.run(selected.owner.login, selected.name, runId) }
             .onSuccess { run -> _state.update { it.copy(loading = false, tracking = BuildRunTracker.isActive(run), run = run, recentRuns = it.recentRuns.upsertRun(run), message = "Build re-run requested") }; if (BuildRunTracker.isActive(run)) monitorRun(selected, run) else loadRunDetails(selected, run.id) }
             .onFailure { error -> _state.update { it.copy(loading = false, error = error.message ?: "Unable to re-run the build") } }
