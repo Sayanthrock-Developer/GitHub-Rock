@@ -341,6 +341,7 @@ class RepositoryHubViewModel @Inject constructor(
         }
 
         const val MAX_LANGUAGE_DETECTION_BLOCKS = 8
+        const val MAX_RELEASE_BLOCKS = 10
         val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
     }
 }
