@@ -3,7 +3,7 @@
 
   # GitHub Rock
 
-  **A native, mobile-first GitHub client for Android developers.**
+  **Your GitHub. Your style. Native Android.**
 
   Browse repositories, inspect code, manage issues and pull requests, monitor GitHub Actions, explore releases, and handle supported downloads through a native Android experience built around real GitHub data.
 
@@ -16,9 +16,23 @@
 
 ---
 
+## Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [UI & UX](#ui--ux)
+- [Architecture](#architecture)
+- [Data, security & reliability](#data-security--reliability)
+- [Android support](#android-support)
+- [Build locally](#build-locally)
+- [Documentation](#documentation)
+- [Development standard](#development-standard)
+- [Project status](#project-status)
+- [License](#license)
+
 ## Overview
 
-GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpack Compose.
+GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpack Compose, designed for fast, clear, mobile-first GitHub workflows.
 
 ### Project principles
 
@@ -132,7 +146,7 @@ Discover installable open-source applications from **real GitHub repository and 
 
 ## UI & UX
 
-GitHub Rock uses a modern native Android design language focused on clarity, productivity, and accessibility.
+GitHub Rock uses a modern native Android design language focused on clarity, productivity, accessibility, and consistent motion.
 
 - Kotlin + Jetpack Compose
 - Material 3 foundation
