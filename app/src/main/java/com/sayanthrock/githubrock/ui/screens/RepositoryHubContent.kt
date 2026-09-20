@@ -1095,7 +1095,7 @@ private fun WhatsNewCard(
                         MarkdownRenderer.render(body).take(MAX_RELEASE_BLOCKS)
                     }
                     blocks.forEachIndexed { index, block ->
-                        MarkdownBlockView(block, translatedBlocks[index])
+                        MarkdownBlockView(block, translatedBlocks[index] ?: block.text)
                     }
                 } ?: Text("No release notes were provided.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
