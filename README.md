@@ -32,10 +32,10 @@
 
 ## Overview
 
-GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpack Compose, designed for fast, clear, mobile-first GitHub workflows.
+GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpack Compose for mobile-first GitHub workflows.
 
 > [!NOTE]
-> GitHub Rock keeps supported workflows native and uses real GitHub data. Availability can vary with authentication, repository permissions, GitHub API limits, asset availability, and Android platform rules.
+> This README describes the current application surface, not a promise that every GitHub website feature exists in the Android app. The authoritative implementation state is [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md). Authentication, repository permissions, API availability, platform rules, and backend/companion boundaries can affect individual features.
 
 ### Project principles
 
@@ -43,7 +43,7 @@ GitHub Rock is a **native Android GitHub companion** built with Kotlin and Jetpa
 - **Real data** — product claims are backed by actual GitHub integrations and explicit state handling.
 - **Honest status** — unfinished or permission-dependent capabilities are not presented as working merely because a screen, button, route, or API method exists.
 
-The authoritative implementation state is maintained in [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md).
+For feature-by-feature verification, platform boundaries, and the definition of “implemented”, see [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md).
 
 ## Features
 
@@ -52,7 +52,7 @@ The authoritative implementation state is maintained in [`IMPLEMENTATION_STATUS.
 | **Accounts & profile** | Authentication foundation, protected sessions, profiles, repositories, organizations and contributions |
 | **Home** | Account overview, activity, recent repositories, issues, pull requests, builds, downloads and releases |
 | **Repositories** | Search, details, README/files, branches, releases, issues, PRs, commits and Actions |
-| **Issues & PRs** | States, labels, assignees, comments, diffs, reviews and supported actions |
+| **Issues & PRs** | Browse, states, labels, assignees, comments, diffs, reviews, reactions and supported actions |
 | **Actions & Builds** | Workflows, runs, jobs, steps, logs, artifacts, dispatch, cancellation and reruns |
 | **Releases & downloads** | Release assets, supported downloads, progress, recovery and SHA-256 verification |
 | **Application discovery** | Real repository/release discovery with platform-aware asset selection |
@@ -60,9 +60,10 @@ The authoritative implementation state is maintained in [`IMPLEMENTATION_STATUS.
 
 ### Accounts & profile
 
-- GitHub Device Flow authentication foundation
+- GitHub OAuth Device Flow request, polling, refresh, and logout foundation
 - Android Keystore-backed token protection
-- Session refresh and sign-out
+- Connected-account and public guest browsing
+- Explicit authentication and permission/error states
 - Public browsing without authentication
 - Connected GitHub profile
 - Repositories, followers, following, organizations, contributions, and supported profile fields
@@ -211,7 +212,7 @@ Auth · Actions · Releases · Downloads · APK inspection
 - GitHub GraphQL APIs where supported
 - GitHub Actions
 
-The Android app uses the existing authenticated networking/data layers rather than introducing duplicate Retrofit/API infrastructure for individual features.
+The Android app reuses its authenticated networking/data layers rather than creating duplicate Retrofit/API clients for individual features.
 
 ---
 
@@ -245,7 +246,7 @@ Security-sensitive credentials must follow [`BUILD.md`](BUILD.md) and remain out
 ## Android support
 
 - **Minimum:** Android 10 / API 29
-- **Current project target range:** API 29–36
+- **Current project API range:** API 29–36
 - **Primary platform:** Android
 
 The repository also contains companion/web and desktop-oriented components. Their platform-specific functionality is kept separate from the native Android feature set described here.
@@ -269,7 +270,7 @@ cd GitHub-Rock
 cp local.properties.example local.properties
 ```
 
-Set the correct `sdk.dir` in `local.properties`. If authentication requires a GitHub OAuth App client ID or backend URL, follow [`BUILD.md`](BUILD.md).
+Set the correct `sdk.dir` in `local.properties`. If local authentication requires a GitHub OAuth App client ID or backend URL, follow [`BUILD.md`](BUILD.md). A client secret must never be placed in the Android application.
 
 > **Never commit** tokens, client secrets, signing keys, keystores, passwords, or `local.properties`.
 
@@ -339,6 +340,19 @@ Platform, permission, backend, or OS dependencies must remain visible in the imp
 ## Project status
 
 GitHub Rock is actively developed. This README documents the product surface and development contract; [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md) is the authoritative source for detailed implementation status.
+
+### What this README does not claim
+
+The following are intentionally **not** presented as universally available Android features:
+
+- Every GitHub website operation
+- Arbitrary user-profile search/follow operations
+- Unrestricted terminal or shell execution
+- Local git worktrees, IDE/LSP processes, or desktop-only developer tooling
+- Backend/cloud-agent capabilities without a supported backend
+- Provider-specific functionality without API/entitlement evidence
+
+If a capability is partial, platform-dependent, companion-only, or roadmap work, its status belongs in [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md) rather than being described here as complete.
 
 - [Releases](https://github.com/Sayanthrock-Developer/GitHub-Rock/releases)
 - [Issues](https://github.com/Sayanthrock-Developer/GitHub-Rock/issues)
