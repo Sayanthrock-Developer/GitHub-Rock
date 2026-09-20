@@ -3,16 +3,21 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -27,6 +32,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -35,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sayanthrock.githubrock.core.model.GitHubNotification
+import com.sayanthrock.githubrock.core.translation.GoogleTranslationService
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 
@@ -46,25 +55,226 @@ enum class ProfileUpdateSection(val route: String, val title: String, val subtit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileUpdatesScreen(section: ProfileUpdateSection, onBack: () -> Unit) {
+fun ProfileUpdatesScreen(
+    section: ProfileUpdateSection,
+    onBack: () -> Unit,
+    translationViewModel: ProfileUpdatesTranslationViewModel = hiltViewModel()
+) {
     if (section == ProfileUpdateSection.Announcements) {
         GitHubNotificationsScreen(onBack)
         return
     }
+
+    val translationState by translationViewModel.state.collectAsState()
+    val sourceTitle = "What's new"
+    val sourceSubtitle = "Recent GitHub Rock improvements"
+    val sourceDescription = "Your app updates are shown here."
+    val selectedLanguage = translationState.targetLanguage ?: "en"
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), contentDescription = "Back") } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                title = {
+                    Column {
+                        Text(
+                            translationState.translatedTitle ?: sourceTitle,
+                            fontWeight = FontWeight.Black
+                        )
+                        Text(
+                            translationState.translatedSubtitle ?: sourceSubtitle,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(RockIcon.Back.vector(), contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         }
     ) { padding ->
-        GlassCard(modifier = Modifier.padding(padding).padding(16.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(RockIcon.AutoAwesome.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Column { Text("GitHub Rock", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black); Text("Your app updates are shown here.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                WhatsNewTranslationCard(
+                    selectedLanguage = selectedLanguage,
+                    loading = translationState.loading,
+                    error = translationState.error,
+                    onSelectLanguage = { language ->
+                        translationViewModel.translate(
+                            sourceTitle,
+                            sourceSubtitle,
+                            sourceDescription,
+                            language
+                        )
+                    },
+                    onTranslate = {
+                        translationViewModel.translate(
+                            sourceTitle,
+                            sourceSubtitle,
+                            sourceDescription,
+                            selectedLanguage
+                        )
+                    }
+                )
+            }
+
+            item {
+                GlassCard {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            RockIcon.AutoAwesome.vector(),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column {
+                            Text(
+                                translationState.translatedTitle ?: "GitHub Rock",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                translationState.translatedDescription ?: sourceDescription,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WhatsNewTranslationCard(
+    selectedLanguage: String,
+    loading: Boolean,
+    error: String?,
+    onSelectLanguage: (String) -> Unit,
+    onTranslate: () -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val language = GoogleTranslationService.supportedLanguages.firstOrNull { it.code == selectedLanguage }
+        ?: GoogleTranslationService.supportedLanguages.first()
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Icon(
+                        RockIcon.Public.vector(),
+                        contentDescription = "Translate",
+                        modifier = Modifier.padding(12.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Column {
+                    Text("Translate", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Render this page in another language.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Text(
+                "Target language",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Box {
+                Surface(
+                    onClick = { expanded = true },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(RockIcon.Public.vector(), contentDescription = null)
+                        Text(
+                            language.label,
+                            modifier = Modifier.weight(1f).padding(start = 12.dp),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Icon(RockIcon.ArrowDropDown.vector(), contentDescription = "Choose language")
+                    }
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    GoogleTranslationService.supportedLanguages.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                expanded = false
+                                onSelectLanguage(option.code)
+                            }
+                        )
+                    }
+                }
+            }
+
+            Button(
+                onClick = onTranslate,
+                enabled = !loading,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Icon(RockIcon.Public.vector(), contentDescription = null)
+                }
+                Text(
+                    if (loading) "Translating…" else "Translate to " + language.label,
+                    modifier = Modifier.padding(start = 10.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            error?.let {
+                Text(
+                    "Translation unavailable: " + it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
