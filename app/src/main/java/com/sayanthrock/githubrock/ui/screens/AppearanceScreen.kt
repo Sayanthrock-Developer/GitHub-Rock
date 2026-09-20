@@ -254,39 +254,25 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
 private fun selectedHex(hue: Float, saturation: Float, brightness: Float): String { val color = Color.hsv(hue, saturation, brightness); return "#%02X%02X%02X".format((color.red * 255f).toInt().coerceIn(0, 255), (color.green * 255f).toInt().coerceIn(0, 255), (color.blue * 255f).toInt().coerceIn(0, 255)) }
 
 @Composable private fun ThemeControls(state: AppearancePreferences, onThemeMode: (ThemeMode) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onShowImages: (Boolean) -> Unit) = StandardSettingsGroup {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Default.DarkMode, null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
-                Text("Color mode", style = MaterialTheme.typography.titleSmall)
+                Text("Color mode", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text("System follows Android. Light and Dark stay fixed.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ThemeMode.entries.forEach { mode ->
-                val selected = state.themeMode == mode
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = MaterialTheme.shapes.medium,
-                    color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                    border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
-                ) {
-                    FilterChip(
-                        selected = selected,
-                        onClick = {
-                            onThemeMode(mode)
-                            if (mode != ThemeMode.Dark) onTrueBlack(false)
-                        },
-                        label = { Text(mode.name, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
-                        leadingIcon = if (selected) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        }
-        if (state.themeMode == ThemeMode.System) {
-            Text("System selected", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-        }
+        ColorModePreviewSelector(state.themeMode, onThemeMode, onTrueBlack)
+        Text(
+            when (state.themeMode) {
+                ThemeMode.System -> "Adaptive · follows your Android light/dark setting"
+                ThemeMode.Light -> "Fixed Light · stays light until you change it"
+                ThemeMode.Dark -> "Fixed Dark · stays dark until you change it"
+            },
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+        )
     }
     StandardSettingsDivider()
     ToggleRow(Icons.Default.Image, "Show remote images", "Avatars and repository artwork", state.showImages, onShowImages)
@@ -295,6 +281,108 @@ private fun selectedHex(hue: Float, saturation: Float, brightness: Float): Strin
     StandardSettingsDivider()
     ToggleRow(Icons.Default.DarkMode, "AMOLED", "True black #000000 in dark mode only", state.trueBlack && state.themeMode == ThemeMode.Dark, onTrueBlack)
 }
+
+@Composable
+private fun ColorModePreviewSelector(
+    selectedMode: ThemeMode,
+    onSelected: (ThemeMode) -> Unit,
+    onTrueBlack: (Boolean) -> Unit,
+) {
+    val modes = listOf(
+        ThemeMode.System to "System",
+        ThemeMode.Light to "Light",
+        ThemeMode.Dark to "Dark",
+    )
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        modes.forEach { (mode, label) ->
+            val selected = selectedMode == mode
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .selectable(
+                        selected = selected,
+                        enabled = true,
+                        role = Role.RadioButton,
+                        onClick = {
+                            onSelected(mode)
+                            if (mode != ThemeMode.Dark) onTrueBlack(false)
+                        },
+                    )
+                    .semantics { contentDescription = "$label color mode" },
+                shape = MaterialTheme.shapes.large,
+                color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(
+                    if (selected) 2.dp else 1.dp,
+                    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                ),
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ModeMiniPreview(mode, selected)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+                        if (selected) Icon(Icons.Default.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Text(
+                        when (mode) {
+                            ThemeMode.System -> "Follows Android"
+                            ThemeMode.Light -> "Always light"
+                            ThemeMode.Dark -> "Always dark"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeMiniPreview(mode: ThemeMode, selected: Boolean) {
+    val lightSurface = Color(0xFFF3F5F7)
+    val lightCard = Color(0xFFFFFFFF)
+    val darkSurface = Color(0xFF111418)
+    val darkCard = Color(0xFF1B2026)
+    Box(Modifier.fillMaxWidth().height(58.dp), contentAlignment = Alignment.Center) {
+        when (mode) {
+            ThemeMode.System -> Row(Modifier.fillMaxWidth().height(58.dp)) {
+                Surface(Modifier.weight(1f).fillMaxSize(), color = lightSurface, shape = MaterialTheme.shapes.medium) {}
+                Surface(Modifier.weight(1f).fillMaxSize(), color = darkSurface, shape = MaterialTheme.shapes.medium) {}
+            }
+            ThemeMode.Light -> Surface(Modifier.fillMaxSize(), color = lightSurface, shape = MaterialTheme.shapes.medium) {}
+            ThemeMode.Dark -> Surface(Modifier.fillMaxSize(), color = darkSurface, shape = MaterialTheme.shapes.medium) {}
+        }
+        Surface(
+            Modifier.size(width = 42.dp, height = 28.dp),
+            color = when (mode) {
+                ThemeMode.System -> MaterialTheme.colorScheme.surface
+                ThemeMode.Light -> lightCard
+                ThemeMode.Dark -> darkCard
+            },
+            shape = MaterialTheme.shapes.small,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            Row(Modifier.fillMaxSize().padding(5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Surface(Modifier.width(4.dp).fillMaxSize(), color = MaterialTheme.colorScheme.primary, shape = CircleShape) {}
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Surface(Modifier.fillMaxWidth().height(4.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = .45f), shape = CircleShape) {}
+                    Surface(Modifier.width(22.dp).height(3.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .45f), shape = CircleShape) {}
+                }
+            }
+        }
+        if (selected) {
+            Surface(Modifier.size(22.dp).align(Alignment.TopEnd), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+        }
+    }
+}
+
 @Composable private fun TypographyPreview() = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { Text("Interface preview", style = MaterialTheme.typography.headlineSmall); Text("Clean typography preview", style = MaterialTheme.typography.titleMedium); Text("Repositories, workflows, releases, and code remain readable at every selected size.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
 @Composable private fun CodeColorPreview() { val colors = LocalCodeColors.current; val code = buildAnnotatedString { withStyle(SpanStyle(color = colors.keyword, fontWeight = FontWeight.Bold)) { append("fun ") }; withStyle(SpanStyle(color = colors.type)) { append("publishRelease") }; append("() {\n  "); withStyle(SpanStyle(color = colors.keyword)) { append("val ") }; withStyle(SpanStyle(color = colors.property)) { append("version") }; append(" = "); withStyle(SpanStyle(color = colors.string)) { append("\"1.0.0\"") }; append("\n  "); withStyle(SpanStyle(color = colors.comment)) { append("// Signed and verified") }; append("\n  "); withStyle(SpanStyle(color = colors.type)) { append("release") }; append("("); withStyle(SpanStyle(color = colors.number)) { append("100") }; append(")\n}") }; GlassCard { Text(code, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium) } }
 @Composable private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) { StandardSettingsRow(icon, title, subtitle) { Switch(checked, onCheckedChange) } }
