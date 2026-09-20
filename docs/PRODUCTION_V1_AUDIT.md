@@ -25,7 +25,7 @@ This is an evidence-based starting point, not a claim that v1.0 is complete.
 
 - Device Flow, Keystore-backed storage, redacted logging, cleartext blocking, and release certificate verification are present and are good foundations.
 - The OAuth client ID is intentionally public, but the authentication setup and callback documentation must be reconciled with the actual Device Flow implementation. No client secret may enter the APK or CI logs.
-- The manifest requests broad install/delete package, foreground-service, boot, and Termux permissions. Each permission needs a feature-level justification, runtime gating, and a release review. Remove anything not required by the shipped Android experience.
+- The manifest requests broad install/delete package, foreground-service, and boot permissions. Each permission needs a feature-level justification, runtime gating, and a release review. Remove anything not required by the shipped Android experience.
 - The HTTPS GitHub deep-link filter is broad. Incoming URLs must be parsed into a strict allow-list before any native navigation, with all other GitHub URLs handed to the browser.
 - Biometric app lock, token cleanup verification, and session-recovery tests remain release-blocking gaps unless already covered elsewhere in the source tree.
 
