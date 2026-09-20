@@ -87,9 +87,46 @@ private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
     ThemeStyle.Obsidian -> Shapes(extraSmall = RoundedCornerShape(7.dp), small = RoundedCornerShape(11.dp), medium = RoundedCornerShape(15.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
 }
 
+private fun contrastRatio(foreground: Color, background: Color): Float {
+    val lighter = maxOf(relativeLuminance(foreground), relativeLuminance(background))
+    val darker = minOf(relativeLuminance(foreground), relativeLuminance(background))
+    return (lighter + 0.05f) / (darker + 0.05f)
+}
+
+private fun ColorScheme.ensureTextContrast(dark: Boolean): ColorScheme {
+    val textFallback = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D)
+    val mutedFallback = if (dark) Color(0xFFB8C1CC) else Color(0xFF59636E)
+    val primaryFallback = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D)
+
+    fun readable(candidate: Color, fallback: Color, background: Color, minimum: Float): Color =
+        if (contrastRatio(candidate, background) >= minimum) candidate else fallback
+
+    val safeOnBackground = readable(onBackground, textFallback, background, 4.5f)
+    val safeOnSurface = readable(onSurface, textFallback, surface, 4.5f)
+    val safeOnSurfaceVariant = readable(onSurfaceVariant, mutedFallback, surfaceVariant, 4.5f)
+    val safeOnPrimary = readable(onPrimary, primaryFallback, primary, 4.5f)
+    val safeOnPrimaryContainer = readable(onPrimaryContainer, textFallback, primaryContainer, 4.5f)
+
+    return copy(
+        onBackground = safeOnBackground,
+        onSurface = safeOnSurface,
+        onSurfaceVariant = safeOnSurfaceVariant,
+        onPrimary = safeOnPrimary,
+        onPrimaryContainer = safeOnPrimaryContainer
+    )
+}
+
 private fun ColorScheme.applyStyle(style: ThemeStyle, dark: Boolean): ColorScheme = when (style) {
     ThemeStyle.Clean -> this
-    ThemeStyle.LiquidGlass -> copy(surface = surface.copy(alpha = .94f), surfaceContainer = surfaceContainer.copy(alpha = .90f), surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .92f), surfaceVariant = surfaceVariant.copy(alpha = .88f), outlineVariant = primary.copy(alpha = .20f))
+    ThemeStyle.LiquidGlass -> copy(
+        // Keep glass translucent enough for the effect without making text depend on
+        // an unpredictable background behind the surface.
+        surface = surface.copy(alpha = .96f),
+        surfaceContainer = surfaceContainer.copy(alpha = .94f),
+        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .96f),
+        surfaceVariant = surfaceVariant.copy(alpha = .94f),
+        outlineVariant = primary.copy(alpha = .20f)
+    )
     ThemeStyle.Studio -> copy(background = if (dark) Color(0xFF0B0E12) else Color(0xFFF6F7F9), surface = if (dark) Color(0xFF11161D) else Color.White, surfaceContainer = if (dark) Color(0xFF151B23) else Color(0xFFF0F2F5), surfaceContainerHigh = if (dark) Color(0xFF1B222C) else Color(0xFFE7EBF0))
     ThemeStyle.Midnight -> copy(background = if (dark) Color(0xFF070B14) else Color(0xFFF4F7FC), surface = if (dark) Color(0xFF0D1422) else Color.White, surfaceContainer = if (dark) Color(0xFF121C2D) else Color(0xFFEAF0FA), surfaceContainerHigh = if (dark) Color(0xFF19263A) else Color(0xFFDDE7F5), outlineVariant = primary.copy(alpha = .28f))
     ThemeStyle.Aurora -> copy(background = if (dark) Color(0xFF07110F) else Color(0xFFF4FBF8), surface = if (dark) Color(0xFF0D1A17) else Color.White, surfaceContainer = if (dark) Color(0xFF13231F) else Color(0xFFE8F6F0), surfaceContainerHigh = if (dark) Color(0xFF1A2E29) else Color(0xFFD9EEE6), outlineVariant = tertiary.copy(alpha = .30f))
@@ -140,6 +177,9 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = true, tru
     }
         .applyStyle(themeStyle, darkTheme)
         .applyTrueBlack(darkTheme, trueBlack)
+        // Glass surfaces may blend with content beneath them, so validate the final
+        // semantic text tokens after every theme/style transformation.
+        .ensureTextContrast(darkTheme)
     val density = Density(baseDensity.density * displaySize.scale(), baseDensity.fontScale * fontSize.scale())
     CompositionLocalProvider(LocalRemoteImagesEnabled provides showImages, LocalLoadingStyle provides loadingStyle, LocalReduceMotion provides reduceMotion, LocalCodeColorStyle provides codeColorStyle, LocalLogDisplayStyle provides logDisplayStyle, LocalCodeColors provides codeColors(codeColorStyle, darkTheme), LocalDensity provides density) {
         MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)
