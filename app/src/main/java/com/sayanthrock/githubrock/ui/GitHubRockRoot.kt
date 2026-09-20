@@ -76,7 +76,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
                     NavigationContent(navController = navController, bottomContentPadding = navigationContentBottomPadding) {
                         MainNavigationV2(navController, state, viewModel::searchRepositories, viewModel::inspectProfile, viewModel::rememberRepository, openGitHubUrl, viewModel::refresh, viewModel::logout)
                     }
-                    RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion, modifier = Modifier.fillMaxSize())
+                    RockNavigationChrome(navController = navController, style = appearanceState.navigationBarStyle, animationStyle = appearanceState.animationStyle, reduceMotion = appearanceState.reduceMotion)
                 }
             }
         }
