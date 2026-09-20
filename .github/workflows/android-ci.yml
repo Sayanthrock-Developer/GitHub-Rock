@@ -16,7 +16,7 @@ concurrency:
 jobs:
   verify:
     name: Verify Android
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload verification artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: github-rock-verification
           path: |
