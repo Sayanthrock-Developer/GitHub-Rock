@@ -164,6 +164,18 @@ Discover installable open-source applications from **real GitHub repository and 
 
 GitHub Rock uses a modern native Android design language focused on clarity, productivity, accessibility, and consistent motion.
 
+### Main navigation
+
+The primary Android destinations are:
+
+- **Home**
+- **Repositories**
+- **Builds**
+- **Downloads**
+- **Profile**
+
+Explore and Settings are not primary bottom-navigation destinations. Settings and appearance preferences are reached through the appropriate in-app controls.
+
 - Kotlin + Jetpack Compose
 - Material 3 foundation
 - Mobile-first responsive layouts
