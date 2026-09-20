@@ -39,6 +39,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -77,6 +81,16 @@ fun LoginScreenV2(
     val colors = MaterialTheme.colorScheme
     val code = auth.code
     val authorizationUrl = auth.authorizationUrl
+    var copiedDeviceCode by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(code?.deviceCode) {
+        val deviceCode = code?.deviceCode ?: return@LaunchedEffect
+        if (copiedDeviceCode == deviceCode) return@LaunchedEffect
+        val userCode = code.userCode.takeIf(String::isNotBlank) ?: return@LaunchedEffect
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", userCode))
+        copiedDeviceCode = deviceCode
+    }
 
     LaunchedEffect(code?.deviceCode) {
         code?.verificationUri?.let(onOpenGitHubUrl)
@@ -120,7 +134,7 @@ fun LoginScreenV2(
                         status = auth.status,
                         onCheckAuthorization = onCheckAuthorization,
                         onOpenGitHubUrl = onOpenGitHubUrl,
-                        context = context,
+                        copied = copiedDeviceCode == code.deviceCode,
                         onRestart = onLogin,
                         onGuest = onGuest
                     )
@@ -333,6 +347,7 @@ private fun AuthorizationCard(
     onCheckAuthorization: () -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
     context: Context,
+    copied: Boolean,
     onRestart: () -> Unit,
     onGuest: () -> Unit
 ) {
@@ -367,7 +382,7 @@ private fun AuthorizationCard(
                     ) {
                         Icon(RockIcon.Copy.vector(), contentDescription = null)
                         Spacer(Modifier.width(6.dp))
-                        Text("Copy code")
+                        Text(if (copied) "Copied automatically" else "Copy code")
                     }
                 }
             }
