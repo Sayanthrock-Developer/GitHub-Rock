@@ -24,6 +24,7 @@
 - [Architecture](#architecture)
 - [Data, security & reliability](#data-security--reliability)
 - [Android support](#android-support)
+- [Distribution](#distribution)
 - [Build locally](#build-locally)
 - [Documentation](#documentation)
 - [Development standard](#development-standard)
@@ -264,6 +265,46 @@ Security-sensitive credentials must follow [`BUILD.md`](BUILD.md) and remain out
 The repository also contains companion/web and desktop-oriented components. Their platform-specific functionality is kept separate from the native Android feature set described here.
 
 ---
+
+## Distribution
+
+GitHub Rock uses a verification-first distribution policy. Only a channel with a real, compatible artifact is described as installable.
+
+### Currently verified
+
+- **GitHub source and CI** — the repository contains the native Android application and release/build workflows.
+- **GitHub Actions artifacts** — CI can produce Android build artifacts for verified workflow runs. These are CI artifacts, not a public stable release channel.
+
+### Prepared, but not currently installable
+
+The following companion repositories are intentionally maintained without placeholder packages until compatible public release artifacts exist:
+
+- [Scoop bucket](https://github.com/Sayanthrock-Developer/GitHub-Rock-scoop-bucket) — requires a real Windows portable artifact.
+- [WinGet manifests](https://github.com/Sayanthrock-Developer/winget-pkgs-GitHub-Rock-) — requires a real Windows installer and matching SHA-256.
+- [Homebrew tap](https://github.com/Sayanthrock-Developer/homebrew-github-rock) — requires a real macOS application artifact suitable for a Homebrew Cask.
+
+There is currently **no published GitHub Rock release** in the repository, so the package-manager channels above must not be presented as working installation methods yet. Excavator/validation automation can remain enabled, but it cannot manufacture a package without a real release artifact.
+
+> [!IMPORTANT]
+> Do not add a fake version, placeholder URL, guessed checksum, Android APK to a desktop package manager, or an install command for a package that has no manifest. When a compatible release is published, update the corresponding distribution repository from that exact artifact and verify the package before documenting it as supported.
+
+### Release flow
+
+```text
+Verified build
+    ↓
+Compatible platform artifact
+    ↓
+GitHub Release + checksum
+    ↓
+Scoop / WinGet / Homebrew package metadata (only where applicable)
+    ↓
+Package validation
+    ↓
+Document the channel as supported
+```
+
+This keeps GitHub Rock aligned with the same distribution structure used by comparable projects while preserving the project's rule: **only real, verified, supported options are listed as working.**
 
 ## Build locally
 
