@@ -11,7 +11,6 @@ import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.RepositoryReadmePolicy
-import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
 import com.sayanthrock.githubrock.data.settings.AppPreferences
@@ -284,25 +283,11 @@ class RepositoryHubViewModel @Inject constructor(
             }
             val readmeDeferred = async {
                 runCatchingPreservingCancellation {
-                    val rootEntries = githubRepository.contents(
+                    githubRepository.readme(
                         owner = owner,
                         repo = repoName,
-                        path = "",
                         ref = resolvedRepository.defaultBranch
                     )
-                    val readmePath = rootEntries.firstOrNull { entry ->
-                        README_CANDIDATES.any { candidate ->
-                            entry.name.equals(candidate, ignoreCase = true)
-                        }
-                    }?.path
-                    readmePath?.let { path ->
-                        githubRepository.file(
-                            owner = owner,
-                            repo = repoName,
-                            path = path,
-                            ref = resolvedRepository.defaultBranch
-                        ).let(SourceFileDecoder::decode)
-                    }
                 }
             }
 
@@ -342,6 +327,5 @@ class RepositoryHubViewModel @Inject constructor(
 
         const val MAX_LANGUAGE_DETECTION_BLOCKS = 8
         const val MAX_RELEASE_BLOCKS = 10
-        val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
     }
 }
