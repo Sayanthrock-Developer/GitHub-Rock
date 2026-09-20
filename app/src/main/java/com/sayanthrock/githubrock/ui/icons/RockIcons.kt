@@ -53,6 +53,8 @@ import com.composables.icons.materialsymbols.rounded.Public as PublicRegular
 import com.composables.icons.materialsymbols.rounded.Refresh as RefreshRegular
 import com.composables.icons.materialsymbols.rounded.Search as SearchRegular
 import com.composables.icons.materialsymbols.rounded.Security as SecurityRegular
+import com.composables.icons.materialsymbols.rounded.Error_outline as ErrorOutlineRegular
+import com.composables.icons.materialsymbols.rounded.Schedule as ScheduleRegular
 import com.composables.icons.materialsymbols.rounded.Settings as SettingsRegular
 import com.composables.icons.materialsymbols.rounded.Star as StarRegular
 import com.composables.icons.materialsymbols.rounded.Stop as StopRegular
@@ -116,6 +118,8 @@ import com.composables.icons.materialsymbols.roundedfilled.Public
 import com.composables.icons.materialsymbols.roundedfilled.Refresh
 import com.composables.icons.materialsymbols.roundedfilled.Search
 import com.composables.icons.materialsymbols.roundedfilled.Security
+import com.composables.icons.materialsymbols.roundedfilled.Error_outline
+import com.composables.icons.materialsymbols.roundedfilled.Schedule
 import com.composables.icons.materialsymbols.roundedfilled.Settings
 import com.composables.icons.materialsymbols.roundedfilled.Star
 import com.composables.icons.materialsymbols.roundedfilled.Stop
@@ -133,7 +137,7 @@ enum class RockIcon {
     Home, Explore, Repositories, Builds, Downloads, Profile, Settings,
     Back, ArrowForward, Search, Chat, Check, Error, AccountCircle, Announcement, AutoAwesome,
     ChevronRight, Favorite, FavoriteBorder, History, Info, Logout, Star, Tune, Archive, Code,
-    Download, Notifications, Security, Lock, Copy, OpenInBrowser,
+    Download, Notifications, Security, ErrorOutline, Schedule, Lock, Copy, OpenInBrowser,
     ExpandLess, ExpandMore, Refresh, Stop, Sync, Timer, FolderOpen, OpenInNew, Public,
     CloudDownload, Palette, Person, PersonAdd, PersonRemove, PrivacyTip, Storage, CallSplit, Tag, Description, UploadFile,
     Add, ArrowDropDown, Close, Android, Devices, LaptopMac, DesktopWindows, PhoneIphone, Terminal, BatterySaver, Delete, ViewCompact,
@@ -167,6 +171,8 @@ enum class RockIcon {
         Code -> if (selected) MaterialSymbols.RoundedFilled.Code else MaterialSymbols.Rounded.CodeRegular
         Notifications -> if (selected) MaterialSymbols.RoundedFilled.Notifications else MaterialSymbols.Rounded.NotificationsRegular
         Security -> if (selected) MaterialSymbols.RoundedFilled.Security else MaterialSymbols.Rounded.SecurityRegular
+        ErrorOutline -> if (selected) MaterialSymbols.RoundedFilled.Error_outline else MaterialSymbols.Rounded.ErrorOutlineRegular
+        Schedule -> if (selected) MaterialSymbols.RoundedFilled.Schedule else MaterialSymbols.Rounded.ScheduleRegular
         Lock -> if (selected) MaterialSymbols.RoundedFilled.Lock else MaterialSymbols.Rounded.LockRegular
         Copy -> if (selected) MaterialSymbols.RoundedFilled.Content_copy else MaterialSymbols.Rounded.ContentCopyRegular
         OpenInBrowser -> if (selected) MaterialSymbols.RoundedFilled.Open_in_browser else MaterialSymbols.Rounded.OpenInBrowserRegular
