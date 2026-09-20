@@ -92,14 +92,6 @@ fun LoginScreenV2(
         copiedDeviceCode = deviceCode
     }
 
-    LaunchedEffect(code?.deviceCode) {
-        code?.verificationUri?.let(onOpenGitHubUrl)
-    }
-
-    LaunchedEffect(authorizationUrl) {
-        authorizationUrl?.let(onOpenGitHubUrl)
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -186,9 +178,9 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
         border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = .55f))
     ) {
         Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Authorize with GitHub", color = colors.onSurface, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+            Text("Application Login", color = colors.onSurface, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
             Text(
-                "Use GitHub's secure authorization page. Your GitHub password is never entered into GitHub Rock.",
+                "Sign in to GitHub Rock from the app. GitHub Rock starts the secure Device Flow and never asks for your GitHub password.",
                 color = colors.onSurfaceVariant,
                 fontSize = 14.sp
             )
@@ -204,7 +196,7 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
                 if (loading) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = colors.onPrimary)
                 else Icon(RockIcon.ArrowForward.vector(), contentDescription = null)
                 Spacer(Modifier.width(10.dp))
-                Text(if (loading) "Preparing secure sign-in…" else "Authorize with GitHub", fontWeight = FontWeight.Black)
+                Text(if (loading) "Starting application login…" else "Application Login", fontWeight = FontWeight.Black)
             }
             Surface(
                 modifier = Modifier.fillMaxWidth().height(52.dp)
@@ -273,8 +265,8 @@ private fun SecurityRow() {
                 }
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Secure browser authorization", color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("OAuth / PKCE · no OAuth client secret in the app", color = colors.onSurfaceVariant, fontSize = 12.sp)
+                Text("Secure application login", color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Device Flow · no OAuth client secret in the app", color = colors.onSurfaceVariant, fontSize = 12.sp)
             }
             Icon(RockIcon.Check.vector(), contentDescription = null, tint = colors.primary, modifier = Modifier.size(20.dp))
         }
