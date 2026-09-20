@@ -134,6 +134,7 @@ fun LoginScreenV2(
                         status = auth.status,
                         onCheckAuthorization = onCheckAuthorization,
                         onOpenGitHubUrl = onOpenGitHubUrl,
+                        context = context,
                         copied = copiedDeviceCode == code.deviceCode,
                         onRestart = onLogin,
                         onGuest = onGuest
