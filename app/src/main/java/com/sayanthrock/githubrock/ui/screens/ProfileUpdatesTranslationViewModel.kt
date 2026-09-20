@@ -29,6 +29,11 @@ class ProfileUpdatesTranslationViewModel @Inject constructor(
     private val _state = MutableStateFlow(ProfileUpdatesTranslationState())
     val state: StateFlow<ProfileUpdatesTranslationState> = _state.asStateFlow()
 
+    fun selectLanguage(targetLanguage: String) {
+        if (targetLanguage.isBlank()) return
+        _state.update { it.copy(targetLanguage = targetLanguage, error = null) }
+    }
+
     fun translate(
         title: String,
         subtitle: String,
