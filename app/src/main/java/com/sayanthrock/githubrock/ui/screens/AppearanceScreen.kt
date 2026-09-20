@@ -195,7 +195,7 @@ fun AppearanceContent(
             item { OutlinedButton(onClick = { confirmReset = true }, Modifier.fillMaxWidth().height(52.dp)) { Icon(Icons.Default.RestartAlt, null); Spacer(Modifier.width(8.dp)); Text("Reset settings") } }
         }
     }
-    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent, dynamic colors, true black, remote images, navigation, display, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
+    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent, dynamic colors, AMOLED, remote images, navigation, display, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
     if (showAccentPicker) AccentColorPickerDialog(state.customAccentHex.ifBlank { "#52D3DC" }, state.recentAccentColors, { showAccentPicker = false }) { hex -> showAccentPicker = false; onCustomAccentHex(hex) }
 }
 
@@ -293,7 +293,7 @@ private fun selectedHex(hue: Float, saturation: Float, brightness: Float): Strin
     StandardSettingsDivider()
     ToggleRow(Icons.Default.ColorLens, "System dynamic color", "Use the Android wallpaper palette", state.dynamicColor, onDynamicColor)
     StandardSettingsDivider()
-    ToggleRow(Icons.Default.DarkMode, "True black", "Pure black in dark mode only", state.trueBlack && state.themeMode == ThemeMode.Dark, onTrueBlack)
+    ToggleRow(Icons.Default.DarkMode, "AMOLED", "True black #000000 in dark mode only", state.trueBlack && state.themeMode == ThemeMode.Dark, onTrueBlack)
 }
 @Composable private fun TypographyPreview() = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { Text("Interface preview", style = MaterialTheme.typography.headlineSmall); Text("Clean typography preview", style = MaterialTheme.typography.titleMedium); Text("Repositories, workflows, releases, and code remain readable at every selected size.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
 @Composable private fun CodeColorPreview() { val colors = LocalCodeColors.current; val code = buildAnnotatedString { withStyle(SpanStyle(color = colors.keyword, fontWeight = FontWeight.Bold)) { append("fun ") }; withStyle(SpanStyle(color = colors.type)) { append("publishRelease") }; append("() {\n  "); withStyle(SpanStyle(color = colors.keyword)) { append("val ") }; withStyle(SpanStyle(color = colors.property)) { append("version") }; append(" = "); withStyle(SpanStyle(color = colors.string)) { append("\"1.0.0\"") }; append("\n  "); withStyle(SpanStyle(color = colors.comment)) { append("// Signed and verified") }; append("\n  "); withStyle(SpanStyle(color = colors.type)) { append("release") }; append("("); withStyle(SpanStyle(color = colors.number)) { append("100") }; append(")\n}") }; GlassCard { Text(code, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium) } }
