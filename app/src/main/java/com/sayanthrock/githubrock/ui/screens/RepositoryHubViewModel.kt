@@ -8,11 +8,13 @@ import com.sayanthrock.githubrock.core.model.Release
 import com.sayanthrock.githubrock.core.model.ReleaseAsset
 import com.sayanthrock.githubrock.core.translation.GoogleTranslationService
 import com.sayanthrock.githubrock.core.util.MarkdownBlock
+import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.RepositoryReadmePolicy
 import com.sayanthrock.githubrock.core.util.SourceFileDecoder
 import com.sayanthrock.githubrock.core.util.runCatchingPreservingCancellation
 import com.sayanthrock.githubrock.data.repository.GitHubRepository
+import com.sayanthrock.githubrock.data.settings.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -20,6 +22,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,14 +41,20 @@ data class RepositoryHubState(
     val translationTarget: String? = null,
     val translatedBlocks: Map<Int, String> = emptyMap(),
     val translationLoading: Boolean = false,
-    val translationError: String? = null
+    val translationError: String? = null,
+    val whatsNewTranslationTarget: String? = null,
+    val translatedReleaseTitle: String? = null,
+    val translatedReleaseBlocks: Map<Int, String> = emptyMap(),
+    val whatsNewTranslationLoading: Boolean = false,
+    val whatsNewTranslationError: String? = null
 )
 
 @HiltViewModel
 class RepositoryHubViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val githubRepository: GitHubRepository,
-    private val translationService: GoogleTranslationService
+    private val translationService: GoogleTranslationService,
+    private val appPreferences: AppPreferences
 ) : ViewModel() {
     private val owner: String = checkNotNull(savedStateHandle["owner"])
     private val repoName: String = checkNotNull(savedStateHandle["repo"])
@@ -56,6 +65,7 @@ class RepositoryHubViewModel @Inject constructor(
     private var loadJob: Job? = null
     private var currentRepositoryId: Long? = null
     private var translationJob: Job? = null
+    private var whatsNewTranslationJob: Job? = null
 
     fun start(initialRepository: GitHubRepositoryModel?) {
         if (initialRepository?.id == currentRepositoryId && currentRepositoryId != null) return
@@ -73,6 +83,99 @@ class RepositoryHubViewModel @Inject constructor(
     fun retry() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch { load(_state.value.repository) }
+    }
+
+    init {
+        viewModelScope.launch {
+            val savedLanguage = appPreferences.whatsNewTranslationLanguage.first()
+            _state.update { it.copy(whatsNewTranslationTarget = savedLanguage) }
+        }
+    }
+
+    fun selectWhatsNewTranslationLanguage(targetLanguage: String) {
+        if (targetLanguage.isBlank()) return
+        _state.update {
+            it.copy(
+                whatsNewTranslationTarget = targetLanguage,
+                translatedReleaseTitle = null,
+                translatedReleaseBlocks = emptyMap(),
+                whatsNewTranslationLoading = false,
+                whatsNewTranslationError = null
+            )
+        }
+        viewModelScope.launch { appPreferences.setWhatsNewTranslationLanguage(targetLanguage) }
+    }
+
+    fun clearWhatsNewTranslation() {
+        whatsNewTranslationJob?.cancel()
+        _state.update {
+            it.copy(
+                whatsNewTranslationTarget = null,
+                translatedReleaseTitle = null,
+                translatedReleaseBlocks = emptyMap(),
+                whatsNewTranslationLoading = false,
+                whatsNewTranslationError = null
+            )
+        }
+        viewModelScope.launch { appPreferences.setWhatsNewTranslationLanguage(null) }
+    }
+
+    fun translateWhatsNew(release: Release, targetLanguage: String) {
+        if (targetLanguage.isBlank()) return
+        whatsNewTranslationJob?.cancel()
+        whatsNewTranslationJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    whatsNewTranslationTarget = targetLanguage,
+                    whatsNewTranslationLoading = true,
+                    whatsNewTranslationError = null,
+                    translatedReleaseTitle = null,
+                    translatedReleaseBlocks = emptyMap()
+                )
+            }
+            appPreferences.setWhatsNewTranslationLanguage(targetLanguage)
+            runCatchingPreservingCancellation {
+                val sourceTitle = release.name?.takeIf(String::isNotBlank) ?: release.tagName
+                val title = translationService.translate(
+                    text = sourceTitle,
+                    targetLanguage = targetLanguage,
+                    sourceLanguage = translationService.detectLanguage(sourceTitle) ?: "en"
+                )
+                val blocks = release.body
+                    ?.takeIf(String::isNotBlank)
+                    ?.let(MarkdownRenderer::render)
+                    ?.take(MAX_RELEASE_BLOCKS)
+                    .orEmpty()
+                val translatable = blocks.mapIndexedNotNull { index, block ->
+                    if (block.kind.isTranslatable() && block.text.isNotBlank()) index to block.text else null
+                }
+                val translated = buildMap {
+                    translatable.forEach { (index, text) ->
+                        val sourceLanguage = translationService.detectLanguage(text) ?: "en"
+                        put(index, translationService.translate(text, targetLanguage, sourceLanguage))
+                    }
+                }
+                title to translated
+            }.onSuccess { (title, blocks) ->
+                _state.update {
+                    it.copy(
+                        whatsNewTranslationLoading = false,
+                        translatedReleaseTitle = title,
+                        translatedReleaseBlocks = blocks,
+                        whatsNewTranslationError = null
+                    )
+                }
+            }.onFailure { failure ->
+                _state.update {
+                    it.copy(
+                        whatsNewTranslationLoading = false,
+                        translatedReleaseTitle = null,
+                        translatedReleaseBlocks = emptyMap(),
+                        whatsNewTranslationError = failure.message ?: "Google translation is unavailable right now."
+                    )
+                }
+            }
+        }
     }
 
     fun translateReadme(blocks: List<MarkdownBlock>, targetLanguage: String) {
@@ -238,6 +341,7 @@ class RepositoryHubViewModel @Inject constructor(
         }
 
         const val MAX_LANGUAGE_DETECTION_BLOCKS = 8
+        const val MAX_RELEASE_BLOCKS = 10
         val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
     }
 }

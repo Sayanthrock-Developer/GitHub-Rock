@@ -123,6 +123,14 @@ fun RepositoryHubContent(
     translatedBlocks: Map<Int, String> = emptyMap(),
     translationLoading: Boolean = false,
     translationError: String? = null,
+    whatsNewTranslationTarget: String? = null,
+    translatedReleaseTitle: String? = null,
+    translatedReleaseBlocks: Map<Int, String> = emptyMap(),
+    whatsNewTranslationLoading: Boolean = false,
+    whatsNewTranslationError: String? = null,
+    onSelectWhatsNewLanguage: (String) -> Unit = {},
+    onTranslateWhatsNew: (Release, String) -> Unit = { _, _ -> },
+    onClearWhatsNewTranslation: () -> Unit = {},
     onTranslate: (List<MarkdownBlock>, String) -> Unit = { _, _ -> },
     onClearTranslation: () -> Unit = {},
     onRetry: () -> Unit,
@@ -131,6 +139,7 @@ fun RepositoryHubContent(
     modifier: Modifier = Modifier
 ) {
     var showTranslationPicker by rememberSaveable { mutableStateOf(false) }
+    var showWhatsNewTranslationPicker by rememberSaveable { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
@@ -159,7 +168,17 @@ fun RepositoryHubContent(
             item(key = "stats") { RepositoryStats(repo, releases) }
             item(key = "actions") { RepositoryActionButtons(repo, onOpenUrl) }
             releases.firstOrNull { !it.draft }?.let { release ->
-                item(key = "whats_new_${release.id}") { WhatsNewCard(release) }
+                item(key = "whats_new_${release.id}") {
+                    WhatsNewCard(
+                        release = release,
+                        translationTarget = whatsNewTranslationTarget,
+                        translatedTitle = translatedReleaseTitle,
+                        translatedBlocks = translatedReleaseBlocks,
+                        translationLoading = whatsNewTranslationLoading,
+                        translationError = whatsNewTranslationError,
+                        onTranslateClick = { showWhatsNewTranslationPicker = true }
+                    )
+                }
             }
         }
 
@@ -209,6 +228,23 @@ fun RepositoryHubContent(
             }
         }
     }
+    if (showWhatsNewTranslationPicker) {
+        WhatsNewTranslationPickerDialog(
+            selectedLanguage = whatsNewTranslationTarget,
+            loading = whatsNewTranslationLoading,
+            error = whatsNewTranslationError,
+            onDismiss = { showWhatsNewTranslationPicker = false },
+            onClear = onClearWhatsNewTranslation,
+            onSelect = onSelectWhatsNewLanguage,
+            onTranslate = { language ->
+                releases.firstOrNull { !it.draft }?.let { release ->
+                    onTranslateWhatsNew(release, language)
+                }
+                showWhatsNewTranslationPicker = false
+            }
+        )
+    }
+
     if (showTranslationPicker) {
         val blocks = readme?.let(MarkdownRenderer::render).orEmpty()
         TranslationPickerDialog(
@@ -984,9 +1020,31 @@ private fun RepositoryActionButtons(repository: GitHubRepositoryModel, onOpenUrl
 }
 
 @Composable
-private fun WhatsNewCard(release: Release) {
+private fun WhatsNewCard(
+    release: Release,
+    translationTarget: String?,
+    translatedTitle: String?,
+    translatedBlocks: Map<Int, String>,
+    translationLoading: Boolean,
+    translationError: String?,
+    onTranslateClick: () -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("What’s New", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("What’s New", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+            ) {
+                TextButton(onClick = onTranslateClick, enabled = !translationLoading) {
+                    Text(if (translationTarget == null) "Translate" else "Change language")
+                }
+            }
+        }
         GlassCard {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -996,7 +1054,7 @@ private fun WhatsNewCard(release: Release) {
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(
-                            release.name?.takeIf(String::isNotBlank) ?: release.tagName,
+                            translatedTitle ?: (release.name?.takeIf(String::isNotBlank) ?: release.tagName),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black
                         )
@@ -1012,14 +1070,109 @@ private fun WhatsNewCard(release: Release) {
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
+                if (translationLoading) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                }
+                translationError?.let {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Translation unavailable: $it",
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        TextButton(onClick = onTranslateClick, enabled = !translationLoading) {
+                            Text("Retry")
+                        }
+                    }
+                }
                 release.body?.takeIf(String::isNotBlank)?.let { body ->
-                    MarkdownRenderer.render(body).take(MAX_RELEASE_BLOCKS).forEach { block ->
-                        MarkdownBlockView(block)
+                    val blocks = remember(body) {
+                        MarkdownRenderer.render(body).take(MAX_RELEASE_BLOCKS)
+                    }
+                    blocks.forEachIndexed { index, block ->
+                        MarkdownBlockView(block, translatedBlocks[index] ?: block.text)
                     }
                 } ?: Text("No release notes were provided.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
+}
+
+@Composable
+private fun WhatsNewTranslationPickerDialog(
+    selectedLanguage: String?,
+    loading: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onClear: () -> Unit,
+    onSelect: (String) -> Unit,
+    onTranslate: (String) -> Unit
+) {
+    var selected by rememberSaveable(selectedLanguage) { mutableStateOf(selectedLanguage ?: "en") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Translate What’s New") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Translate the release title and notes on-device. The original English source stays unchanged.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    "Target language",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(GoogleTranslationService.supportedLanguages, key = { it.code }) { language ->
+                        TextButton(
+                            onClick = { selected = language.code },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !loading
+                        ) {
+                            Text(language.label, modifier = Modifier.weight(1f))
+                            if (selected == language.code) Text("✓")
+                        }
+                    }
+                }
+                error?.let {
+                    Text(
+                        "Translation unavailable: $it",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSelect(selected)
+                    onTranslate(selected)
+                },
+                enabled = !loading
+            ) {
+                Text(if (loading) "Translating…" else "Translate")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (selectedLanguage != null) {
+                    TextButton(onClick = onClear, enabled = !loading) { Text("Original") }
+                }
+                TextButton(onClick = onDismiss, enabled = !loading) { Text("Cancel") }
+            }
+        }
+    )
 }
 
 @Composable
