@@ -91,9 +91,23 @@ class RepositoryHubViewModel @Inject constructor(
                 val translatable = blocks.mapIndexedNotNull { index, block ->
                     if (block.kind.isTranslatable()) index to block.text else null
                 }.filter { it.second.isNotBlank() }
+                val documentSource = translationService.detectLanguage(
+                    translatable
+                        .take(MAX_LANGUAGE_DETECTION_BLOCKS)
+                        .joinToString("\n") { it.second }
+                )
+
                 buildMap {
                     translatable.forEach { (index, text) ->
-                        put(index, translationService.translate(text, targetLanguage))
+                        val sourceLanguage = translationService.detectLanguage(text) ?: documentSource
+                        put(
+                            index,
+                            translationService.translate(
+                                text = text,
+                                targetLanguage = targetLanguage,
+                                sourceLanguage = sourceLanguage
+                            )
+                        )
                     }
                 }
             }.onSuccess { translated ->
@@ -223,6 +237,7 @@ class RepositoryHubViewModel @Inject constructor(
             else -> false
         }
 
+        const val MAX_LANGUAGE_DETECTION_BLOCKS = 8
         val README_CANDIDATES = listOf("README.md", "README.MD", "readme.md", "README")
     }
 }
