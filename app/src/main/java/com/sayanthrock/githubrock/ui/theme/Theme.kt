@@ -98,6 +98,8 @@ private fun ColorScheme.applyStyle(style: ThemeStyle, dark: Boolean): ColorSchem
 }
 
 private fun ColorScheme.applyTrueBlack(dark: Boolean, enabled: Boolean): ColorScheme = if (!dark || !enabled) this else copy(
+    // AMOLED is a dedicated dark variant: the canvas and every Material surface
+    // collapse to true black while retaining readable dark-theme content tokens.
     background = Color.Black,
     surface = Color.Black,
     surfaceVariant = Color.Black,
@@ -106,9 +108,12 @@ private fun ColorScheme.applyTrueBlack(dark: Boolean, enabled: Boolean): ColorSc
     surfaceContainer = Color.Black,
     surfaceContainerHigh = Color.Black,
     surfaceContainerHighest = Color.Black,
+    onBackground = RockDarkText,
+    onSurface = RockDarkText,
+    onSurfaceVariant = RockDarkMuted,
     inverseSurface = Color.White,
-    outline = outline,
-    outlineVariant = outlineVariant
+    outline = RockDarkBorder,
+    outlineVariant = RockDarkBorder
 )
 
 private fun codeColors(style: CodeColorStyle, dark: Boolean) = when (style) {
@@ -127,7 +132,14 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = true, tru
     val context = LocalContext.current
     val baseDensity = LocalDensity.current
     val systemColors = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val colors = when { systemColors && darkTheme -> dynamicDarkColorScheme(context); systemColors -> dynamicLightColorScheme(context); darkTheme -> darkColors(accentColor, customAccentHex); else -> lightColors(accentColor, customAccentHex) }.applyStyle(themeStyle, darkTheme).applyTrueBlack(darkTheme, trueBlack)
+    val colors = when {
+        systemColors && darkTheme -> dynamicDarkColorScheme(context)
+        systemColors -> dynamicLightColorScheme(context)
+        darkTheme -> darkColors(accentColor, customAccentHex)
+        else -> lightColors(accentColor, customAccentHex)
+    }
+        .applyStyle(themeStyle, darkTheme)
+        .applyTrueBlack(darkTheme, trueBlack)
     val density = Density(baseDensity.density * displaySize.scale(), baseDensity.fontScale * fontSize.scale())
     CompositionLocalProvider(LocalRemoteImagesEnabled provides showImages, LocalLoadingStyle provides loadingStyle, LocalReduceMotion provides reduceMotion, LocalCodeColorStyle provides codeColorStyle, LocalLogDisplayStyle provides logDisplayStyle, LocalCodeColors provides codeColors(codeColorStyle, darkTheme), LocalDensity provides density) {
         MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)

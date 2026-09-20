@@ -296,7 +296,7 @@ private fun AppearancePage(
         ThemeCard("Dark", "Graphite · Glass · GitHub", appearance.themeMode == ThemeMode.Dark && !appearance.trueBlack) {
             onThemeMode(ThemeMode.Dark); onTrueBlack(false)
         }
-        ThemeCard("True Black", "AMOLED · #000000 foundation", appearance.themeMode == ThemeMode.Dark && appearance.trueBlack) {
+        ThemeCard("AMOLED", "True black · #000000 foundation", appearance.themeMode == ThemeMode.Dark && appearance.trueBlack) {
             onThemeMode(ThemeMode.Dark); onTrueBlack(true)
         }
 
