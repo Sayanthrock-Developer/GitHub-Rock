@@ -109,8 +109,8 @@ class BuildsViewModel @Inject constructor(
 
     fun cancelRun(selected: GitHubRepositoryModel, runId: Long) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, message = null) }
-        val current = runCatching { repository.run(selected.owner.login, selected.name, runId) }.getOrElse {
-            _state.update { it.copy(loading = false, error = it.message ?: "Unable to load the build before cancellation") }
+        val current = runCatching { repository.run(selected.owner.login, selected.name, runId) }.getOrElse { error ->
+            _state.update { it.copy(loading = false, error = error.message ?: "Unable to load the build before cancellation") }
             return@launch
         }
         if (!BuildRunTracker.isActive(current)) {
@@ -124,8 +124,8 @@ class BuildsViewModel @Inject constructor(
 
     fun rerunRun(selected: GitHubRepositoryModel, runId: Long) = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null, message = null) }
-        val current = runCatching { repository.run(selected.owner.login, selected.name, runId) }.getOrElse {
-            _state.update { it.copy(loading = false, error = it.message ?: "Unable to load the build before re-running") }
+        val current = runCatching { repository.run(selected.owner.login, selected.name, runId) }.getOrElse { error ->
+            _state.update { it.copy(loading = false, error = error.message ?: "Unable to load the build before re-running") }
             return@launch
         }
         if (current.status != "completed") {
