@@ -1074,11 +1074,21 @@ private fun WhatsNewCard(
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                 }
                 translationError?.let {
-                    Text(
-                        "Translation unavailable: $it",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Translation unavailable: $it",
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        TextButton(onClick = onTranslateClick, enabled = !translationLoading) {
+                            Text("Retry")
+                        }
+                    }
                 }
                 release.body?.takeIf(String::isNotBlank)?.let { body ->
                     val blocks = remember(body) {
