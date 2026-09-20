@@ -453,6 +453,13 @@ private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences) {
             Column(Modifier.weight(1f)) {
                 Text(run.displayTitle.ifBlank { run.name ?: "Android build" }, fontWeight = FontWeight.SemiBold)
                 Text("${state.name} • ${run.headBranch.orEmpty()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                run.runTime()?.let { duration ->
+                    Text("Duration ${duration.formatRunTime()}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                } ?: Text(
+                    if (state == WorkflowDisplayState.Queued) "Waiting for a runner" else "Duration unavailable",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             Text("Run ID ${run.id}", color = accent, style = MaterialTheme.typography.labelMedium)
         }
@@ -560,6 +567,8 @@ private fun RunDetailsDialog(
                                 }
                                 DetailRow("Branch", run.headBranch.orEmpty())
                                 DetailRow("Event", run.event)
+                                DetailRow("Started", run.runStartedAt.orEmpty())
+                                DetailRow("Duration", run.runTime()?.formatRunTime() ?: if (state == WorkflowDisplayState.Queued) "Waiting for a runner" else "Unavailable")
                                 DetailRow("Run ID", run.id.toString())
                             }
                         }
@@ -576,10 +585,13 @@ private fun RunDetailsDialog(
                     }
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (state == WorkflowDisplayState.Running || state == WorkflowDisplayState.Queued) {
-                                OutlinedButton(onCancel, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Cancel, null); Spacer(Modifier.width(4.dp)); Text("Cancel") }
-                            } else {
-                                OutlinedButton(onRerun, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(4.dp)); Text("Re-run") }
+                            when {
+                                BuildRunTracker.isActive(run) -> {
+                                    OutlinedButton(onCancel, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Cancel, null); Spacer(Modifier.width(4.dp)); Text("Cancel") }
+                                }
+                                run.status == "completed" -> {
+                                    OutlinedButton(onRerun, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(4.dp)); Text("Re-run") }
+                                }
                             }
                             OutlinedButton(onRefresh, Modifier.weight(1f).heightIn(min = 48.dp)) { Icon(Icons.Default.Sync, null); Spacer(Modifier.width(4.dp)); Text("Refresh") }
                         }
