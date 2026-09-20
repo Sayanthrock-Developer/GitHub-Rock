@@ -48,7 +48,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 enum class ProfileUpdateSection(val route: String, val title: String, val subtitle: String) {
-    WhatsNew("whats-new", "What's new", "Recent GitHub Rock improvements"),
+    WhatsNew("whats-new", "What's New", "Recent GitHub Rock improvements"),
     Announcements("announcements", "Notifications", "Your GitHub notifications");
     companion object { fun fromRoute(value: String?) = entries.firstOrNull { it.route.equals(value, true) } ?: WhatsNew }
 }
@@ -189,9 +189,9 @@ private fun WhatsNewTranslationCard(
                     )
                 }
                 Column {
-                    Text("Translate", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Translate", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
                     Text(
-                        "Render this page in another language.",
+                        "Translate the What's New content without changing the original English source.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
