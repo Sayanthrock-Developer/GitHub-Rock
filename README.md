@@ -1,12 +1,14 @@
 <div align="center">
 
-# GITHUB ROCK
+# GitHub Rock – Android GitHub Client
 
 ### GitHub, redesigned for Android.
 
 **Native · Fast · GitHub-native · Verification-first**
 
-A native Android companion for GitHub workflows — repositories, code, issues, pull requests, Actions, releases, downloads, and profile data.
+Manage GitHub from your phone: browse repositories, review issues and pull requests, monitor Actions runs, build APKs, and download files with SHA-256 verification. Open source, built with Kotlin and Jetpack Compose.
+
+> Unofficial app. Not affiliated with or endorsed by GitHub, Inc.
 
 <p>
   <a href="https://github.com/Sayanthrock-Developer/GitHub-Rock/releases">Releases</a> ·
