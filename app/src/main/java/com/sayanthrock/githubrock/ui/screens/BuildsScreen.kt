@@ -403,7 +403,7 @@ private fun BuildExecutionPanel(
     }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Run diagnosis", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Current build", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             when {
                 mode != AppMode.Connected -> Text("Connect GitHub to start and track a build.")
                 repository == null -> Text("Select a repository first.")
@@ -454,7 +454,7 @@ private fun RunFrame(run: WorkflowRun, preferences: AppearancePreferences) {
                 Text(run.displayTitle.ifBlank { run.name ?: "Android build" }, fontWeight = FontWeight.SemiBold)
                 Text("${state.name} • ${run.headBranch.orEmpty()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text("#${run.id}", color = accent)
+            Text("Run ID ${run.id}", color = accent, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -490,7 +490,7 @@ private fun RecentRunCard(run: WorkflowRun, preferences: AppearancePreferences, 
             StatusIcon(state, accent)
             Column(Modifier.weight(1f)) {
                 Text(run.displayTitle.ifBlank { run.name ?: "Workflow run" }, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${run.event} • ${run.headBranch.orEmpty()} • #${run.id}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Text("${run.event} • ${run.headBranch.orEmpty()} • Run ID ${run.id}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
             Text(state.name, color = accent, fontWeight = FontWeight.SemiBold)
             Icon(Icons.Default.ChevronRight, "Open run details")
@@ -560,7 +560,7 @@ private fun RunDetailsDialog(
                                 }
                                 DetailRow("Branch", run.headBranch.orEmpty())
                                 DetailRow("Event", run.event)
-                                DetailRow("Run", "#${run.id}")
+                                DetailRow("Run ID", run.id.toString())
                             }
                         }
                     }
