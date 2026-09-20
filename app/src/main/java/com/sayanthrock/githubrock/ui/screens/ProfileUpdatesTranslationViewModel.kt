@@ -31,7 +31,16 @@ class ProfileUpdatesTranslationViewModel @Inject constructor(
 
     fun selectLanguage(targetLanguage: String) {
         if (targetLanguage.isBlank()) return
-        _state.update { it.copy(targetLanguage = targetLanguage, error = null) }
+        _state.update {
+            it.copy(
+                targetLanguage = targetLanguage,
+                translatedTitle = null,
+                translatedSubtitle = null,
+                translatedDescription = null,
+                loading = false,
+                error = null
+            )
+        }
     }
 
     fun translate(
@@ -51,7 +60,7 @@ class ProfileUpdatesTranslationViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 listOf(title, subtitle, description)
-                    .map { text -> async { translationService.translate(text, targetLanguage) } }
+                    .map { text -> async { translationService.translate(text, targetLanguage, sourceLanguage = "en") } }
                     .awaitAll()
             }.onSuccess { translated ->
                 _state.update {
