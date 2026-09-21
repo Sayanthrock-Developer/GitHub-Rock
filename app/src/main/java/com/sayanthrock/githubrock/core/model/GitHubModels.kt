@@ -149,3 +149,32 @@ fun Duration.formatRunTime(): String {
 @Serializable data class MergeResponse(val sha: String? = null, val merged: Boolean, val message: String)
 enum class WorkflowDisplayState { Queued, Running, Success, Failed, Cancelled, Unknown }
 fun WorkflowRun.displayState(): WorkflowDisplayState = when { status == "queued" || status == "waiting" || status == "pending" -> WorkflowDisplayState.Queued; status == "in_progress" -> WorkflowDisplayState.Running; conclusion == "success" -> WorkflowDisplayState.Success; conclusion == "failure" || conclusion == "timed_out" || conclusion == "action_required" -> WorkflowDisplayState.Failed; conclusion == "cancelled" || conclusion == "skipped" -> WorkflowDisplayState.Cancelled; else -> WorkflowDisplayState.Unknown }
+@Serializable data class CodeSearchItem(
+    val name: String,
+    val path: String,
+    val sha: String,
+    @SerialName("html_url") val htmlUrl: String = "",
+    val repository: GitHubRepositoryModel? = null
+)
+@Serializable data class CodeSearchResponse(@SerialName("total_count") val totalCount: Int = 0, val items: List<CodeSearchItem> = emptyList())
+@Serializable data class IssueSearchItem(
+    val id: Long,
+    val number: Int,
+    val title: String,
+    val state: String,
+    @SerialName("html_url") val htmlUrl: String = "",
+    val user: Owner,
+    @SerialName("repository_url") val repositoryUrl: String = "",
+    @SerialName("updated_at") val updatedAt: String = ""
+)
+@Serializable data class IssueSearchResponse(@SerialName("total_count") val totalCount: Int = 0, val items: List<IssueSearchItem> = emptyList())
+@Serializable data class CommitSearchItem(
+    val sha: String,
+    @SerialName("html_url") val htmlUrl: String = "",
+    val repository: GitHubRepositoryModel? = null,
+    val commit: CommitSearchCommit = CommitSearchCommit(),
+    val author: Owner? = null
+)
+@Serializable data class CommitSearchCommit(val message: String = "", val author: CommitSearchAuthor = CommitSearchAuthor())
+@Serializable data class CommitSearchAuthor(val name: String = "", val date: String? = null)
+@Serializable data class CommitSearchResponse(@SerialName("total_count") val totalCount: Int = 0, val items: List<CommitSearchItem> = emptyList())
