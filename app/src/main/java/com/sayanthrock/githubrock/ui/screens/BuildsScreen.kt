@@ -240,64 +240,90 @@ private fun BuildSummary(health: BuildHealthSummary, preferences: AppearancePref
         health.successful > 0 -> statusColor(false, true, preferences)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    GlassCard {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(Modifier.size(9.dp), shape = RoundedCornerShape(50), color = statusAccent) {}
-                Text("Build health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    GlassCard(contentPadding = PaddingValues(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Surface(Modifier.size(7.dp), shape = RoundedCornerShape(50), color = statusAccent) {}
+                Text("Build health", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                Text(health.status, style = MaterialTheme.typography.labelMedium, color = statusAccent, maxLines = 1)
                 Spacer(Modifier.weight(1f))
-                Text("Small", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(health.status, color = statusAccent, fontWeight = FontWeight.SemiBold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SummaryMetric("Success rate", health.successRate?.let { "$it%" } ?: "—", statusAccent, Modifier.weight(1f))
-                SummaryMetric("Failed builds", health.failed.toString(), if (health.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SummaryMetric("Recent builds", health.recentBuilds, statusAccent, Modifier.weight(1f))
-                SummaryMetric("Last build", health.lastBuild, statusAccent, Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SummaryMetric("CI checks", health.ciChecks, statusAccent, Modifier.weight(1f))
-                SummaryMetric("Artifacts", if (health.artifacts > 0) "Available" else "None", if (health.artifacts > 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                CompactHealthMetric("Success", health.successRate?.let { "$it%" } ?: "—", statusAccent)
+                CompactHealthMetric("Failed", health.failed.toString(), if (health.failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                CompactHealthMetric("Recent", health.recentBuilds, statusAccent)
+                CompactHealthMetric("CI", health.ciChecks, statusAccent)
+                CompactHealthMetric("Artifacts", if (health.artifacts > 0) "Available" else "None", if (health.artifacts > 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
 
 @Composable
-private fun SummaryMetric(label: String, value: String, accent: Color, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f)) {
-        Column(Modifier.padding(12.dp)) {
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun CompactHealthMetric(label: String, value: String, accent: Color) {
+    Surface(
+        Modifier.heightIn(min = 36.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f))
+    ) {
+        Row(
+            Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun BuildFilterRow(selected: BuildFilter, onFilter: (BuildFilter) -> Unit) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         BuildFilter.values().forEach { filter ->
-            FilterChip(selected == filter, { onFilter(filter) }, label = { Text(filter.label) })
+            FilterChip(
+                selected = selected == filter,
+                onClick = { onFilter(filter) },
+                label = { Text(filter.label, style = MaterialTheme.typography.labelMedium) },
+                modifier = Modifier.heightIn(min = 40.dp)
+            )
         }
     }
 }
 
 @Composable
 private fun RepositoryPicker(repositories: List<GitHubRepositoryModel>, selected: GitHubRepositoryModel?, onSelect: (GitHubRepositoryModel) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Repository", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Repository", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         if (repositories.isEmpty()) {
-            GlassCard { Text("No repositories are available in this workspace.") }
+            GlassCard(contentPadding = PaddingValues(10.dp)) {
+                Text("No repositories are available in this workspace.", style = MaterialTheme.typography.bodySmall)
+            }
         } else {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 repositories.forEach { repo ->
                     FilterChip(
                         selected = selected?.id == repo.id,
                         onClick = { onSelect(repo) },
-                        label = { Text(repo.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        leadingIcon = if (selected?.id == repo.id) { { Icon(Icons.Default.Build, null, Modifier.size(18.dp)) } } else null
+                        label = { Text(repo.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = if (selected?.id == repo.id) {
+                            { Icon(Icons.Default.Build, null, Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.heightIn(min = 40.dp)
                     )
                 }
             }
