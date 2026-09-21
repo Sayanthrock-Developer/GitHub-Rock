@@ -81,6 +81,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.AppFontFamily
+import com.sayanthrock.githubrock.data.settings.SurfaceStyle
+import com.sayanthrock.githubrock.data.settings.ButtonStyle
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.CodeColorStyle
 import com.sayanthrock.githubrock.data.settings.DisplaySize
@@ -114,6 +116,14 @@ fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltVi
         onCustomAccentHex = viewModel::setCustomAccentHex,
         onSystemDynamicAccent = viewModel::setSystemDynamicAccent,
         onThemeStyle = viewModel::setThemeStyle,
+        onSurfaceStyle = viewModel::setSurfaceStyle,
+        onSurfaceOpacity = viewModel::setSurfaceOpacity,
+        onBorderWidth = viewModel::setBorderWidth,
+        onElevation = viewModel::setElevation,
+        onBlurAmount = viewModel::setBlurAmount,
+        onCardDensity = viewModel::setCardDensity,
+        onShapeRadius = viewModel::setShapeRadius,
+        onButtonStyle = viewModel::setButtonStyle,
         onDisplaySize = viewModel::setDisplaySize,
         onFontSize = viewModel::setFontSize,
         onFontWeight = viewModel::setFontWeight,
@@ -140,6 +150,14 @@ fun AppearanceContent(
     onCustomAccentHex: (String) -> Unit = {},
     onSystemDynamicAccent: () -> Unit = {},
     onThemeStyle: (ThemeStyle) -> Unit = {},
+    onSurfaceStyle: (SurfaceStyle) -> Unit = {},
+    onSurfaceOpacity: (Float) -> Unit = {},
+    onBorderWidth: (Float) -> Unit = {},
+    onElevation: (Float) -> Unit = {},
+    onBlurAmount: (Float) -> Unit = {},
+    onCardDensity: (Float) -> Unit = {},
+    onShapeRadius: (Float) -> Unit = {},
+    onButtonStyle: (ButtonStyle) -> Unit = {},
     onDisplaySize: (DisplaySize) -> Unit = {},
     onFontSize: (FontSize) -> Unit = {},
     onFontWeight: (FontWeightStyle) -> Unit = {},
@@ -173,6 +191,8 @@ fun AppearanceContent(
             item { StandardSectionHeader("Theme") }
             item { ThemePreview(state) }
             item { ChoiceCard("Design style", "Complete surface and shape system", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
+            item { SurfaceAndShapeSystem(state, onSurfaceStyle, onSurfaceOpacity, onBorderWidth, onElevation, onBlurAmount, onCardDensity, onShapeRadius) }
+            item { ButtonStyleControl(state.buttonStyle, onButtonStyle) }
             item { AccentPicker(state, onAccentColor, onSystemDynamicAccent, onCustomAccentHex) { showAccentPicker = true } }
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
             item { StandardSectionHeader("Navigation") }
@@ -197,6 +217,66 @@ fun AppearanceContent(
     }
     if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent, dynamic colors, AMOLED, remote images, navigation, display, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
     if (showAccentPicker) AccentColorPickerDialog(state.customAccentHex.ifBlank { "#52D3DC" }, state.recentAccentColors, { showAccentPicker = false }) { hex -> showAccentPicker = false; onCustomAccentHex(hex) }
+}
+
+
+@Composable
+private fun SurfaceAndShapeSystem(
+    state: AppearancePreferences,
+    onSurfaceStyle: (SurfaceStyle) -> Unit,
+    onSurfaceOpacity: (Float) -> Unit,
+    onBorderWidth: (Float) -> Unit,
+    onElevation: (Float) -> Unit,
+    onBlurAmount: (Float) -> Unit,
+    onCardDensity: (Float) -> Unit,
+    onShapeRadius: (Float) -> Unit,
+) {
+    var radius by remember(state.shapeRadius) { mutableFloatStateOf(state.shapeRadius) }
+    var opacity by remember(state.surfaceOpacity) { mutableFloatStateOf(state.surfaceOpacity) }
+    var border by remember(state.borderWidth) { mutableFloatStateOf(state.borderWidth) }
+    var elevation by remember(state.elevation) { mutableFloatStateOf(state.elevation) }
+    var blur by remember(state.blurAmount) { mutableFloatStateOf(state.blurAmount) }
+    var density by remember(state.cardDensity) { mutableFloatStateOf(state.cardDensity) }
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Surfaces", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("One global surface system controls cards, sheets, dialogs, navigation and inputs.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SurfaceStyle.entries.forEach { style -> FilterChip(state.surfaceStyle == style, { onSurfaceStyle(style) }, label = { Text(style.name) }, leadingIcon = if (state.surfaceStyle == style) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) }
+            }
+            DesignSlider("Surface opacity", opacity, .72f, 1f, { opacity = it }, { onSurfaceOpacity(opacity) }, "${(opacity * 100).toInt()}%")
+            DesignSlider("Border", border, 0f, 3f, { border = it }, { onBorderWidth(border) }, "${border.toInt()} dp")
+            DesignSlider("Elevation", elevation, 0f, 12f, { elevation = it }, { onElevation(elevation) }, "${elevation.toInt()} dp")
+            DesignSlider("Blur", blur, 0f, 24f, { blur = it }, { onBlurAmount(blur) }, "${blur.toInt()} dp")
+            DesignSlider("Card density", density, .85f, 1.2f, { density = it }, { onCardDensity(density) }, "${(density * 100).toInt()}%")
+            Text("Shape", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Square ←────────────→ Pill", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            DesignSlider("Corner radius", radius, 0f, 32f, { radius = it }, { onShapeRadius(radius) }, "${radius.toInt()} dp")
+            Surface(Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(radius.dp), color = MaterialTheme.colorScheme.primaryContainer, border = BorderStroke(border.dp, MaterialTheme.colorScheme.primary.copy(alpha = .35f))) {
+                Box(contentAlignment = Alignment.Center) { Text("Live surface preview", fontWeight = FontWeight.Bold) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesignSlider(title: String, value: Float, min: Float, max: Float, onValueChange: (Float) -> Unit, onFinished: () -> Unit, valueText: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(title, style = MaterialTheme.typography.labelLarge); Text(valueText, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold) }
+        Slider(value = value, onValueChange = onValueChange, onValueChangeFinished = onFinished, valueRange = min..max)
+    }
+}
+
+@Composable
+private fun ButtonStyleControl(selected: ButtonStyle, onSelected: (ButtonStyle) -> Unit) = GlassCard {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Buttons", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Global button treatment", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ButtonStyle.entries.forEach { style -> FilterChip(selected == style, { onSelected(style) }, label = { Text(style.name) }, leadingIcon = if (selected == style) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) }
+        }
+        Surface(Modifier.fillMaxWidth().height(52.dp), shape = when (selected) { ButtonStyle.Pill, ButtonStyle.Floating -> CircleShape; else -> MaterialTheme.shapes.large }, color = when (selected) { ButtonStyle.Ghost -> MaterialTheme.colorScheme.surface; ButtonStyle.Outlined -> MaterialTheme.colorScheme.surface; else -> MaterialTheme.colorScheme.primaryContainer }, border = if (selected == ButtonStyle.Outlined) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null) { Box(contentAlignment = Alignment.Center) { Text("Continue  →", fontWeight = FontWeight.Bold) } }
+    }
 }
 
 @Composable private fun NavigationBarStyleControl(selected: NavigationBarStyle, onSelected: (NavigationBarStyle) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.ViewCompact, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Navigation Bar Style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text("Choose how the five main destinations are presented.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { NavigationBarStyle.entries.forEach { style -> FilterChip(selected == style, { onSelected(style) }, label = { Text(style.displayName) }, leadingIcon = if (selected == style) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) } } } }
@@ -388,7 +468,7 @@ private fun ModeMiniPreview(mode: ThemeMode, selected: Boolean) {
 @Composable private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) { StandardSettingsRow(icon, title, subtitle) { Switch(checked, onCheckedChange) } }
 
 private val AnimationStyle.displayName: String get() = when (this) { AnimationStyle.Liquid -> "Liquid"; AnimationStyle.Spring -> "Spring"; AnimationStyle.Cinematic -> "Cinematic"; AnimationStyle.Magnetic -> "Magnetic"; AnimationStyle.Dynamic -> "Dynamic" }
-private val ThemeStyle.displayName: String get() = when (this) { ThemeStyle.Clean -> "Clean"; ThemeStyle.LiquidGlass -> "Liquid glass"; ThemeStyle.Studio -> "Studio"; ThemeStyle.Midnight -> "Midnight"; ThemeStyle.Aurora -> "Aurora"; ThemeStyle.HighContrast -> "High contrast"; ThemeStyle.Obsidian -> "Obsidian" }
+private val ThemeStyle.displayName: String get() = when (this) { ThemeStyle.Clean -> "Clean"; ThemeStyle.LiquidGlass -> "Liquid glass"; ThemeStyle.Studio -> "Studio"; ThemeStyle.Midnight -> "Midnight"; ThemeStyle.Aurora -> "Aurora"; ThemeStyle.HighContrast -> "High contrast"; ThemeStyle.Obsidian -> "Obsidian"; ThemeStyle.RockAdaptive -> "Rock Adaptive" }
 private val AppFontFamily.displayName: String get() = when (this) { AppFontFamily.SystemSans -> "System sans"; AppFontFamily.Serif -> "Serif"; AppFontFamily.Monospace -> "Monospace" }
 private val CodeColorStyle.displayName: String get() = when (this) { CodeColorStyle.Classic -> "Classic"; CodeColorStyle.Ocean -> "Ocean"; CodeColorStyle.Sunset -> "Sunset"; CodeColorStyle.Monochrome -> "Mono"; CodeColorStyle.GitHub -> "GitHub" }
 private val NavigationBarStyle.displayName: String get() = when (this) { NavigationBarStyle.FloatingCapsule -> "Floating Capsule"; NavigationBarStyle.Classic -> "Classic"; NavigationBarStyle.Minimal -> "Minimal"; NavigationBarStyle.Glass -> "Glass"; NavigationBarStyle.Compact -> "Compact"; NavigationBarStyle.Ios -> "iOS" }
