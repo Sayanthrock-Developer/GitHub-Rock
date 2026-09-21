@@ -1,8 +1,10 @@
 package com.sayanthrock.githubrock
 
+import android.app.LocaleManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,6 +14,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
 import com.sayanthrock.githubrock.core.navigation.GitHubUrlPolicy
 import com.sayanthrock.githubrock.data.settings.AppPreferences
@@ -21,6 +24,9 @@ import com.sayanthrock.githubrock.ui.GitHubRockRoot
 import com.sayanthrock.githubrock.ui.MainViewModel
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -37,8 +43,10 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
-        setContent {
-            val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
+        lifecycleScope.launch {
+            applyAppLanguage(appPreferences.appLanguageTag.first())
+            setContent {
+                val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
             val useDarkTheme = when (appearance.themeMode) {
                 ThemeMode.System -> isSystemInDarkTheme()
                 ThemeMode.Light -> false
@@ -77,6 +85,26 @@ class MainActivity : ComponentActivity() {
                 GitHubRockRoot(viewModel)
             }
         }
+    }
+
+    private fun applyAppLanguage(tag: String?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val localeManager = getSystemService(LocaleManager::class.java)
+            localeManager.applicationLocales = if (tag.isNullOrBlank()) {
+                android.os.LocaleList.getEmptyLocaleList()
+            } else {
+                android.os.LocaleList.forLanguageTags(tag)
+            }
+            return
+        }
+
+        val configuration = Configuration(resources.configuration)
+        if (tag.isNullOrBlank()) {
+            configuration.setLocale(Locale.getDefault())
+        } else {
+            configuration.setLocale(Locale.forLanguageTag(tag))
+        }
+        resources.updateConfiguration(configuration, resources.displayMetrics)
     }
 
     override fun onNewIntent(intent: Intent) {
