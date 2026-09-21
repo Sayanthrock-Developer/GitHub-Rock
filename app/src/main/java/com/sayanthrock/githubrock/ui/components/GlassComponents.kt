@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
+import com.sayanthrock.githubrock.ui.theme.LocalRockDesignTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -34,16 +36,19 @@ fun GlassCard(
         Modifier.clickable(role = Role.Button, onClick = onClick)
     }
 
+    val design = LocalRockDesignTokens.current
+    val densityPadding = (18f * design.cardDensity).dp
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .then(interactionModifier),
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
-        shadowElevation = if (onClick == null) 0.dp else 1.dp
+        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = design.surfaceOpacity.coerceIn(.72f, 1f)),
+        tonalElevation = design.elevation.dp,
+        shadowElevation = if (onClick == null) 0.dp else (design.elevation * .5f).dp,
+        border = if (design.borderWidth > 0f) BorderStroke(design.borderWidth.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = (design.borderWidth / 3f).coerceIn(.08f, .45f))) else null
     ) {
-        Box(modifier = Modifier.padding(contentPadding), content = content)
+        Box(modifier = Modifier.padding(if (contentPadding == PaddingValues(18.dp)) PaddingValues(densityPadding) else contentPadding), content = content)
     }
 }
 
