@@ -104,30 +104,23 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun githubApi(json: Json, client: OkHttpClient): GitHubRestApi = Retrofit.Builder()
+    fun githubRetrofit(json: Json, client: OkHttpClient): Retrofit = Retrofit.Builder()
         .baseUrl("https://api.github.com/")
         .client(client)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
-        .create(GitHubRestApi::class.java)
 
     @Provides
     @Singleton
-    fun repositoryCreationApi(json: Json, client: OkHttpClient): RepositoryCreationApi = Retrofit.Builder()
-        .baseUrl("https://api.github.com/")
-        .client(client)
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-        .build()
-        .create(RepositoryCreationApi::class.java)
+    fun githubApi(retrofit: Retrofit): GitHubRestApi = retrofit.create(GitHubRestApi::class.java)
 
     @Provides
     @Singleton
-    fun githubGraphQlApi(json: Json, client: OkHttpClient): GitHubGraphQlApi = Retrofit.Builder()
-        .baseUrl("https://api.github.com/")
-        .client(client)
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-        .build()
-        .create(GitHubGraphQlApi::class.java)
+    fun repositoryCreationApi(retrofit: Retrofit): RepositoryCreationApi = retrofit.create(RepositoryCreationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun githubGraphQlApi(retrofit: Retrofit): GitHubGraphQlApi = retrofit.create(GitHubGraphQlApi::class.java)
 
     @Provides
     @Singleton
