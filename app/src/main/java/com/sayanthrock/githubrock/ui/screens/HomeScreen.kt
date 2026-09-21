@@ -138,6 +138,7 @@ fun HomeScreen(
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
+    watchEnabled: Boolean = false,
     dashboardViewModel: HomeRepositoryDashboardViewModel = hiltViewModel(),
 ) {
     val dashboardEnabled by dashboardViewModel.enabled.collectAsStateWithLifecycle()
@@ -257,6 +258,7 @@ fun HomeScreen(
                         null
                     },
                     watched = repository.fullName.lowercase() in watchedRepositories,
+                    watchEnabled = watchEnabled,
                     onWatch = { dashboardViewModel.toggleWatch(repository) },
                     onClick = { onOpenRepo(repository) },
                 )
@@ -509,6 +511,7 @@ private fun DiscoveryRepositoryCard(
     repository: GitHubRepositoryModel,
     rank: Int?,
     watched: Boolean = false,
+    watchEnabled: Boolean = false,
     onWatch: () -> Unit = {},
     onClick: () -> Unit,
 ) {
@@ -652,7 +655,7 @@ private fun DiscoveryRepositoryCard(
                     contentDescription = "Updated ${relativeRepositoryTime(repository.updatedAt)}",
                 )
                 Spacer(Modifier.weight(1f))
-                FilterChip(
+                if (watchEnabled) FilterChip(
                     selected = watched,
                     onClick = onWatch,
                     label = { Text(if (watched) "Watching" else "Watch") },
