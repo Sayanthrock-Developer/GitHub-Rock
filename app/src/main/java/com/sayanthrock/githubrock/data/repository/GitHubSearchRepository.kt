@@ -74,22 +74,20 @@ class GitHubSearchRepository @Inject constructor(private val api: GitHubRestApi)
 
     suspend fun all(query: String, page: Int, perPage: Int = 30): UnifiedSearchPage = withContext(Dispatchers.IO) {
         coroutineScope {
-            val calls = listOf(
-                async { repositories(query, page, perPage) },
-                async { code(query, page, perPage) },
-                async { issues(query, page, perPage) },
-                async { pullRequests(query, page, perPage) },
-                async { owners(query, page, perPage) },
-                async { commits(query, page, perPage) }
-            )
-            val (repositories, code, issues, pullRequests, owners, commits) = calls.awaitAll()
+            val repositoriesCall = async { repositories(query, page, perPage) }
+            val codeCall = async { code(query, page, perPage) }
+            val issuesCall = async { issues(query, page, perPage) }
+            val pullRequestsCall = async { pullRequests(query, page, perPage) }
+            val ownersCall = async { owners(query, page, perPage) }
+            val commitsCall = async { commits(query, page, perPage) }
+
             UnifiedSearchPage(
-                repositories as RepositorySearchPage,
-                code as CodeSearchPage,
-                issues as IssueSearchPage,
-                pullRequests as IssueSearchPage,
-                owners as OwnerSearchPage,
-                commits as CommitSearchPage
+                repositories = repositoriesCall.await(),
+                code = codeCall.await(),
+                issues = issuesCall.await(),
+                pullRequests = pullRequestsCall.await(),
+                owners = ownersCall.await(),
+                commits = commitsCall.await()
             )
         }
     }
