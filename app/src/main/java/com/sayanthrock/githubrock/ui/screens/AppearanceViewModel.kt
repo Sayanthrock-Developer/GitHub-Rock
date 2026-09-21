@@ -45,6 +45,7 @@ class AppearanceViewModel @Inject constructor(
     fun setFontSize(size: FontSize) = viewModelScope.launch { preferences.setFontSize(size) }
     fun setFontWeight(weight: FontWeightStyle) = viewModelScope.launch { preferences.setFontWeight(weight) }
     fun setFontFamily(family: AppFontFamily) = viewModelScope.launch { preferences.setFontFamily(family) }
+    fun setAppLanguage(tag: String?) = viewModelScope.launch { preferences.setAppLanguage(tag) }
     fun setLoadingStyle(style: LoadingStyle) = viewModelScope.launch { preferences.setLoadingStyle(style) }
     fun setAnimationStyle(style: AnimationStyle) = viewModelScope.launch { preferences.setAnimationStyle(style) }
     fun setCodeColorStyle(style: CodeColorStyle) = viewModelScope.launch { preferences.setCodeColorStyle(style) }
