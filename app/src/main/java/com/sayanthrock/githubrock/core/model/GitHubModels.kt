@@ -42,6 +42,7 @@ data class DashboardPayload(
     val repositories: List<GitHubRepositoryModel>
 )
 @Serializable data class Owner(val login: String, @SerialName("avatar_url") val avatarUrl: String = "")
+@Serializable data class GitHubRepositorySubscription(val subscribed: Boolean = false, val ignored: Boolean = false, val reason: String? = null, val createdAt: String? = null, val url: String? = null, val repositoryUrl: String? = null)
 @Serializable data class GitHubRepositoryModel(
     val id: Long, val name: String, @SerialName("full_name") val fullName: String, val owner: Owner,
     val description: String? = null, val private: Boolean = false, val fork: Boolean = false,
