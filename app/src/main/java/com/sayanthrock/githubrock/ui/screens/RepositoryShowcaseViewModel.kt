@@ -55,7 +55,7 @@ class RepositoryShowcaseViewModel @Inject constructor(
         _state.update {
             it.copy(
                 repository = initialRepository ?: it.repository,
-                loading = initialRepository == null && it.repository == null,
+                loading = true,
                 readme = if (initialRepository != null && initialRepository.id != it.repository?.id) null else it.readme
             )
         }
