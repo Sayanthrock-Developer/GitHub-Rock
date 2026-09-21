@@ -69,6 +69,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -220,7 +221,7 @@ fun AppearanceContent(
 
 @Composable
 private fun LanguageSettingCard(selectedTag: String?, onOpenPicker: () -> Unit) {
-    val currentLocale = Locale.getDefault()
+    val currentLocale = LocalConfiguration.current.locales[0]
     val selectedLabel = selectedTag
         ?.let(Locale::forLanguageTag)
         ?.getDisplayName(currentLocale)
