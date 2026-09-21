@@ -177,16 +177,28 @@ private fun NavigationSurface(modifier: Modifier, shape: Dp, role: RockSurfaceRo
 }
 
 private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
+    var lastIndex = -1
     detectDragGesturesAfterLongPress(
-        onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+        onDragStart = {
+            lastIndex = -1
+            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        },
+        onDragCancel = { lastIndex = -1 },
+        onDragEnd = { lastIndex = -1 },
         onDrag = { change, dragAmount ->
             if (size.width <= 0) return@detectDragGesturesAfterLongPress
             val horizontalDistance = kotlin.math.abs(dragAmount.x)
             val verticalDistance = kotlin.math.abs(dragAmount.y)
             if (horizontalDistance <= verticalDistance) return@detectDragGesturesAfterLongPress
             change.consume()
-            val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt().coerceIn(0, rockNavigationDestinations.lastIndex)
-            onDestinationSelected(rockNavigationDestinations[index])
+            val index = (change.position.x / size.width * rockNavigationDestinations.size)
+                .toInt()
+                .coerceIn(0, rockNavigationDestinations.lastIndex)
+            if (index != lastIndex) {
+                lastIndex = index
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onDestinationSelected(rockNavigationDestinations[index])
+            }
         }
     )
 }
@@ -200,7 +212,7 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
 private fun RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f, label: String = destination.accessibilityLabel, verticalLabelLayout: Boolean = false) {
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
-    val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else spring(), label = "navigation indicator color")
+    val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else androidx.compose.animation.core.tween(RockMotion.duration(false, RockMotion.Navigation)), label = "navigation indicator color")
     val iconTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     val labelTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = androidx.compose.foundation.shape.RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
