@@ -242,8 +242,6 @@ fun HomeScreen(
                     } else {
                         null
                     },
-                    watchEnabled = watchEnabled,
-                    onWatch = onWatch
                     onClick = { onOpenRepo(repository) },
                 )
             }
