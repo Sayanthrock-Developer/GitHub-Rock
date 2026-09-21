@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -81,6 +82,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.data.settings.AccentColor
 import com.sayanthrock.githubrock.data.settings.AnimationStyle
 import com.sayanthrock.githubrock.data.settings.AppFontFamily
+import com.sayanthrock.githubrock.data.settings.AppLanguages
 import com.sayanthrock.githubrock.data.settings.AppearancePreferences
 import com.sayanthrock.githubrock.data.settings.CodeColorStyle
 import com.sayanthrock.githubrock.data.settings.DisplaySize
@@ -100,6 +102,7 @@ import com.sayanthrock.githubrock.ui.components.StandardSettingsGroup
 import com.sayanthrock.githubrock.ui.components.StandardSettingsRow
 import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
 import com.sayanthrock.githubrock.ui.theme.parseAccentHex
+import java.util.Locale
 
 @Composable
 fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltViewModel()) {
@@ -118,6 +121,7 @@ fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltVi
         onFontSize = viewModel::setFontSize,
         onFontWeight = viewModel::setFontWeight,
         onFontFamily = viewModel::setFontFamily,
+        onAppLanguage = viewModel::setAppLanguage,
         onLoadingStyle = viewModel::setLoadingStyle,
         onAnimationStyle = viewModel::setAnimationStyle,
         onCodeColorStyle = viewModel::setCodeColorStyle,
@@ -144,6 +148,7 @@ fun AppearanceContent(
     onFontSize: (FontSize) -> Unit = {},
     onFontWeight: (FontWeightStyle) -> Unit = {},
     onFontFamily: (AppFontFamily) -> Unit = {},
+    onAppLanguage: (String?) -> Unit = {},
     onLoadingStyle: (LoadingStyle) -> Unit = {},
     onAnimationStyle: (AnimationStyle) -> Unit = {},
     onCodeColorStyle: (CodeColorStyle) -> Unit = {},
@@ -154,6 +159,7 @@ fun AppearanceContent(
 ) {
     var confirmReset by remember { mutableStateOf(false) }
     var showAccentPicker by remember { mutableStateOf(false) }
+    var showLanguagePicker by remember { mutableStateOf(false) }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -170,6 +176,7 @@ fun AppearanceContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { StandardScreenHeader("Customize your experience", "Choose the visual system, scale, typography, loading style, animation, and code presentation.") }
+            item { LanguageSettingCard(state.appLanguageTag) { showLanguagePicker = true } }
             item { StandardSectionHeader("Theme") }
             item { ThemePreview(state) }
             item { ChoiceCard("Design style", "Complete surface and shape system", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
@@ -196,7 +203,122 @@ fun AppearanceContent(
         }
     }
     if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent, dynamic colors, AMOLED, remote images, navigation, display, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
+    if (showLanguagePicker) {
+        LanguagePickerDialog(
+            selectedTag = state.appLanguageTag,
+            onDismiss = { showLanguagePicker = false },
+            onSelect = { tag ->
+                showLanguagePicker = false
+                onAppLanguage(tag)
+            },
+        )
+    }
     if (showAccentPicker) AccentColorPickerDialog(state.customAccentHex.ifBlank { "#52D3DC" }, state.recentAccentColors, { showAccentPicker = false }) { hex -> showAccentPicker = false; onCustomAccentHex(hex) }
+}
+
+
+@Composable
+private fun LanguageSettingCard(selectedTag: String?, onOpenPicker: () -> Unit) {
+    val currentLocale = Locale.getDefault()
+    val selectedLabel = selectedTag
+        ?.let(Locale::forLanguageTag)
+        ?.getDisplayName(currentLocale)
+        ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(currentLocale) else it.toString() }
+        ?: "Follow system"
+
+    GlassCard {
+        StandardSettingsRow(Icons.Default.TextFields, "Language", selectedLabel) {
+            OutlinedButton(onClick = onOpenPicker) { Text("Change") }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LanguagePickerDialog(
+    selectedTag: String?,
+    onDismiss: () -> Unit,
+    onSelect: (String?) -> Unit,
+) {
+    var query by remember { mutableStateOf("") }
+    val currentLocale = Locale.getDefault()
+    val languages = remember(currentLocale) { AppLanguages.available(currentLocale) }
+    val filtered = remember(query, languages) {
+        val normalized = query.trim()
+        if (normalized.isBlank()) languages else languages.filter {
+            it.displayName.contains(normalized, ignoreCase = true) ||
+                it.tag.contains(normalized, ignoreCase = true)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Language") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Choose any language available on this device, or follow the system language.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    label = { Text("Search languages") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                LazyColumn(
+                    Modifier.fillMaxWidth().height(360.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    item {
+                        LanguageChoiceRow(
+                            label = "Follow system",
+                            secondary = "Use Android's current language",
+                            selected = selectedTag == null,
+                            onClick = { onSelect(null); onDismiss() },
+                        )
+                    }
+                    items(filtered) { language ->
+                        LanguageChoiceRow(
+                            label = language.displayName,
+                            secondary = language.tag,
+                            selected = selectedTag == language.tag,
+                            onClick = { onSelect(language.tag); onDismiss() },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun LanguageChoiceRow(
+    label: String,
+    secondary: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        Modifier.fillMaxWidth().selectable(selected, true, Role.RadioButton, onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+                Text(secondary, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+            }
+            if (selected) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
 }
 
 @Composable
