@@ -128,11 +128,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                 onRetry = viewModel::retry,
                 onOpenUrl = openUrl,
                 onDownload = { asset ->
-                    val downloadUrl = if (displayedRepository?.private == true) {
-                        asset.downloadUrl
-                    } else {
-                        asset.browserDownloadUrl?.takeIf(String::isNotBlank) ?: asset.downloadUrl
-                    }
+                    val downloadUrl = asset.downloadUrl
                     val release = state.releases.firstOrNull { candidate -> candidate.assets.any { it.id == asset.id } }
                     downloadsViewModel.enqueue(
                         url = downloadUrl,
