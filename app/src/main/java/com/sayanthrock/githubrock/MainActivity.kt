@@ -10,7 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -26,9 +25,10 @@ import com.sayanthrock.githubrock.ui.MainViewModel
 import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
+import javax.inject.Inject
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,18 +44,25 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
+
         lifecycleScope.launch {
-            applyAppLanguage(appPreferences.appLanguageTag.first())
-            setContent {
-                val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
-                var appliedLanguageTag = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(appearance.appLanguageTag) }
-                LaunchedEffect(appearance.appLanguageTag) {
-                    if (appearance.appLanguageTag != appliedLanguageTag.value) {
-                        appliedLanguageTag.value = appearance.appLanguageTag
-                        applyAppLanguage(appearance.appLanguageTag)
-                        recreate()
-                    }
+            val initialLanguageTag = appPreferences.appLanguageTag.first()
+            applyAppLanguage(initialLanguageTag)
+            var appliedLanguageTag = initialLanguageTag
+            appPreferences.appLanguageTag
+                .distinctUntilChanged()
+                .collect { languageTag ->
+                    if (languageTag == appliedLanguageTag) return@collect
+                    appliedLanguageTag = languageTag
+                    applyAppLanguage(languageTag)
+                    recreate()
                 }
+        }
+
+        setContent {
+            val appearance = appPreferences.appearance.collectAsStateWithLifecycle(
+                initialValue = AppearancePreferences(showImages = false)
+            ).value
             val useDarkTheme = when (appearance.themeMode) {
                 ThemeMode.System -> isSystemInDarkTheme()
                 ThemeMode.Light -> false
