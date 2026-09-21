@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
@@ -136,7 +138,11 @@ fun HomeScreen(
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
+    dashboardViewModel: HomeRepositoryDashboardViewModel = hiltViewModel(),
 ) {
+    val dashboardEnabled by dashboardViewModel.enabled.collectAsStateWithLifecycle()
+    val watchedRepositories by dashboardViewModel.watched.collectAsStateWithLifecycle()
+    val watchError by dashboardViewModel.watchError.collectAsStateWithLifecycle()
     var selectedPlatformName by rememberSaveable { mutableStateOf(HomePlatform.All.name) }
     var selectedCategoryName by rememberSaveable { mutableStateOf(HomeCategory.All.name) }
     var selectedSortName by rememberSaveable { mutableStateOf(HomeSort.Updated.name) }
@@ -184,6 +190,14 @@ fun HomeScreen(
                 )
             }
 
+            item {
+                HomeRepositoryDashboardOption(
+                    enabled = dashboardEnabled,
+                    onEnabledChange = dashboardViewModel::setEnabled,
+                )
+            }
+
+            if (dashboardEnabled) {
             item {
                 HomeBrowsingHeader(
                     selectedPlatform = selectedPlatform,
@@ -242,8 +256,21 @@ fun HomeScreen(
                     } else {
                         null
                     },
+                    watched = repository.fullName.lowercase() in watchedRepositories,
+                    onWatch = { dashboardViewModel.toggleWatch(repository) },
                     onClick = { onOpenRepo(repository) },
                 )
+            }
+
+            watchError?.let { message ->
+                item {
+                    GlassCard {
+                        Text(message, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+            } else {
+                item { RepositoryDashboardDisabledCard(onEnable = { dashboardViewModel.setEnabled(true) }) }
             }
 
             item { Spacer(Modifier.height(8.dp)) }
@@ -259,6 +286,47 @@ fun HomeScreen(
             },
             onDismiss = { showPlatformSheet = false },
         )
+    }
+}
+
+@Composable
+private fun HomeRepositoryDashboardOption(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+) {
+    GlassCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Repository dashboard", fontWeight = FontWeight.Bold)
+                Text(
+                    "Search, inspect, and watch repositories from Home.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = onEnabledChange)
+        }
+    }
+}
+
+@Composable
+private fun RepositoryDashboardDisabledCard(onEnable: () -> Unit) {
+    GlassCard {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Repository dashboard is off", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                "Turn it on to see repository language, topics, stars, forks, issues, and watch controls.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onEnable) { Text("Turn on") }
+        }
     }
 }
 
@@ -440,6 +508,8 @@ private fun DiscoveryRepositoryCard(
     modifier: Modifier = Modifier,
     repository: GitHubRepositoryModel,
     rank: Int?,
+    watched: Boolean = false,
+    onWatch: () -> Unit = {},
     onClick: () -> Unit,
 ) {
     val showImages = LocalRemoteImagesEnabled.current
@@ -571,6 +641,11 @@ private fun DiscoveryRepositoryCard(
                     contentDescription = "Updated ${relativeRepositoryTime(repository.updatedAt)}",
                 )
                 Spacer(Modifier.weight(1f))
+                FilterChip(
+                    selected = watched,
+                    onClick = onWatch,
+                    label = { Text(if (watched) "Watching" else "Watch") },
+                )
                 Text(
                     text = "Open",
                     style = MaterialTheme.typography.labelLarge,
