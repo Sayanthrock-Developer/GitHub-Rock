@@ -55,8 +55,7 @@ data class AppearancePreferences(
     val repositoryManager: Boolean = true,
     val fileTools: Boolean = true,
     val compactCards: Boolean = false,
-    val reduceMotion: Boolean = false,
-    val repositoryDashboard: Boolean = true
+    val reduceMotion: Boolean = false
 )
 
 @Singleton
@@ -100,8 +99,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             repositoryManager = preferences[REPOSITORY_MANAGER] ?: true,
             fileTools = preferences[FILE_TOOLS] ?: true,
             compactCards = preferences[COMPACT_CARDS] ?: false,
-            reduceMotion = preferences[REDUCE_MOTION] ?: false,
-            repositoryDashboard = preferences[REPOSITORY_DASHBOARD] ?: true
+            reduceMotion = preferences[REDUCE_MOTION] ?: false
         )
     }
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
@@ -151,7 +149,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setFileTools(enabled: Boolean) = context.dataStore.edit { it[FILE_TOOLS] = enabled }
     suspend fun setCompactCards(enabled: Boolean) = context.dataStore.edit { it[COMPACT_CARDS] = enabled }
     suspend fun setReduceMotion(enabled: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = enabled }
-    suspend fun setRepositoryDashboard(enabled: Boolean) = context.dataStore.edit { it[REPOSITORY_DASHBOARD] = enabled }
     suspend fun setBiometricLock(enabled: Boolean) = context.dataStore.edit { it[BIOMETRIC_LOCK] = enabled }
 
     suspend fun addRepositorySearch(query: String) {
@@ -164,7 +161,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         else preferences[WHATS_NEW_TRANSLATION_LANGUAGE] = language
     }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE); preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE); preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES); preferences.remove(REMOTE_IMAGES_ALL); preferences.remove(REMOTE_IMAGES_AVATARS); preferences.remove(REMOTE_IMAGES_REPOSITORY_ARTWORK); preferences.remove(REMOTE_IMAGES_PROFILE_REPOSITORY); preferences.remove(REMOTE_IMAGES_NETWORK); preferences.remove(REMOTE_IMAGES_QUALITY); preferences.remove(REMOTE_IMAGES_CACHE); preferences.remove(REMOTE_IMAGES_SHAPE); preferences.remove(REMOTE_IMAGES_SIZE); preferences.remove(REMOTE_IMAGES_PLACEHOLDER); preferences.remove(REMOTE_IMAGES_ANIMATION); preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS); preferences.remove(REDUCE_MOTION); preferences.remove(REPOSITORY_DASHBOARD)
+        preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE); preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE); preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES); preferences.remove(REMOTE_IMAGES_ALL); preferences.remove(REMOTE_IMAGES_AVATARS); preferences.remove(REMOTE_IMAGES_REPOSITORY_ARTWORK); preferences.remove(REMOTE_IMAGES_PROFILE_REPOSITORY); preferences.remove(REMOTE_IMAGES_NETWORK); preferences.remove(REMOTE_IMAGES_QUALITY); preferences.remove(REMOTE_IMAGES_CACHE); preferences.remove(REMOTE_IMAGES_SHAPE); preferences.remove(REMOTE_IMAGES_SIZE); preferences.remove(REMOTE_IMAGES_PLACEHOLDER); preferences.remove(REMOTE_IMAGES_ANIMATION); preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS); preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
@@ -181,7 +178,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val THEME_MODE = stringPreferencesKey("theme_mode"); val THEME_STYLE = stringPreferencesKey("theme_style"); val ACCENT_COLOR = stringPreferencesKey("accent_color"); val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex"); val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors"); val DISPLAY_SIZE = stringPreferencesKey("display_size"); val FONT_SIZE = stringPreferencesKey("font_size"); val FONT_WEIGHT = stringPreferencesKey("font_weight"); val FONT_FAMILY = stringPreferencesKey("font_family"); val LOADING_STYLE = stringPreferencesKey("loading_style"); val ANIMATION_STYLE = stringPreferencesKey("animation_style"); val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style"); val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style"); val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style"); val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color"); val TRUE_BLACK = booleanPreferencesKey("true_black"); val SHOW_IMAGES = booleanPreferencesKey("show_images")
         val REMOTE_IMAGES_ALL = booleanPreferencesKey("remote_images_all"); val REMOTE_IMAGES_AVATARS = stringPreferencesKey("remote_images_avatars"); val REMOTE_IMAGES_REPOSITORY_ARTWORK = stringPreferencesKey("remote_images_repository_artwork"); val REMOTE_IMAGES_PROFILE_REPOSITORY = stringPreferencesKey("remote_images_profile_repository"); val REMOTE_IMAGES_NETWORK = stringPreferencesKey("remote_images_network"); val REMOTE_IMAGES_QUALITY = stringPreferencesKey("remote_images_quality"); val REMOTE_IMAGES_CACHE = booleanPreferencesKey("remote_images_cache"); val REMOTE_IMAGES_SHAPE = stringPreferencesKey("remote_images_shape"); val REMOTE_IMAGES_SIZE = stringPreferencesKey("remote_images_size"); val REMOTE_IMAGES_PLACEHOLDER = stringPreferencesKey("remote_images_placeholder"); val REMOTE_IMAGES_ANIMATION = stringPreferencesKey("remote_images_animation")
         val WHATS_NEW_TRANSLATION_LANGUAGE = stringPreferencesKey("whats_new_translation_language")
-        val REPOSITORY_DASHBOARD = booleanPreferencesKey("repository_dashboard"); val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview"); val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details"); val STATUS_COLORS = booleanPreferencesKey("status_colors"); val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls"); val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager"); val FILE_TOOLS = booleanPreferencesKey("file_tools"); val COMPACT_CARDS = booleanPreferencesKey("compact_cards"); val REDUCE_MOTION = booleanPreferencesKey("reduce_motion"); val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock"); val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories"); val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
+        val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview"); val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details"); val STATUS_COLORS = booleanPreferencesKey("status_colors"); val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls"); val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager"); val FILE_TOOLS = booleanPreferencesKey("file_tools"); val COMPACT_CARDS = booleanPreferencesKey("compact_cards"); val REDUCE_MOTION = booleanPreferencesKey("reduce_motion"); val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock"); val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories"); val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
         fun normalizeHex(value: String): String? { val raw = value.trim().removePrefix("#"); if (raw.length != 6 && raw.length != 8) return null; if (!raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null; return "#${raw.uppercase()}" }
         fun parseRecentAccentColors(value: String?): List<String> = value.orEmpty().split(HISTORY_SEPARATOR).mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY)
         fun encodeRecentAccentColors(values: List<String>): String = values.mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY).joinToString(HISTORY_SEPARATOR)
