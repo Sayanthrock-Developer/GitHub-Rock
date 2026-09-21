@@ -26,6 +26,8 @@ class HomeRepositoryDashboardViewModel @Inject constructor(
 
     private val _watched = MutableStateFlow<Set<String>>(emptySet())
     val watched: StateFlow<Set<String>> = _watched
+    private val _watchError = MutableStateFlow<String?>(null)
+    val watchError: StateFlow<String?> = _watchError
 
     fun setEnabled(value: Boolean) {
         viewModelScope.launch { preferences.setRepositoryDashboard(value) }
@@ -34,6 +36,7 @@ class HomeRepositoryDashboardViewModel @Inject constructor(
     fun toggleWatch(item: GitHubRepositoryModel) {
         viewModelScope.launch {
             val key = item.fullName.lowercase()
+            _watchError.value = null
             runCatching {
                 val current = repository.isRepositoryWatched(item.owner.login, item.name)
                 if (current) {
@@ -48,6 +51,8 @@ class HomeRepositoryDashboardViewModel @Inject constructor(
                 _watched.update { currentSet ->
                     if (current) currentSet - key else currentSet + key
                 }
+            }.onFailure { error ->
+                _watchError.value = error.message ?: "Unable to update repository watch status."
             }
         }
     }
