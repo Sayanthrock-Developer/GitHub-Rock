@@ -70,13 +70,6 @@ class GitHubRepository @Inject constructor(
     suspend fun setRepositoryStarred(owner: String, repo: String, starred: Boolean): Boolean =
         if (starred) api.starRepository(owner, repo).isSuccessful else api.unstarRepository(owner, repo).isSuccessful
 
-    suspend fun isRepositoryWatched(owner: String, repo: String): Boolean =
-        api.repositorySubscription(owner, repo).subscribed
-
-    suspend fun setRepositoryWatched(owner: String, repo: String, watched: Boolean): Boolean =
-        if (watched) api.watchRepository(owner, repo, mapOf("subscribed" to true, "ignored" to false)).subscribed
-        else api.unwatchRepository(owner, repo).isSuccessful
-
     suspend fun forkRepository(owner: String, repo: String) = api.forkRepository(owner, repo)
 
     suspend fun createDraftRelease(
