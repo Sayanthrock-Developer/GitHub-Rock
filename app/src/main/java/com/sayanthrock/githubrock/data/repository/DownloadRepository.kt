@@ -64,8 +64,8 @@ class DownloadRepository @Inject constructor(
         val repositoryName = repositoryFullName?.trim()?.takeIf(String::isNotBlank)
         val resolvedAsset = resolveReleaseAsset(requestedUrl, fileName, repositoryName, assetId)
         val resolvedAssetId = assetId ?: resolvedAsset?.id
-        val browserUrl = resolvedAsset?.browserDownloadUrl?.trim()?.takeIf(String::isNotBlank)
-        val resolvedUrl = if (isPublicGitHubReleaseUrl(requestedUrl) && browserUrl != null) browserUrl else requestedUrl
+        val releaseAssetUrl = resolvedAsset?.downloadUrl?.trim()?.takeIf(String::isNotBlank)
+        val resolvedUrl = releaseAssetUrl ?: requestedUrl
         val resolvedChecksumUrl = checksumUrl?.trim()?.takeIf(String::isNotBlank)
             ?: resolveReleaseChecksumUrl(resolvedUrl, fileName, repositoryName, resolvedAssetId)
 
