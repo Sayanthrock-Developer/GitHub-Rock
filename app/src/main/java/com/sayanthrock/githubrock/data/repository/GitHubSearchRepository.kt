@@ -36,25 +36,25 @@ class GitHubSearchRepository @Inject constructor(private val api: GitHubRestApi)
     suspend fun repositories(query: String, page: Int, perPage: Int = 30): RepositorySearchPage =
         withContext(Dispatchers.IO) {
             val response = api.searchRepositories(query, perPage = perPage, page = page)
-            RepositorySearchPage(response.items, response.items.size == perPage)
+            RepositorySearchPage(response.items, page * perPage < response.totalCount)
         }
 
     suspend fun owners(query: String, page: Int, perPage: Int = 30): OwnerSearchPage =
         withContext(Dispatchers.IO) {
             val response = api.searchUsers(query, perPage = perPage, page = page)
-            OwnerSearchPage(response.items, response.items.size == perPage)
+            OwnerSearchPage(response.items, page * perPage < response.totalCount)
         }
 
     suspend fun code(query: String, page: Int, perPage: Int = 30): CodeSearchPage =
         withContext(Dispatchers.IO) {
             val response = api.searchCode(query, perPage = perPage, page = page)
-            CodeSearchPage(response.items, response.items.size == perPage)
+            CodeSearchPage(response.items, page * perPage < response.totalCount)
         }
 
     suspend fun issues(query: String, page: Int, perPage: Int = 30): IssueSearchPage =
         withContext(Dispatchers.IO) {
             val response = api.searchIssues(query, perPage = perPage, page = page)
-            IssueSearchPage(response.items, response.items.size == perPage)
+            IssueSearchPage(response.items, page * perPage < response.totalCount)
         }
 
     suspend fun pullRequests(query: String, page: Int, perPage: Int = 30): IssueSearchPage =
@@ -66,7 +66,7 @@ class GitHubSearchRepository @Inject constructor(private val api: GitHubRestApi)
     suspend fun commits(query: String, page: Int, perPage: Int = 30): CommitSearchPage =
         withContext(Dispatchers.IO) {
             val response = api.searchCommits(query, perPage = perPage, page = page)
-            CommitSearchPage(response.items, response.items.size == perPage)
+            CommitSearchPage(response.items, page * perPage < response.totalCount)
         }
 
     suspend fun topics(query: String, page: Int, perPage: Int = 30): RepositorySearchPage =
