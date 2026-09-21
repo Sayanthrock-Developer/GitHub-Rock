@@ -180,7 +180,7 @@ fun AppearanceContent(
             item { StandardSectionHeader("Display size") }
             item { ChoiceCard("Interface scale", "Changes controls, cards, spacing, and navigation app-wide", Icons.Default.ViewCompact, listOf(DisplaySize.Large to "Large", DisplaySize.Standard to "Standard", DisplaySize.Small to "Small"), state.displaySize, onDisplaySize) }
             item { StandardSectionHeader("Fonts") }
-            item { ChoiceCard("Font family", "System sans, serif, or developer monospace", Icons.Default.TextFields, AppFontFamily.entries.map { it to it.displayName }, state.fontFamily, onFontFamily) }
+            item { FontFamilyControl(state.fontFamily, onFontFamily) }
             item { ChoiceCard("Font size", "Readable text scale", Icons.Default.FormatSize, listOf(FontSize.Small to "Small", FontSize.Default to "Default", FontSize.Large to "Large"), state.fontSize, onFontSize) }
             item { ChoiceCard("Font weight", "Light, default, or stronger text", Icons.Default.FormatSize, listOf(FontWeightStyle.Light to "Light", FontWeightStyle.Default to "Default", FontWeightStyle.Bold to "Bold"), state.fontWeight, onFontWeight) }
             item { TypographyPreview() }
@@ -197,6 +197,49 @@ fun AppearanceContent(
     }
     if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text("Reset settings?") }, text = { Text("Theme, accent, dynamic colors, AMOLED, remote images, navigation, display, fonts, loading, animation, code colors, and log presentation will return to defaults.") }, confirmButton = { Button(onClick = { confirmReset = false; onReset() }) { Text("Reset") } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } })
     if (showAccentPicker) AccentColorPickerDialog(state.customAccentHex.ifBlank { "#52D3DC" }, state.recentAccentColors, { showAccentPicker = false }) { hex -> showAccentPicker = false; onCustomAccentHex(hex) }
+}
+
+@Composable
+private fun FontFamilyControl(selected: AppFontFamily, onSelected: (AppFontFamily) -> Unit) {
+    val options = listOf(
+        Triple(AppFontFamily.SystemSans, "System Sans", "Native Android interface typography"),
+        Triple(AppFontFamily.Serif, "Serif", "Editorial and reading-focused typography"),
+        Triple(AppFontFamily.Monospace, "Developer Mono", "Developer-focused fixed-width typography"),
+    )
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Default.TextFields, null, tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text("Font family", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Choose the app-wide interface typeface. Code surfaces keep their dedicated code font.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            options.forEach { (family, label, description) ->
+                val isSelected = selected == family
+                Surface(
+                    modifier = Modifier.fillMaxWidth().selectable(isSelected, true, Role.RadioButton) { onSelected(family) },
+                    shape = MaterialTheme.shapes.large,
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                    border = BorderStroke(2.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.weight(1f)) {
+                            Text(label, style = MaterialTheme.typography.titleMedium, fontFamily = family.composeFamily(), fontWeight = FontWeight.Bold)
+                            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (isSelected) Icon(Icons.Default.Check, "Selected", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun AppFontFamily.composeFamily(): FontFamily = when (this) {
+    AppFontFamily.SystemSans -> FontFamily.SansSerif
+    AppFontFamily.Serif -> FontFamily.Serif
+    AppFontFamily.Monospace -> FontFamily.Monospace
 }
 
 @Composable private fun NavigationBarStyleControl(selected: NavigationBarStyle, onSelected: (NavigationBarStyle) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.ViewCompact, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Navigation Bar Style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text("Choose how the five main destinations are presented.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { NavigationBarStyle.entries.forEach { style -> FilterChip(selected == style, { onSelected(style) }, label = { Text(style.displayName) }, leadingIcon = if (selected == style) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) } } } }
