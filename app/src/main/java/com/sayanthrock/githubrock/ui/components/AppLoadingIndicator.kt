@@ -15,10 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Animatable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +32,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FolderOpen
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.ui.theme.LocalLoadingStyle
 import com.sayanthrock.githubrock.ui.theme.LocalReduceMotion
@@ -133,6 +138,112 @@ fun AppLoadingIndicator(
             LoadingStyle.Morph -> {
                 MorphLoader(compact = compact, reduceMotion = reduceMotion)
             }
+        }
+    }
+}
+
+
+/**
+ * Repository-specific loading surface. It keeps the repository context visible while
+ * GitHub operations are in flight and never invents progress.
+ */
+@Composable
+fun RepositoryOperationLoader(
+    modifier: Modifier = Modifier,
+    label: String = "Loading repository",
+    compact: Boolean = false,
+    reduceMotion: Boolean = LocalReduceMotion.current
+) {
+    val size = if (compact) 44.dp else 56.dp
+    val iconSize = if (compact) 20.dp else 26.dp
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(if (compact) 18.dp else 22.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = .42f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = if (compact) 12.dp else 16.dp,
+                vertical = if (compact) 10.dp else 12.dp
+            ),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(size),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier.size(size),
+                    shape = RoundedCornerShape(if (compact) 14.dp else 18.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
+                ) {}
+                Icon(
+                    imageVector = Icons.Default.FolderOpen,
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                if (!reduceMotion) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(size - 2.dp),
+                        strokeWidth = if (compact) 2.dp else 2.5.dp
+                    )
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                androidx.compose.material3.Text(
+                    label,
+                    style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                )
+                androidx.compose.material3.Text(
+                    "Syncing with GitHub",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RepositoryOperationSkeleton(modifier: Modifier = Modifier, reduceMotion: Boolean = LocalReduceMotion.current) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .28f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = .32f)
+        )
+    ) {
+        Column(
+            Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AppLoadingIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                compact = true,
+                style = LoadingStyle.Skeleton,
+                reduceMotion = reduceMotion
+            )
+            AppLoadingIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                compact = true,
+                style = LoadingStyle.Skeleton,
+                reduceMotion = reduceMotion
+            )
+            AppLoadingIndicator(
+                modifier = Modifier.fillMaxWidth(0.62f),
+                compact = true,
+                style = LoadingStyle.Skeleton,
+                reduceMotion = reduceMotion
+            )
         }
     }
 }
