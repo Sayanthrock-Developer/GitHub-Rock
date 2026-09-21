@@ -235,7 +235,7 @@ class RepositoryHubViewModel @Inject constructor(
 
         _state.update {
             it.copy(
-                loading = initialRepository == null && it.repository == null,
+                loading = true,
                 releasesLoading = true,
                 readmeLoading = true,
                 error = null,
