@@ -614,7 +614,7 @@ private fun DiscoveryRepositoryCard(
                 }
                 repository.topics.take(3).forEach { topic ->
                     RepositoryPlatformChip(
-                        icon = RockIcon.Tag.vector(),
+                        icon = RockIcon.Code.vector(),
                         label = topic,
                     )
                 }
@@ -642,7 +642,7 @@ private fun DiscoveryRepositoryCard(
                     contentDescription = "${compactCount(repository.forks)} forks",
                 )
                 RepositoryFooterMetric(
-                    icon = RockIcon.Issues.vector(),
+                    icon = RockIcon.ErrorOutline.vector(),
                     value = compactCount(repository.openIssues),
                     contentDescription = "${compactCount(repository.openIssues)} open issues",
                 )
