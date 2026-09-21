@@ -26,6 +26,8 @@ val LocalLoadingStyle = staticCompositionLocalOf { LoadingStyle.Spinner }
 val LocalReduceMotion = staticCompositionLocalOf { false }
 val LocalCodeColorStyle = staticCompositionLocalOf { CodeColorStyle.Classic }
 val LocalLogDisplayStyle = staticCompositionLocalOf { LogDisplayStyle.Terminal }
+data class RockDesignTokens(val surfaceStyle: SurfaceStyle, val surfaceOpacity: Float, val borderWidth: Float, val elevation: Float, val blurAmount: Float, val cardDensity: Float, val shapeRadius: Float, val buttonStyle: ButtonStyle)
+val LocalRockDesignTokens = staticCompositionLocalOf { RockDesignTokens(SurfaceStyle.Adaptive, .96f, 1f, 2f, 0f, 1f, 24f, ButtonStyle.Adaptive) }
 
 data class CodeColors(val keyword: Color, val string: Color, val comment: Color, val number: Color, val type: Color, val property: Color)
 val LocalCodeColors = staticCompositionLocalOf { CodeColors(Color(0xFF79B8FF), Color(0xFF85E89D), Color(0xFF8B949E), Color(0xFFFFAB70), Color(0xFFBC8CFF), Color(0xFFFF7B72)) }
@@ -85,6 +87,18 @@ private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
     ThemeStyle.Aurora -> Shapes(extraSmall = RoundedCornerShape(10.dp), small = RoundedCornerShape(14.dp), medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(32.dp))
     ThemeStyle.HighContrast -> Shapes(extraSmall = RoundedCornerShape(2.dp), small = RoundedCornerShape(4.dp), medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp), extraLarge = RoundedCornerShape(12.dp))
     ThemeStyle.Obsidian -> Shapes(extraSmall = RoundedCornerShape(7.dp), small = RoundedCornerShape(11.dp), medium = RoundedCornerShape(15.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
+    ThemeStyle.RockAdaptive -> Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(22.dp), extraLarge = RoundedCornerShape(28.dp))
+}
+
+private fun adaptiveShapes(radius: Float): Shapes {
+    val r = radius.coerceIn(0f, 32f)
+    return Shapes(
+        extraSmall = RoundedCornerShape((r * .25f).dp),
+        small = RoundedCornerShape((r * .42f).dp),
+        medium = RoundedCornerShape((r * .66f).dp),
+        large = RoundedCornerShape((r * .84f).dp),
+        extraLarge = RoundedCornerShape(r.dp)
+    )
 }
 
 private fun contrastRatio(foreground: Color, background: Color): Float {
@@ -131,6 +145,7 @@ private fun ColorScheme.applyStyle(style: ThemeStyle, dark: Boolean): ColorSchem
     ThemeStyle.Midnight -> copy(background = if (dark) Color(0xFF070B14) else Color(0xFFF4F7FC), surface = if (dark) Color(0xFF0D1422) else Color.White, surfaceContainer = if (dark) Color(0xFF121C2D) else Color(0xFFEAF0FA), surfaceContainerHigh = if (dark) Color(0xFF19263A) else Color(0xFFDDE7F5), outlineVariant = primary.copy(alpha = .28f))
     ThemeStyle.Aurora -> copy(background = if (dark) Color(0xFF07110F) else Color(0xFFF4FBF8), surface = if (dark) Color(0xFF0D1A17) else Color.White, surfaceContainer = if (dark) Color(0xFF13231F) else Color(0xFFE8F6F0), surfaceContainerHigh = if (dark) Color(0xFF1A2E29) else Color(0xFFD9EEE6), outlineVariant = tertiary.copy(alpha = .30f))
     ThemeStyle.HighContrast -> copy(background = if (dark) Color.Black else Color.White, surface = if (dark) Color(0xFF050505) else Color.White, surfaceContainer = if (dark) Color(0xFF0D0D0D) else Color(0xFFF4F4F4), surfaceContainerHigh = if (dark) Color(0xFF161616) else Color(0xFFEAEAEA), outline = if (dark) Color.White else Color.Black, outlineVariant = if (dark) Color(0xFFBDBDBD) else Color(0xFF2B2B2B), onBackground = if (dark) Color.White else Color.Black, onSurface = if (dark) Color.White else Color.Black, onSurfaceVariant = if (dark) Color(0xFFE3E3E3) else Color(0xFF222222))
+    ThemeStyle.RockAdaptive -> copy(surface = surface.copy(alpha = .96f), surfaceContainer = surfaceContainer.copy(alpha = .94f), surfaceContainerHigh = surfaceContainerHigh.copy(alpha = .97f), outlineVariant = primary.copy(alpha = .18f))
     ThemeStyle.Obsidian -> copy(background = if (dark) Color(0xFF07080A) else Color(0xFFF5F6F8), surface = if (dark) Color(0xFF0D0F12) else Color(0xFFFCFCFD), surfaceVariant = if (dark) Color(0xFF111419) else Color(0xFFF0F2F5), surfaceContainerLowest = if (dark) Color(0xFF050608) else Color.White, surfaceContainerLow = if (dark) Color(0xFF0A0C0F) else Color(0xFFF7F8FA), surfaceContainer = if (dark) Color(0xFF12151A) else Color(0xFFF0F2F5), surfaceContainerHigh = if (dark) Color(0xFF191D23) else Color(0xFFE7EAF0), surfaceContainerHighest = if (dark) Color(0xFF222730) else Color(0xFFDCE1E8), outline = if (dark) Color(0xFF343B45) else Color(0xFFB8C0CA), outlineVariant = if (dark) Color(0xFF242A32) else Color(0xFFD9DEE5), onBackground = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D), onSurface = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D), onSurfaceVariant = if (dark) Color(0xFFAAB2BD) else Color(0xFF59636E))
 }
 
@@ -165,7 +180,7 @@ private fun DisplaySize.scale() = when (this) { DisplaySize.Small -> .90f; Displ
 private fun FontSize.scale() = when (this) { FontSize.Small -> .90f; FontSize.Default -> 1f; FontSize.Large -> 1.16f }
 
 @Composable
-fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = true, trueBlack: Boolean = true, accentColor: AccentColor = AccentColor.DefaultGitHubRock, customAccentHex: String? = null, themeStyle: ThemeStyle = ThemeStyle.Clean, displaySize: DisplaySize = DisplaySize.Standard, fontSize: FontSize = FontSize.Default, fontWeight: FontWeightStyle = FontWeightStyle.Default, fontFamily: AppFontFamily = AppFontFamily.SystemSans, loadingStyle: LoadingStyle = LoadingStyle.Spinner, codeColorStyle: CodeColorStyle = CodeColorStyle.Classic, logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal, reduceMotion: Boolean = false, showImages: Boolean = true, content: @Composable () -> Unit) {
+fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = true, trueBlack: Boolean = true, accentColor: AccentColor = AccentColor.DefaultGitHubRock, customAccentHex: String? = null, themeStyle: ThemeStyle = ThemeStyle.Clean, displaySize: DisplaySize = DisplaySize.Standard, fontSize: FontSize = FontSize.Default, fontWeight: FontWeightStyle = FontWeightStyle.Default, fontFamily: AppFontFamily = AppFontFamily.SystemSans, surfaceStyle: SurfaceStyle = SurfaceStyle.Adaptive, surfaceOpacity: Float = .96f, borderWidth: Float = 1f, elevation: Float = 2f, blurAmount: Float = 0f, cardDensity: Float = 1f, shapeRadius: Float = 24f, buttonStyle: ButtonStyle = ButtonStyle.Adaptive, loadingStyle: LoadingStyle = LoadingStyle.Spinner, codeColorStyle: CodeColorStyle = CodeColorStyle.Classic, logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal, reduceMotion: Boolean = false, showImages: Boolean = true, content: @Composable () -> Unit) {
     val context = LocalContext.current
     val baseDensity = LocalDensity.current
     val systemColors = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -176,12 +191,13 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = true, tru
         else -> lightColors(accentColor, customAccentHex)
     }
         .applyStyle(themeStyle, darkTheme)
+        .let { scheme -> if (surfaceStyle == SurfaceStyle.Solid) scheme.copy(surface = scheme.surface.copy(alpha = 1f), surfaceContainer = scheme.surfaceContainer.copy(alpha = 1f), surfaceContainerHigh = scheme.surfaceContainerHigh.copy(alpha = 1f)) else scheme.copy(surface = scheme.surface.copy(alpha = surfaceOpacity.coerceIn(.72f,1f)), surfaceContainer = scheme.surfaceContainer.copy(alpha = surfaceOpacity.coerceIn(.72f,1f))) }
         .applyTrueBlack(darkTheme, trueBlack)
         // Glass surfaces may blend with content beneath them, so validate the final
         // semantic text tokens after every theme/style transformation.
         .ensureTextContrast(darkTheme)
     val density = Density(baseDensity.density * displaySize.scale(), baseDensity.fontScale * fontSize.scale())
-    CompositionLocalProvider(LocalRemoteImagesEnabled provides showImages, LocalLoadingStyle provides loadingStyle, LocalReduceMotion provides reduceMotion, LocalCodeColorStyle provides codeColorStyle, LocalLogDisplayStyle provides logDisplayStyle, LocalCodeColors provides codeColors(codeColorStyle, darkTheme), LocalDensity provides density) {
-        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)
+    CompositionLocalProvider(LocalRockDesignTokens provides RockDesignTokens(surfaceStyle, surfaceOpacity, borderWidth, elevation, blurAmount, cardDensity, shapeRadius, buttonStyle), LocalRemoteImagesEnabled provides showImages, LocalLoadingStyle provides loadingStyle, LocalReduceMotion provides reduceMotion, LocalCodeColorStyle provides codeColorStyle, LocalLogDisplayStyle provides logDisplayStyle, LocalCodeColors provides codeColors(codeColorStyle, darkTheme), LocalDensity provides density) {
+        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = if (themeStyle == ThemeStyle.RockAdaptive) adaptiveShapes(shapeRadius) else shapesFor(themeStyle), content = content)
     }
 }
