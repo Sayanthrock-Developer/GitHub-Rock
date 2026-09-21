@@ -22,6 +22,8 @@ import com.sayanthrock.githubrock.data.settings.RemoteImageQuality
 import com.sayanthrock.githubrock.data.settings.RemoteImageShape
 import com.sayanthrock.githubrock.data.settings.RemoteImageSize
 import com.sayanthrock.githubrock.data.settings.ThemeMode
+import com.sayanthrock.githubrock.data.settings.SurfaceStyle
+import com.sayanthrock.githubrock.data.settings.ButtonStyle
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -38,6 +40,14 @@ class AppearanceViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
+    fun setSurfaceStyle(style: SurfaceStyle) = viewModelScope.launch { preferences.setSurfaceStyle(style) }
+    fun setSurfaceOpacity(value: Float) = viewModelScope.launch { preferences.setSurfaceOpacity(value) }
+    fun setBorderWidth(value: Float) = viewModelScope.launch { preferences.setBorderWidth(value) }
+    fun setElevation(value: Float) = viewModelScope.launch { preferences.setElevation(value) }
+    fun setBlurAmount(value: Float) = viewModelScope.launch { preferences.setBlurAmount(value) }
+    fun setCardDensity(value: Float) = viewModelScope.launch { preferences.setCardDensity(value) }
+    fun setShapeRadius(value: Float) = viewModelScope.launch { preferences.setShapeRadius(value) }
+    fun setButtonStyle(style: ButtonStyle) = viewModelScope.launch { preferences.setButtonStyle(style) }
     fun setAccentColor(color: AccentColor) = viewModelScope.launch { preferences.setAccentColor(color) }
     fun setSystemDynamicAccent() = viewModelScope.launch { preferences.setSystemDynamicAccent() }
     fun setCustomAccentHex(hex: String) = viewModelScope.launch { preferences.setCustomAccentHex(hex) }
