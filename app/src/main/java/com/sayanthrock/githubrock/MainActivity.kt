@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -47,6 +48,14 @@ class MainActivity : ComponentActivity() {
             applyAppLanguage(appPreferences.appLanguageTag.first())
             setContent {
                 val appearance = appPreferences.appearance.collectAsStateWithLifecycle(initialValue = AppearancePreferences(showImages = false)).value
+                var appliedLanguageTag = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(appearance.appLanguageTag) }
+                LaunchedEffect(appearance.appLanguageTag) {
+                    if (appearance.appLanguageTag != appliedLanguageTag.value) {
+                        appliedLanguageTag.value = appearance.appLanguageTag
+                        applyAppLanguage(appearance.appLanguageTag)
+                        recreate()
+                    }
+                }
             val useDarkTheme = when (appearance.themeMode) {
                 ThemeMode.System -> isSystemInDarkTheme()
                 ThemeMode.Light -> false
