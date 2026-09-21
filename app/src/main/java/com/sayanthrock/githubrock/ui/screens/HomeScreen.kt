@@ -136,7 +136,6 @@ fun HomeScreen(
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
-    watchEnabled: Boolean = false,
 ) {
     var selectedPlatformName by rememberSaveable { mutableStateOf(HomePlatform.All.name) }
     var selectedCategoryName by rememberSaveable { mutableStateOf(HomeCategory.All.name) }
@@ -444,9 +443,6 @@ private fun DiscoveryRepositoryCard(
     modifier: Modifier = Modifier,
     repository: GitHubRepositoryModel,
     rank: Int?,
-    watched: Boolean = false,
-    watchEnabled: Boolean = false,
-    onWatch: () -> Unit = {},
     onClick: () -> Unit,
 ) {
     val showImages = LocalRemoteImagesEnabled.current
@@ -589,11 +585,6 @@ private fun DiscoveryRepositoryCard(
                     contentDescription = "Updated ${relativeRepositoryTime(repository.updatedAt)}",
                 )
                 Spacer(Modifier.weight(1f))
-                if (watchEnabled) FilterChip(
-                    selected = watched,
-                    onClick = onWatch,
-                    label = { Text(if (watched) "Watching" else "Watch") },
-                )
                 Text(
                     text = "Open",
                     style = MaterialTheme.typography.labelLarge,
