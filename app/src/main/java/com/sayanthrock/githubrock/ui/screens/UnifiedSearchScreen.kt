@@ -3,8 +3,9 @@ package com.sayanthrock.githubrock.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -19,6 +21,7 @@ import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.core.model.*
 import com.sayanthrock.githubrock.data.repository.*
 import com.sayanthrock.githubrock.data.settings.AppPreferences
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -93,7 +96,22 @@ class UnifiedSearchViewModel @Inject constructor(
         searchJob = viewModelScope.launch { search(1, false, requestGeneration) }
     }
 
+    fun clearSearch() {
+        generation++
+        searchJob?.cancel()
+        _state.value = _state.value.copy(query = "", repositories = emptyList(), code = emptyList(), issues = emptyList(), pullRequests = emptyList(), owners = emptyList(), commits = emptyList(), topics = emptyList(), loading = false, loadingMore = false, hasMore = false, error = null)
+    }
+
     fun clearHistory() { viewModelScope.launch { preferences.clearRepositorySearchHistory() } }
+
+    fun retry() {
+        val normalized = _state.value.query.trim()
+        if (normalized.length < 2) return
+        generation++
+        val requestGeneration = generation
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch { search(1, false, requestGeneration) }
+    }
 
     fun loadMore() {
         if (_state.value.loading || _state.value.loadingMore || !_state.value.hasMore) return
@@ -197,20 +215,20 @@ fun UnifiedSearchScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val history by viewModel.history.collectAsState()
-    var query by rememberSaveable { mutableStateOf("") }
+    val query = state.query
     val uriHandler = LocalUriHandler.current
-
-    LaunchedEffect(Unit) { query = state.query }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+            IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") }
             OutlinedTextField(
                 value = query,
-                onValueChange = { query = it; viewModel.queryChanged(it) },
+                onValueChange = viewModel::queryChanged,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { viewModel.submit() }),
                 modifier = Modifier.weight(1f), singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = ""; viewModel.queryChanged("") }) { Icon(Icons.Default.Clear, "Clear") } }) else null,
+                leadingIcon = { Icon(RockIcon.Search.vector(), null) },
+                trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = viewModel::clearSearch) { Icon(RockIcon.Close.vector(), "Clear search") } }) else null,
                 placeholder = { Text("Search GitHub") }
             )
         }
@@ -221,8 +239,8 @@ fun UnifiedSearchScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SearchKind.entries.forEach { kind ->
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+                    items(SearchKind.entries, key = { it.name }) { kind ->
                         FilterChip(selected = state.kind == kind.name, onClick = { viewModel.setKind(kind.name) }, label = { Text(kind.label) })
                     }
                 }
@@ -234,11 +252,11 @@ fun UnifiedSearchScreen(
                 item {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("Recent searches", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        IconButton(onClick = viewModel::clearHistory) { Icon(Icons.Default.DeleteSweep, "Clear search history") }
+                        IconButton(onClick = viewModel::clearHistory) { Icon(RockIcon.Delete.vector(), "Clear search history") }
                     }
                 }
                 items(history, key = { it }) { item ->
-                    AssistChip(onClick = { query = item; viewModel.submit(item) }, label = { Text(item) }, leadingIcon = { Icon(Icons.Default.History, null) })
+                    AssistChip(onClick = { viewModel.submit(item) }, label = { Text(item) }, leadingIcon = { Icon(RockIcon.History.vector(), null) })
                 }
             }
             return@Column
@@ -253,7 +271,10 @@ fun UnifiedSearchScreen(
         }
 
         state.error?.let {
-            Text(it, Modifier.padding(20.dp), color = MaterialTheme.colorScheme.error)
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(it, color = MaterialTheme.colorScheme.error)
+                OutlinedButton(onClick = viewModel::retry) { Text("Retry") }
+            }
             return@Column
         }
 
