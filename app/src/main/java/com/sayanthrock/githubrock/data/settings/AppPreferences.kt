@@ -105,6 +105,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         )
     }
     val dynamicColor: Flow<Boolean> = appearance.map { it.dynamicColor }
+    val appLanguageTag: Flow<String?> = appearance.map { it.appLanguageTag }
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
     val favoriteRepositories: Flow<Set<String>> = context.dataStore.data.map { it[FAVORITE_REPOSITORIES].orEmpty() }
     val repositorySearchHistory: Flow<List<String>> = context.dataStore.data.map { preferences -> preferences[REPOSITORY_SEARCH_HISTORY]?.split(HISTORY_SEPARATOR)?.map(String::trim)?.filter(String::isNotBlank).orEmpty() }
