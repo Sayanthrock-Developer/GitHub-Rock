@@ -33,9 +33,6 @@ interface GitHubRestApi {
     @PUT("notifications/threads/{threadId}") suspend fun markNotificationRead(@Path("threadId") threadId: String): Response<Unit>
     @PUT("notifications") suspend fun markNotificationsRead(): Response<Unit>
     @GET("repos/{owner}/{repo}") suspend fun repository(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositoryModel
-    @GET("repos/{owner}/{repo}/subscription") suspend fun repositorySubscription(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepositorySubscription
-    @PUT("repos/{owner}/{repo}/subscription") suspend fun watchRepository(@Path("owner") owner: String, @Path("repo") repo: String, @Body request: Map<String, Boolean>): GitHubRepositorySubscription
-    @DELETE("repos/{owner}/{repo}/subscription") suspend fun unwatchRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
     @PUT("user/starred/{owner}/{repo}") suspend fun starRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
     @DELETE("user/starred/{owner}/{repo}") suspend fun unstarRepository(@Path("owner") owner: String, @Path("repo") repo: String): Response<Unit>
     @GET("user/starred") suspend fun starredRepositories(@Query("sort") sort: String = "updated", @Query("direction") direction: String = "desc", @Query("per_page") perPage: Int = 100, @Query("page") page: Int = 1): List<GitHubRepositoryModel>
