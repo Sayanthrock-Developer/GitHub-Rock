@@ -27,7 +27,25 @@ Manage GitHub from your phone: browse repositories, review issues and pull reque
 
 ---
 
-## 01 — The idea
+## 01 — Project documentation
+
+GitHub Rock's README is the **project-facing documentation entry point**. It explains what the app is, how it is built, which GitHub workflows it supports, and how problems are handled during development.
+
+The app is intended to solve real GitHub workflow problems inside a native Android experience — not hide them behind mock data or simulated success.
+
+### Problem-solving principle
+
+When a problem is found, the project follows:
+
+**Identify → Reproduce → Audit → Find the root cause → Fix → Build/Test → Verify → Commit → CI → Document**
+
+This applies to UI/UX bugs, authentication, GitHub API integration, README rendering, search, Actions/builds, downloads, releases, networking, permissions, accessibility and other supported features.
+
+If a problem cannot be solved because of GitHub permissions, API limits, network conditions, platform restrictions or missing backend support, GitHub Rock should show a clear actionable state instead of pretending the operation succeeded.
+
+---
+
+## 02 — The idea
 
 GitHub Rock brings core GitHub workflows into a **native Jetpack Compose experience** instead of wrapping the GitHub website.
 
@@ -39,7 +57,7 @@ If a capability is unavailable because of permissions, API limits, platform rest
 
 ---
 
-## 02 — What you can do
+## 03 — What you can do
 
 | Surface | GitHub Rock |
 |---|---|
@@ -60,7 +78,7 @@ The primary navigation stays focused on GitHub work. Explore and Settings are no
 
 ---
 
-## 03 — 2026 design direction
+## 04 — 2026 design direction
 
 GitHub Rock follows a **Liquid GitHub Luxury** direction:
 
@@ -93,7 +111,7 @@ Translation is performed with the existing Google ML Kit integration; GitHub Roc
 
 ---
 
-## 04 — Rock Flow
+## 05 — Rock Flow
 
 Motion is treated as part of the navigation model rather than a collection of unrelated screen animations.
 
@@ -112,7 +130,7 @@ Animations should remain useful, short and predictable.
 
 ---
 
-## 05 — Architecture
+## 06 — Architecture
 
 ```text
 ┌─────────────────────────────┐
@@ -143,11 +161,11 @@ Animations should remain useful, short and predictable.
 - **GitHub GraphQL APIs where supported**
 - **GitHub Actions**
 
-The Android app reuses its authenticated networking/data layers. Feature work must not create duplicate Retrofit/API clients.
+The Android app reuses its authenticated networking/data layers. Feature work must not create duplicate Retrofit/API clients or parallel implementations of an existing capability.
 
 ---
 
-## 06 — Security & reliability
+## 07 — Security & reliability
 
 GitHub Rock uses a verification-first approach to sensitive operations.
 
@@ -165,7 +183,7 @@ See [`SECURITY.md`](SECURITY.md) and [`BUILD.md`](BUILD.md) for project-specific
 
 ---
 
-## 07 — Android
+## 08 — Android
 
 | Requirement | Version |
 |---|---|
@@ -179,7 +197,7 @@ The repository also contains companion/web and desktop-oriented components. Thei
 
 ---
 
-## 08 — Downloads & distribution
+## 09 — Downloads & distribution
 
 GitHub Rock follows a simple rule:
 
@@ -197,7 +215,7 @@ No guessed version, URL, checksum or platform artifact is treated as a release.
 
 ---
 
-## 09 — Build
+## 10 — Build
 
 ### Requirements
 
@@ -235,7 +253,7 @@ app/build/outputs/apk/debug/
 
 ---
 
-## 10 — Documentation
+## 11 — Documentation
 
 | Document | Purpose |
 |---|---|
@@ -249,7 +267,7 @@ app/build/outputs/apk/debug/
 
 ---
 
-## 11 — Development contract
+## 12 — Development contract
 
 GitHub Rock uses:
 
@@ -272,11 +290,11 @@ Detailed implementation state belongs in [`IMPLEMENTATION_STATUS.md`](IMPLEMENTA
 
 ---
 
-## 12 — Project status
+## 13 — Project status
 
 GitHub Rock is actively developed.
 
-This README is the **product-facing overview**. It intentionally avoids presenting every planned or platform-dependent capability as universally available.
+This README is the **project documentation and product-facing overview**. It intentionally avoids presenting every planned or platform-dependent capability as universally available.
 
 For the implementation truth, use:
 
