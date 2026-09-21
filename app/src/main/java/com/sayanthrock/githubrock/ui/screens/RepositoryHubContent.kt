@@ -84,6 +84,8 @@ import com.sayanthrock.githubrock.core.util.ReleaseAssetClassifier
 import com.sayanthrock.githubrock.core.util.ReleaseAssetInfo
 import com.sayanthrock.githubrock.core.util.ReleasePlatform
 import com.sayanthrock.githubrock.ui.components.GlassCard
+import com.sayanthrock.githubrock.ui.components.RepositoryOperationLoader
+import com.sayanthrock.githubrock.ui.components.RepositoryOperationSkeleton
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
 
 internal enum class ReleaseFilter(val label: String) {
@@ -146,7 +148,11 @@ fun RepositoryHubContent(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         if (loading && repository == null) {
-            item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            item(key = "loading") {
+                RepositoryOperationSkeleton(
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
         error?.let { message ->
@@ -205,12 +211,11 @@ fun RepositoryHubContent(
         }
         when {
             readmeLoading -> item(key = "readme_loading") {
-                GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Loading README…", fontWeight = FontWeight.SemiBold)
-                        LinearProgressIndicator(Modifier.fillMaxWidth())
-                    }
-                }
+                RepositoryOperationLoader(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = "Loading README",
+                    compact = false
+                )
             }
             readme != null -> item(key = "readme_content") {
                 RepositoryMarkdownCard(readme, translatedBlocks)
