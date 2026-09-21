@@ -243,7 +243,7 @@ private fun LanguagePickerDialog(
     onSelect: (String?) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    val currentLocale = Locale.getDefault()
+    val currentLocale = LocalConfiguration.current.locales[0]
     val languages = remember(currentLocale) { AppLanguages.available(currentLocale) }
     val filtered = remember(query, languages) {
         val normalized = query.trim()
