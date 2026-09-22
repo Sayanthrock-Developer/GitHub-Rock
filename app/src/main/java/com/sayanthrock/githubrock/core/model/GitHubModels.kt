@@ -134,7 +134,18 @@ fun Duration.formatRunTime(): String {
 @Serializable data class ReviewRequest(val body: String, val event: String)
 @Serializable data class PullRequestReview(val id: Long, val user: Owner, val body: String? = null, val state: String, @SerialName("submitted_at") val submittedAt: String? = null)
 @Serializable data class WorkflowJob(val id: Long, val name: String, val status: String, val conclusion: String? = null, val steps: List<WorkflowStep> = emptyList())
-@Serializable data class WorkflowStep(val name: String, val status: String, val conclusion: String? = null)
+@Serializable data class WorkflowStep(
+    val name: String,
+    val status: String,
+    val conclusion: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("completed_at") val completedAt: String? = null
+)
+fun WorkflowStep.runTime(now: Instant = Instant.now()): Duration? {
+    val started = startedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
+    val finished = completedAt?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: now
+    return Duration.ofSeconds((finished.epochSecond - started.epochSecond).coerceAtLeast(0))
+}
 @Serializable data class WorkflowJobsResponse(@SerialName("total_count") val totalCount: Int = 0, val jobs: List<WorkflowJob> = emptyList())
 @Serializable data class WorkflowArtifact(
     val id: Long,
