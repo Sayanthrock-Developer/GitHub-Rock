@@ -86,13 +86,19 @@ class RepositoryShowcaseViewModel @Inject constructor(
                     if (block.kind.isTranslatable()) index to block.text else null
                 }.filter { it.second.isNotBlank() }
                 if (translatable.isEmpty()) return@runCatchingPreservingCancellation emptyMap()
+
+                // Detect once from the full README so short headings/labels inherit context.
+                val sourceContext = translatable.joinToString("\n") { it.second }.take(12_000)
+                val detectedSource = translationService.detectLanguage(sourceContext)
+
                 buildMap {
                     translatable.forEach { (index, text) ->
                         put(
                             index,
                             translationService.translate(
                                 text = text,
-                                targetLanguage = targetLanguage
+                                targetLanguage = targetLanguage,
+                                sourceLanguage = detectedSource
                             )
                         )
                     }
