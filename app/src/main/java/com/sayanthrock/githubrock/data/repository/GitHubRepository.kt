@@ -51,6 +51,25 @@ class GitHubRepository @Inject constructor(
         options.applyLocally(artworkResolver.attach(repositories))
     }
 
+    suspend fun publicRepositoriesPage(
+        options: RepositorySearchOptions,
+        page: Int,
+        perPage: Int = 30
+    ): RepositorySearchPage = withContext(Dispatchers.IO) {
+        val response = api.searchRepositories(
+            query = options.githubQuery(),
+            sort = options.sort.apiValue,
+            order = "desc",
+            perPage = perPage.coerceIn(1, 100),
+            page = page.coerceAtLeast(1)
+        )
+        val repositories = options.applyLocally(artworkResolver.attach(response.items))
+        RepositorySearchPage(
+            repositories = repositories,
+            hasMore = page * perPage < response.totalCount
+        )
+    }
+
     suspend fun repository(owner: String, repo: String): GitHubRepositoryModel = withContext(Dispatchers.IO) {
         artworkResolver.attach(listOf(api.repository(owner, repo))).single()
     }
