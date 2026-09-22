@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +43,8 @@ import com.sayanthrock.githubrock.core.model.WorkflowArtifact
 import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
+import com.sayanthrock.githubrock.core.model.WorkflowStep
+import com.sayanthrock.githubrock.core.model.runTime
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.core.model.formatRunTime
 import com.sayanthrock.githubrock.core.model.runTime
@@ -659,7 +662,12 @@ private fun RunDetailsDialog(
                                             Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
                                                 Text("${index + 1}", Modifier.width(28.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 Text(step.name, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                                                Text(step.conclusion ?: step.status, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                                                WorkflowStepTimer(step)
+                                                Text(
+                                                    step.conclusion ?: step.status,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    style = MaterialTheme.typography.labelSmall
+                                                )
                                             }
                                         }
                                         jobState.logs?.let { logs ->
@@ -689,6 +697,31 @@ private fun RunDetailsDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WorkflowStepTimer(step: WorkflowStep) {
+    var now by remember { mutableStateOf(java.time.Instant.now()) }
+    val running = step.status == "in_progress" && step.completedAt == null
+
+    LaunchedEffect(running, step.startedAt, step.completedAt) {
+        if (running) {
+            while (true) {
+                now = java.time.Instant.now()
+                delay(1_000)
+            }
+        }
+    }
+
+    val duration = step.runTime(now)
+    if (duration != null) {
+        Text(
+            if (running) "Live " + duration.formatRunTime() else duration.formatRunTime(),
+            color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (running) FontWeight.SemiBold else FontWeight.Normal,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
