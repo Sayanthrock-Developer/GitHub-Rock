@@ -44,7 +44,6 @@ import com.sayanthrock.githubrock.core.model.WorkflowDisplayState
 import com.sayanthrock.githubrock.core.model.WorkflowJob
 import com.sayanthrock.githubrock.core.model.WorkflowRun
 import com.sayanthrock.githubrock.core.model.WorkflowStep
-import com.sayanthrock.githubrock.core.model.runTime
 import com.sayanthrock.githubrock.core.model.displayState
 import com.sayanthrock.githubrock.core.model.formatRunTime
 import com.sayanthrock.githubrock.core.model.runTime
