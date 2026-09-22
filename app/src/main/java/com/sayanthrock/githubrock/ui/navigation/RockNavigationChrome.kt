@@ -5,6 +5,7 @@ import android.view.View
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -102,7 +103,7 @@ private fun FuturisticNavigation(selectedRoute: String?, animationStyle: Animati
                 val selected = selectedRoute == destination.route
                 val scale by animateFloatAsState(
                     targetValue = if (selected) 1.05f else 1f,
-                    animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(RockMotion.duration(true, RockMotion.Navigation)) else spring(stiffness = 500f, dampingRatio = 0.78f),
+                    animationSpec = navigationScaleSpec(animationStyle, reduceMotion),
                     label = "futuristic navigation scale"
                 )
                 Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
@@ -196,11 +197,31 @@ private fun NavigationRow(height: Dp, horizontalPadding: Dp, spacing: Dp, conten
     Row(modifier = Modifier.fillMaxWidth().height(height).padding(horizontal = horizontalPadding, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(spacing), verticalAlignment = Alignment.CenterVertically, content = content)
 }
 
+private fun navigationScaleSpec(style: AnimationStyle, reduceMotion: Boolean): androidx.compose.animation.core.AnimationSpec<Float> = when {
+    reduceMotion -> tween(RockMotion.duration(true, RockMotion.Navigation))
+    style == AnimationStyle.RockFlow -> tween(180)
+    style == AnimationStyle.Cinematic -> tween(280)
+    style == AnimationStyle.Liquid -> spring(stiffness = 320f, dampingRatio = 0.86f)
+    style == AnimationStyle.Magnetic -> spring(stiffness = 700f, dampingRatio = 0.72f)
+    style == AnimationStyle.Dynamic -> spring(stiffness = 520f, dampingRatio = 0.80f)
+    else -> spring(stiffness = 500f, dampingRatio = 0.78f)
+}
+
+private fun navigationColorSpec(style: AnimationStyle, reduceMotion: Boolean, duration: Int): androidx.compose.animation.core.AnimationSpec<Color> = when {
+    reduceMotion -> tween(duration)
+    style == AnimationStyle.RockFlow -> tween(180)
+    style == AnimationStyle.Cinematic -> tween(280)
+    style == AnimationStyle.Liquid -> tween(240)
+    style == AnimationStyle.Magnetic -> spring(stiffness = 700f, dampingRatio = 0.80f)
+    style == AnimationStyle.Dynamic -> spring(stiffness = 520f, dampingRatio = 0.82f)
+    else -> spring(stiffness = 500f, dampingRatio = 0.80f)
+}
+
 @Composable
 private fun RockNavigationItem(destination: TopDestinationV2, selected: Boolean, showLabel: Boolean, modifier: Modifier, selectedShape: Dp, animationStyle: AnimationStyle, reduceMotion: Boolean, onClick: () -> Unit, iconSize: Dp = if (selected) 24.dp else 22.dp, transparent: Boolean = false, selectedContainerAlpha: Float = 1f, label: String = destination.accessibilityLabel, verticalLabelLayout: Boolean = false) {
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
-    val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = if (reduceMotion) androidx.compose.animation.core.tween(duration) else spring(), label = "navigation indicator color")
+    val selectedContainer by animateColorAsState(targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = selectedContainerAlpha) else Color.Transparent, animationSpec = navigationColorSpec(animationStyle, reduceMotion, duration), label = "navigation indicator color")
     val iconTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     val labelTint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(modifier = modifier.combinedClickable(role = Role.Tab, onClick = onClick, onLongClick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }).semantics { contentDescription = destination.accessibilityLabel; role = Role.Tab; this.selected = selected }, shape = androidx.compose.foundation.shape.RoundedCornerShape(selectedShape), color = selectedContainer, contentColor = labelTint) {
