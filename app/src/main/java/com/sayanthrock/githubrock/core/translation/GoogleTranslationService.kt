@@ -44,9 +44,9 @@ class GoogleTranslationService @Inject constructor() {
             ?: throw IllegalArgumentException("Google could not identify the source language.")
         if (source.equals(targetLanguage, ignoreCase = true)) return text
 
-        val sourceCode = TranslateLanguage.fromLanguageTag(source)
+        val sourceCode = resolveMlKitLanguage(source)
             ?: throw IllegalArgumentException("Unsupported source language: $source")
-        val targetCode = TranslateLanguage.fromLanguageTag(targetLanguage)
+        val targetCode = resolveMlKitLanguage(targetLanguage)
             ?: throw IllegalArgumentException("Unsupported target language: $targetLanguage")
 
         val key = "$sourceCode->$targetCode"
@@ -69,6 +69,12 @@ class GoogleTranslationService @Inject constructor() {
                 .addOnSuccessListener(success)
                 .addOnFailureListener(failure)
         }
+    }
+
+    private fun resolveMlKitLanguage(tag: String): String? {
+        val normalized = tag.trim().replace('_', '-')
+        return TranslateLanguage.fromLanguageTag(normalized)
+            ?: TranslateLanguage.fromLanguageTag(normalized.substringBefore('-'))
     }
 
     fun close() {
