@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.translation.GoogleTranslationService
+import com.sayanthrock.githubrock.data.settings.AppLanguages
 import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
@@ -173,6 +174,11 @@ fun RepositoryShowcaseContent(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Translation unavailable", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                         Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        translationTarget?.let { target ->
+                            OutlinedButton(onClick = { onTranslate(blocks, target) }, enabled = !translationLoading) {
+                                Text("Retry")
+                            }
+                        }
                     }
                 }
             }
@@ -218,6 +224,13 @@ private fun TranslationPickerDialog(
     onDismiss: () -> Unit,
     onSelect: (String?) -> Unit
 ) {
+    val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val appLanguages = remember(currentLocale) { AppLanguages.available(currentLocale) }
+    val mlKitCodes = remember { GoogleTranslationService.supportedLanguages.map { it.code }.toSet() }
+    val languages = remember(appLanguages, mlKitCodes) {
+        appLanguages.filter { it.tag.substringBefore('-').lowercase() in mlKitCodes }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Translate README") },
@@ -239,12 +252,14 @@ private fun TranslationPickerDialog(
                         }
                     }
                     items(
-                        GoogleTranslationService.supportedLanguages,
-                        key = { it.code }
+                        languages,
+                        key = { it.tag }
                     ) { language ->
-                        TextButton(onClick = { onSelect(language.code) }, modifier = Modifier.fillMaxWidth()) {
-                            Text(language.label, modifier = Modifier.weight(1f))
-                            if (selectedLanguage == language.code) Text("✓")
+                        val code = language.tag.substringBefore('-').lowercase()
+                        TextButton(onClick = { onSelect(code) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(language.displayName, modifier = Modifier.weight(1f))
+                            Text(language.tag, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (selectedLanguage == code) Text("✓")
                         }
                     }
                 }
