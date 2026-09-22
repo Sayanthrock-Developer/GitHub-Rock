@@ -117,6 +117,8 @@ class RepositorySearchHistoryViewModel @Inject constructor(
     }
 }
 
+private enum class RepositorySectionMode { Explore, TopCharts }
+
 private enum class RepositoryChartMode(
     val label: String,
     val defaultSort: RepositoryResultSort
@@ -164,6 +166,7 @@ fun RepositoriesScreen(
     var type by rememberSaveable { mutableStateOf(RepositoryTypeFilter.All) }
     var source by rememberSaveable { mutableStateOf(RepositorySourceFilter.AllGitHub) }
     var sourceOwner by rememberSaveable { mutableStateOf("") }
+    var selectedSectionName by rememberSaveable { mutableStateOf(RepositorySectionMode.TopCharts.name) }
     var selectedModeName by rememberSaveable { mutableStateOf(RepositoryChartMode.Trending.name) }
     var selectedPlatformName by rememberSaveable { mutableStateOf(HomePlatform.All.name) }
     var selectedSortName by rememberSaveable { mutableStateOf(RepositoryResultSort.BestMatch.name) }
@@ -280,8 +283,17 @@ fun RepositoriesScreen(
         onSearch(RepositorySearchOptions(sort = selectedMode.defaultSort.apiSort))
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+    Column(modifier = Modifier.fillMaxSize()) {
+        RepositorySectionTabs(
+            selected = RepositorySectionMode.entries.firstOrNull { it.name == selectedSectionName }
+                ?: RepositorySectionMode.TopCharts,
+            onSelect = { selectedSectionName = it.name }
+        )
+        if (selectedSectionName == RepositorySectionMode.Explore.name) {
+            RepositoryExploreTab(selectedPlatform = selectedPlatform, onOpen = onOpen)
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -376,10 +388,10 @@ fun RepositoriesScreen(
                 onClick = { onOpen(repository) }
             )
         }
-    }
+            }
 
-    if (showFilters) {
-        RepositoryFiltersSheet(
+            if (showFilters) {
+                RepositoryFiltersSheet(
             selectedPlatform = selectedPlatform,
             onPlatformChange = { selectedPlatformName = it.name },
             source = source,
@@ -410,14 +422,122 @@ fun RepositoriesScreen(
         )
     }
 
-    if (showCreateRepository && creationEnabled) {
-        CreateRepositorySheet(
-            onDismiss = { showCreateRepository = false },
-            onCreated = { repository ->
-                showCreateRepository = false
-                onOpen(repository)
+            if (showCreateRepository && creationEnabled) {
+                CreateRepositorySheet(
+                    onDismiss = { showCreateRepository = false },
+                    onCreated = { repository ->
+                        showCreateRepository = false
+                        onOpen(repository)
+                    }
+                )
             }
-        )
+        }
+}
+
+@Composable
+private fun RepositorySectionTabs(
+    selected: RepositorySectionMode,
+    onSelect: (RepositorySectionMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        RepositorySectionMode.entries.forEach { mode ->
+            FilterChip(
+                selected = selected == mode,
+                onClick = { onSelect(mode) },
+                label = { Text(if (mode == RepositorySectionMode.TopCharts) "Top Charts" else "Explore") },
+                leadingIcon = if (selected == mode) {
+                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                } else null
+            )
+        }
+    }
+}
+
+@Composable
+private fun RepositoryExploreTab(
+    selectedPlatform: HomePlatform,
+    onOpen: (GitHubRepositoryModel) -> Unit,
+    viewModel: RepositoryExploreTabViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Explore", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                Text("Fresh GitHub projects with verifiable release assets.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(
+                    selected = true,
+                    onClick = { viewModel.load(selectedPlatform, refresh = true) },
+                    label = { Text("Daily refresh") }
+                )
+                Text(
+                    "Platform: \${if (selectedPlatform == HomePlatform.All) "All" else selectedPlatform.label}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+        if (state.loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        state.error?.let { error ->
+            item {
+                GlassCard {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Explore unavailable", fontWeight = FontWeight.Bold)
+                        Text(error, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton(onClick = { viewModel.load(selectedPlatform, refresh = true) }) { Text("Retry") }
+                    }
+                }
+            }
+        }
+        items(state.items, key = { it.repository.id }) { item ->
+            GlassCard(modifier = Modifier.fillMaxWidth(), onClick = { onOpen(item.repository) }) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(item.repository.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+                            Text("@\${item.repository.owner.login}", color = MaterialTheme.colorScheme.primary)
+                        }
+                        Text("Installable", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                    }
+                    Text(item.repository.description ?: "No repository description provided.", maxLines = 3, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("★ \${compactRepositoryCount(item.repository.stars)}")
+                        item.repository.language?.let { Text(it) }
+                        Text(item.releaseLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        }
+        if (!state.loading && state.items.isEmpty() && state.error == null) {
+            item {
+                GlassCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("No installable projects found", fontWeight = FontWeight.Bold)
+                        Text("GitHub did not return repositories with a verifiable release asset for this platform.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+        if (state.hasMore) {
+            item {
+                TextButton(onClick = { viewModel.loadMore(selectedPlatform) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (state.loadingMore) "Loading…" else "Load more")
+                }
+            }
+        }
     }
 }
 
