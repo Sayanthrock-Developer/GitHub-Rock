@@ -24,7 +24,7 @@ enum class FontSize { Small, Default, Large; companion object { fun fromStored(v
 enum class FontWeightStyle { Light, Default, Bold; companion object { fun fromStored(value: String?): FontWeightStyle = entries.firstOrNull { it.name == value } ?: Default } }
 enum class AppFontFamily { SystemSans, Serif, Monospace; companion object { fun fromStored(value: String?): AppFontFamily = entries.firstOrNull { it.name == value } ?: SystemSans } }
 enum class LoadingStyle { Spinner, Linear, Pulse, Skeleton, Liquid, Orbit, Shimmer, Morph; companion object { fun fromStored(value: String?): LoadingStyle = entries.firstOrNull { it.name == value } ?: Spinner } }
-enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
+enum class AnimationStyle { Liquid, Spring, Cinematic, Magnetic, Dynamic, RockFlow; companion object { fun fromStored(value: String?): AnimationStyle = entries.firstOrNull { it.name == value } ?: Spring } }
 enum class CodeColorStyle { Classic, Ocean, Sunset, Monochrome, GitHub; companion object { fun fromStored(value: String?): CodeColorStyle = entries.firstOrNull { it.name == value } ?: Classic } }
 enum class LogDisplayStyle { Dialog, Terminal; companion object { fun fromStored(value: String?): LogDisplayStyle = entries.firstOrNull { it.name == value } ?: Terminal } }
 enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compact, Ios; companion object { fun fromStored(value: String?): NavigationBarStyle = entries.firstOrNull { it.name == value } ?: FloatingCapsule } }
