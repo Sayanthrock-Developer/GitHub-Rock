@@ -108,6 +108,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     val appLanguageTag: Flow<String?> = appearance.map { it.appLanguageTag }
     val biometricLock: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_LOCK] ?: false }
     val favoriteRepositories: Flow<Set<String>> = context.dataStore.data.map { it[FAVORITE_REPOSITORIES].orEmpty() }
+    val hiddenRepositories: Flow<Set<String>> = context.dataStore.data.map { it[HIDDEN_REPOSITORIES].orEmpty() }
     val repositorySearchHistory: Flow<List<String>> = context.dataStore.data.map { preferences -> preferences[REPOSITORY_SEARCH_HISTORY]?.split(HISTORY_SEPARATOR)?.map(String::trim)?.filter(String::isNotBlank).orEmpty() }
     val whatsNewTranslationLanguage: Flow<String?> = context.dataStore.data.map { it[WHATS_NEW_TRANSLATION_LANGUAGE] }
 
@@ -182,7 +183,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         const val MAX_SEARCH_HISTORY = 8
         const val MAX_ACCENT_HISTORY = 8
         val APP_LANGUAGE_TAG = stringPreferencesKey("app_language_tag"); val THEME_MODE = stringPreferencesKey("theme_mode"); val THEME_STYLE = stringPreferencesKey("theme_style"); val ACCENT_COLOR = stringPreferencesKey("accent_color"); val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex"); val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors"); val DISPLAY_SIZE = stringPreferencesKey("display_size"); val FONT_SIZE = stringPreferencesKey("font_size"); val FONT_WEIGHT = stringPreferencesKey("font_weight"); val FONT_FAMILY = stringPreferencesKey("font_family"); val LOADING_STYLE = stringPreferencesKey("loading_style"); val ANIMATION_STYLE = stringPreferencesKey("animation_style"); val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style"); val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style"); val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style"); val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color"); val TRUE_BLACK = booleanPreferencesKey("true_black"); val SHOW_IMAGES = booleanPreferencesKey("show_images")
-        val REMOTE_IMAGES_ALL = booleanPreferencesKey("remote_images_all"); val REMOTE_IMAGES_AVATARS = stringPreferencesKey("remote_images_avatars"); val REMOTE_IMAGES_REPOSITORY_ARTWORK = stringPreferencesKey("remote_images_repository_artwork"); val REMOTE_IMAGES_PROFILE_REPOSITORY = stringPreferencesKey("remote_images_profile_repository"); val REMOTE_IMAGES_NETWORK = stringPreferencesKey("remote_images_network"); val REMOTE_IMAGES_QUALITY = stringPreferencesKey("remote_images_quality"); val REMOTE_IMAGES_CACHE = booleanPreferencesKey("remote_images_cache"); val REMOTE_IMAGES_SHAPE = stringPreferencesKey("remote_images_shape"); val REMOTE_IMAGES_SIZE = stringPreferencesKey("remote_images_size"); val REMOTE_IMAGES_PLACEHOLDER = stringPreferencesKey("remote_images_placeholder"); val REMOTE_IMAGES_ANIMATION = stringPreferencesKey("remote_images_animation")
+        val HIDDEN_REPOSITORIES = stringSetPreferencesKey("hidden_repositories"); val REMOTE_IMAGES_ALL = booleanPreferencesKey("remote_images_all"); val REMOTE_IMAGES_AVATARS = stringPreferencesKey("remote_images_avatars"); val REMOTE_IMAGES_REPOSITORY_ARTWORK = stringPreferencesKey("remote_images_repository_artwork"); val REMOTE_IMAGES_PROFILE_REPOSITORY = stringPreferencesKey("remote_images_profile_repository"); val REMOTE_IMAGES_NETWORK = stringPreferencesKey("remote_images_network"); val REMOTE_IMAGES_QUALITY = stringPreferencesKey("remote_images_quality"); val REMOTE_IMAGES_CACHE = booleanPreferencesKey("remote_images_cache"); val REMOTE_IMAGES_SHAPE = stringPreferencesKey("remote_images_shape"); val REMOTE_IMAGES_SIZE = stringPreferencesKey("remote_images_size"); val REMOTE_IMAGES_PLACEHOLDER = stringPreferencesKey("remote_images_placeholder"); val REMOTE_IMAGES_ANIMATION = stringPreferencesKey("remote_images_animation")
         val WHATS_NEW_TRANSLATION_LANGUAGE = stringPreferencesKey("whats_new_translation_language")
         val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview"); val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details"); val STATUS_COLORS = booleanPreferencesKey("status_colors"); val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls"); val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager"); val FILE_TOOLS = booleanPreferencesKey("file_tools"); val COMPACT_CARDS = booleanPreferencesKey("compact_cards"); val REDUCE_MOTION = booleanPreferencesKey("reduce_motion"); val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock"); val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories"); val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
         fun normalizeHex(value: String): String? { val raw = value.trim().removePrefix("#"); if (raw.length != 6 && raw.length != 8) return null; if (!raw.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null; return "#${raw.uppercase()}" }
@@ -190,3 +191,17 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         fun encodeRecentAccentColors(values: List<String>): String = values.mapNotNull(::normalizeHex).distinct().take(MAX_ACCENT_HISTORY).joinToString(HISTORY_SEPARATOR)
     }
 }
+    suspend fun setRepositoryHidden(fullName: String, hidden: Boolean) {
+        val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
+        context.dataStore.edit { preferences ->
+            val current = preferences[HIDDEN_REPOSITORIES].orEmpty().toMutableSet()
+            val existing = current.firstOrNull { it.equals(normalized, ignoreCase = true) }
+            if (hidden) {
+                if (existing == null) current += normalized
+            } else {
+                existing?.let(current::remove)
+            }
+            preferences[HIDDEN_REPOSITORIES] = current
+        }
+    }
+
