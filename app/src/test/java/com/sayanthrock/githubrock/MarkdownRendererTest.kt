@@ -10,7 +10,7 @@ class MarkdownRendererTest {
     @Test
     fun `renders headings bullets quotes and fenced code safely`() {
         val blocks = MarkdownRenderer.render(
-            "# Title\n\n- One\n> Note\n\n\`\`\`kotlin\nval value = 1\n\`\`\`"
+            "# Title\n\n- One\n> Note\n\n```kotlin\nval value = 1\n```"
         )
 
         assertEquals(MarkdownBlockKind.Heading, blocks[0].kind)
