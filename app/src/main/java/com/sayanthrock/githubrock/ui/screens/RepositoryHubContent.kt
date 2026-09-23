@@ -1100,7 +1100,7 @@ private fun WhatsNewCard(
                         MarkdownRenderer.render(body).take(MAX_RELEASE_BLOCKS)
                     }
                     blocks.forEachIndexed { index, block ->
-                        MarkdownBlockView(block, translatedBlocks[index] ?: block.text)
+                        MarkdownBlockView(block, translatedBlocks[index] ?: block.text, repository, onOpenUrl)
                     }
                 } ?: Text("No release notes were provided.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -1225,17 +1225,22 @@ private fun RepositoryMarkdownCard(markdown: String, translatedBlocks: Map<Int, 
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            blocks.forEachIndexed { index, block -> MarkdownBlockView(block, translatedBlocks[index] ?: block.text) }
+            blocks.forEachIndexed { index, block -> MarkdownBlockView(block, translatedBlocks[index] ?: block.text, repository, onOpenUrl) }
 
         }
     }
 }
 
 @Composable
-private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.text) {
+private fun MarkdownBlockView(
+    block: MarkdownBlock,
+    displayText: String = block.text,
+    repository: GitHubRepositoryModel?,
+    onOpenUrl: (String) -> Unit
+) {
     when (block.kind) {
         MarkdownBlockKind.Heading -> {
-            val text = block.text
+            val text = displayText
             val emojiRegex = remember { Regex("^([\\u2700-\\u27BF]|[\\uE000-\\uF8FF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|[\\u2011-\\u26FF]|\\uD83E[\\uDD10-\\uDDFF])\\s+(.*)") }
             val match = emojiRegex.find(text)
             val style = when (block.level) {
@@ -1245,14 +1250,8 @@ private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.
                 else -> MaterialTheme.typography.titleMedium
             }
             if (match != null) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
                         Text(
                             text = match.groupValues[1],
                             modifier = Modifier.padding(10.dp),
@@ -1260,30 +1259,38 @@ private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Text(
-                        text = displayText.substringAfter(match.groupValues[1]).trim(),
-                        style = style,
-                        fontWeight = FontWeight.Bold
+                    InlineMarkdownText(
+                        text.substringAfter(match.groupValues[1]).trim(),
+                        style.copy(fontWeight = FontWeight.Bold),
+                        onOpenUrl,
+                        Modifier.weight(1f)
                     )
                 }
             } else {
-                Text(
-                    displayText,
-                    style = style,
-                    fontWeight = FontWeight.Bold
-                )
+                InlineMarkdownText(text, style.copy(fontWeight = FontWeight.Bold), onOpenUrl)
             }
         }
         MarkdownBlockKind.Bullet -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(displayText, modifier = Modifier.weight(1f))
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium, onOpenUrl, Modifier.weight(1f))
+        }
+        MarkdownBlockKind.Task -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+            Text(if (block.checked) "☑" else "☐", color = MaterialTheme.colorScheme.primary)
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium, onOpenUrl, Modifier.weight(1f))
+        }
+        MarkdownBlockKind.Alert -> Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = .08f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f))
+        ) {
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium, onOpenUrl, Modifier.padding(12.dp))
         }
         MarkdownBlockKind.Quote -> Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.primary.copy(alpha = .08f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f))
         ) {
-            Text(displayText, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant), onOpenUrl, Modifier.padding(12.dp))
         }
         MarkdownBlockKind.Code -> Surface(
             shape = RoundedCornerShape(16.dp),
@@ -1291,10 +1298,7 @@ private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.
         ) {
             Text(
                 block.text,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(12.dp),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(12.dp),
                 fontFamily = FontFamily.Monospace,
                 style = MaterialTheme.typography.bodySmall,
                 softWrap = false
@@ -1310,24 +1314,35 @@ private fun MarkdownBlockView(block: MarkdownBlock, displayText: String = block.
             ) {
                 Column(Modifier.horizontalScroll(rememberScrollState())) {
                     Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        table.headers.forEach { Text(it, fontWeight = FontWeight.Bold, modifier = Modifier.width(120.dp)) }
+                        table.headers.forEach {
+                            InlineMarkdownText(it, MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), onOpenUrl, Modifier.width(120.dp))
+                        }
                     }
                     table.rows.forEach { row ->
                         HorizontalDivider()
                         Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            row.forEach { Text(it, modifier = Modifier.width(120.dp)) }
+                            row.forEach {
+                                InlineMarkdownText(it, MaterialTheme.typography.bodySmall, onOpenUrl, Modifier.width(120.dp))
+                            }
                         }
                     }
                 }
             }
         }
-        MarkdownBlockKind.Image -> AsyncImage(
-            model = block.url,
-            contentDescription = block.text,
-            modifier = Modifier.fillMaxWidth(),
-            contentScale = ContentScale.FillWidth
-        )
-        MarkdownBlockKind.Paragraph -> Text(displayText, style = MaterialTheme.typography.bodyMedium)
+        MarkdownBlockKind.Image -> {
+            val imageUrl = block.url?.let { resolveReadmeUrl(it, repository, image = true) }
+            if (imageUrl != null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = block.text,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.FillWidth
+                )
+            } else if (block.text.isNotBlank()) {
+                Text(block.text, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        MarkdownBlockKind.Paragraph -> InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium, onOpenUrl)
     }
 }
 
