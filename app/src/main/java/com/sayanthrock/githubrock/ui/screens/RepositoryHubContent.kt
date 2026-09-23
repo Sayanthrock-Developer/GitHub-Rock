@@ -832,7 +832,7 @@ private fun ReleaseAssetOption(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                if (selected) Icons.Default.CheckCircle else Icons.Default.InsertDriveFile,
+                if (selected) RockIcon.Check.vector() else Icons.Default.InsertDriveFile,
                 contentDescription = null,
                 tint = if (selected) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
