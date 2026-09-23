@@ -364,7 +364,20 @@ fun UnifiedSearchScreen(
     Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 }
 
-@Composable\n@OptIn(ExperimentalFoundationApi::class)\nprivate fun SearchRepositoryCard(\n    repository: GitHubRepositoryModel,\n    onOpen: () -> Unit,\n    onLongPress: () -> Unit,\n    content: @Composable ColumnScope.() -> Unit\n) {\n    Surface(shape = MaterialTheme.shapes.large, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).semantics { contentDescription = repository.fullName + ". Tap to open. Long-press to hide repository." }) {\n        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)\n    }\n}\n\n@Composable private fun ResultCard(onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+@Composable
+@OptIn(ExperimentalFoundationApi::class)
+private fun SearchRepositoryCard(
+    repository: GitHubRepositoryModel,
+    onOpen: () -> Unit,
+    onLongPress: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(shape = MaterialTheme.shapes.large, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).semantics { contentDescription = repository.fullName + ". Tap to open. Long-press to hide repository." }) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)
+    }
+}
+
+@Composable private fun ResultCard(onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Surface(onClick = onClick, shape = MaterialTheme.shapes.large, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)
     }
