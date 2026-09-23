@@ -135,23 +135,26 @@ fun RepositoryDetailScreen(
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             SelectionContainer {
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(MaterialTheme.typography.titleLarge.toSpanStyle()) {
-                                            append(repository?.name ?: "Repository")
-                                        }
-                                        append("\n")
-                                        append(repository?.fullName ?: "Repository")
-                                        append("\n")
-                                        withStyle(MaterialTheme.typography.bodyLarge.toSpanStyle()) {
-                                            append(repository?.description ?: "No repository description.")
-                                        }
-                                        append("\nLanguage: ${repository?.language ?: "Not specified"}")
-                                        append("\nDefault branch: ${repository?.defaultBranch ?: "main"}")
-                                        append("\n${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = repository?.name ?: "Repository",
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                    Text(repository?.fullName ?: "Repository")
+                                    Text(
+                                        repository?.description ?: "No repository description.",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    Text("Language: ${repository?.language ?: "Not specified"}")
+                                    Text("Default branch: ${repository?.defaultBranch ?: "main"}")
+                                    Text(
+                                        "${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues"
+                                    )
+                                }
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
