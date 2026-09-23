@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
@@ -65,6 +66,7 @@ fun RepositoryDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val logDisplayStyle = LocalLogDisplayStyle.current
     val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val downloadsViewModel: DownloadsViewModel = hiltViewModel()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
@@ -154,6 +156,27 @@ fun RepositoryDetailScreen(
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(false) }) { Text("Unstar") }
                                 OutlinedButton(onClick = { showForkConfirmation = true }) { Text("Fork") }
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    clipboard.setText(
+                                        androidx.compose.ui.text.AnnotatedString(
+                                            buildString {
+                                                append(repository?.name ?: "Repository")
+                                                append("\n")
+                                                append(repository?.fullName ?: "Repository")
+                                                append("\n")
+                                                append(repository?.description ?: "No repository description.")
+                                                append("\nLanguage: ${repository?.language ?: "Not specified"}")
+                                                append("\nDefault branch: ${repository?.defaultBranch ?: "main"}")
+                                                append("\n${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
+                                            }
+                                        )
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Copy repository details")
                             }
                             if (repository?.private == true) Text("Private repository", color = MaterialTheme.colorScheme.primary)
                         }
