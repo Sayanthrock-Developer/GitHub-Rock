@@ -168,12 +168,24 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
                             return@ApplicationDownloadCard
                         }
 
-                        // Do not gate installation on PackageManager archive metadata. Some
-                        // Android builds can read a valid APK through the package installer
-                        // while getPackageArchiveInfo() returns null. The installer is the
-                        // authority for whether the package can actually be installed.
-                        InstalledApkStateResolver.launchInstaller(context, file)
-                            .onFailure { errorMessage = it.message ?: "Android could not open the package installer." }
+                        // Keep Download, Install, and Open as separate actions.
+                        // Download only saves the verified APK; it must never install it.
+                        // Open launches an already-installed package, while Install explicitly
+                        // hands the downloaded APK to Android's package installer.
+                        val result = if (state?.installed == true) {
+                            if (state.launchIntent != null) {
+                                if (InstalledApkStateResolver.launchInstalledApp(context, state)) {
+                                    Result.success(Unit)
+                                } else {
+                                    Result.failure(IllegalStateException("The installed application cannot be opened on this device."))
+                                }
+                            } else {
+                                Result.failure(IllegalStateException("This application does not expose a launcher activity."))
+                            }
+                        } else {
+                            InstalledApkStateResolver.launchInstaller(context, file)
+                        }
+                        result.onFailure { errorMessage = it.message ?: "Android could not complete the application action." }
                     },
                     onPause = { viewModel.pause(item) },
                     onResume = { viewModel.resume(item) },
