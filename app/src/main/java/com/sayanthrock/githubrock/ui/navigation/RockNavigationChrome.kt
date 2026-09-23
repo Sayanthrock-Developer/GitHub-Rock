@@ -195,13 +195,27 @@ private fun RowScope.IosNavigationItem(
             tonalElevation = 0.dp,
             shadowElevation = 0.dp
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     imageVector = if (selected) destination.selectedIcon else destination.icon,
                     contentDescription = destination.accessibilityLabel,
                     modifier = Modifier.size(iconSize.dp),
                     tint = iconColor
                 )
+                if (selected) {
+                    Text(
+                        text = futuristicNavigationLabel(destination),
+                        modifier = Modifier.padding(start = 6.dp),
+                        maxLines = 1,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = iconColor
+                    )
+                }
             }
         }
     }
