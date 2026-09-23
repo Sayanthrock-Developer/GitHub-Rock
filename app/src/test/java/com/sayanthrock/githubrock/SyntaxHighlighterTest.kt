@@ -38,7 +38,7 @@ class SyntaxHighlighterTest {
             "sample.swift" to "let answer = 42",
             "sample.cs" to "public class Sample { }",
             "sample.rb" to "def main; end",
-            "sample.sh" to "echo hello"
+            "sample.sh" to "if true; then echo hello; fi"
         )
         samples.forEach { (file, source) ->
             assertTrue("No spans for $file", SyntaxHighlighter.highlight(file, source).isNotEmpty())
