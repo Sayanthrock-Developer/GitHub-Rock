@@ -1,7 +1,10 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
@@ -66,7 +68,6 @@ fun RepositoryDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val logDisplayStyle = LocalLogDisplayStyle.current
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
     val downloadsViewModel: DownloadsViewModel = hiltViewModel()
     var mergePull by remember { mutableStateOf<PullRequestSummary?>(null) }
     var logJob by remember { mutableStateOf<WorkflowJob?>(null) }
@@ -159,20 +160,19 @@ fun RepositoryDetailScreen(
                             }
                             OutlinedButton(
                                 onClick = {
-                                    clipboard.setText(
-                                        androidx.compose.ui.text.AnnotatedString(
-                                            buildString {
-                                                append(repository?.name ?: "Repository")
-                                                append("\n")
-                                                append(repository?.fullName ?: "Repository")
-                                                append("\n")
-                                                append(repository?.description ?: "No repository description.")
-                                                append("\nLanguage: ${repository?.language ?: "Not specified"}")
-                                                append("\nDefault branch: ${repository?.defaultBranch ?: "main"}")
-                                                append("\n${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
-                                            }
-                                        )
-                                    )
+                                    val details = buildString {
+                                        append(repository?.name ?: "Repository")
+                                        append("\n")
+                                        append(repository?.fullName ?: "Repository")
+                                        append("\n")
+                                        append(repository?.description ?: "No repository description.")
+                                        append("\nLanguage: ${repository?.language ?: "Not specified"}")
+                                        append("\nDefault branch: ${repository?.defaultBranch ?: "main"}")
+                                        append("\n${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
+                                    }
+                                    val clipboard = context.getSystemService(ClipboardManager::class.java)
+                                    clipboard?.setPrimaryClip(ClipData.newPlainText("Repository details", details))
+                                    Toast.makeText(context, "Repository details copied", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
