@@ -3,6 +3,8 @@ package com.sayanthrock.githubrock.ui.theme
 import android.graphics.Color as AndroidColor
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -181,7 +183,20 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = true, tru
         // semantic text tokens after every theme/style transformation.
         .ensureTextContrast(darkTheme)
     val density = Density(baseDensity.density * displaySize.scale(), baseDensity.fontScale * fontSize.scale())
-    CompositionLocalProvider(LocalRemoteImagesEnabled provides showImages, LocalLoadingStyle provides loadingStyle, LocalReduceMotion provides reduceMotion, LocalCodeColorStyle provides codeColorStyle, LocalLogDisplayStyle provides logDisplayStyle, LocalCodeColors provides codeColors(codeColorStyle, darkTheme), LocalDensity provides density) {
+    val selectionColors = TextSelectionColors(
+        handleColor = colors.primary,
+        backgroundColor = colors.primary.copy(alpha = if (darkTheme) 0.38f else 0.28f)
+    )
+    CompositionLocalProvider(
+        LocalRemoteImagesEnabled provides showImages,
+        LocalLoadingStyle provides loadingStyle,
+        LocalReduceMotion provides reduceMotion,
+        LocalCodeColorStyle provides codeColorStyle,
+        LocalLogDisplayStyle provides logDisplayStyle,
+        LocalCodeColors provides codeColors(codeColorStyle, darkTheme),
+        LocalDensity provides density,
+        LocalTextSelectionColors provides selectionColors
+    ) {
         MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)
     }
 }
