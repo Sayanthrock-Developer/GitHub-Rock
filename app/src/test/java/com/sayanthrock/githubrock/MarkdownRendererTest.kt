@@ -10,7 +10,7 @@ class MarkdownRendererTest {
     @Test
     fun `renders headings bullets quotes and fenced code safely`() {
         val blocks = MarkdownRenderer.render(
-            "# Title\n\n- One\n> Note\n\n```kotlin\nval value = 1\n```"
+            "# Title\n\n- One\n> Note\n\n\`\`\`kotlin\nval value = 1\n\`\`\`"
         )
 
         assertEquals(MarkdownBlockKind.Heading, blocks[0].kind)
@@ -24,11 +24,13 @@ class MarkdownRendererTest {
     fun `preserves standalone markdown punctuation and parses divider syntax`() {
         val blocks = MarkdownRenderer.render("#\n##\n###\n*\n**\n***\n\nActual README")
 
-        assertEquals(6, blocks.size)
+        assertEquals(7, blocks.size)
         assertEquals(listOf("#", "##", "###", "*", "**"), blocks.take(5).map { it.text })
         assertTrue(blocks.take(5).all { it.kind == MarkdownBlockKind.Paragraph })
         assertEquals(MarkdownBlockKind.Divider, blocks[5].kind)
         assertEquals("", blocks[5].text)
+        assertEquals(MarkdownBlockKind.Paragraph, blocks[6].kind)
+        assertEquals("Actual README", blocks[6].text)
     }
 
     @Test
