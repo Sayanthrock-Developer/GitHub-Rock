@@ -88,6 +88,7 @@ import com.sayanthrock.githubrock.core.model.RepositorySearchOptions
 import com.sayanthrock.githubrock.core.model.RepositorySort
 import com.sayanthrock.githubrock.core.model.RepositorySourceFilter
 import com.sayanthrock.githubrock.core.model.RepositoryTypeFilter
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.data.settings.AppPreferences
 import com.sayanthrock.githubrock.ui.components.GitHubAvatar
 import com.sayanthrock.githubrock.ui.components.GlassCard
@@ -726,7 +727,7 @@ private fun RepositoryChartCard(
                         )
                         if (currentLogin != null && repository.owner.login.equals(currentLogin, ignoreCase = true)) {
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.CheckCircle,
+                                imageVector = RockIcon.Check.vector(),
                                 contentDescription = "Owned by your signed-in GitHub account",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
