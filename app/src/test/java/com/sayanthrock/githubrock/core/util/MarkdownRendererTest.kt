@@ -141,4 +141,45 @@ class MarkdownRendererTest {
         val markdown = "**bold** *italic* ~~strike~~ `code` [Link](https://example.com)"
         assertEquals("bold italic strike code Link", MarkdownRenderer.cleanInline(markdown))
     }
+
+    @Test fun `parse GitHub picture light and dark image sources`() {
+        val result = MarkdownRenderer.render("""
+            <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="dark.svg">
+            <source media="(prefers-color-scheme: light)" srcset="light.svg">
+            <img src="fallback.svg" alt="Logo">
+            </picture>
+        """.trimIndent())
+        val image = result.single()
+        assertEquals(MarkdownBlockKind.Image, image.kind)
+        assertEquals("fallback.svg", image.image?.fallbackUrl)
+        assertEquals("light.svg", image.image?.lightUrl)
+        assertEquals("dark.svg", image.image?.darkUrl)
+        assertEquals("Logo", image.image?.alt)
+    }
+
+    @Test fun `render details as expandable metadata with parsed children`() {
+        val result = MarkdownRenderer.render("""
+            <details>
+            <summary>More information</summary>
+            **Hello**
+            </details>
+        """.trimIndent())
+        val details = result.single()
+        assertEquals(MarkdownBlockKind.Details, details.kind)
+        assertEquals("More information", details.details?.summary)
+        assertEquals("**Hello**", details.details?.blocks?.single()?.text)
+    }
+
+    @Test fun `group multiple README images into an inline row`() {
+        val result = MarkdownRenderer.render("![One](one.svg) ![Two](two.svg)")
+        assertEquals(1, result.size)
+        assertEquals(MarkdownBlockKind.ImageRow, result[0].kind)
+        assertEquals(listOf("one.svg", "two.svg"), result[0].imageRow.map { it.fallbackUrl })
+    }
+
+    @Test fun `decode html entities and convert sup sub markup`() {
+        assertEquals("A & B < 2² H₂O", MarkdownRenderer.cleanInline("A &amp; B &lt; 2<sup>2</sup> H<sub>2</sub>O"))
+    }
+
 }
