@@ -129,10 +129,16 @@ fun RepositoryDetailScreen(
                 RepoSection.Overview -> item {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text(repository?.name ?: "Repository", style = MaterialTheme.typography.titleLarge)
-                            Text(repository?.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Default branch: ${repository?.defaultBranch ?: "main"}")
-                            Text("${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
+                            SelectionContainer {
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(repository?.name ?: "Repository", style = MaterialTheme.typography.titleLarge)
+                                    Text(repository?.fullName ?: "Repository")
+                                    Text(repository?.description ?: "No repository description.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Language: ${repository?.language ?: "Not specified"}")
+                                    Text("Default branch: ${repository?.defaultBranch ?: "main"}")
+                                    Text("${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
+                                }
+                            }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(false) }) { Text("Unstar") }
@@ -798,8 +804,3 @@ private fun MarkdownPreviewCard(blocks: List<com.sayanthrock.githubrock.core.uti
 
 private fun com.sayanthrock.githubrock.core.util.DiffLine.prefix(): String = when (kind) {
     DiffLineKind.Added -> "+ "
-    DiffLineKind.Removed -> "- "
-    DiffLineKind.Context -> "  "
-}
-
-private const val MAX_VISIBLE_DIFF_LINES = 240
