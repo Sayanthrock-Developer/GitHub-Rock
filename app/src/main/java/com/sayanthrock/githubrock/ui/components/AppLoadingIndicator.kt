@@ -341,7 +341,7 @@ private fun LiquidBar(offset: Float, compact: Boolean) {
         modifier = Modifier
             .size(width = if (compact) 58.dp else 82.dp, height = if (compact) 12.dp else 16.dp)
             .graphicsLayer { translationX = offset * if (compact) 8f else 14f; scaleX = 0.88f + ((offset + 1f) * .06f) }
-            .background(primary, RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
     )
 }
 
