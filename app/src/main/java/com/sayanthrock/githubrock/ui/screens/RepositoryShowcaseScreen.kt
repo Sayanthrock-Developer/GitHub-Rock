@@ -345,12 +345,10 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
         else -> "README.$language"
     }
     val spans = remember(fileName, block.text) { com.sayanthrock.githubrock.core.util.SyntaxHighlighter.highlight(fileName, block.text) }
-    val annotated = remember(block.text, spans) {
-        AnnotatedString.Builder(block.text).apply {
-            addStyle(SpanStyle(fontFamily = FontFamily.Monospace), 0, block.text.length)
-            spans.forEach { span -> addStyle(SpanStyle(color = syntaxColor(span.kind)), span.start, span.end) }
-        }.toAnnotatedString()
-    }
+    val annotated = AnnotatedString.Builder(block.text).apply {
+        addStyle(SpanStyle(fontFamily = FontFamily.Monospace), 0, block.text.length)
+        spans.forEach { span -> addStyle(SpanStyle(color = syntaxColor(span.kind)), span.start, span.end) }
+    }.toAnnotatedString()
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
