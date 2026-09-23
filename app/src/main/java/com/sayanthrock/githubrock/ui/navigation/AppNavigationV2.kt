@@ -128,7 +128,7 @@ fun MainNavigationV2(
                 exitTransition = { topLevelForwardExit() },
                 popEnterTransition = { topLevelBackEnter() },
                 popExitTransition = { topLevelBackExit() }
-            ) { HomeScreen(state.repositories, openRepo, state.isLoading, state.isRefreshing, onRefresh) }
+            ) { HomeScreen(state.repositories, openRepo, state.profile?.login, state.isLoading, state.isRefreshing, onRefresh) }
             composable(TopDestinationV2.Explore.route) { ExploreScreen(onOpenRepo = openRepo, onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) }) }
             composable(
                 TopDestinationV2.Repositories.route,
