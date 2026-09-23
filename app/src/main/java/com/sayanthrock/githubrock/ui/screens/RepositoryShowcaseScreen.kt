@@ -366,7 +366,7 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
 }
 
 @Composable
-private fun InlineMarkdownText(
+internal fun InlineMarkdownText(
     text: String,
     style: TextStyle,
     onOpenLink: (String) -> Unit,
