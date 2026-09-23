@@ -91,27 +91,123 @@ private fun RockBottomNavigation(selectedRoute: String?, style: NavigationBarSty
         NavigationBarStyle.Minimal -> MinimalNavigation(selectedRoute, compact, animationStyle, reduceMotion, onDestinationSelected, modifier)
         NavigationBarStyle.Glass -> GlassNavigation(selectedRoute, compact, animationStyle, reduceMotion, onDestinationSelected, modifier)
         NavigationBarStyle.Compact -> CompactNavigation(selectedRoute, animationStyle, reduceMotion, onDestinationSelected, modifier)
-        NavigationBarStyle.Ios -> FuturisticNavigation(selectedRoute, animationStyle, reduceMotion, onDestinationSelected, modifier)
+        NavigationBarStyle.Ios -> IosNavigation(selectedRoute, animationStyle, reduceMotion, onDestinationSelected, modifier)
     }
 }
 
 @Composable
-private fun FuturisticNavigation(selectedRoute: String?, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
-    NavigationSurface(modifier, RockShapes.Navigation, RockSurfaceRole.Navigation, 18.dp, 700.dp, onDestinationSelected) {
-        NavigationRow(76.dp, 8.dp, 2.dp) {
+private fun IosNavigation(
+    selectedRoute: String?,
+    animationStyle: AnimationStyle,
+    reduceMotion: Boolean,
+    onDestinationSelected: (TopDestinationV2) -> Unit,
+    modifier: Modifier
+) {
+    NavigationSurface(
+        modifier = modifier,
+        shape = RockShapes.Navigation,
+        role = RockSurfaceRole.Navigation,
+        shadow = 18.dp,
+        maxWidth = 640.dp,
+        onDestinationSelected = onDestinationSelected
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(76.dp)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             rockNavigationDestinations.forEach { destination ->
                 val selected = selectedRoute == destination.route
-                val scale by animateFloatAsState(
-                    targetValue = if (selected) 1.05f else 1f,
-                    animationSpec = navigationScaleSpec(animationStyle, reduceMotion),
-                    label = "futuristic navigation scale"
+                IosNavigationItem(
+                    destination = destination,
+                    selected = selected,
+                    animationStyle = animationStyle,
+                    reduceMotion = reduceMotion,
+                    onClick = { onDestinationSelected(destination) }
                 )
-                Box(Modifier.weight(1f).height(64.dp), contentAlignment = Alignment.Center) {
-                    if (selected) {
-                        Surface(modifier = Modifier.size(60.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(RockShapes.SmallCard), color = rockSurfaceColor(RockSurfaceRole.Selected), contentColor = rockContentColor(RockSurfaceRole.Selected), tonalElevation = 0.dp, shadowElevation = 0.dp) {}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.IosNavigationItem(
+    destination: TopDestinationV2,
+    selected: Boolean,
+    animationStyle: AnimationStyle,
+    reduceMotion: Boolean,
+    onClick: () -> Unit
+) {
+    val view = LocalView.current
+    val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
+    val itemWidth by animateFloatAsState(
+        targetValue = if (selected) 1.0f else 0.0f,
+        animationSpec = navigationScaleSpec(animationStyle, reduceMotion),
+        label = "ios navigation selection"
+    )
+
+    // The selected destination expands into a compact iOS-style pill while
+    // inactive destinations remain icon-only and share the remaining space.
+    val selectedWidth = 116.dp
+    val selectedContainer by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            Color.Transparent
+        },
+        animationSpec = navigationColorSpec(animationStyle, reduceMotion, duration),
+        label = "ios navigation selected container"
+    )
+    val iconColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val iconSize by animateFloatAsState(
+        targetValue = if (selected) 26f else 25f,
+        animationSpec = navigationScaleSpec(animationStyle, reduceMotion),
+        label = "ios navigation icon size"
+    )
+
+    Box(
+        modifier = if (selected) {
+            Modifier.width(selectedWidth)
+        } else {
+            Modifier.weight(1f)
+        }.height(60.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .combinedClickable(
+                    role = Role.Tab,
+                    onClick = onClick,
+                    onLongClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
-                    RockNavigationItem(destination = destination, selected = selected, showLabel = true, label = futuristicNavigationLabel(destination), modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale), selectedShape = RockShapes.SmallCard, animationStyle = animationStyle, reduceMotion = reduceMotion, onClick = { onDestinationSelected(destination) }, iconSize = if (selected) 23.dp else 21.dp, selectedContainerAlpha = 0f, verticalLabelLayout = true)
-                }
+                )
+                .semantics {
+                    contentDescription = destination.accessibilityLabel
+                    role = Role.Tab
+                    this.selected = selected
+                },
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(30.dp),
+            color = selectedContainer,
+            contentColor = iconColor,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = if (selected) destination.selectedIcon else destination.icon,
+                    contentDescription = destination.accessibilityLabel,
+                    modifier = Modifier.size(iconSize.dp),
+                    tint = iconColor
+                )
             }
         }
     }
