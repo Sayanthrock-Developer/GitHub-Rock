@@ -399,7 +399,9 @@ fun RepositoriesScreen(
                 Spacer(Modifier.height(12.dp))
             }
         }
-    }\n\n    if (showFilters) {
+    }
+
+    if (showFilters) {
         RepositoryFiltersSheet(
             selectedPlatform = selectedPlatform,
             onPlatformChange = { selectedPlatformName = it.name },
