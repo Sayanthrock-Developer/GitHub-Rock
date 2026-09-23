@@ -883,7 +883,7 @@ private val IOS_KEYWORDS = setOf("ios", "iphone", "ipad", "swiftui", "uikit")
 @Composable
 private fun SelfOwnedBadge() {
     Icon(
-        imageVector = androidx.compose.material.icons.Icons.Default.CheckCircle,
+        imageVector = RockIcon.Check.vector(),
         contentDescription = "Owned by your signed-in GitHub account",
         tint = MaterialTheme.colorScheme.primary,
         modifier = Modifier.size(18.dp),
