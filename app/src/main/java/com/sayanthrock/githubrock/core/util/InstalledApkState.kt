@@ -118,10 +118,21 @@ object InstalledApkStateResolver {
             ?: error("Android could not parse the downloaded APK. Download it again.")
         require(archive.packageName.isNotBlank()) { "Downloaded APK has no package name." }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            require(packageManager.canRequestPackageInstalls()) {
-                "Install unknown apps permission is disabled for GitHub Rock."
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            // Android deliberately blocks third-party APK installation until the user grants
+            // the per-app "Install unknown apps" permission. Open the system page instead of
+            // leaving the user with the generic "App not installed" failure.
+            val settingsIntent = Intent(
+                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                android.net.Uri.parse("package:${context.packageName}")
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            require(
+                packageManager.resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null
+            ) {
+                "Enable Install unknown apps for GitHub Rock in Android Settings, then tap Install again."
             }
+            context.startActivity(settingsIntent)
+            error("Enable Install unknown apps for GitHub Rock, then tap Install again.")
         }
 
         val packageName = archive.packageName
