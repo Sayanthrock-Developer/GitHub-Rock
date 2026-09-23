@@ -189,12 +189,56 @@ internal fun DownloadsRedesignContent(
     onPrimaryAction: (DownloadEntity) -> Unit, onOpenActions: (DownloadEntity) -> Unit, onOpenProfile: (String) -> Unit
 ) {
     val visibleDownloads = remember(downloads, selectedFilter) { filterDownloads(downloads, selectedFilter) }
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 44.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { DownloadsHeader(downloads = downloads, visibleCount = visibleDownloads.size, selectedFilter = selectedFilter) }
         item { DownloadFilterRow(selected = selectedFilter, downloads = downloads, onSelect = onSelectFilter) }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text(selectedFilter.label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black); Text("${visibleDownloads.size} item${if (visibleDownloads.size == 1) "" else "s"}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         if (visibleDownloads.isEmpty()) item { EmptyDownloadsCard(selectedFilter) }
         items(visibleDownloads, key = { it.id }) { item -> DownloadListCard(item, { onPrimaryAction(item) }, { onOpenActions(item) }, onOpenProfile) }
         item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+@Composable
+private fun DownloadsHeader(downloads: List<DownloadEntity>, visibleCount: Int, selectedFilter: DownloadListFilter) {
+    val active = downloads.count { it.state == DownloadState.DOWNLOADING || it.state == DownloadState.RETRYING }
+    val apps = downloads.count { it.isApkDownload() }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Downloads", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+                    Text(
+                        if (selectedFilter == DownloadListFilter.All) "Files from GitHub, ready when you are." else selectedFilter.label + " downloads",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primary.copy(alpha = .12f)) {
+                    Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.padding(10.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DownloadMetric("Visible", visibleCount.toString(), Modifier.weight(1f))
+                DownloadMetric("Active", active.toString(), Modifier.weight(1f))
+                DownloadMetric("Apps", apps.toString(), Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadMetric(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -222,9 +266,9 @@ private fun DownloadListCard(item: DownloadEntity, onPrimaryAction: () -> Unit, 
     val isTerminal = state == DownloadState.COMPLETED || state == DownloadState.INSTALLABLE
     val localFileExists = item.localPath?.let(::File)?.isFile == true
     Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(Modifier.size(56.dp), MaterialTheme.shapes.extraLarge, MaterialTheme.colorScheme.surfaceContainerHigh) { Box(contentAlignment = Alignment.Center) { Icon(if (item.isApkDownload()) Icons.Default.Android else Icons.Default.InsertDriveFile, null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary) } }
+                Surface(Modifier.size(48.dp), MaterialTheme.shapes.large, MaterialTheme.colorScheme.surfaceContainerHigh) { Box(contentAlignment = Alignment.Center) { Icon(if (item.isApkDownload()) Icons.Default.Android else Icons.Default.InsertDriveFile, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary) } }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(item.fileName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     item.repositoryFullName?.takeIf { it.isNotBlank() }?.let { fullName ->
@@ -249,7 +293,7 @@ private fun DownloadListCard(item: DownloadEntity, onPrimaryAction: () -> Unit, 
             if (isTerminal && item.sha256 != null) Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.CheckCircle, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.primary); Text("Verified ✓", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
             if (state == DownloadState.FAILED && !item.errorMessage.isNullOrBlank()) Text(item.errorMessage.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (isTerminal && item.isApkDownload() && !localFileExists) Text("APK file is missing. Retry to download it again.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { Button(onClick = onPrimaryAction, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = accent), enabled = state != DownloadState.VERIFYING) { Icon(primaryActionIcon(item), null); Spacer(Modifier.width(7.dp)); Text(primaryActionLabel(item), fontWeight = FontWeight.Bold) }; IconButton(onClick = onOpenActions) { Icon(Icons.Default.MoreHoriz, "More actions for ${item.fileName}") } }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { Button(onClick = onPrimaryAction, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp), colors = ButtonDefaults.buttonColors(containerColor = accent), enabled = state != DownloadState.VERIFYING) { Icon(primaryActionIcon(item), null); Spacer(Modifier.width(7.dp)); Text(primaryActionLabel(item), fontWeight = FontWeight.Bold) }; IconButton(onClick = onOpenActions) { Icon(Icons.Default.MoreHoriz, "More actions for ${item.fileName}") } }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Text("Added ${formatDownloadTimestamp(item.createdAt)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
@@ -264,7 +308,7 @@ private fun DownloadActionsSheet(item: DownloadEntity, onPause: () -> Unit, onRe
     val state = item.state
     val localFileExists = item.localPath?.let(::File)?.isFile == true
     val terminal = state == DownloadState.COMPLETED || state == DownloadState.INSTALLABLE
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(item.fileName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
         item.repositoryFullName?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item.releaseName?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold) }
