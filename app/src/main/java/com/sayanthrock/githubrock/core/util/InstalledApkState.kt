@@ -125,26 +125,10 @@ object InstalledApkStateResolver {
         }
 
         val packageName = archive.packageName
-        val downloadedVersionCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
-        val installed = runCatching {
-            if (Build.VERSION.SDK_INT >= 33) {
-                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-            } else {
-                packageManager.getPackageInfo(packageName, 0)
-            }
-        }.getOrNull()
-        val installedVersionCode = installed?.let {
-            if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else it.versionCode.toLong()
-        }
 
-        if (installed != null && installedVersionCode != null && downloadedVersionCode <= installedVersionCode) {
-            packageManager.getLaunchIntentForPackage(packageName)?.let { launchIntent ->
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(launchIntent)
-                return@runCatching
-            }
-        }
-
+        // Installation is an explicit action. Do not silently open an already-installed
+        // application from this method: Downloads UI owns the separate Open action.
+        // This keeps Download -> saved APK and Install -> Android package installer distinct.
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", apkFile)
         val installIntent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
             data = uri
