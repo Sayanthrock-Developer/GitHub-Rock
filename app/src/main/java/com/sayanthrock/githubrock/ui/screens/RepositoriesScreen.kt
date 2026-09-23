@@ -385,7 +385,21 @@ fun RepositoriesScreen(
         }
     }
 
-    if (showHiddenRepositories) {\n        ModalBottomSheet(onDismissRequest = { showHiddenRepositories = false }) {\n            Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {\n                Text("Hidden repositories", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)\n                if (hiddenRepositories.isEmpty()) Text("No hidden repositories.", color = MaterialTheme.colorScheme.onSurfaceVariant)\n                hiddenRepositories.sortedBy(String::lowercase).forEach { fullName ->\n                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {\n                        Text(fullName, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)\n                        TextButton(onClick = { visibilityViewModel.unhide(fullName) }) { Text("Unhide") }\n                    }\n                }\n                Spacer(Modifier.height(12.dp))\n            }\n        }\n    }\n\n    if (showFilters) {
+    if (showHiddenRepositories) {
+        ModalBottomSheet(onDismissRequest = { showHiddenRepositories = false }) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Hidden repositories", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                if (hiddenRepositories.isEmpty()) Text("No hidden repositories.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                hiddenRepositories.sortedBy(String::lowercase).forEach { fullName ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(fullName, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        TextButton(onClick = { visibilityViewModel.unhide(fullName) }) { Text("Unhide") }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+    }\n\n    if (showFilters) {
         RepositoryFiltersSheet(
             selectedPlatform = selectedPlatform,
             onPlatformChange = { selectedPlatformName = it.name },
