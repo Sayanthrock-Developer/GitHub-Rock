@@ -10,9 +10,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
@@ -209,6 +212,7 @@ class UnifiedSearchViewModel @Inject constructor(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun UnifiedSearchScreen(
     onBack: () -> Unit,
     onOpenRepository: (GitHubRepositoryModel) -> Unit,
@@ -353,8 +357,8 @@ fun UnifiedSearchScreen(
                 Text("Hide repository", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(fullName, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("This removes the repository from Home and the normal Repositories feed. Installed/library data is not deleted.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(Modifier.fillMaxWidth(), onClick = { visibilityViewModel.hide(fullName); hiddenRepositoryName = null }) { Text("Hide repository") }
-                TextButton(Modifier.fillMaxWidth(), onClick = { hiddenRepositoryName = null }) { Text("Cancel") }
+                TextButton(onClick = { visibilityViewModel.hide(fullName); hiddenRepositoryName = null }, modifier = Modifier.fillMaxWidth()) { Text("Hide repository") }
+                TextButton(onClick = { hiddenRepositoryName = null }, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
             }
         }
     }
