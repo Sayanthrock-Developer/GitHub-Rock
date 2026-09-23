@@ -11,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,18 +42,26 @@ class RepositoryExploreTabViewModel @Inject constructor(
     private var page = 0
     private var loadedDay: LocalDate? = null
     private var selectedPlatform = HomePlatform.All
-
-    init {
-        load(HomePlatform.All)
-    }
+    private var requestGeneration = 0L
 
     fun load(platform: HomePlatform, refresh: Boolean = false) {
-        if (!refresh && loadedDay == LocalDate.now() && platform == selectedPlatform && _state.value.items.isNotEmpty()) return
+        val platformChanged = platform != selectedPlatform
+        if (!refresh && !platformChanged && loadedDay == LocalDate.now() && _state.value.items.isNotEmpty()) return
+
         selectedPlatform = platform
         page = 0
         loadedDay = LocalDate.now()
+        val generation = ++requestGeneration
+
         viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null, items = if (refresh || platform != selectedPlatform) emptyList() else it.items, hasMore = true) }
+            _state.update {
+                it.copy(
+                    loading = true,
+                    error = null,
+                    items = if (refresh || platformChanged) emptyList() else it.items,
+                    hasMore = true
+                )
+            }
             runCatching {
                 repository.publicRepositoriesPage(
                     RepositorySearchOptions(
@@ -64,18 +71,26 @@ class RepositoryExploreTabViewModel @Inject constructor(
                     page = 1
                 )
             }.onSuccess { result ->
+                if (generation != requestGeneration) return@onSuccess
                 val enriched = enrich(result.repositories, platform)
+                if (generation != requestGeneration) return@onSuccess
                 page = 1
                 _state.update { it.copy(items = enriched, loading = false, hasMore = result.hasMore) }
             }.onFailure { error ->
-                _state.update { it.copy(loading = false, error = error.message ?: "Unable to load Explore.") }
+                if (generation == requestGeneration) {
+                    _state.update { it.copy(loading = false, error = error.message ?: "Unable to load Explore.") }
+                }
             }
         }
     }
 
     fun loadMore(platform: HomePlatform) {
-        if (_state.value.loadingMore || !_state.value.hasMore) return
+        if (_state.value.loading || _state.value.loadingMore || !_state.value.hasMore) return
+
         selectedPlatform = platform
+        val requestedPage = page + 1
+        val generation = requestGeneration
+
         viewModelScope.launch {
             _state.update { it.copy(loadingMore = true, error = null) }
             runCatching {
@@ -84,11 +99,13 @@ class RepositoryExploreTabViewModel @Inject constructor(
                         query = discoveryQuery(platform),
                         sort = RepositorySort.Stars
                     ),
-                    page = page + 1
+                    page = requestedPage
                 )
             }.onSuccess { result ->
+                if (generation != requestGeneration) return@onSuccess
                 val enriched = enrich(result.repositories, platform)
-                page += 1
+                if (generation != requestGeneration) return@onSuccess
+                page = requestedPage
                 _state.update { current ->
                     current.copy(
                         items = (current.items + enriched).distinctBy { it.repository.id },
@@ -97,7 +114,9 @@ class RepositoryExploreTabViewModel @Inject constructor(
                     )
                 }
             }.onFailure { error ->
-                _state.update { it.copy(loadingMore = false, error = error.message ?: "Unable to load more.") }
+                if (generation == requestGeneration) {
+                    _state.update { it.copy(loadingMore = false, error = error.message ?: "Unable to load more.") }
+                }
             }
         }
     }
@@ -108,17 +127,28 @@ class RepositoryExploreTabViewModel @Inject constructor(
     ): List<RepositoryExploreItem> {
         return repositories.take(12).map { repo ->
             repo to viewModelScope.async {
-                runCatching { repository.releases(repo.owner.login, repo.name).firstOrNull { !it.draft && !it.prerelease } }
-                    .getOrNull()
+                runCatching {
+                    repository.releases(repo.owner.login, repo.name)
+                        .firstOrNull { release ->
+                            !release.draft &&
+                                !release.prerelease &&
+                                release.assets.any { asset ->
+                                    val info = ReleaseAssetClassifier.classify(asset.name)
+                                    info.isInstallablePackage &&
+                                        (platform == HomePlatform.All || info.platform.name.equals(platform.name, true))
+                                }
+                        }
+                }.getOrNull()
             }
         }.map { (repo, deferred) ->
             repo to deferred.await()
         }.mapNotNull { (repo, release) ->
             val asset = release?.assets?.firstOrNull { asset ->
                 val info = ReleaseAssetClassifier.classify(asset.name)
-                info.isInstallablePackage && (platform == HomePlatform.All || info.platform.name.equals(platform.name, true))
+                info.isInstallablePackage &&
+                    (platform == HomePlatform.All || info.platform.name.equals(platform.name, true))
             } ?: return@mapNotNull null
-            RepositoryExploreItem(repo, "${release?.tagName ?: "Release"} · ${asset.name}")
+            RepositoryExploreItem(repo, "\${release.tagName} · \${asset.name}")
         }
     }
 
