@@ -217,6 +217,7 @@ fun UnifiedSearchScreen(
     onBack: () -> Unit,
     onOpenRepository: (GitHubRepositoryModel) -> Unit,
     onOpenOwner: (String) -> Unit,
+    currentLogin: String? = null,
     viewModel: UnifiedSearchViewModel = hiltViewModel(),
     visibilityViewModel: RepositoryVisibilityViewModel = hiltViewModel()
 ) {
@@ -292,7 +293,20 @@ fun UnifiedSearchScreen(
                 item { SectionTitle("Repositories") }
                 items(state.repositories.filterNot { repo -> hiddenRepositories.any { it.equals(repo.fullName, ignoreCase = true) } }, key = { "repo-" + it.id }) { repo ->
                     SearchRepositoryCard(repo, onOpen = { onOpenRepository(repo) }, onLongPress = { hiddenRepositoryName = repo.fullName }) {
-                        Text(repo.fullName, fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                repo.fullName,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (currentLogin != null && repo.owner.login.equals(currentLogin, ignoreCase = true)) {
+                                SelfOwnedBadge()
+                            }
+                        }
                         Text(repo.description.orEmpty().ifBlank { "No description" }, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text((repo.language ?: "Unknown") + " · ★ " + repo.stars + " · forks " + repo.forks, style = MaterialTheme.typography.labelMedium)
                     }
@@ -392,4 +406,15 @@ private fun SearchRepositoryCard(
         Text("#" + item.number + " · " + item.title, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Text(type + " · " + item.user.login + " · " + item.state, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+ 
+@Composable
+private fun SelfOwnedBadge() {
+    Icon(
+        imageVector = androidx.compose.material.icons.Icons.Default.CheckCircle,
+        contentDescription = "Owned by your signed-in GitHub account",
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.size(18.dp),
+    )
 }
