@@ -380,6 +380,7 @@ fun RepositoriesScreen(
             RepositoryChartCard(
                 repository = repository,
                 badge = badge,
+                currentLogin = connectedLogin,
                 onClick = { onOpen(repository) }
             )
         }
@@ -685,6 +686,7 @@ private fun RepositoryActiveFilters(
 private fun RepositoryChartCard(
     repository: GitHubRepositoryModel,
     badge: String?,
+    currentLogin: String?,
     onClick: () -> Unit
 ) {
     val platforms = remember(repository) { repositoryPlatforms(repository) }
@@ -709,13 +711,28 @@ private fun RepositoryChartCard(
                 )
 
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        text = repository.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = repository.name,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (currentLogin != null && repository.owner.login.equals(currentLogin, ignoreCase = true)) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.CheckCircle,
+                                contentDescription = "Owned by your signed-in GitHub account",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                     Text(
                         text = buildString {
                             append("@")
