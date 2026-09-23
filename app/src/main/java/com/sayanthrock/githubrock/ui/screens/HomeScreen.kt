@@ -171,7 +171,9 @@ fun HomeScreen(
             platform = selectedPlatform,
             category = selectedCategory,
             sort = selectedSort,
-        )
+        ).filterNot { repository ->
+            hiddenRepositories.any { it.equals(repository.fullName, ignoreCase = true) }
+        }
     }
 
     PullToRefreshBox(
