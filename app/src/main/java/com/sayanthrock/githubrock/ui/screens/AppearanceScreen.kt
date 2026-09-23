@@ -167,7 +167,17 @@ fun AppearanceContent(
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") } },
+                navigationIcon = {
+                    Surface(
+                        modifier = Modifier.padding(start = 12.dp).size(56.dp).clickable(onClick = onBack),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ArrowBack, "Back", modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -196,7 +206,7 @@ fun AppearanceContent(
             item { StandardSectionHeader("Animation") }
             item { AnimationStyleControl(state.animationStyle, state.reduceMotion, onAnimationStyle) }
             item { StandardSectionHeader("Loading and code") }
-            item { ChoiceCard("Loading animation", "Applied to repository operations", Icons.Default.PlayArrow, LoadingStyle.entries.map { it to it.name }, state.loadingStyle, onLoadingStyle) }
+            item { ChoiceCard("Loading animation", "Applied to repository operations", Icons.Default.PlayArrow, LoadingStyle.entries.map { it to if (it == LoadingStyle.RockRing) "Rock Ring" else it.name }, state.loadingStyle, onLoadingStyle) }
             item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { AppLoadingIndicator(state.loadingStyle, state.reduceMotion); Text("Live loading preview", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } } }
             item { ChoiceCard("Code colors", "Syntax colors stay isolated from the interface", Icons.Default.Code, CodeColorStyle.entries.map { it to it.displayName }, state.codeColorStyle, onCodeColorStyle) }
             item { ChoiceCard("Log display style", "Popup or highlighted terminal", Icons.Default.Code, listOf(LogDisplayStyle.Dialog to "Popup dialog", LogDisplayStyle.Terminal to "On-screen terminal"), state.logDisplayStyle, onLogDisplayStyle) }
