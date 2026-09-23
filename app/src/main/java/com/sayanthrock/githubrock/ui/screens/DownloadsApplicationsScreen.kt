@@ -172,18 +172,27 @@ fun DownloadsApplicationsScreen(viewModel: DownloadsViewModel = hiltViewModel())
                         // Download only saves the verified APK; it must never install it.
                         // Open launches an already-installed package, while Install explicitly
                         // hands the downloaded APK to Android's package installer.
-                        val result = if (state?.installed == true) {
-                            if (state.launchIntent != null) {
-                                if (InstalledApkStateResolver.launchInstalledApp(context, state)) {
-                                    Result.success(Unit)
+                        val result = when {
+                            // A newer downloaded APK must go through Android's installer.
+                            // Do not open the currently installed version when "Update" is shown.
+                            state?.installed == true && state.isUpdateAvailable ->
+                                InstalledApkStateResolver.launchInstaller(context, file)
+
+                            // Only open the installed package when the downloaded APK is
+                            // already installed at the same/newer version.
+                            state?.installed == true -> {
+                                if (state.launchIntent != null) {
+                                    if (InstalledApkStateResolver.launchInstalledApp(context, state)) {
+                                        Result.success(Unit)
+                                    } else {
+                                        Result.failure(IllegalStateException("The installed application cannot be opened on this device."))
+                                    }
                                 } else {
-                                    Result.failure(IllegalStateException("The installed application cannot be opened on this device."))
+                                    Result.failure(IllegalStateException("This application does not expose a launcher activity."))
                                 }
-                            } else {
-                                Result.failure(IllegalStateException("This application does not expose a launcher activity."))
                             }
-                        } else {
-                            InstalledApkStateResolver.launchInstaller(context, file)
+
+                            else -> InstalledApkStateResolver.launchInstaller(context, file)
                         }
                         result.onFailure { errorMessage = it.message ?: "Android could not complete the application action." }
                     },
