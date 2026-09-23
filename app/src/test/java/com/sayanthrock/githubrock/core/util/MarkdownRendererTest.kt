@@ -13,6 +13,13 @@ class MarkdownRendererTest {
         assertEquals(MarkdownBlock(MarkdownBlockKind.Heading, "Heading 6", 6), result[2])
     }
 
+    @Test fun `preserve standalone markdown punctuation as literal paragraphs`() {
+        val result = MarkdownRenderer.render("#\n##\n###\n*\n**\n_\n__")
+        assertEquals(7, result.size)
+        assertEquals(listOf("#", "##", "###", "*", "**", "_", "__"), result.map { it.text })
+        assertTrue(result.all { it.kind == MarkdownBlockKind.Paragraph })
+    }
+
     @Test fun `render paragraph blocks`() {
         val result = MarkdownRenderer.render("This is a paragraph.\nIt spans multiple lines.\n\nThis is another paragraph.")
         assertEquals(2, result.size)
