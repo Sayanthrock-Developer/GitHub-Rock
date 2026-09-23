@@ -116,7 +116,7 @@ private fun IosNavigation(
                 .fillMaxWidth()
                 .height(76.dp)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             rockNavigationDestinations.forEach { destination ->
@@ -143,12 +143,6 @@ private fun RowScope.IosNavigationItem(
 ) {
     val view = LocalView.current
     val duration = RockMotion.duration(reduceMotion, RockMotion.Navigation)
-    val itemWidth by animateFloatAsState(
-        targetValue = if (selected) 1.0f else 0.0f,
-        animationSpec = navigationScaleSpec(animationStyle, reduceMotion),
-        label = "ios navigation selection"
-    )
-
     // The selected destination expands into a compact iOS-style pill while
     // inactive destinations remain icon-only and share the remaining space.
     val selectedWidth = 116.dp
