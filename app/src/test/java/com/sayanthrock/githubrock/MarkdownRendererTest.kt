@@ -3,7 +3,6 @@ package com.sayanthrock.githubrock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,14 +21,14 @@ class MarkdownRendererTest {
     }
 
     @Test
-    fun `ignores empty markdown markers instead of rendering them as README content`() {
+    fun `preserves standalone markdown punctuation and parses divider syntax`() {
         val blocks = MarkdownRenderer.render("#\n##\n###\n*\n**\n***\n\nActual README")
 
-        assertEquals(2, blocks.size)
-        assertEquals(MarkdownBlockKind.Divider, blocks[0].kind)
-        assertEquals(MarkdownBlockKind.Paragraph, blocks[1].kind)
-        assertEquals("Actual README", blocks[1].text)
-        assertFalse(blocks.any { it.text == "#" || it.text == "##" || it.text == "###" || it.text == "*" || it.text == "**" })
+        assertEquals(6, blocks.size)
+        assertEquals(listOf("#", "##", "###", "*", "**"), blocks.take(5).map { it.text })
+        assertTrue(blocks.take(5).all { it.kind == MarkdownBlockKind.Paragraph })
+        assertEquals(MarkdownBlockKind.Divider, blocks[5].kind)
+        assertEquals("", blocks[5].text)
     }
 
     @Test
