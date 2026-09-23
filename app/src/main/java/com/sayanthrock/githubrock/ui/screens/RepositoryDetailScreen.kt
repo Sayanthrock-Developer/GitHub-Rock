@@ -155,7 +155,7 @@ fun RepositoryDetailScreen(
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 )
-                            }                            }
+                            }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(false) }) { Text("Unstar") }
