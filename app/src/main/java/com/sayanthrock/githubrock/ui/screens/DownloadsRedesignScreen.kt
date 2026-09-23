@@ -342,4 +342,18 @@ private fun formatDownloadTimestamp(value: Long): String = runCatching { DateTim
 private fun openDownloadedApk(context: Context, item: DownloadEntity): Result<Unit> = runCatching { require(item.isApkDownload()) { "This download is not an APK." }; val file = item.localPath?.let(::File)?.takeIf(File::isFile) ?: error("The downloaded APK file is no longer available. Download it again."); InstalledApkStateResolver.launchInstaller(context, file).getOrThrow() }
 private fun openInstalledApplication(context: Context, item: DownloadEntity): Result<Unit> = runCatching { require(item.isApkDownload()) { "This download is not an APK application." }; val file = item.localPath?.let(::File)?.takeIf(File::isFile) ?: error("The downloaded APK file is no longer available. Download it again."); val state = InstalledApkStateResolver.resolve(context, file) ?: error("Unable to read the installed application identity."); require(state.installed) { "This application is not installed yet. Use Install first." }; require(InstalledApkStateResolver.launchInstalledApp(context, state)) { "The installed application cannot be opened on this device." } }
 private fun shareDownloadedFile(context: Context, item: DownloadEntity): Result<Unit> = runCatching { val file = item.localPath?.let(::File)?.takeIf(File::isFile) ?: error("The downloaded file is no longer available. Download it again."); val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file); val mime = if (item.isApkDownload()) "application/vnd.android.package-archive" else "application/octet-stream"; context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = mime; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Share ${item.fileName}").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-private fun viewRelease(context: Context, item: DownloadEntity): Result<Unit> = runCatching { val url = item.releaseUrl?.trim()?.takeIf { it.startsWith("https://github.com/", ignoreCase = true) } ?: error("The GitHub release link is not available for this download."); context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+private fun viewRelease(context: Context, item: DownloadEntity): Result<Unit> = runCatching {
+    val storedUrl = item.releaseUrl?.trim().orEmpty()
+    val url = when {
+        storedUrl.startsWith("https://github.com/", ignoreCase = true) &&
+            storedUrl.contains("/releases", ignoreCase = true) -> storedUrl
+        storedUrl.startsWith("https://api.github.com/repos/", ignoreCase = true) -> {
+            val repository = storedUrl.removePrefix("https://api.github.com/repos/").substringBefore("/releases")
+            val tag = storedUrl.substringAfter("/releases/tags/", "").takeIf(String::isNotBlank)
+            if (!tag.isNullOrBlank()) "https://github.com/" + repository + "/releases/tag/" + android.net.Uri.encode(tag) else null
+        }
+        !item.repositoryFullName.isNullOrBlank() -> "https://github.com/" + item.repositoryFullName.trim() + "/releases"
+        else -> null
+    } ?: error("The GitHub release link is not available for this download.")
+    context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
