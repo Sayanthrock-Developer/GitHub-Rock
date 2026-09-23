@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock
 
 import android.app.LocaleManager
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.content.res.Configuration
@@ -38,13 +39,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Explicitly keep the system navigation region transparent on devices/ROMs
+        // that may otherwise apply a legacy navigation-bar surface.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+            window.navigationBarDividerColor = Color.TRANSPARENT
+        }
         if (consumeOAuthCallback(intent)) setIntent(Intent())
         if (redirectNonRepositoryGitHubUrl(intent)) {
             finish()
             return
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
-
         lifecycleScope.launch {
             val initialLanguageTag = appPreferences.appLanguageTag.first()
             applyAppLanguage(initialLanguageTag)
