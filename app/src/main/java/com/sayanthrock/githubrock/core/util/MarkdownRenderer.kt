@@ -50,11 +50,7 @@ object MarkdownRenderer {
         fun isBlockHtmlWrapper(line: String): Boolean =
             line.trim().matches(Regex("</?(div|p|center|section|article|aside|header|footer|main|figure|figcaption)(\\s[^>]*)?/?>", RegexOption.IGNORE_CASE))
 
-        fun isEmptyMarkdownSyntax(line: String): Boolean {
-            val trimmed = line.trim()
-            return trimmed.matches(Regex("^#{1,6}$")) ||
-                trimmed.matches(Regex("^(?:\\*{1,2}|_{1,2})$"))
-        }
+        fun isEmptyMarkdownSyntax(line: String): Boolean = false
 
         for (rawLine in lines) {
             val line = rawLine.trimEnd()
