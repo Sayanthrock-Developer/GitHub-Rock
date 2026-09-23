@@ -145,8 +145,8 @@ class MarkdownRendererTest {
     @Test fun `parse GitHub picture light and dark image sources`() {
         val result = MarkdownRenderer.render("""
             <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="dark.svg">
-            <source media="(prefers-color-scheme: light)" srcset="light.svg">
+            <source media="(prefers-color-scheme: dark)" srcset="dark.svg 1x, dark@2x.svg 2x">
+            <source media="(prefers-color-scheme: light)" srcset="light.svg 1x, light@2x.svg 2x">
             <img src="fallback.svg" alt="Logo">
             </picture>
         """.trimIndent())
