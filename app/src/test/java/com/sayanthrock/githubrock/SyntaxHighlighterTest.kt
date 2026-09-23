@@ -28,4 +28,21 @@ class SyntaxHighlighterTest {
         assertTrue(spans.any { it.kind == SyntaxTokenKind.Keyword && source.substring(it.start, it.end) == "true" })
         assertEquals(1, spans.count { it.kind == SyntaxTokenKind.String })
     }
+
+    @Test fun `supports common GitHub README code languages`() {
+        val samples = mapOf(
+            "sample.py" to "def main(): return 42",
+            "sample.js" to "const answer = 42",
+            "sample.ts" to "let answer: number = 42",
+            "sample.rs" to "fn main() { let answer = 42; }",
+            "sample.swift" to "let answer = 42",
+            "sample.cs" to "public class Sample { }",
+            "sample.rb" to "def main; end",
+            "sample.sh" to "echo hello"
+        )
+        samples.forEach { (file, source) ->
+            assertTrue("No spans for $file", SyntaxHighlighter.highlight(file, source).isNotEmpty())
+        }
+    }
+
 }
