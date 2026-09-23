@@ -803,7 +803,6 @@ private fun MarkdownPreviewCard(blocks: List<com.sayanthrock.githubrock.core.uti
 }
 
 private fun com.sayanthrock.githubrock.core.util.DiffLine.prefix(): String = when (kind) {
-private fun com.sayanthrock.githubrock.core.util.DiffLine.prefix(): String = when (kind) {
     DiffLineKind.Added -> "+ "
     DiffLineKind.Removed -> "- "
     DiffLineKind.Context -> "  "
