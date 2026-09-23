@@ -26,7 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Description
@@ -87,6 +86,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryOperationLoader
 import com.sayanthrock.githubrock.ui.components.RepositoryOperationSkeleton
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
+import com.sayanthrock.githubrock.ui.icons.RockIcon
 
 internal enum class ReleaseFilter(val label: String) {
     Stable("Stable"),
@@ -177,6 +177,8 @@ fun RepositoryHubContent(
                 item(key = "whats_new_${release.id}") {
                     WhatsNewCard(
                         release = release,
+                        repository = repo,
+                        onOpenUrl = onOpenUrl,
                         translationTarget = whatsNewTranslationTarget,
                         translatedTitle = translatedReleaseTitle,
                         translatedBlocks = translatedReleaseBlocks,
@@ -763,7 +765,7 @@ private fun ReleasePlatformTile(
                 Icon(platformIcon(platform), contentDescription = null, tint = color)
                 if (selected) {
                     Icon(
-                        Icons.Default.CheckCircle,
+                        RockIcon.Check.vector(),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
@@ -1027,6 +1029,8 @@ private fun RepositoryActionButtons(repository: GitHubRepositoryModel, onOpenUrl
 @Composable
 private fun WhatsNewCard(
     release: Release,
+    repository: GitHubRepositoryModel?,
+    onOpenUrl: (String) -> Unit,
     translationTarget: String?,
     translatedTitle: String?,
     translatedBlocks: Map<Int, String>,
