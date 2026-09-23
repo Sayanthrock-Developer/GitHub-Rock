@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -318,21 +319,9 @@ private fun RenderMarkdownBlock(
         }
         MarkdownBlockKind.Code -> CodeBlock(block, repository)
         MarkdownBlockKind.Divider -> HorizontalDivider()
-        MarkdownBlockKind.Image -> {
-            val model = resolveReadmeUrl(block.url.orEmpty(), repository, image = true)
-            if (model == null) {
-                Text(block.text.ifBlank { "Unavailable image" }, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                SubcomposeAsyncImage(
-                    model = model,
-                    contentDescription = block.text,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentScale = ContentScale.FillWidth,
-                    loading = { Box(Modifier.fillMaxWidth().heightIn(min = 72.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } },
-                    error = { Text("Image unavailable", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                )
-            }
-        }
+        MarkdownBlockKind.Image -> MarkdownImage(block.image, repository)
+        MarkdownBlockKind.ImageRow -> MarkdownImageRow(block.imageRow, repository)
+        MarkdownBlockKind.Details -> MarkdownDetails(block.details, openLink, repository)
         MarkdownBlockKind.Table -> ResponsiveMarkdownTable(block.table, openLink)
     }
 }
@@ -341,6 +330,27 @@ private fun RenderMarkdownBlock(
 private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) {
     val context = LocalContext.current
     val scroll = rememberScrollState()
+    val language = block.codeLanguage?.lowercase()?.substringBefore('-')?.substringBefore(' ') ?: "text"
+    val fileName = when (language) {
+        "kotlin", "kt" -> "README.kt"
+        "java" -> "README.java"
+        "python", "py" -> "README.py"
+        "javascript", "js", "jsx" -> "README.js"
+        "typescript", "ts", "tsx" -> "README.ts"
+        "rust", "rs" -> "README.rs"
+        "swift" -> "README.swift"
+        "csharp", "cs" -> "README.cs"
+        "ruby", "rb" -> "README.rb"
+        "shell", "bash", "sh", "zsh" -> "README.sh"
+        else -> "README.$language"
+    }
+    val spans = remember(fileName, block.text) { com.sayanthrock.githubrock.core.util.SyntaxHighlighter.highlight(fileName, block.text) }
+    val annotated = remember(block.text, spans) {
+        AnnotatedString.Builder(block.text).apply {
+            addStyle(SpanStyle(fontFamily = FontFamily.Monospace), 0, block.text.length)
+            spans.forEach { span -> addStyle(SpanStyle(color = syntaxColor(span.kind)), span.start, span.end) }
+        }.toAnnotatedString()
+    }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -354,13 +364,58 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
                     Text("Copy")
                 }
             }
-            Text(
-                block.text,
-                Modifier.fillMaxWidth().horizontalScroll(scroll),
-                fontFamily = FontFamily.Monospace,
-                softWrap = false,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SelectionContainer {
+                Text(
+                    annotated,
+                    Modifier.fillMaxWidth().horizontalScroll(scroll),
+                    softWrap = false,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarkdownImage(metadata: com.sayanthrock.githubrock.core.util.ImageMetadata?, repository: GitHubRepositoryModel?) {
+    if (metadata == null) return
+    val dark = isSystemInDarkTheme()
+    val raw = if (dark) metadata.darkUrl ?: metadata.lightUrl ?: metadata.fallbackUrl
+              else metadata.lightUrl ?: metadata.darkUrl ?: metadata.fallbackUrl
+    val model = raw?.let { resolveReadmeUrl(it, repository, image = true) }
+    if (model == null) Text(metadata.alt.ifBlank { "Unavailable image" }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    else SubcomposeAsyncImage(
+        model = model,
+        contentDescription = metadata.alt,
+        modifier = Modifier.fillMaxWidth(),
+        contentScale = ContentScale.Inside,
+        loading = { Box(Modifier.fillMaxWidth().heightIn(min = 72.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } },
+        error = { Text("Image unavailable", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    )
+}
+
+@Composable
+private fun MarkdownImageRow(images: List<com.sayanthrock.githubrock.core.util.ImageMetadata>, repository: GitHubRepositoryModel?) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        images.forEach { metadata -> Box(Modifier.weight(1f)) { MarkdownImage(metadata, repository) } }
+    }
+}
+
+@Composable
+private fun MarkdownDetails(details: com.sayanthrock.githubrock.core.util.DetailsMetadata?, openLink: (String) -> Unit, repository: GitHubRepositoryModel?) {
+    if (details == null) return
+    var expanded by remember(details.summary) { mutableStateOf(false) }
+    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.fillMaxWidth()) {
+            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+                Text(details.summary, modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                Text(if (expanded) "⌃" else "⌄")
+            }
+            if (expanded) {
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    details.blocks.forEach { RenderMarkdownBlock(it, openLink, repository) }
+                }
+            }
         }
     }
 }
