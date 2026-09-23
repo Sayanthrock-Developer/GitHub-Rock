@@ -132,24 +132,39 @@ object InstalledApkStateResolver {
             error("Enable Install unknown apps for GitHub Rock, then tap Install again.")
         }
 
-        // ACTION_VIEW with the APK MIME type is the portable package-installer handoff. Some
-        // Android builds do not expose ACTION_INSTALL_PACKAGE to third-party apps even when the
-        // system installer handles APK files.
+        /*
+         * Android OEMs expose APK installation through different intent actions. Prefer the
+         * dedicated package-install action, then fall back to the standard APK MIME VIEW action.
+         * Both paths use the same FileProvider URI and explicit read grant.
+         */
         val uri = FileProvider.getUriForFile(context, context.packageName + ".files", apkFile)
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            clipData = android.content.ClipData.newRawUri("APK", uri)
-        }
-
-        val installerActivities = packageManager.queryIntentActivities(
-            installIntent,
-            PackageManager.MATCH_DEFAULT_ONLY
+        val intents = listOf(
+            Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                clipData = android.content.ClipData.newRawUri("APK", uri)
+            },
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                clipData = android.content.ClipData.newRawUri("APK", uri)
+            }
         )
-        require(installerActivities.isNotEmpty()) {
+
+        val selected = intents.asSequence()
+            .map { intent ->
+                intent to packageManager.queryIntentActivities(
+                    intent,
+                    PackageManager.MATCH_DEFAULT_ONLY
+                )
+            }
+            .firstOrNull { (_, activities) -> activities.isNotEmpty() }
+
+        requireNotNull(selected) {
             "Android package installer is unavailable for APK files on this device."
         }
 
+        val (installIntent, installerActivities) = selected
         installerActivities.forEach { resolveInfo ->
             val targetPackage = resolveInfo.activityInfo?.packageName ?: return@forEach
             context.grantUriPermission(
