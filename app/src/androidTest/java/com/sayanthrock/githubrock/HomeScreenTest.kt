@@ -79,6 +79,28 @@ class HomeScreenTest {
         compose.runOnIdle { assertTrue(openedRepository) }
     }
 
+    @Test fun signedInOwnerGetsSelfOwnedBadge() {
+        val repository = GitHubRepositoryModel(
+            id = 3,
+            name = "Owned-Rock",
+            fullName = "SayanthRock/Owned-Rock",
+            owner = Owner(login = "SayanthRock"),
+            description = "Owned repository",
+        )
+
+        compose.setContent {
+            GitHubRockTheme(dynamicColor = false) {
+                HomeScreen(
+                    repositories = listOf(repository),
+                    onOpenRepo = {},
+                    currentLogin = "sayanthrock",
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription("Owned by your signed-in GitHub account").assertIsDisplayed()
+    }
+
     @Test fun privateRepositoriesAreNotExposedOnHome() {
         val privateRepository = GitHubRepositoryModel(
             id = 2,
