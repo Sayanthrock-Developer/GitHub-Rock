@@ -80,6 +80,7 @@ class AppearancePreferencesTest {
         assertEquals(LoadingStyle.Orbit, LoadingStyle.fromStored("Orbit"))
         assertEquals(LoadingStyle.Shimmer, LoadingStyle.fromStored("Shimmer"))
         assertEquals(LoadingStyle.Morph, LoadingStyle.fromStored("Morph"))
+        assertEquals(LoadingStyle.RockRing, LoadingStyle.fromStored("RockRing"))
         assertEquals(CodeColorStyle.Classic, CodeColorStyle.fromStored(null))
         assertEquals(LogDisplayStyle.Terminal, LogDisplayStyle.fromStored(null))
         assertEquals(LogDisplayStyle.Dialog, LogDisplayStyle.fromStored("Dialog"))
@@ -87,7 +88,7 @@ class AppearancePreferencesTest {
 
     @Test fun allExistingAndNewLoadingOptionsRemainAvailable() {
         assertEquals(
-            listOf("Spinner", "Linear", "Pulse", "Skeleton", "Liquid", "Orbit", "Shimmer", "Morph"),
+            listOf("Spinner", "Linear", "Pulse", "Skeleton", "Liquid", "Orbit", "Shimmer", "Morph", "RockRing"),
             LoadingStyle.entries.map { it.name }
         )
     }
