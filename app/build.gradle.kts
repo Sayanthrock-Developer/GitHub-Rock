@@ -112,6 +112,7 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.work)
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
     implementation(libs.androidx.security)
     implementation(libs.androidx.browser)
     implementation(libs.mlkit.translate)
