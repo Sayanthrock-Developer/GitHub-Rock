@@ -137,6 +137,7 @@ internal enum class HomeSort(val label: String) {
 fun HomeScreen(
     repositories: List<GitHubRepositoryModel>,
     onOpenRepo: (GitHubRepositoryModel) -> Unit,
+    currentLogin: String? = null,
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -247,6 +248,7 @@ fun HomeScreen(
                 DiscoveryRepositoryCard(
                     modifier = Modifier.animateItem(),
                     repository = repository,
+                    currentLogin = currentLogin,
                     rank = if (selectedSort == HomeSort.Popular) {
                         index + 1
                     } else {
@@ -464,6 +466,7 @@ private fun EmptyDiscoveryCard(
 private fun DiscoveryRepositoryCard(
     modifier: Modifier = Modifier,
     repository: GitHubRepositoryModel,
+    currentLogin: String?,
     rank: Int?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -523,7 +526,11 @@ private fun DiscoveryRepositoryCard(
                             fontWeight = FontWeight.Black,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
                         )
+                        if (currentLogin != null && repository.owner.login.equals(currentLogin, ignoreCase = true)) {
+                            SelfOwnedBadge()
+                        }
                     }
                     Text(
                         text = buildString {
@@ -871,3 +878,14 @@ private val MACOS_KEYWORDS = setOf("macos", "mac os", "osx", "appkit", "cocoa")
 private val WINDOWS_KEYWORDS = setOf("windows", "win32", "winui", "wpf", "uwp")
 private val LINUX_KEYWORDS = setOf("linux", "appimage", "flatpak", "gtk", "wayland", "x11")
 private val IOS_KEYWORDS = setOf("ios", "iphone", "ipad", "swiftui", "uikit")
+
+ 
+@Composable
+private fun SelfOwnedBadge() {
+    Icon(
+        imageVector = androidx.compose.material.icons.Icons.Default.CheckCircle,
+        contentDescription = "Owned by your signed-in GitHub account",
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.size(18.dp),
+    )
+}
