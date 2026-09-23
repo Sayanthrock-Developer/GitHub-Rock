@@ -8,8 +8,11 @@ import androidx.compose.ui.unit.sp
 import com.sayanthrock.githubrock.data.settings.AppFontFamily
 import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 
+// GitHub Rock uses Jetpack Compose for UI. The system option follows Compose's
+// platform default; bundled custom fonts belong in res/font and are loaded with
+// FontFamily(Font(R.font.<name>)) rather than through XML TextView APIs.
 private fun AppFontFamily.composeFamily(): FontFamily = when (this) {
-    AppFontFamily.SystemSans -> FontFamily.SansSerif
+    AppFontFamily.SystemSans -> FontFamily.Default
     AppFontFamily.Serif -> FontFamily.Serif
     AppFontFamily.Monospace -> FontFamily.Monospace
 }
