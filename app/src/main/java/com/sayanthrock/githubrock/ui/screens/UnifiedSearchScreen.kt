@@ -1,5 +1,7 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -211,10 +213,13 @@ fun UnifiedSearchScreen(
     onBack: () -> Unit,
     onOpenRepository: (GitHubRepositoryModel) -> Unit,
     onOpenOwner: (String) -> Unit,
-    viewModel: UnifiedSearchViewModel = hiltViewModel()
+    viewModel: UnifiedSearchViewModel = hiltViewModel(),
+    visibilityViewModel: RepositoryVisibilityViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val history by viewModel.history.collectAsState()
+    val hiddenRepositories by visibilityViewModel.hiddenRepositories.collectAsState()
+    var hiddenRepositoryName by rememberSaveable { mutableStateOf<String?>(null) }
     val query = state.query
     val uriHandler = LocalUriHandler.current
 
@@ -281,8 +286,8 @@ fun UnifiedSearchScreen(
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (state.repositories.isNotEmpty()) {
                 item { SectionTitle("Repositories") }
-                items(state.repositories, key = { "repo-" + it.id }) { repo ->
-                    ResultCard({ onOpenRepository(repo) }) {
+                items(state.repositories.filterNot { repo -> hiddenRepositories.any { it.equals(repo.fullName, ignoreCase = true) } }, key = { "repo-" + it.id }) { repo ->
+                    SearchRepositoryCard(repo, onOpen = { onOpenRepository(repo) }, onLongPress = { hiddenRepositoryName = repo.fullName }) {
                         Text(repo.fullName, fontWeight = FontWeight.Bold)
                         Text(repo.description.orEmpty().ifBlank { "No description" }, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text((repo.language ?: "Unknown") + " · ★ " + repo.stars + " · forks " + repo.forks, style = MaterialTheme.typography.labelMedium)
@@ -341,13 +346,25 @@ fun UnifiedSearchScreen(
             }
         }
     }
+
+    hiddenRepositoryName?.let { fullName ->
+        ModalBottomSheet(onDismissRequest = { hiddenRepositoryName = null }) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Hide repository", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(fullName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("This removes the repository from Home and the normal Repositories feed. Installed/library data is not deleted.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(Modifier.fillMaxWidth(), onClick = { visibilityViewModel.hide(fullName); hiddenRepositoryName = null }) { Text("Hide repository") }
+                TextButton(Modifier.fillMaxWidth(), onClick = { hiddenRepositoryName = null }) { Text("Cancel") }
+            }
+        }
+    }
 }
 
 @Composable private fun SectionTitle(title: String) {
     Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 }
 
-@Composable private fun ResultCard(onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+@Composable\n@OptIn(ExperimentalFoundationApi::class)\nprivate fun SearchRepositoryCard(\n    repository: GitHubRepositoryModel,\n    onOpen: () -> Unit,\n    onLongPress: () -> Unit,\n    content: @Composable ColumnScope.() -> Unit\n) {\n    Surface(shape = MaterialTheme.shapes.large, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).semantics { contentDescription = repository.fullName + ". Tap to open. Long-press to hide repository." }) {\n        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)\n    }\n}\n\n@Composable private fun ResultCard(onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Surface(onClick = onClick, shape = MaterialTheme.shapes.large, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)
     }
