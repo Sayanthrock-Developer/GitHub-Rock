@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-apk-${{ github.ref }}-${{ inputs.artifact_type }}
+  group: android-apk-${{ github.ref }}-${{ inputs.artifact_type || 'debug-apk' }}
   cancel-in-progress: false
 
 jobs:
@@ -26,6 +26,7 @@ jobs:
     timeout-minutes: 45
     env:
       GITHUB_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID || 'Ov23lim8WhLjeUMqvuMj' }}
+      ARTIFACT_TYPE: ${{ inputs.artifact_type || 'debug-apk' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
@@ -47,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ inputs.artifact_type }}" = "debug-apk" ]; then
+          if [ "$ARTIFACT_TYPE" = "debug-apk" ]; then
             echo "Debug APK does not require release signing secrets."
             exit 0
           fi
@@ -106,8 +107,11 @@ jobs:
             -noprompt >/dev/null
 
           echo "Android signing keystore, alias, and private-key password validated."
+      - name: Run debug unit tests
+        if: ${{ inputs.artifact_type != 'release-apk' }}
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
       - name: Build debug APK
-        if: ${{ inputs.artifact_type == 'debug-apk' }}
+        if: ${{ inputs.artifact_type != 'release-apk' }}
         run: ./gradlew :app:assembleDebug --stacktrace
       - name: Build release APK
         if: ${{ inputs.artifact_type == 'release-apk' }}
@@ -119,6 +123,6 @@ jobs:
         run: ./gradlew :app:assembleRelease --stacktrace
       - uses: actions/upload-artifact@v7
         with:
-          name: github-rock-${{ inputs.artifact_type }}
+          name: github-rock-${{ inputs.artifact_type || 'debug-apk' }}
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
