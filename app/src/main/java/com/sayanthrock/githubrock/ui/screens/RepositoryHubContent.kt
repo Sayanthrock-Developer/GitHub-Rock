@@ -218,7 +218,7 @@ fun RepositoryHubContent(
                 )
             }
             readme != null -> item(key = "readme_content") {
-                RepositoryMarkdownCard(readme, translatedBlocks)
+                RepositoryMarkdownCard(readme, translatedBlocks, repository, onOpenUrl)
             }
             readmeError != null -> item(key = "readme_error") {
                 GlassCard {
@@ -1221,7 +1221,12 @@ private fun ReadmeTitle(
 }
 
 @Composable
-private fun RepositoryMarkdownCard(markdown: String, translatedBlocks: Map<Int, String>) {
+private fun RepositoryMarkdownCard(
+    markdown: String,
+    translatedBlocks: Map<Int, String>,
+    repository: GitHubRepositoryModel?,
+    onOpenUrl: (String) -> Unit
+) {
     val blocks = remember(markdown) { MarkdownRenderer.render(markdown) }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
