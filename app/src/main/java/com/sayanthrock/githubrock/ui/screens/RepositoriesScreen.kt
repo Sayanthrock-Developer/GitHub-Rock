@@ -490,7 +490,7 @@ private fun RepositoryExploreTab(
                     label = { Text("Daily refresh") }
                 )
                 Text(
-                    "Platform: \${if (selectedPlatform == HomePlatform.All) "All" else selectedPlatform.label}",
+                    "Platform: ${if (selectedPlatform == HomePlatform.All) "All" else selectedPlatform.label}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -514,13 +514,13 @@ private fun RepositoryExploreTab(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(item.repository.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
-                            Text("@\${item.repository.owner.login}", color = MaterialTheme.colorScheme.primary)
+                            Text("@${item.repository.owner.login}", color = MaterialTheme.colorScheme.primary)
                         }
                         Text("Installable", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     }
                     Text(item.repository.description ?: "No repository description provided.", maxLines = 3, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        Text("★ \${compactRepositoryCount(item.repository.stars)}")
+                        Text("★ ${compactRepositoryCount(item.repository.stars)}")
                         item.repository.language?.let { Text(it) }
                         Text(item.releaseLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
