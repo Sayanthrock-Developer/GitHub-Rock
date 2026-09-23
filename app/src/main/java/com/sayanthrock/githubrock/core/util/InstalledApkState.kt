@@ -55,126 +55,39 @@ object InstalledApkStateResolver {
             it.publicSourceDir = apkFile.absolutePath
         }
 
-        val packageName = archive.packageName
-        val downloadedVersionCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
-        val installed = runCatching {
-            if (Build.VERSION.SDK_INT >= 33) pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-            else pm.getPackageInfo(packageName, 0)
-        }.getOrNull()
-        val installedVersionCode = installed?.let { if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else it.versionCode.toLong() }
-        val installedAppInfo = installed?.applicationInfo
-        val label = installedAppInfo?.let { pm.getApplicationLabel(it).toString() }
-            ?: archive.applicationInfo?.let { pm.getApplicationLabel(it).toString() }
-        val icon = installedAppInfo?.loadIcon(pm) ?: archive.applicationInfo?.loadIcon(pm)
-        val launchIntent = installed?.let { pm.getLaunchIntentForPackage(packageName) }
-
-        return InstalledApkState(
-            packageName = packageName,
-            installed = installed != null,
-            installedVersionCode = installedVersionCode,
-            installedVersionName = installed?.versionName,
-            label = label,
-            icon = icon,
-            launchIntent = launchIntent,
-            downloadedVersionCode = downloadedVersionCode,
-            downloadedVersionName = archive.versionName
-        )
-    }
-
-    @Suppress("DEPRECATION")
-    private fun resolveArchive(pm: PackageManager, file: File): PackageInfo? {
-        val baseFlags = PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS
-        val flags = if (Build.VERSION.SDK_INT >= 28) {
-            baseFlags or PackageManager.GET_SIGNING_CERTIFICATES
-        } else {
-            baseFlags or PackageManager.GET_SIGNATURES
-        }
-        return runCatching { pm.getPackageArchiveInfo(file.absolutePath, flags) }.getOrNull()
-            ?: runCatching { pm.getPackageArchiveInfo(file.absolutePath, 0) }.getOrNull()
-    }
-
-    fun launchInstalledApp(context: Context, state: InstalledApkState): Boolean {
-        val intent = state.launchIntent ?: return false
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        return runCatching { context.startActivity(intent); true }.getOrDefault(false)
-    }
-
-    /**
-     * Opens the downloaded APK with Android's package installer.
-     *
-     * The file is revalidated immediately before the installer handoff. This prevents a stale,
-     * missing, non-APK, or replaced file from being presented as installable by the Downloads UI.
-     */
-    fun launchInstaller(context: Context, apkFile: File): Result<Unit> = runCatching {
-        require(apkFile.isFile && apkFile.length() > 0L) {
-            "The downloaded APK file is no longer available. Download it again."
-        }
-        require(apkFile.extension.equals("apk", ignoreCase = true)) {
-            "Only APK files can be installed."
-        }
-
-        val packageManager = context.packageManager
-        val archive = resolveArchive(packageManager, apkFile)
-            ?: error("Android could not parse the downloaded APK. Download it again.")
-        require(archive.packageName.isNotBlank()) { "Downloaded APK has no package name." }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
-            // Android deliberately blocks third-party APK installation until the user grants
-            // the per-app "Install unknown apps" permission. Open the system page instead of
-            // leaving the user with the generic "App not installed" failure.
-            val settingsIntent = Intent(
-                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                android.net.Uri.parse("package:${context.packageName}")
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            require(
-                packageManager.resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null
-            ) {
-                "Enable Install unknown apps for GitHub Rock in Android Settings, then tap Install again."
-            }
-            context.startActivity(settingsIntent)
-            error("Enable Install unknown apps for GitHub Rock, then tap Install again.")
-        }
-
-        val packageName = archive.packageName
-
         // Installation is an explicit action. Do not silently open an already-installed
         // application from this method: Downloads UI owns the separate Open action.
         // This keeps Download -> saved APK and Install -> Android package installer distinct.
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", apkFile)
-        val installIntent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-            data = uri
-            type = "application/vnd.android.package-archive"
+
+        // ACTION_VIEW is the portable Android package-install handoff. Some Android builds do
+        // not expose ACTION_INSTALL_PACKAGE to third-party apps even though their system package
+        // installer can handle APK files. ClipData makes the URI grant survive stricter Android
+        // URI-permission handling on newer releases.
+        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            clipData = android.content.ClipData.newRawUri("APK", uri)
         }
 
-        val resolvedIntent = if (packageManager.resolveActivity(
-                installIntent,
-                PackageManager.MATCH_DEFAULT_ONLY
-            ) != null
-        ) {
-            installIntent
-        } else {
-            Intent(Intent.ACTION_VIEW).apply {
-                data = uri
-                type = "application/vnd.android.package-archive"
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }.also { fallback ->
-                require(
-                    packageManager.resolveActivity(fallback, PackageManager.MATCH_DEFAULT_ONLY) != null
-                ) {
-                    "No Android package installer is available on this device."
-                }
-            }
+        val installerActivities = packageManager.queryIntentActivities(
+            installIntent,
+            PackageManager.MATCH_DEFAULT_ONLY
+        )
+        require(installerActivities.isNotEmpty()) {
+            "Android package installer is unavailable for APK files on this device."
         }
 
-        val targetPackage = packageManager
-            .resolveActivity(resolvedIntent, PackageManager.MATCH_DEFAULT_ONLY)
-            ?.activityInfo
-            ?.packageName
-
-        if (targetPackage != null) {
-            context.grantUriPermission(targetPackage, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        // Grant the URI only to the actual installer targets.
+        installerActivities.forEach { resolveInfo ->
+            val targetPackage = resolveInfo.activityInfo?.packageName ?: return@forEach
+            context.grantUriPermission(
+                targetPackage,
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
         }
-        context.startActivity(resolvedIntent)
+
+        context.startActivity(installIntent)
     }
 }
