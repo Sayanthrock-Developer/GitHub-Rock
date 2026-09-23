@@ -98,14 +98,14 @@ fun ProfileLibraryScreen(section: ProfileLibrarySection, onBack: () -> Unit, onO
     LaunchedEffect(section) { viewModel.open(section) }
     val visibleRepositories = remember(state.repositories, query) {
         val normalized = query.trim()
-        if (normalized.isBlank()) state.repositories else state.repositories.filter { it.name.contains(normalized, true) || it.fullName.contains(normalized, true) || it.description.orEmpty().contains(normalized, true) || it.language.orEmpty().contains(normalized, true) }
+        if (normalized.isBlank()) state.repositories else state.repositories.filter { it.name.contains(normalized, true) || it.owner.login.contains(normalized, true) || it.fullName.contains(normalized, true) || it.description.orEmpty().contains(normalized, true) || it.language.orEmpty().contains(normalized, true) }
     }
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         TopAppBar(title = { Column { Text(section.title, fontWeight = FontWeight.Black); Text(section.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) } }, navigationIcon = { IconButton(onClick = onBack) { Icon(RockIcon.Back.vector(), "Back") } }, actions = { IconButton(onClick = viewModel::refresh) { Icon(RockIcon.Refresh.vector(), "Refresh ${section.title}") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { ProfileLibrarySummary(section.icon, section.title, section.subtitle, state.repositories.size) }
-            item { OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Search ${section.title.lowercase()}") }) }
+            item { OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Search ${section.title.lowercase()}") }, placeholder = { Text("Name, owner, description, or language") }) }
             when {
                 state.loading -> item { Box(Modifier.fillMaxWidth().padding(vertical = 56.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
                 state.error != null -> item { GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(state.error!!, color = MaterialTheme.colorScheme.error); OutlinedButton(onClick = viewModel::refresh) { Icon(RockIcon.Refresh.vector(), null); Spacer(Modifier.width(8.dp)); Text("Retry") } } } }
