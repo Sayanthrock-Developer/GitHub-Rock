@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -138,6 +139,10 @@ fun AppLoadingIndicator(
 
             LoadingStyle.Morph -> {
                 MorphLoader(compact = compact, reduceMotion = reduceMotion)
+            }
+
+            LoadingStyle.RockRing -> {
+                RockRingLoader(compact = compact, reduceMotion = reduceMotion)
             }
         }
     }
@@ -430,6 +435,78 @@ private fun MorphLoader(compact: Boolean, reduceMotion: Boolean) {
         shape = RoundedCornerShape(38),
         color = MaterialTheme.colorScheme.primary
     ) {}
+}
+
+@Composable
+private fun RockRingLoader(compact: Boolean, reduceMotion: Boolean) {
+    val size = if (compact) 32.dp else 58.dp
+    val stroke = if (compact) 4.dp else 6.dp
+    if (reduceMotion) {
+        Canvas(
+            modifier = Modifier.size(size),
+            onDraw = {
+                drawArc(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .18f),
+                    startAngle = -90f,
+                    sweepAngle = 300f,
+                    useCenter = false,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = stroke.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                )
+                drawArc(
+                    color = MaterialTheme.colorScheme.primary,
+                    startAngle = -90f,
+                    sweepAngle = 95f,
+                    useCenter = false,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = stroke.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                )
+            }
+        )
+        return
+    }
+
+    val transition = rememberInfiniteTransition(label = "app-loading-rock-ring")
+    val rotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "app-loading-rock-ring-rotation"
+    )
+
+    Canvas(
+        modifier = Modifier
+            .size(size)
+            .graphicsLayer { rotationZ = rotation }
+    ) {
+        drawArc(
+            color = MaterialTheme.colorScheme.primary.copy(alpha = .16f),
+            startAngle = -90f,
+            sweepAngle = 300f,
+            useCenter = false,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                width = stroke.toPx(),
+                cap = StrokeCap.Round
+            )
+        )
+        drawArc(
+            color = MaterialTheme.colorScheme.primary,
+            startAngle = -90f,
+            sweepAngle = 95f,
+            useCenter = false,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                width = stroke.toPx(),
+                cap = StrokeCap.Round
+            )
+        )
+    }
 }
 
 @Composable
