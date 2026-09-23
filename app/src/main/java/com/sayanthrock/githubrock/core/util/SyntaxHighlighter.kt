@@ -28,6 +28,7 @@ object SyntaxHighlighter {
     private val xmlExtensions = setOf("xml", "html", "htm")
     private val jsonYamlExtensions = setOf("json", "yaml", "yml")
     private val markdownExtensions = setOf("md", "markdown")
+    private val cLikeExtensions = setOf("js", "jsx", "ts", "tsx", "rs", "swift", "cs", "rb", "sh", "bash", "zsh")
 
     private val kotlinJavaKeywords = Regex(
         "\\b(?:as|break|class|const|continue|data|do|else|enum|" +
@@ -60,6 +61,7 @@ object SyntaxHighlighter {
             extension in xmlExtensions -> highlightXml(source)
             extension in jsonYamlExtensions -> highlightJsonYaml(source, extension == "json")
             extension in markdownExtensions -> highlightMarkdown(source)
+            extension in cLikeExtensions -> highlightCStyle(source, extension)
             else -> emptyList()
         }
     }
@@ -114,6 +116,18 @@ object SyntaxHighlighter {
         ).filterNot { span ->
             span.kind == SyntaxTokenKind.String && propertyStarts.contains(span.start)
         }
+    }
+
+    private fun highlightCStyle(source: String, extension: String): List<SyntaxSpan> {
+        val keywords = when (extension) {
+            "rs" -> Regex("\\b(?:as|break|const|continue|crate|else|enum|extern|false|fn|for|if|impl|in|let|loop|match|mod|move|mut|pub|ref|return|self|Self|static|struct|trait|true|type|unsafe|use|where|while)\\b")
+            "swift" -> Regex("\\b(?:actor|associatedtype|class|defer|enum|extension|false|func|guard|if|import|in|init|let|nil|protocol|return|self|struct|switch|true|typealias|var|while)\\b")
+            "cs" -> Regex("\\b(?:abstract|async|await|bool|break|case|catch|class|const|continue|else|enum|false|for|foreach|if|in|interface|internal|namespace|new|null|override|private|protected|public|readonly|return|sealed|static|string|struct|switch|this|throw|true|try|using|var|void|while)\\b")
+            "rb" -> Regex("\\b(?:begin|class|def|do|else|elsif|end|false|for|if|in|module|nil|require|rescue|return|self|true|unless|until|when|while|yield)\\b")
+            else -> Regex("\\b(?:async|await|break|case|catch|class|const|continue|else|export|false|for|from|function|if|import|in|interface|let|new|null|return|switch|throw|true|try|type|typeof|var|while)\\b")
+        }
+        val comment = if (extension in setOf("sh", "bash", "zsh", "rb")) Regex("#[^\\r\\n]*") else lineOrBlockComment
+        return tokenize(source, listOf(quotedString to SyntaxTokenKind.String, comment to SyntaxTokenKind.Comment, keywords to SyntaxTokenKind.Keyword, number to SyntaxTokenKind.Number, typeName to SyntaxTokenKind.Type))
     }
 
     private fun highlightMarkdown(source: String): List<SyntaxSpan> = tokenize(
