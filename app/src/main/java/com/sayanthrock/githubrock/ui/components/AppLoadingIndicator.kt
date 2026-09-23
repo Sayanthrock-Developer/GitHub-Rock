@@ -341,7 +341,7 @@ private fun LiquidBar(offset: Float, compact: Boolean) {
         modifier = Modifier
             .size(width = if (compact) 58.dp else 82.dp, height = if (compact) 12.dp else 16.dp)
             .graphicsLayer { translationX = offset * if (compact) 8f else 14f; scaleX = 0.88f + ((offset + 1f) * .06f) }
-            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+            .background(primary, RoundedCornerShape(50))
     )
 }
 
@@ -442,12 +442,13 @@ private fun MorphLoader(compact: Boolean, reduceMotion: Boolean) {
 private fun RockRingLoader(compact: Boolean, reduceMotion: Boolean) {
     val size = if (compact) 32.dp else 58.dp
     val stroke = if (compact) 4.dp else 6.dp
+    val primary = MaterialTheme.colorScheme.primary
     if (reduceMotion) {
         Canvas(
             modifier = Modifier.size(size),
             onDraw = {
                 drawArc(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = .18f),
+                    color = primary.copy(alpha = .18f),
                     startAngle = -90f,
                     sweepAngle = 300f,
                     useCenter = false,
@@ -457,7 +458,7 @@ private fun RockRingLoader(compact: Boolean, reduceMotion: Boolean) {
                     )
                 )
                 drawArc(
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primary,
                     startAngle = -90f,
                     sweepAngle = 95f,
                     useCenter = false,
@@ -498,7 +499,7 @@ private fun RockRingLoader(compact: Boolean, reduceMotion: Boolean) {
             )
         )
         drawArc(
-            color = MaterialTheme.colorScheme.primary,
+            color = primary,
             startAngle = -90f,
             sweepAngle = 95f,
             useCenter = false,
