@@ -489,7 +489,7 @@ private fun RockRingLoader(compact: Boolean, reduceMotion: Boolean) {
             .graphicsLayer { rotationZ = rotation }
     ) {
         drawArc(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = .16f),
+            color = primary.copy(alpha = .16f),
             startAngle = -90f,
             sweepAngle = 300f,
             useCenter = false,
