@@ -1,6 +1,8 @@
 package com.sayanthrock.githubrock.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -51,6 +54,7 @@ import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.components.StandardScreenPadding
 import com.sayanthrock.githubrock.ui.theme.LocalRemoteImagesEnabled
+import androidx.hilt.navigation.compose.hiltViewModel
 import java.time.Duration
 import java.time.Instant
 import java.util.Locale
@@ -136,11 +140,14 @@ fun HomeScreen(
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
+    visibilityViewModel: RepositoryVisibilityViewModel = hiltViewModel(),
 ) {
     var selectedPlatformName by rememberSaveable { mutableStateOf(HomePlatform.All.name) }
     var selectedCategoryName by rememberSaveable { mutableStateOf(HomeCategory.All.name) }
     var selectedSortName by rememberSaveable { mutableStateOf(HomeSort.Updated.name) }
     var showPlatformSheet by rememberSaveable { mutableStateOf(false) }
+    var hiddenRepositoryName by rememberSaveable { mutableStateOf<String?>(null) }
+    val hiddenRepositories by visibilityViewModel.hiddenRepositories.collectAsState()
 
     val selectedPlatform = HomePlatform.entries.firstOrNull { it.name == selectedPlatformName }
         ?: HomePlatform.All
@@ -157,6 +164,7 @@ fun HomeScreen(
         selectedPlatform,
         selectedCategory,
         selectedSort,
+        hiddenRepositories,
     ) {
         homeRepositoryFeed(
             repositories = repositories,
@@ -243,6 +251,7 @@ fun HomeScreen(
                         null
                     },
                     onClick = { onOpenRepo(repository) },
+                    onLongClick = { hiddenRepositoryName = repository.fullName },
                 )
             }
 
@@ -261,6 +270,19 @@ fun HomeScreen(
             onDismiss = { showPlatformSheet = false },
         )
     }
+    hiddenRepositoryName?.let { fullName ->
+        ModalBottomSheet(onDismissRequest = { hiddenRepositoryName = null }, sheetState = rememberModalBottomSheetState()) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Hide repository", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(fullName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("This removes the repository from Home and the normal Repositories feed. Installed/library data is not deleted.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(Modifier.fillMaxWidth(), onClick = { visibilityViewModel.hide(fullName); hiddenRepositoryName = null }) { Text("Hide repository") }
+                TextButton(Modifier.fillMaxWidth(), onClick = { hiddenRepositoryName = null }) { Text("Cancel") }
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -436,19 +458,19 @@ private fun EmptyDiscoveryCard(
 }
 
 @Composable
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 private fun DiscoveryRepositoryCard(
     modifier: Modifier = Modifier,
     repository: GitHubRepositoryModel,
     rank: Int?,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val showImages = LocalRemoteImagesEnabled.current
     val platforms = remember(repository) { repositoryPlatforms(repository) }
 
     GlassCard(
-        modifier = modifier.fillMaxWidth(),
-        onClick = onClick,
+        modifier = modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLongClick).semantics { contentDescription = repository.fullName + ". Tap to open. Long-press to hide repository." },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
