@@ -278,8 +278,8 @@ fun HomeScreen(
                 Text("Hide repository", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(fullName, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("This removes the repository from Home and the normal Repositories feed. Installed/library data is not deleted.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(Modifier.fillMaxWidth(), onClick = { visibilityViewModel.hide(fullName); hiddenRepositoryName = null }) { Text("Hide repository") }
-                TextButton(Modifier.fillMaxWidth(), onClick = { hiddenRepositoryName = null }) { Text("Cancel") }
+                TextButton(onClick = { visibilityViewModel.hide(fullName); hiddenRepositoryName = null }, modifier = Modifier.fillMaxWidth()) { Text("Hide repository") }
+                TextButton(onClick = { hiddenRepositoryName = null }, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
                 Spacer(Modifier.height(12.dp))
             }
         }
