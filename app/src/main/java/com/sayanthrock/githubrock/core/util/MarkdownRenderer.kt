@@ -79,7 +79,7 @@ object MarkdownRenderer {
                 fun attrs(tag: String) = htmlAttrRegex.findAll(tag).associate { it.groupValues[1].lowercase() to it.groupValues[2] }
                 val sources = Regex("<source\\b[^>]*>", RegexOption.IGNORE_CASE).findAll(html).map { attrs(it.value) }.toList()
                 val imgAttrs = htmlImageRegex.find(html)?.value?.let(::attrs).orEmpty()
-                val dark = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: dark", true) }?.get("srcset")
+                val dark = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: dark", true) }?.get("srcset")?.let(::firstSrcsetUrl)
                 val light = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: light", true) }?.get("srcset")
                 val fallback = imgAttrs["src"]
                 val alt = imgAttrs["alt"].orEmpty()
@@ -169,6 +169,8 @@ object MarkdownRenderer {
             .replace(Regex("(?<!_)_([^_]+)_(?!_)")) { it.groupValues[1] }
             .replace(Regex("<[^>]+>"), "")
     )
+    private fun firstSrcsetUrl(value: String): String = value.substringBefore(",").trim().substringBefore(" ").trim()
+
     fun decodeHtmlEntities(text: String): String = text
         .replace("&amp;", "&", true).replace("&lt;", "<", true).replace("&gt;", ">", true)
         .replace("&quot;", "\"", true).replace("&#39;", "'", true).replace("&apos;", "'", true)
