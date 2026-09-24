@@ -118,11 +118,10 @@ object MarkdownRenderer {
             val htmlImages = htmlImageRegex.findAll(line).toList()
             if (htmlImages.size > 1) {
                 flushTable(); flushParagraph()
-                val images = htmlImages.mapNotNull { tag ->
+                htmlImages.forEach { tag ->
                     val a = htmlAttrRegex.findAll(tag.value).associate { it.groupValues[1].lowercase() to it.groupValues[2] }
-                    a["src"]?.let { ImageMetadata(it, it, it, a["alt"].orEmpty()) }
+                    a["src"]?.let { blocks += MarkdownBlock(MarkdownBlockKind.Image, a["alt"].orEmpty(), ImageMetadata(it, it, it, a["alt"].orEmpty())) }
                 }
-                if (images.isNotEmpty()) blocks += MarkdownBlock(MarkdownBlockKind.ImageRow, "", images)
                 index++; continue
             }
             if (htmlImages.size == 1) {
