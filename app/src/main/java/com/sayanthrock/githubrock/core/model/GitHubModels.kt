@@ -81,7 +81,8 @@ data class PullRequestDetail(
     val id: Long, val name: String? = null, @SerialName("display_title") val displayTitle: String = "",
     val status: String, val conclusion: String? = null, val event: String = "", @SerialName("head_branch") val headBranch: String? = null,
     @SerialName("html_url") val htmlUrl: String = "", @SerialName("created_at") val createdAt: String = "",
-    @SerialName("run_started_at") val runStartedAt: String? = null, @SerialName("updated_at") val updatedAt: String? = null
+    @SerialName("run_started_at") val runStartedAt: String? = null, @SerialName("updated_at") val updatedAt: String? = null,
+    val actor: Owner? = null, @SerialName("run_attempt") val runAttempt: Int = 1
 )
 fun WorkflowRun.runTime(now: Instant = Instant.now()): Duration? {
     if (displayState() == WorkflowDisplayState.Queued) return null
