@@ -594,7 +594,7 @@ internal const val REPOSITORY_DETAIL_SELECTABLE_TEST_TAG = "repository-detail-ov
 
 @Composable
 internal fun RepositoryDetailSelectableText(repository: GitHubRepositoryModel?) {
-    SelectionContainer {
+    SelectionContainer(modifier = Modifier.testTag(REPOSITORY_DETAIL_SELECTABLE_TEST_TAG)) {
         Text(
             text = buildAnnotatedString {
                 withStyle(MaterialTheme.typography.titleLarge.toSpanStyle()) {
@@ -613,9 +613,7 @@ internal fun RepositoryDetailSelectableText(repository: GitHubRepositoryModel?) 
                 append("\n")
                 append("${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(REPOSITORY_DETAIL_SELECTABLE_TEST_TAG)
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
