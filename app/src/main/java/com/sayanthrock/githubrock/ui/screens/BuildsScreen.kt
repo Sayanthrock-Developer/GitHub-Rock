@@ -155,6 +155,7 @@ fun BuildsScreen(
                 BuildAuditLog(
                     runs = repositoryRuns,
                     selectedRunId = selectedRunId,
+                    artifacts = actionState.artifacts,
                     preferences = preferences,
                     onOpenRun = { selectedRunId = it }
                 )
@@ -571,11 +572,23 @@ private fun WorkflowRun.auditEvents(): List<BuildAuditEvent> {
 private fun BuildAuditLog(
     runs: List<WorkflowRun>,
     selectedRunId: Long?,
+    artifacts: List<WorkflowArtifact>,
     preferences: AppearancePreferences,
     onOpenRun: (Long) -> Unit
 ) {
-    val events = remember(runs) {
-        runs.flatMap { it.auditEvents() }.sortedByDescending { it.timestamp }.take(12)
+    val events = remember(runs, artifacts, selectedRunId) {
+        val runEvents = runs.flatMap { it.auditEvents() }.toMutableList()
+        if (artifacts.isNotEmpty()) {
+            runs.firstOrNull { it.id == selectedRunId }?.let { selected ->
+                runEvents += BuildAuditEvent(
+                    run = selected,
+                    title = "Artifacts available",
+                    detail = artifacts.joinToString(" · ") { it.name } + " · Run ID " + selected.id,
+                    timestamp = selected.updatedAt ?: selected.createdAt
+                )
+            }
+        }
+        runEvents.sortedByDescending { it.timestamp }.take(12)
     }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
