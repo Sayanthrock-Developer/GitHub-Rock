@@ -50,7 +50,7 @@ data class RepositoryHubState(
 
 @HiltViewModel
 class RepositoryHubViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val githubRepository: GitHubRepository,
     private val translationService: GoogleTranslationService,
     private val appPreferences: AppPreferences
