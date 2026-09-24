@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
@@ -41,6 +42,7 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.MarkdownTable
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
+import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.icons.vector
 import java.net.URI
@@ -347,7 +349,7 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
     val spans = remember(fileName, block.text) { com.sayanthrock.githubrock.core.util.SyntaxHighlighter.highlight(fileName, block.text) }
     val annotated = AnnotatedString.Builder(block.text).apply {
         addStyle(SpanStyle(fontFamily = FontFamily.Monospace), 0, block.text.length)
-        spans.forEach { span -> addStyle(SpanStyle(color = syntaxColor(span.kind)), span.start, span.end) }
+        spans.forEach { span -> addStyle(SpanStyle(color = showcaseSyntaxColor(span.kind)), span.start, span.end) }
     }.toAnnotatedString()
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -371,6 +373,22 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun showcaseSyntaxColor(kind: com.sayanthrock.githubrock.core.util.SyntaxTokenKind): androidx.compose.ui.graphics.Color {
+    val colors = LocalCodeColors.current
+    return when (kind) {
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Keyword -> colors.keyword
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.String -> colors.string
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Comment -> colors.comment
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Number -> colors.number
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Type -> colors.type
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Tag -> colors.type
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Attribute -> colors.property
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Property -> colors.property
+        com.sayanthrock.githubrock.core.util.SyntaxTokenKind.Markdown -> colors.keyword
     }
 }
 
