@@ -57,13 +57,9 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                     val state = UUID.randomUUID().toString()
                     val (verifier, challenge) = generatePkcePair()
                     pendingWebOAuthState = state; pendingWebOAuthCodeVerifier = verifier; pendingWebOAuthCreatedAt = System.currentTimeMillis()
-                    try {
-                        val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
-                        _state.update { it.copy(isLoading = false, auth = DeviceAuthState(authorizationUrl = authorizationUrl, status = "Waiting for GitHub authorization…")) }
-                        return@launch
-                    } catch (_: Exception) {
-                        clearPendingWebOAuth()
-                    }
+                    val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
+                    _state.update { it.copy(isLoading = false, auth = DeviceAuthState(authorizationUrl = authorizationUrl, status = "Waiting for GitHub authorization…")) }
+                    return@launch
                 }
                 startDeviceLogin()
             } catch (cancelled: CancellationException) { throw cancelled } catch (error: Exception) { reportAuthFailure(error) }
