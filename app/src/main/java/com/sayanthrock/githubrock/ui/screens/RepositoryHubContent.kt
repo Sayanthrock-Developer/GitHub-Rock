@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -142,7 +143,9 @@ fun RepositoryHubContent(
 ) {
     var showTranslationPicker by rememberSaveable { mutableStateOf(false) }
     var showWhatsNewTranslationPicker by rememberSaveable { mutableStateOf(false) }
+    val repositoryContentListState = rememberLazyListState()
     LazyColumn(
+        state = repositoryContentListState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -1301,27 +1304,41 @@ private fun MarkdownBlockView(
         ) {
             InlineMarkdownText(displayText, MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant), onOpenUrl, Modifier.padding(12.dp))
         }
-        MarkdownBlockKind.Code -> Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.background.copy(alpha = .72f)
-        ) {
-            Text(
+        MarkdownBlockKind.Code -> {
+            val scrollState = rememberSaveable(
                 block.text,
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(12.dp),
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.bodySmall,
-                softWrap = false
-            )
+                saver = androidx.compose.foundation.ScrollState.Saver
+            ) { androidx.compose.foundation.ScrollState(0) }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.background.copy(alpha = .72f)
+            ) {
+                Text(
+                    block.text,
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(scrollState).padding(12.dp),
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodySmall,
+                    softWrap = false
+                )
+            }
         }
         MarkdownBlockKind.Divider -> HorizontalDivider()
         MarkdownBlockKind.Table -> block.table?.let { table ->
+            val tableScrollKey = remember(table.headers, table.rows) {
+                table.headers.joinToString("\u0000") + "\u0001" +
+                    table.rows.joinToString("\u0002") { it.joinToString("\u0000") }
+            }
+            val scrollState = rememberSaveable(
+                tableScrollKey,
+                saver = androidx.compose.foundation.ScrollState.Saver
+            ) { androidx.compose.foundation.ScrollState(0) }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .35f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .4f))
             ) {
-                Column(Modifier.horizontalScroll(rememberScrollState())) {
+                Column(Modifier.horizontalScroll(scrollState)) {
                     Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         table.headers.forEach {
                             InlineMarkdownText(it, MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), onOpenUrl, Modifier.width(120.dp))
