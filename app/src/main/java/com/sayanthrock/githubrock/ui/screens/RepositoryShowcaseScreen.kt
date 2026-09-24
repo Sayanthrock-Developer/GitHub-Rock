@@ -435,7 +435,7 @@ internal fun InlineMarkdownText(
     modifier: Modifier = Modifier
 ) {
     val linkColor = MaterialTheme.colorScheme.primary
-    val annotated = remember(text, linkColor) { buildMarkdownAnnotatedString(text, linkColor) }
+    val annotated = remember(text, linkColor) { buildMarkdownAnnotatedString(MarkdownRenderer.normalizeInlineHtml(text), linkColor) }
     ClickableText(
         text = annotated,
         modifier = modifier,
