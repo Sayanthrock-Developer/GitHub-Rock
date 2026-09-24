@@ -79,8 +79,8 @@ object MarkdownRenderer {
                 fun attrs(tag: String) = htmlAttrRegex.findAll(tag).associate { it.groupValues[1].lowercase() to it.groupValues[2] }
                 val sources = Regex("<source\\b[^>]*>", RegexOption.IGNORE_CASE).findAll(html).map { attrs(it.value) }.toList()
                 val imgAttrs = htmlImageRegex.find(html)?.value?.let(::attrs).orEmpty()
-                val dark = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: dark", true) }?.get("srcset")
-                val light = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: light", true) }?.get("srcset")
+                val dark = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: dark", true) }?.get("srcset")?.let(::firstSrcSetUrl)
+                val light = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: light", true) }?.get("srcset")?.let(::firstSrcSetUrl)
                 val fallback = imgAttrs["src"]
                 val alt = imgAttrs["alt"].orEmpty()
                 if (!dark.isNullOrBlank() || !light.isNullOrBlank() || !fallback.isNullOrBlank())
@@ -192,13 +192,22 @@ object MarkdownRenderer {
         return value
     }
 
+    private fun firstSrcSetUrl(srcset: String): String? =
+        srcset.trim().split(",").firstOrNull()?.trim()?.substringBefore(Regex("\\s+"))?.takeIf(String::isNotBlank)
     private fun normalizeHtmlBlocks(markdown: String): String {
         var value = markdown
         value = Regex("<pre[^>]*>[\\t\\r\\n ]*<code[^>]*>(.*?)</code>[\\t\\r\\n ]*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
             val full = match.value
             val attrs = Regex("<code[^>]*>", RegexOption.IGNORE_CASE).find(full)?.value.orEmpty()
-            val body = decodeHtmlEntities(match.groupValues[1]).replace(Regex("<br[\\t\\r\\n ]*/?>", RegexOption.IGNORE_CASE), "\n").replace(Regex("<[^>]+>"), "")
-            val language = Regex("class[\\t\\r\\n ]*=[\\t\\r\\n ]*\\\"(?:language-)?([^\\\"\\t\\r\\n ]+)\\\"", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
+            val body = decodeHtmlEntities(
+                match.groupValues[1]
+                    .replace(Regex("<br[\\t\\r\\n ]*/?>", RegexOption.IGNORE_CASE), "\n")
+                    .replace(Regex("<[^>]+>"), "")
+            )
+            val language = Regex("class[\\t\\r\\n ]*=[\\t\\r\\n ]*(?:\\\"([^\\\"]+)\\\"|\\\'([^\\\']+)\\\')", RegexOption.IGNORE_CASE)
+                .find(attrs)?.let { it.groupValues[1].ifEmpty { it.groupValues[2] } }
+                ?.removePrefix("language-")
+                .orEmpty()
             "```" + language + "\n" + body + "\n```"
         }
         value = Regex("<blockquote[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
