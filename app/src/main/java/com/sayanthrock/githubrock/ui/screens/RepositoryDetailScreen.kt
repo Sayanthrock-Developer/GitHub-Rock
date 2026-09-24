@@ -260,6 +260,16 @@ fun RepositoryDetailScreen(
                         }
                     }
                 }
+                RepoSection.Security -> item {
+                    RepositorySecuritySection(
+                        repository = repository,
+                        advisories = state.securityAdvisories,
+                        securityPolicy = state.securityPolicy,
+                        onOpenUrl = { url ->
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        }
+                    )
+                }
                 RepoSection.Releases -> {
                     item { OutlinedButton(onClick = { showCreateRelease = true }, Modifier.fillMaxWidth()) { Text("New draft release") } }
                     items(state.releases, key = { it.id }) { release ->
