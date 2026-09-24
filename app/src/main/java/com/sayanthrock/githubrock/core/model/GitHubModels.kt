@@ -104,6 +104,18 @@ fun Duration.formatRunTime(): String {
     }
 }
 @Serializable data class WorkflowRuns(@SerialName("total_count") val totalCount: Int, @SerialName("workflow_runs") val runs: List<WorkflowRun>)
+@Serializable data class SecurityAdvisory(
+    @SerialName("ghsa_id") val ghsaId: String = "",
+    @SerialName("cve_id") val cveId: String? = null,
+    val url: String = "",
+    @SerialName("html_url") val htmlUrl: String = "",
+    val summary: String = "",
+    val description: String? = null,
+    val severity: String? = null,
+    @SerialName("published_at") val publishedAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("withdrawn_at") val withdrawnAt: String? = null
+)
 @Serializable data class Release(val id: Long, @SerialName("tag_name") val tagName: String, val name: String? = null, val body: String? = null, val draft: Boolean = false, val prerelease: Boolean = false, @SerialName("published_at") val publishedAt: String? = null, val assets: List<ReleaseAsset> = emptyList())
 @Serializable data class ReleaseAsset(
     val id: Long,
