@@ -155,7 +155,7 @@ object MarkdownRenderer {
         return blocks
     }
 
-    private fun normalizeInlineHtml(text: String): String = decodeHtmlEntities(
+    fun normalizeInlineHtml(text: String): String = decodeHtmlEntities(
         text.replace(Regex("<sup[^>]*>(.*?)</sup>", RegexOption.IGNORE_CASE)) { toSuperscript(it.groupValues[1]) }
             .replace(Regex("<sub[^>]*>(.*?)</sub>", RegexOption.IGNORE_CASE)) { toSubscript(it.groupValues[1]) }
             .replace(Regex("<[^>]+>"), "")
