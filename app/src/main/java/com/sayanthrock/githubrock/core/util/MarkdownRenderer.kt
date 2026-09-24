@@ -147,7 +147,7 @@ object MarkdownRenderer {
                 index++; continue
             }
             if (line.contains('|')) { flushParagraph(); table += line; index++; continue }
-            paragraph += line.replace(Regex("</?(?!script\b|style\b)[A-Za-z][^>]*>", RegexOption.IGNORE_CASE), "")
+            paragraph += normalizeInlineHtml(line)
             index++
         }
         if (inFence) blocks += MarkdownBlock(MarkdownBlockKind.Code, fenceLines.joinToString("\n"), fenceLanguage)
@@ -155,6 +155,11 @@ object MarkdownRenderer {
         return blocks
     }
 
+    private fun normalizeInlineHtml(text: String): String = decodeHtmlEntities(
+        text.replace(Regex("<sup[^>]*>(.*?)</sup>", RegexOption.IGNORE_CASE)) { toSuperscript(it.groupValues[1]) }
+            .replace(Regex("<sub[^>]*>(.*?)</sub>", RegexOption.IGNORE_CASE)) { toSubscript(it.groupValues[1]) }
+            .replace(Regex("<[^>]+>"), "")
+    )
     fun cleanInline(text: String): String = decodeHtmlEntities(
         text.replace(Regex("<sup\b[^>]*>(.*?)</sup>", RegexOption.IGNORE_CASE)) { toSuperscript(it.groupValues[1]) }
             .replace(Regex("<sub\b[^>]*>(.*?)</sub>", RegexOption.IGNORE_CASE)) { toSubscript(it.groupValues[1]) }
