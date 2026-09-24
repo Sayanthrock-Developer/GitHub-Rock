@@ -760,7 +760,7 @@ private fun SyntaxPreviewCard(path: String, source: String) {
 }
 
 @Composable
-private fun syntaxColor(kind: SyntaxTokenKind): Color {
+internal fun syntaxColor(kind: SyntaxTokenKind): Color {
     val colors = LocalCodeColors.current
     return when (kind) {
         SyntaxTokenKind.Keyword -> colors.keyword
