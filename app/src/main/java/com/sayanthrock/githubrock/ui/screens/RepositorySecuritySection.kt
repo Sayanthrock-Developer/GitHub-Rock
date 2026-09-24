@@ -34,7 +34,7 @@ internal fun RepositorySecuritySection(repository: GitHubRepositoryModel?, advis
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Security policy", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 if (securityPolicy == null) Text("No SECURITY.md policy was found in the default branch.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                else SecurityPolicyMarkdown(securityPolicy, repository, onOpenUrl)
+                else SecurityPolicyMarkdown(securityPolicy, onOpenUrl)
             }
         }
     }
@@ -57,18 +57,18 @@ private fun SecurityAdvisoryCard(advisory: SecurityAdvisory, onOpenUrl: (String)
 }
 
 @Composable
-private fun SecurityPolicyMarkdown(markdown: String, repository: GitHubRepositoryModel?, onOpenUrl: (String) -> Unit) {
+private fun SecurityPolicyMarkdown(markdown: String, onOpenUrl: (String) -> Unit) {
     val blocks = androidx.compose.runtime.remember(markdown) { com.sayanthrock.githubrock.core.util.MarkdownRenderer.render(markdown) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         blocks.forEach { block ->
             when (block.kind) {
                 com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Heading -> Text(block.text, style = when (block.level) { 1 -> MaterialTheme.typography.headlineSmall; 2 -> MaterialTheme.typography.titleLarge; else -> MaterialTheme.typography.titleMedium }, fontWeight = FontWeight.Bold)
-                com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Bullet -> Text("• ${block.text}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Bullet -> InlineMarkdownText("• ${block.text}", MaterialTheme.typography.bodyLarge, onOpenUrl)
                 com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Task -> Text(if (block.checked) "☑ ${block.text}" else "☐ ${block.text}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Quote, com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Alert -> Text(block.text, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Quote, com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Alert -> InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, onOpenUrl)
                 com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Code -> GlassCard { Text(block.text, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) }
                 com.sayanthrock.githubrock.core.util.MarkdownBlockKind.Divider -> androidx.compose.material3.HorizontalDivider()
-                else -> Text(block.text)
+                else -> InlineMarkdownText(block.text, MaterialTheme.typography.bodyLarge, onOpenUrl)
             }
         }
     }
