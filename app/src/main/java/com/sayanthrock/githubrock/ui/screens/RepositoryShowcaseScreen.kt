@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -18,6 +19,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -125,7 +127,9 @@ fun RepositoryShowcaseContent(
             if (resolved != null && !onOpenNativeLink(resolved)) openHttpsBrowser(context, resolved)
         }
     }
+    val readmeListState = rememberLazyListState()
     LazyColumn(
+        state = readmeListState,
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -350,7 +354,7 @@ private fun showcaseSyntaxColor(kind: SyntaxTokenKind): Color {
 @Composable
 private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) {
     val context = LocalContext.current
-    val scroll = rememberScrollState()
+    val scroll = rememberSaveable(block.text, saver = androidx.compose.foundation.ScrollState.Saver) { androidx.compose.foundation.ScrollState(0) }
     val language = block.codeLanguage?.lowercase()?.substringBefore('-')?.substringBefore(' ') ?: "text"
     val fileName = when (language) {
         "kotlin", "kt" -> "README.kt"
