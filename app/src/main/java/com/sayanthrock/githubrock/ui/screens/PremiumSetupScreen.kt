@@ -45,8 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -96,15 +94,7 @@ fun PremiumSetupScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                        Color.Transparent
-                    ),
-                    radius = 900f
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -131,11 +121,6 @@ fun PremiumSetupScreen(
                 Spacer(Modifier.size(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("GitHub Rock", fontWeight = FontWeight.Bold)
-                    Text(
-                        "Setup",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
                 if (page < 2) {
                     Text(
@@ -213,7 +198,7 @@ fun PremiumSetupScreen(
                     shape = LuxuryShape
                 ) { Text("Continue  →") }
                 Text(
-                    "You can refine every visual detail later in Settings → Appearance.",
+                    "Change anytime in Appearance.",
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -240,12 +225,12 @@ private fun WelcomePage() {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Spacer(Modifier.height(24.dp))
         Text(
-            "Your GitHub.\nYour style.",
+            "Make it yours.",
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold
         )
         Text(
-            "A native GitHub experience designed around your workflow — clean, focused and unmistakably Rock.",
+            "A clean, native GitHub experience.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -257,17 +242,12 @@ private fun WelcomePage() {
             tonalElevation = 3.dp
         ) {
             Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("Liquid GitHub Luxury", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text("Premium by default", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Graphite surfaces · selective glass · strong typography · fast motion",
+                    "Quiet surfaces. Clear type. Native motion.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    LuxuryPill("20–28dp")
-                    LuxuryPill("Dark first")
-                    LuxuryPill("Native")
-                }
             }
         }
     }
@@ -281,9 +261,9 @@ private fun AppearancePage(
     onTrueBlack: (Boolean) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Choose your atmosphere", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Appearance", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(
-            "Start with a premium foundation. Everything remains editable later.",
+            "Choose a base. Change it anytime.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
@@ -300,7 +280,7 @@ private fun AppearancePage(
             onThemeMode(ThemeMode.Dark); onTrueBlack(true)
         }
 
-        Text("Style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text("Finish", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StyleChip("Liquid Glass", ThemeStyle.LiquidGlass, appearance.themeStyle, onThemeStyle, Modifier.weight(1f))
             StyleChip("Clean", ThemeStyle.Clean, appearance.themeStyle, onThemeStyle, Modifier.weight(1f))
