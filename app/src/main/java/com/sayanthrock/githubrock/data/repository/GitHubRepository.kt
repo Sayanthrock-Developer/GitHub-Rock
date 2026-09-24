@@ -186,6 +186,21 @@ class GitHubRepository @Inject constructor(
     suspend fun runsForWorkflow(owner: String, repo: String, workflowId: Long) =
         api.workflowRunsForWorkflow(owner, repo, workflowId).runs
     suspend fun run(owner: String, repo: String, runId: Long) = api.workflowRun(owner, repo, runId)
+    suspend fun securityAdvisories(owner: String, repo: String): List<SecurityAdvisory> = withContext(Dispatchers.IO) {
+        val response = api.securityAdvisories(owner, repo)
+        if (response.code() == 404) return@withContext emptyList()
+        check(response.isSuccessful) { "Unable to load security advisories (HTTP ${response.code()})" }
+        response.body().orEmpty()
+            .filter { it.publishedAt != null && it.withdrawnAt == null }
+            .sortedByDescending { it.publishedAt }
+    }
+
+    suspend fun securityPolicy(owner: String, repo: String): String? = withContext(Dispatchers.IO) {
+        runCatching { SourceFileDecoder.decode(api.file(owner, repo, "SECURITY.md", null)) }
+            .getOrNull()
+            ?.takeIf(String::isNotBlank)
+    }
+
     suspend fun releases(owner: String, repo: String) = api.releases(owner, repo)
 
     suspend fun dispatch(
