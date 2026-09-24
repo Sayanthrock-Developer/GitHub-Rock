@@ -151,6 +151,14 @@ fun BuildsScreen(
                     }
                 }
             }
+            item {
+                BuildAuditLog(
+                    runs = repositoryRuns,
+                    selectedRunId = selectedRunId,
+                    preferences = preferences,
+                    onOpenRun = { selectedRunId = it }
+                )
+            }
             item { Text("Recent runs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
             if (visibleRuns.isEmpty()) {
                 item { GlassCard { Text("No runs match this filter.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
@@ -529,6 +537,93 @@ private fun RecentRunCard(run: WorkflowRun, preferences: AppearancePreferences, 
             }
             Text(state.name, color = accent, fontWeight = FontWeight.SemiBold)
             Icon(Icons.Default.ChevronRight, "Open run details")
+        }
+    }
+}
+
+private data class BuildAuditEvent(
+    val run: WorkflowRun,
+    val title: String,
+    val detail: String,
+    val timestamp: String
+)
+
+private fun WorkflowRun.auditEvents(): List<BuildAuditEvent> {
+    val title = displayTitle.ifBlank { name ?: "Workflow run" }
+    val detail = buildString {
+        append(headBranch.orEmpty().ifBlank { "default branch" })
+        if (event.isNotBlank()) append(" · ").append(event)
+        append(" · Run ID ").append(id)
+        actor?.login?.takeIf(String::isNotBlank)?.let { append(" · ").append(it) }
+    }
+    val primary = when {
+        runAttempt > 1 -> BuildAuditEvent(this, "Build re-run", detail, updatedAt ?: createdAt)
+        conclusion == "cancelled" -> BuildAuditEvent(this, "Build cancelled", detail, updatedAt ?: createdAt)
+        conclusion != null -> BuildAuditEvent(this, "Build completed", detail, updatedAt ?: createdAt)
+        status == "in_progress" -> BuildAuditEvent(this, "Build started", detail, runStartedAt ?: createdAt)
+        event == "workflow_dispatch" -> BuildAuditEvent(this, "Workflow dispatched", detail, createdAt)
+        else -> BuildAuditEvent(this, "Workflow run created", detail, createdAt)
+    }
+    return listOf(primary)
+}
+
+@Composable
+private fun BuildAuditLog(
+    runs: List<WorkflowRun>,
+    selectedRunId: Long?,
+    preferences: AppearancePreferences,
+    onOpenRun: (Long) -> Unit
+) {
+    val events = remember(runs) {
+        runs.flatMap { it.auditEvents() }.sortedByDescending { it.timestamp }.take(12)
+    }
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Audit log", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Real GitHub Actions run activity",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Icon(Icons.Default.History, contentDescription = "Audit log")
+            }
+            if (events.isEmpty()) {
+                Text(
+                    "No GitHub Actions activity is available for this repository.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                events.forEach { event ->
+                    val state = event.run.displayState()
+                    val accent = runColor(state, preferences)
+                    OutlinedCard(
+                        onClick = { onOpenRun(event.run.id) },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(
+                            1.dp,
+                            if (selectedRunId == event.run.id) accent else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    ) {
+                        Row(
+                            Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            StatusIcon(state, accent)
+                            Column(Modifier.weight(1f)) {
+                                Text(event.title, fontWeight = FontWeight.SemiBold)
+                                Text(event.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(event.timestamp.ifBlank { "Time unavailable" }, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                            }
+                            Icon(Icons.Default.ChevronRight, contentDescription = "Open run")
+                        }
+                    }
+                }
+            }
         }
     }
 }
