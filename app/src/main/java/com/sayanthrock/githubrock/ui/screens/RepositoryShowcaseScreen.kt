@@ -130,7 +130,7 @@ fun RepositoryShowcaseContent(
     val readmeListState = rememberLazyListState()
     LazyColumn(
         state = readmeListState,
-        modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
