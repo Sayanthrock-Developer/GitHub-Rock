@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.testTag
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -617,6 +617,7 @@ internal fun RepositoryDetailSelectableText(repository: GitHubRepositoryModel?) 
     }
 }
 
+@Composable
 private fun SummaryCard(title: String, subtitle: String) {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
