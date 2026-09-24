@@ -192,19 +192,17 @@ fun RepositoryHubContent(
             }
         }
 
-        item(key = "readme_title") {
+        item(key = "readme") {
             ReadmeTitle(
                 translationTarget = translationTarget,
                 translationLoading = translationLoading,
                 readmeAvailable = readme != null,
                 onTranslateClick = { showTranslationPicker = true }
             )
-        }
-        if (translationLoading) {
-            item(key = "translation_loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        }
-        translationError?.let { message ->
-            item(key = "translation_error") {
+            if (translationLoading) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
+            translationError?.let { message ->
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Translation unavailable", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
@@ -212,26 +210,24 @@ fun RepositoryHubContent(
                     }
                 }
             }
-        }
-        when {
-            readmeLoading -> item(key = "readme_loading") {
-                RepositoryOperationLoader(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = "Loading README",
-                    compact = false
-                )
-            }
-            readme != null -> item(key = "readme_content") {
-                RepositoryMarkdownCard(readme, translatedBlocks, repository, onOpenUrl)
-            }
-            readmeError != null -> item(key = "readme_error") {
-                GlassCard {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Folder, contentDescription = null)
-                        Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when {
+                readmeLoading -> {
+                    RepositoryOperationLoader(
+                        modifier = Modifier.fillMaxWidth(),
+                        label = "Loading README",
+                        compact = false
+                    )
+                }
+                readme != null -> RepositoryMarkdownCard(readme, translatedBlocks, repository, onOpenUrl)
+                readmeError != null -> {
+                    GlassCard {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Folder, contentDescription = null)
+                            Text(readmeError, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
