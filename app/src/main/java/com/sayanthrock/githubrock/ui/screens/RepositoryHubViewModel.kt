@@ -66,6 +66,17 @@ class RepositoryHubViewModel @Inject constructor(
     private var translationJob: Job? = null
     private var whatsNewTranslationJob: Job? = null
 
+    val contentScrollIndex: Int
+        get() = savedStateHandle[CONTENT_SCROLL_INDEX_KEY] ?: 0
+
+    val contentScrollOffset: Int
+        get() = savedStateHandle[CONTENT_SCROLL_OFFSET_KEY] ?: 0
+
+    fun saveContentScrollPosition(index: Int, offset: Int) {
+        savedStateHandle[CONTENT_SCROLL_INDEX_KEY] = index.coerceAtLeast(0)
+        savedStateHandle[CONTENT_SCROLL_OFFSET_KEY] = offset.coerceAtLeast(0)
+    }
+
     fun start(initialRepository: GitHubRepositoryModel?) {
         if (initialRepository?.id == currentRepositoryId && currentRepositoryId != null) return
         currentRepositoryId = initialRepository?.id
@@ -327,5 +338,7 @@ class RepositoryHubViewModel @Inject constructor(
 
         const val MAX_LANGUAGE_DETECTION_BLOCKS = 8
         const val MAX_RELEASE_BLOCKS = 10
+        const val CONTENT_SCROLL_INDEX_KEY = "repository_hub_content_scroll_index"
+        const val CONTENT_SCROLL_OFFSET_KEY = "repository_hub_content_scroll_offset"
     }
 }
