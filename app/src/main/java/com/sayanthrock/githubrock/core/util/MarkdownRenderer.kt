@@ -213,7 +213,7 @@ object MarkdownRenderer {
             val full = match.value
             val attrs = Regex("<code[^>]*>", RegexOption.IGNORE_CASE).find(full)?.value.orEmpty()
             val body = decodeHtmlEntities(match.groupValues[1]).replace(Regex("<br[\\t\\r\\n ]*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "")
-            val language = Regex("class[\\t\\r\\n ]*= [\\t\\r\\n ]*\\\"(?:language-)?([^\\\"\\t\\r\\n ]+)\\\"", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
+            val language = Regex("class[\\t\\r\\n ]*=[\\t\\r\\n ]*\\\"(?:language-)?([^\\\"\\t\\r\\n ]+)\\\"", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
             "```" + language + "\\n" + body + "\\n```"
         }
         value = Regex("<blockquote[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
