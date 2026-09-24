@@ -129,7 +129,7 @@ fun RepositoryDetailScreen(
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp)) }
         LazyColumn(
             state = rememberLazyListState(),
-            Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 40.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
