@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class RepoSection(val title: String) { Overview("Overview"), Code("Code"), Issues("Issues"), Pulls("Pull Requests"), Actions("Actions"), Releases("Releases") }
+enum class RepoSection(val title: String) { Overview("Overview"), Code("Code"), Issues("Issues"), Pulls("Pull Requests"), Actions("Actions"), Releases("Releases"), Security("Security") }
 
 data class RepositoryDetailState(
     val section: RepoSection = RepoSection.Overview,
@@ -28,6 +28,8 @@ data class RepositoryDetailState(
     val jobs: List<WorkflowJob> = emptyList(),
     val artifacts: List<WorkflowArtifact> = emptyList(),
     val releases: List<Release> = emptyList(),
+    val securityAdvisories: List<SecurityAdvisory> = emptyList(),
+    val securityPolicy: String? = null,
     val issueComments: List<IssueComment> = emptyList(),
     val pullReviews: List<PullRequestReview> = emptyList(),
     val currentPath: String = "",
@@ -456,6 +458,11 @@ class RepositoryDetailViewModel @Inject constructor(
                     }
                 }
                 RepoSection.Releases -> _state.update { it.copy(releases = repository.releases(owner, repo)) }
+                RepoSection.Security -> {
+                    val advisories = repository.securityAdvisories(owner, repo)
+                    val policy = repository.securityPolicy(owner, repo)
+                    _state.update { it.copy(securityAdvisories = advisories, securityPolicy = policy) }
+                }
             }
         }.onFailure { error -> _state.update { it.copy(error = error.message ?: "Unable to load this section") } }
         _state.update { it.copy(loading = false) }
