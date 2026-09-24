@@ -4,8 +4,8 @@ import java.util.Locale
 
 object MarkdownRenderer {
     private val imageRegex = Regex("!\\[([^]]*)\\]\\(([^)]+)\\)")
-    private val htmlImageRegex = Regex("<img\\b[^>]*>", RegexOption.IGNORE_CASE)
-    private val htmlAttrRegex = Regex("\\b([A-Za-z_:][A-Za-z0-9_.:-]*)\\s*=\\s*[\\\"']([^\\\"']*)[\\\"']", RegexOption.IGNORE_CASE)
+    private val htmlImageRegex = Regex("<img\b[^>]*>", RegexOption.IGNORE_CASE)
+    private val htmlAttrRegex = Regex("\b([A-Za-z_:][A-Za-z0-9_.:-]*)\s*=\s*[\\\"']([^\\\"']*)[\\\"']", RegexOption.IGNORE_CASE)
 
     fun render(markdown: String): List<MarkdownBlock> {
         val source = normalizeHtmlBlocks(markdown.replace("\r\n", "\n").replace('\r', '\n'))
@@ -34,7 +34,7 @@ object MarkdownRenderer {
             table.clear()
         }
         fun isBlockHtmlWrapper(line: String) =
-            line.trim().matches(Regex("</?(div|p|center|section|article|aside|header|footer|main|figure|figcaption)(\\s[^>]*)?/?>", RegexOption.IGNORE_CASE))
+            line.trim().matches(Regex("</?(div|p|center|section|article|aside|header|footer|main|figure|figcaption)(\s[^>]*)?/?>", RegexOption.IGNORE_CASE))
         fun isStandaloneMarkdownPunctuation(line: String) =
             line.trim().matches(Regex("^(#{1,6}|\\*{1,2}|_{1,2})$"))
 
@@ -47,7 +47,7 @@ object MarkdownRenderer {
                 } else fenceLines += line
                 index++; continue
             }
-            val fence = Regex("^\\s*```(.*)$").find(line)
+            val fence = Regex("^\s*```(.*)$").find(line)
             if (fence != null) {
                 flushTable(); flushParagraph()
                 inFence = true; fenceLanguage = fence.groupValues[1].trim().ifBlank { null }
@@ -61,10 +61,10 @@ object MarkdownRenderer {
                 var end = index + 1
                 while (end < lines.size && !lines[end].trim().equals("</details>", true)) { detailLines += lines[end]; end++ }
                 val summary = detailLines.firstOrNull { it.trim().startsWith("<summary", true) }
-                    ?.let { Regex("<summary\\b[^>]*>(.*?)</summary>", RegexOption.IGNORE_CASE).find(it)?.groupValues?.get(1) }
+                    ?.let { Regex("<summary\b[^>]*>(.*?)</summary>", RegexOption.IGNORE_CASE).find(it)?.groupValues?.get(1) }
                     ?.let(::cleanInline)?.ifBlank { null } ?: "Details"
                 val inner = detailLines.filterNot { it.trim().startsWith("<summary", true) }
-                    .joinToString("\n").replace(Regex("</?summary\\b[^>]*>", RegexOption.IGNORE_CASE), "")
+                    .joinToString("\n").replace(Regex("</?summary\b[^>]*>", RegexOption.IGNORE_CASE), "")
                 blocks += MarkdownBlock(MarkdownBlockKind.Details, summary, DetailsMetadata(summary, render(inner)))
                 index = if (end < lines.size) end + 1 else lines.size
                 continue
@@ -77,7 +77,7 @@ object MarkdownRenderer {
                 while (end < lines.size && !lines[end].trim().equals("</picture>", true)) { pictureLines += lines[end]; end++ }
                 val html = pictureLines.joinToString("\n")
                 fun attrs(tag: String) = htmlAttrRegex.findAll(tag).associate { it.groupValues[1].lowercase() to it.groupValues[2] }
-                val sources = Regex("<source\\b[^>]*>", RegexOption.IGNORE_CASE).findAll(html).map { attrs(it.value) }.toList()
+                val sources = Regex("<source\b[^>]*>", RegexOption.IGNORE_CASE).findAll(html).map { attrs(it.value) }.toList()
                 val imgAttrs = htmlImageRegex.find(html)?.value?.let(::attrs).orEmpty()
                 val dark = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: dark", true) }?.get("srcset")
                 val light = sources.firstOrNull { it["media"].orEmpty().contains("prefers-color-scheme: light", true) }?.get("srcset")
@@ -93,25 +93,25 @@ object MarkdownRenderer {
             if (isStandaloneMarkdownPunctuation(line)) {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Paragraph, line.trim()); index++; continue
             }
-            Regex("^\\s*(#{1,6})\\s+(.+?)\\s*$").find(line)?.let {
+            Regex("^\s*(#{1,6})\s+(.+?)\s*$").find(line)?.let {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Heading, it.groupValues[2], it.groupValues[1].length); index++; continue
             }
-            if (line.matches(Regex("^\\s*((\\*\\s*){3,}|(-\\s*){3,}|(_\\s*){3,})$"))) {
+            if (line.matches(Regex("^\s*((\\*\s*){3,}|(-\s*){3,}|(_\s*){3,})$"))) {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Divider, ""); index++; continue
             }
-            Regex("^\\s*[-*+]\\s+\\[([ xX])\\]\\s+(.+)$").find(line)?.let {
+            Regex("^\s*[-*+]\s+\\[([ xX])\\]\s+(.+)$").find(line)?.let {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Task, it.groupValues[2], it.groupValues[1].equals("x", true)); index++; continue
             }
-            Regex("^\\s*[-*+]\\s+(.+)$").find(line)?.let {
+            Regex("^\s*[-*+]\s+(.+)$").find(line)?.let {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Bullet, it.groupValues[1], ListMetadata(false, 1)); index++; continue
             }
-            Regex("^\\s*(\\d+)[.)]\\s+(.+)$").find(line)?.let {
+            Regex("^\s*(\\d+)[.)]\s+(.+)$").find(line)?.let {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Bullet, it.groupValues[2], ListMetadata(true, it.groupValues[1].toIntOrNull() ?: 1)); index++; continue
             }
-            Regex("^\\s*>\\s*\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\\s*(.*)$", RegexOption.IGNORE_CASE).find(line)?.let {
+            Regex("^\s*>\s*\\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]\s*(.*)$", RegexOption.IGNORE_CASE).find(line)?.let {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Alert, it.groupValues[2], it.groupValues[1].uppercase(Locale.ROOT)); index++; continue
             }
-            Regex("^\\s*>\\s?(.*)$").find(line)?.let {
+            Regex("^\s*>\s?(.*)$").find(line)?.let {
                 flushTable(); flushParagraph(); blocks += MarkdownBlock(MarkdownBlockKind.Quote, cleanInline(it.groupValues[1])); index++; continue
             }
 
@@ -147,7 +147,7 @@ object MarkdownRenderer {
                 index++; continue
             }
             if (line.contains('|')) { flushParagraph(); table += line; index++; continue }
-            paragraph += line.replace(Regex("</?(?!script\\b|style\\b)[A-Za-z][^>]*>", RegexOption.IGNORE_CASE), "")
+            paragraph += line.replace(Regex("</?(?!script\b|style\b)[A-Za-z][^>]*>", RegexOption.IGNORE_CASE), "")
             index++
         }
         if (inFence) blocks += MarkdownBlock(MarkdownBlockKind.Code, fenceLines.joinToString("\n"), fenceLanguage)
@@ -156,8 +156,8 @@ object MarkdownRenderer {
     }
 
     fun cleanInline(text: String): String = decodeHtmlEntities(
-        text.replace(Regex("<sup\\b[^>]*>(.*?)</sup>", RegexOption.IGNORE_CASE)) { toSuperscript(it.groupValues[1]) }
-            .replace(Regex("<sub\\b[^>]*>(.*?)</sub>", RegexOption.IGNORE_CASE)) { toSubscript(it.groupValues[1]) }
+        text.replace(Regex("<sup\b[^>]*>(.*?)</sup>", RegexOption.IGNORE_CASE)) { toSuperscript(it.groupValues[1]) }
+            .replace(Regex("<sub\b[^>]*>(.*?)</sub>", RegexOption.IGNORE_CASE)) { toSubscript(it.groupValues[1]) }
             .replace(imageRegex) { it.groupValues[1] }
             .replace(Regex("\\[([^]]+)\\]\\(([^)]+)\\)")) { it.groupValues[1] }
             .replace(Regex("<https?://[^>]+>")) { it.value.removePrefix("<").removeSuffix(">") }
@@ -188,15 +188,15 @@ object MarkdownRenderer {
 
     private fun normalizeHtmlBlocks(markdown: String): String {
         var value = markdown
-        value = Regex("<pre\\\\b[^>]*>\\\\s*<code\\\\b([^>]*)>(.*?)</code>\\\\s*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+        value = Regex("<pre\\\b[^>]*>\\\s*<code\\\b([^>]*)>(.*?)</code>\\\s*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
             val attrs = match.groupValues[1]
-            val body = decodeHtmlEntities(match.groupValues[2]).replace(Regex("<br\\\\s*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "")
-            val language = Regex("""(?:class|data-language)\\\\s*=\\\\s*["'](?:language-)?([^"'\\\\s]+)["']""", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
-            "```" + language + "\\n" + body + "\\n```"
+            val body = decodeHtmlEntities(match.groupValues[2]).replace(Regex("<br\\\s*/?>", RegexOption.IGNORE_CASE), "\n").replace(Regex("<[^>]+>"), "")
+            val language = Regex("""(?:class|data-language)\\\s*=\\\s*["'](?:language-)?([^"'\\\s]+)["']""", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
+            "```" + language + "\n" + body + "\n```"
         }
-        value = Regex("<blockquote\\\\b[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
-            val body = match.groupValues[1].trim().replace(Regex("<br\\\\s*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("</?p\\\\b[^>]*>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "").trim()
-            body.lines().joinToString("\\n") { line -> if (line.isBlank()) ">" else "> " + line }
+        value = Regex("<blockquote\\\b[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+            val body = match.groupValues[1].trim().replace(Regex("<br\\\s*/?>", RegexOption.IGNORE_CASE), "\n").replace(Regex("</?p\\\b[^>]*>", RegexOption.IGNORE_CASE), "\n").replace(Regex("<[^>]+>"), "").trim()
+            body.lines().joinToString("\n") { line -> if (line.isBlank()) ">" else "> " + line }
         }
         return value
     }
