@@ -89,6 +89,7 @@ interface GitHubRestApi {
     @POST("repos/{owner}/{repo}/actions/workflows/{workflowId}/dispatches") suspend fun dispatchWorkflow(@Path("owner") owner: String, @Path("repo") repo: String, @Path("workflowId") workflowId: Long, @Body request: WorkflowDispatchRequest): Response<Unit>
     @POST("repos/{owner}/{repo}/actions/runs/{runId}/cancel") suspend fun cancelWorkflow(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Response<Unit>
     @POST("repos/{owner}/{repo}/actions/runs/{runId}/rerun") suspend fun rerunWorkflow(@Path("owner") owner: String, @Path("repo") repo: String, @Path("runId") runId: Long): Response<Unit>
+    @GET("repos/{owner}/{repo}/security-advisories") suspend fun securityAdvisories(@Path("owner") owner: String, @Path("repo") repo: String, @Query("per_page") perPage: Int = 100): Response<List<SecurityAdvisory>>
     @GET("repos/{owner}/{repo}/releases") suspend fun releases(@Path("owner") owner: String, @Path("repo") repo: String, @Query("per_page") perPage: Int = 30): List<Release>
     @PATCH("repos/{owner}/{repo}/releases/{releaseId}") suspend fun updateRelease(@Path("owner") owner: String, @Path("repo") repo: String, @Path("releaseId") releaseId: Long, @Body request: UpdateReleaseRequest): Release
     @DELETE("repos/{owner}/{repo}/releases/{releaseId}") suspend fun deleteRelease(@Path("owner") owner: String, @Path("repo") repo: String, @Path("releaseId") releaseId: Long): Response<Unit>
