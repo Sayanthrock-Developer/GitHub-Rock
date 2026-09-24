@@ -589,7 +589,6 @@ fun RepositoryDetailScreen(
     }
 }
 
-@Composable
 internal const val REPOSITORY_DETAIL_SELECTABLE_TEST_TAG = "repository-detail-overview-selectable"
 
 @Composable
