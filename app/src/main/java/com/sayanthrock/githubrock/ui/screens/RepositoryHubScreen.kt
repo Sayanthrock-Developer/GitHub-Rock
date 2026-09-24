@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -26,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.ui.icons.RockIcon
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /** Native repository workspace. GitHub browsing stays inside GitHub Rock; only the explicit external action opens GitHub. */
@@ -52,6 +55,20 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
     LaunchedEffect(repository?.id) { viewModel.start(repository) }
     val displayedRepository = state.repository ?: repository
     val appState = rememberRepositoryAppPackageState(downloads, state.releases)
+    val repositoryContentListState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.contentScrollIndex,
+        initialFirstVisibleItemScrollOffset = viewModel.contentScrollOffset
+    )
+    LaunchedEffect(viewModel, repositoryContentListState) {
+        snapshotFlow {
+            repositoryContentListState.firstVisibleItemIndex to
+                repositoryContentListState.firstVisibleItemScrollOffset
+        }
+            .distinctUntilChanged()
+            .collect { (index, offset) ->
+                viewModel.saveContentScrollPosition(index, offset)
+            }
+    }
 
     when (workspacePage) {
         "manager" -> {
@@ -127,6 +144,7 @@ fun RepositoryHubScreen(repository: GitHubRepositoryModel?, onBack: () -> Unit, 
                 onClearTranslation = viewModel::clearTranslation,
                 onRetry = viewModel::retry,
                 onOpenUrl = openUrl,
+                contentListState = repositoryContentListState,
                 onDownload = { asset ->
                     val downloadUrl = asset.downloadUrl
                     val release = state.releases.firstOrNull { candidate -> candidate.assets.any { it.id == asset.id } }
