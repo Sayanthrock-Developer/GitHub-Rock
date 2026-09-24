@@ -8,7 +8,7 @@ object MarkdownRenderer {
     private val htmlAttrRegex = Regex("\\b([A-Za-z_:][A-Za-z0-9_.:-]*)\\s*=\\s*[\\\"']([^\\\"']*)[\\\"']", RegexOption.IGNORE_CASE)
 
     fun render(markdown: String): List<MarkdownBlock> {
-        val source = markdown.replace("\r\n", "\n").replace('\r', '\n')
+        val source = normalizeHtmlBlocks(markdown.replace("\r\n", "\n").replace('\r', '\n'))
         val lines = source.lines()
         val blocks = mutableListOf<MarkdownBlock>()
         val paragraph = mutableListOf<String>()
@@ -169,9 +169,37 @@ object MarkdownRenderer {
             .replace(Regex("(?<!_)_([^_]+)_(?!_)")) { it.groupValues[1] }
             .replace(Regex("<[^>]+>"), "")
     )
-    fun decodeHtmlEntities(text: String): String = text
-        .replace("&amp;", "&", true).replace("&lt;", "<", true).replace("&gt;", ">", true)
-        .replace("&quot;", "\"", true).replace("&#39;", "'", true).replace("&apos;", "'", true)
+    fun decodeHtmlEntities(text: String): String {
+        var value = text
+            .replace("&amp;", "&", true)
+            .replace("&lt;", "<", true)
+            .replace("&gt;", ">", true)
+            .replace("&quot;", "\"", true)
+            .replace("&#39;", "'", true)
+            .replace("&apos;", "'", true)
+        value = Regex("&#x([0-9A-Fa-f]+);|&#([0-9]+);").replace(value) { match ->
+            val raw = match.groupValues[1].ifEmpty { match.groupValues[2] }
+            val radix = if (match.groupValues[1].isNotEmpty()) 16 else 10
+            val codePoint = raw.toLongOrNull(radix)
+            if (codePoint != null && codePoint in 0..0x10FFFF && !Character.isSurrogate(codePoint.toInt())) String(Character.toChars(codePoint.toInt())) else match.value
+        }
+        return value
+    }
+
+    private fun normalizeHtmlBlocks(markdown: String): String {
+        var value = markdown
+        value = Regex("<pre\\\\b[^>]*>\\\\s*<code\\\\b([^>]*)>(.*?)</code>\\\\s*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+            val attrs = match.groupValues[1]
+            val body = decodeHtmlEntities(match.groupValues[2]).replace(Regex("<br\\\\s*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "")
+            val language = Regex("""(?:class|data-language)\\\\s*=\\\\s*["'](?:language-)?([^"'\\\\s]+)["']""", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
+            "```" + language + "\\n" + body + "\\n```"
+        }
+        value = Regex("<blockquote\\\\b[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+            val body = match.groupValues[1].trim().replace(Regex("<br\\\\s*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("</?p\\\\b[^>]*>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "").trim()
+            body.lines().joinToString("\\n") { line -> if (line.isBlank()) ">" else "> " + line }
+        }
+        return value
+    }
     private fun toSuperscript(value: String) = value.map {
         when (it) { '0' -> '⁰'; '1' -> '¹'; '2' -> '²'; '3' -> '³'; '4' -> '⁴'; '5' -> '⁵'; '6' -> '⁶'; '7' -> '⁷'; '8' -> '⁸'; '9' -> '⁹'; '+' -> '⁺'; '-' -> '⁻'; '=' -> '⁼'; '(' -> '⁽'; ')' -> '⁾'; 'n' -> 'ⁿ'; 'i' -> 'ⁱ'; else -> it }
     }.joinToString("")
