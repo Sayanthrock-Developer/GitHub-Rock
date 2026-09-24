@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -39,8 +41,10 @@ import com.sayanthrock.githubrock.core.util.MarkdownBlock
 import com.sayanthrock.githubrock.core.util.MarkdownBlockKind
 import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.MarkdownTable
+import com.sayanthrock.githubrock.core.util.SyntaxTokenKind
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryArtwork
+import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.icons.vector
 import java.net.URI
@@ -326,6 +330,23 @@ private fun RenderMarkdownBlock(
     }
 }
 
+
+@Composable
+private fun showcaseSyntaxColor(kind: SyntaxTokenKind): Color {
+    val colors = LocalCodeColors.current
+    return when (kind) {
+        SyntaxTokenKind.Keyword -> colors.keyword
+        SyntaxTokenKind.String -> colors.string
+        SyntaxTokenKind.Comment -> colors.comment
+        SyntaxTokenKind.Number -> colors.number
+        SyntaxTokenKind.Type -> colors.type
+        SyntaxTokenKind.Tag -> colors.type
+        SyntaxTokenKind.Attribute -> colors.property
+        SyntaxTokenKind.Property -> colors.property
+        SyntaxTokenKind.Markdown -> colors.keyword
+    }
+}
+
 @Composable
 private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) {
     val context = LocalContext.current
@@ -347,7 +368,7 @@ private fun CodeBlock(block: MarkdownBlock, repository: GitHubRepositoryModel?) 
     val spans = remember(fileName, block.text) { com.sayanthrock.githubrock.core.util.SyntaxHighlighter.highlight(fileName, block.text) }
     val annotated = AnnotatedString.Builder(block.text).apply {
         addStyle(SpanStyle(fontFamily = FontFamily.Monospace), 0, block.text.length)
-        spans.forEach { span -> addStyle(SpanStyle(color = syntaxColor(span.kind)), span.start, span.end) }
+        spans.forEach { span -> addStyle(SpanStyle(color = showcaseSyntaxColor(span.kind)), span.start, span.end) }
     }.toAnnotatedString()
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
