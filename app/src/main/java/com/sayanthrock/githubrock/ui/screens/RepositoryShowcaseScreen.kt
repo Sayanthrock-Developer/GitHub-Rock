@@ -8,6 +8,8 @@ import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -392,10 +394,17 @@ private fun MarkdownImage(metadata: com.sayanthrock.githubrock.core.util.ImageMe
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MarkdownImageRow(images: List<com.sayanthrock.githubrock.core.util.ImageMetadata>, repository: GitHubRepositoryModel?) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        images.forEach { metadata -> Box(Modifier.weight(1f)) { MarkdownImage(metadata, repository) } }
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        images.forEach { metadata ->
+            Box(Modifier.widthIn(max = 220.dp)) { MarkdownImage(metadata, repository) }
+        }
     }
 }
 
