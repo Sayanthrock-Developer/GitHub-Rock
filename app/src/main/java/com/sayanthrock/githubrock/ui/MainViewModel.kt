@@ -57,9 +57,18 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                     val state = UUID.randomUUID().toString()
                     val (verifier, challenge) = generatePkcePair()
                     pendingWebOAuthState = state; pendingWebOAuthCodeVerifier = verifier; pendingWebOAuthCreatedAt = System.currentTimeMillis()
-                    val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
-                    _state.update { it.copy(isLoading = false, auth = DeviceAuthState(authorizationUrl = authorizationUrl, status = "Waiting for GitHub authorization…")) }
-                    return@launch
+                    try {
+                        val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
+                        _state.update { it.copy(isLoading = false, auth = DeviceAuthState(authorizationUrl = authorizationUrl, status = "Waiting for GitHub authorization…")) }
+                        return@launch
+                    } catch (error: retrofit2.HttpException) {
+                        // A stale/mis-deployed backend can expose /v1/config while the
+                        // browser OAuth route is unavailable. Recover through the real
+                        // Device Flow instead of surfacing a misleading 404/503.
+                        if (error.code() !in setOf(404, 503)) throw error
+                        clearPendingWebOAuth()
+                        startDeviceLogin()
+                    }
                 }
                 startDeviceLogin()
             } catch (cancelled: CancellationException) { throw cancelled } catch (error: Exception) { reportAuthFailure(error) }
