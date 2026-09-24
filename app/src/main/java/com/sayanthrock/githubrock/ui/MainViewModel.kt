@@ -68,6 +68,15 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                         if (error.code() !in setOf(404, 503)) throw error
                         clearPendingWebOAuth()
                         startDeviceLogin()
+                        return@launch
+                    } catch (error: java.io.IOException) {
+                        // If the configured backend cannot be reached, use the real
+                        // direct Device Flow when this build has a GitHub client ID.
+                        // DeviceFlowAuthRepository will surface a precise configuration
+                        // error when no direct client is available.
+                        clearPendingWebOAuth()
+                        startDeviceLogin()
+                        return@launch
                     }
                 }
                 startDeviceLogin()
