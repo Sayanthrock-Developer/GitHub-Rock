@@ -29,6 +29,7 @@ object SyntaxHighlighter {
     private val jsonYamlExtensions = setOf("json", "yaml", "yml")
     private val markdownExtensions = setOf("md", "markdown")
     private val cLikeExtensions = setOf("js", "jsx", "ts", "tsx", "rs", "swift", "cs", "rb", "sh", "bash", "zsh")
+    private val pythonExtensions = setOf("py", "pyw")
 
     private val kotlinJavaKeywords = Regex(
         "\\b(?:as|break|class|const|continue|data|do|else|enum|" +
@@ -61,6 +62,7 @@ object SyntaxHighlighter {
             extension in xmlExtensions -> highlightXml(source)
             extension in jsonYamlExtensions -> highlightJsonYaml(source, extension == "json")
             extension in markdownExtensions -> highlightMarkdown(source)
+            extension in pythonExtensions -> highlightPython(source)
             extension in cLikeExtensions -> highlightCStyle(source, extension)
             else -> emptyList()
         }
@@ -117,6 +119,17 @@ object SyntaxHighlighter {
             span.kind == SyntaxTokenKind.String && propertyStarts.contains(span.start)
         }
     }
+
+    private fun highlightPython(source: String): List<SyntaxSpan> = tokenize(
+        source,
+        listOf(
+            quotedString to SyntaxTokenKind.String,
+            Regex("(?m)#.*$") to SyntaxTokenKind.Comment,
+            Regex("\\b(?:and|as|assert|async|await|break|case|class|continue|def|del|elif|else|except|False|finally|for|from|global|if|import|in|is|lambda|match|None|nonlocal|not|or|pass|raise|return|True|try|while|with|yield)\\b") to SyntaxTokenKind.Keyword,
+            number to SyntaxTokenKind.Number,
+            typeName to SyntaxTokenKind.Type
+        )
+    )
 
     private fun highlightCStyle(source: String, extension: String): List<SyntaxSpan> {
         val keywords = when (extension) {
