@@ -182,4 +182,32 @@ class MarkdownRendererTest {
         assertEquals("A & B < 2² H₂O", MarkdownRenderer.cleanInline("A &amp; B &lt; 2<sup>2</sup> H<sub>2</sub>O"))
     }
 
+    @Test fun `render html pre code with language class and entities`() {
+        val result = MarkdownRenderer.render("""<pre><code class=\"language-kotlin\">fun main() {
+    println(&quot;Hello &amp; Rock&quot;)
+}</code></pre>""")
+        assertEquals(1, result.size)
+        assertEquals(MarkdownBlockKind.Code, result[0].kind)
+        assertEquals("kotlin", result[0].codeLanguage)
+        assertEquals("fun main() {\n    println(\"Hello & Rock\")\n}", result[0].text)
+    }
+
+    @Test fun `render html blockquote as native quote`() {
+        val result = MarkdownRenderer.render("<blockquote><p>Quoted &amp; text</p><p>Second line</p></blockquote>")
+        assertEquals(2, result.size)
+        assertTrue(result.all { it.kind == MarkdownBlockKind.Quote })
+        assertEquals("Quoted & text", result[0].text)
+        assertEquals("Second line", result[1].text)
+    }
+
+    @Test fun `decode numeric and hexadecimal html entities`() {
+        assertEquals("A-©-😀", MarkdownRenderer.decodeHtmlEntities("A&#45;&#169;&#x1F600;"))
+    }
+
+    @Test fun `details summary decodes html entities`() {
+        val result = MarkdownRenderer.render("<details><summary>More &amp; info</summary>Body</details>")
+        assertEquals(MarkdownBlockKind.Details, result.single().kind)
+        assertEquals("More & info", result.single().details?.summary)
+    }
+
 }
