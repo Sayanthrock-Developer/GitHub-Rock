@@ -188,15 +188,19 @@ object MarkdownRenderer {
 
     private fun normalizeHtmlBlocks(markdown: String): String {
         var value = markdown
-        value = Regex("<pre\\\b[^>]*>\\\s*<code\\\b([^>]*)>(.*?)</code>\\\s*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
-            val attrs = match.groupValues[1]
-            val body = decodeHtmlEntities(match.groupValues[2]).replace(Regex("<br\\\s*/?>", RegexOption.IGNORE_CASE), "\n").replace(Regex("<[^>]+>"), "")
-            val language = Regex("""(?:class|data-language)\\\s*=\\\s*["'](?:language-)?([^"'\\\s]+)["']""", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
-            "```" + language + "\n" + body + "\n```"
+        value = Regex("<pre[^>]*>[\\t\\r\\n ]*<code[^>]*>(.*?)</code>[\\t\\r\\n ]*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+            val full = match.value
+            val attrs = Regex("<code[^>]*>", RegexOption.IGNORE_CASE).find(full)?.value.orEmpty()
+            val body = decodeHtmlEntities(match.groupValues[1]).replace(Regex("<br[\\t\\r\\n ]*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "")
+            val language = Regex("class[\\t\\r\\n ]*=[\\t\\r\\n ]*\\\"(?:language-)?([^\\\"\\t\\r\\n ]+)\\\"", RegexOption.IGNORE_CASE).find(attrs)?.groupValues?.get(1).orEmpty()
+            "```" + language + "\\n" + body + "\\n```"
         }
-        value = Regex("<blockquote\\\b[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
-            val body = match.groupValues[1].trim().replace(Regex("<br\\\s*/?>", RegexOption.IGNORE_CASE), "\n").replace(Regex("</?p\\\b[^>]*>", RegexOption.IGNORE_CASE), "\n").replace(Regex("<[^>]+>"), "").trim()
-            body.lines().joinToString("\n") { line -> if (line.isBlank()) ">" else "> " + line }
+        value = Regex("<blockquote[^>]*>(.*?)</blockquote>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+            val body = match.groupValues[1].trim().replace(Regex("<br[\\t\\r\\n ]*/?>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("</?p[^>]*>", RegexOption.IGNORE_CASE), "\\n").replace(Regex("<[^>]+>"), "").trim()
+            body.lines().joinToString("\\n") { line -> if (line.isBlank()) ">" else "> " + line }
+        }
+        value = Regex("<details[^>]*>[\\t\\r\\n ]*<summary[^>]*>(.*?)</summary>(.*?)[\\t\\r\\n ]*</details>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
+            "<details>\\n<summary>" + match.groupValues[1] + "</summary>\\n" + match.groupValues[2].trim() + "\\n</details>"
         }
         return value
     }
