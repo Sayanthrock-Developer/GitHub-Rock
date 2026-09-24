@@ -193,7 +193,7 @@ object MarkdownRenderer {
     }
 
     private fun firstSrcSetUrl(srcset: String): String? =
-        srcset.trim().split(",").firstOrNull()?.trim()?.substringBefore(Regex("\\s+"))?.takeIf(String::isNotBlank)
+        srcset.trim().split(",").firstOrNull()?.trim()?.split(Regex("\\s+"))?.firstOrNull()?.takeIf(String::isNotBlank)
     private fun normalizeHtmlBlocks(markdown: String): String {
         var value = markdown
         value = Regex("<pre[^>]*>[\\t\\r\\n ]*<code[^>]*>(.*?)</code>[\\t\\r\\n ]*</pre>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).replace(value) { match ->
