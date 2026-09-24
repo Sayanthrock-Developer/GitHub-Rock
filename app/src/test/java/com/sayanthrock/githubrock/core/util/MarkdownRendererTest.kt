@@ -204,6 +204,21 @@ class MarkdownRendererTest {
         assertEquals("A-©-😀", MarkdownRenderer.decodeHtmlEntities("A&#45;&#169;&#x1F600;"))
     }
 
+    @Test fun `render html pre code preserves escaped tags and accepts single quoted language`() {
+        val result = MarkdownRenderer.render("""<pre><code class='language-kotlin'>&lt;div&gt;\nprintln(&quot;Rock&quot;)\n&lt;/div&gt;</code></pre>""")
+        assertEquals(1, result.size)
+        assertEquals("kotlin", result[0].codeLanguage)
+        assertEquals("<div>\\nprintln(\"Rock\")\\n</div>", result[0].text)
+    }
+
+    @Test fun `picture srcset strips candidate descriptors`() {
+        val result = MarkdownRenderer.render("""<picture>
+            <source media="(prefers-color-scheme: dark)" srcset="dark.svg 2x, dark-large.svg 3x">
+            <img src="fallback.svg" alt="Logo">
+            </picture>""".trimIndent())
+        assertEquals("dark.svg", result.single().image?.darkUrl)
+    }
+
     @Test fun `details summary decodes html entities`() {
         val result = MarkdownRenderer.render("<details><summary>More &amp; info</summary>Body</details>")
         assertEquals(MarkdownBlockKind.Details, result.single().kind)
