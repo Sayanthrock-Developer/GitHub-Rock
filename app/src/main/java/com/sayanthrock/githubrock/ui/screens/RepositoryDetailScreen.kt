@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -134,28 +135,7 @@ fun RepositoryDetailScreen(
                 RepoSection.Overview -> item {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            SelectionContainer {
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(MaterialTheme.typography.titleLarge.toSpanStyle()) {
-                                            append(repository?.name ?: "Repository")
-                                        }
-                                        append("\n")
-                                        append(repository?.fullName ?: "Repository")
-                                        append("\n")
-                                        withStyle(MaterialTheme.typography.bodyLarge.toSpanStyle().copy(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
-                                            append(repository?.description ?: "No repository description.")
-                                        }
-                                        append("\n")
-                                        append("Language: ${repository?.language ?: "Not specified"}")
-                                        append("\n")
-                                        append("Default branch: ${repository?.defaultBranch ?: "main"}")
-                                        append("\n")
-                                        append("${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+                            RepositoryDetailSelectableText(repository)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(true) }) { Text("Star") }
                                 OutlinedButton(onClick = { viewModel.setRepositoryStarred(false) }) { Text("Unstar") }
@@ -610,6 +590,36 @@ fun RepositoryDetailScreen(
 }
 
 @Composable
+internal const val REPOSITORY_DETAIL_SELECTABLE_TEST_TAG = "repository-detail-overview-selectable"
+
+@Composable
+internal fun RepositoryDetailSelectableText(repository: GitHubRepositoryModel?) {
+    SelectionContainer {
+        Text(
+            text = buildAnnotatedString {
+                withStyle(MaterialTheme.typography.titleLarge.toSpanStyle()) {
+                    append(repository?.name ?: "Repository")
+                }
+                append("\n")
+                append(repository?.fullName ?: "Repository")
+                append("\n")
+                withStyle(MaterialTheme.typography.bodyLarge.toSpanStyle().copy(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    append(repository?.description ?: "No repository description.")
+                }
+                append("\n")
+                append("Language: ${repository?.language ?: "Not specified"}")
+                append("\n")
+                append("Default branch: ${repository?.defaultBranch ?: "main"}")
+                append("\n")
+                append("${repository?.stars ?: 0} stars • ${repository?.forks ?: 0} forks • ${repository?.openIssues ?: 0} open issues")
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(REPOSITORY_DETAIL_SELECTABLE_TEST_TAG)
+        )
+    }
+}
+
 private fun SummaryCard(title: String, subtitle: String) {
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
