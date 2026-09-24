@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -139,13 +138,13 @@ fun RepositoryHubContent(
     onRetry: () -> Unit,
     onOpenUrl: (String) -> Unit,
     onDownload: (ReleaseAsset) -> Unit,
+    contentListState: androidx.compose.foundation.lazy.LazyListState,
     modifier: Modifier = Modifier
 ) {
     var showTranslationPicker by rememberSaveable { mutableStateOf(false) }
     var showWhatsNewTranslationPicker by rememberSaveable { mutableStateOf(false) }
-    val repositoryContentListState = rememberLazyListState()
     LazyColumn(
-        state = repositoryContentListState,
+        state = contentListState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
