@@ -183,7 +183,7 @@ class MarkdownRendererTest {
     }
 
     @Test fun `render html pre code with language class and entities`() {
-        val result = MarkdownRenderer.render("""<pre><code class=\"language-kotlin\">fun main() {
+        val result = MarkdownRenderer.render("""<pre><code class="language-kotlin">fun main() {
     println(&quot;Hello &amp; Rock&quot;)
 }</code></pre>""")
         assertEquals(1, result.size)
