@@ -73,6 +73,7 @@ fun LoginScreenV2(
     loading: Boolean,
     auth: DeviceAuthState,
     onLogin: () -> Unit,
+    onDeviceCodeLogin: () -> Unit,
     onOpenGitHubUrl: (String) -> Unit,
     onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
@@ -136,7 +137,7 @@ fun LoginScreenV2(
             AnimatedVisibility(visible = authorizationUrl == null && code == null, enter = fadeIn(), exit = fadeOut()) {
                 when {
                     auth.error != null -> ErrorCard(auth.error, onLogin)
-                    else -> WelcomeCard(configured, loading, onLogin, onGuest)
+                    else -> WelcomeCard(configured, loading, onLogin, onDeviceCodeLogin, onGuest)
                 }
             }
             Text(
@@ -169,7 +170,7 @@ private fun RockLogoHeader() {
 }
 
 @Composable
-private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onGuest: () -> Unit) {
+private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -184,19 +185,40 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
                 color = colors.onSurfaceVariant,
                 fontSize = 14.sp
             )
-            PermissionList()
             SecurityRow()
+            Text("Supported login options", color = colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Button(
                 onClick = onLogin,
                 enabled = configured && !loading,
-                modifier = Modifier.fillMaxWidth().height(58.dp).semantics { contentDescription = "Authorize with GitHub" },
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = "Continue with GitHub in browser" },
+                shape = RoundedCornerShape(19.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.onPrimary)
             ) {
-                if (loading) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = colors.onPrimary)
-                else Icon(RockIcon.ArrowForward.vector(), contentDescription = null)
-                Spacer(Modifier.width(10.dp))
-                Text(if (loading) "Starting application login…" else "Application Login", fontWeight = FontWeight.Black)
+                if (loading) CircularProgressIndicator(modifier = Modifier.size(21.dp), strokeWidth = 2.dp, color = colors.onPrimary)
+                else Icon(RockIcon.OpenInBrowser.vector(), contentDescription = null)
+                Spacer(Modifier.width(9.dp))
+                Text(if (loading) "Preparing sign-in…" else "Continue with GitHub", fontWeight = FontWeight.Black)
+            }
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(56.dp)
+                    .clickable(enabled = configured && !loading, onClick = onDeviceCodeLogin)
+                    .semantics { contentDescription = "Sign in with a one-time code" },
+                shape = RoundedCornerShape(19.dp),
+                color = colors.surfaceContainerHigh,
+                border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = .65f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 17.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(RockIcon.Security.vector(), contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(21.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("One-time code", color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Enter the code on GitHub", color = colors.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                    Icon(RockIcon.ArrowForward.vector(), contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                }
             }
             Surface(
                 modifier = Modifier.fillMaxWidth().height(52.dp)
