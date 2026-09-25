@@ -137,7 +137,11 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     fun logout() { cancelAllJobs(); monitorScheduler.cancelAll(); authRepository.logout(); clearPendingWebOAuth(); _state.value = MainUiState() }
     fun dismissMessage() = _state.update { it.copy(message = null) }
 
-    private suspend fun startDeviceLoginInternal() { _state.update { it.copy(isLoading = true, auth = DeviceAuthState(status = "Requesting a device code…")) }; val code = authRepository.begin(); _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code = code, status = "Waiting for approval on GitHub…")) }; completeLogin(code) }
+    private suspend fun startDeviceLoginFallback() {
+        startDeviceCodeLoginInternal()
+    }
+
+    private suspend fun startDeviceCodeLoginInternal() { _state.update { it.copy(isLoading = true, auth = DeviceAuthState(status = "Requesting a device code…")) }; val code = authRepository.begin(); _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code = code, status = "Waiting for approval on GitHub…")) }; completeLogin(code) }
     private suspend fun completeLogin(code: DeviceCodeResponse) { authRepository.poll(code) { status -> _state.update { current -> current.copy(isLoading = false, auth = current.auth.copy(status = status, error = null)) } }; _state.update { it.copy(mode = AppMode.Connected, auth = DeviceAuthState(), isLoading = true, isRefreshing = false, message = null) }; loadConnectedDashboard() }
     private fun reportAuthFailure(error: Exception) = _state.update {
         it.copy(
