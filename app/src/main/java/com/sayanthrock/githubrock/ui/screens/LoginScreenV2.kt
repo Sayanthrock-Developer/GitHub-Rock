@@ -202,14 +202,14 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
             SecurityRow()
             Text("Supported login options", color = colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Button(
-                onClick = onLogin,
+                onClick = onDeviceCodeLogin,
                 enabled = configured && !loading,
-                modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = "Continue with GitHub in browser" },
+                modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = "Continue with GitHub" },
                 shape = RoundedCornerShape(19.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.onPrimary)
             ) {
                 if (loading) CircularProgressIndicator(modifier = Modifier.size(21.dp), strokeWidth = 2.dp, color = colors.onPrimary)
-                else Icon(RockIcon.OpenInBrowser.vector(), contentDescription = null)
+                else Icon(RockIcon.Security.vector(), contentDescription = null)
                 Spacer(Modifier.width(9.dp))
                 Text(if (loading) "Preparing sign-in…" else "Continue with GitHub", fontWeight = FontWeight.Black)
             }
