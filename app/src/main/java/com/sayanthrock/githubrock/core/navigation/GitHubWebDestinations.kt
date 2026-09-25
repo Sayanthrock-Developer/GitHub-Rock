@@ -90,7 +90,6 @@ fun githubWebSections(login: String?): List<GitHubWebSection> {
                 destination("marketplace", "Marketplace", "Browse all GitHub apps, Actions, and developer tools.", "https://github.com/marketplace"),
                 destination("developer-apps", "Developer settings", "Create and manage GitHub Apps and OAuth apps.", "https://github.com/settings/apps"),
                 destination("marketplace-transactions", "Marketplace transactions", "Download and view all transactions for your GitHub Marketplace listing.", "https://github.com/marketplace/manage"),
-                destination("tokens", "Access tokens", "Create and revoke personal access tokens on GitHub's secure settings page.", "https://github.com/settings/tokens")
             )
         ),
         GitHubWebSection(
