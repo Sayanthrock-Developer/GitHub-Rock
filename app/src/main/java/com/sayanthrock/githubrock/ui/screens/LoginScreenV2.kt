@@ -56,6 +56,7 @@ import com.sayanthrock.githubrock.core.model.DeviceCodeResponse
 import com.sayanthrock.githubrock.ui.DeviceAuthState
 import com.sayanthrock.githubrock.ui.icons.RockIcon
 import com.sayanthrock.githubrock.ui.icons.vector
+import kotlinx.coroutines.delay
 
 private data class PermissionItem(val title: String, val description: String)
 
@@ -83,6 +84,7 @@ fun LoginScreenV2(
     val code = auth.code
     val authorizationUrl = auth.authorizationUrl
     var copiedDeviceCode by remember { mutableStateOf<String?>(null) }
+    var remainingSeconds by remember { mutableStateOf(0L) }
 
     LaunchedEffect(code?.deviceCode) {
         val deviceCode = code?.deviceCode ?: return@LaunchedEffect
@@ -91,6 +93,17 @@ fun LoginScreenV2(
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("GitHub verification code", userCode))
         copiedDeviceCode = deviceCode
+    }
+
+    LaunchedEffect(code?.deviceCode, code?.expiresIn) {
+        val current = code ?: run { remainingSeconds = 0L; return@LaunchedEffect }
+        val deadline = System.currentTimeMillis() + current.expiresIn.coerceAtLeast(0) * 1_000L
+        while (true) {
+            val remaining = ((deadline - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
+            remainingSeconds = remaining
+            if (remaining == 0L) break
+            delay(1_000L)
+        }
     }
 
     Box(
@@ -129,6 +142,7 @@ fun LoginScreenV2(
                         onOpenGitHubUrl = onOpenGitHubUrl,
                         context = context,
                         copied = copiedDeviceCode == code.deviceCode,
+                        remainingSeconds = remainingSeconds,
                         onRestart = onLogin,
                         onGuest = onGuest
                     )
@@ -363,6 +377,7 @@ private fun AuthorizationCard(
     onOpenGitHubUrl: (String) -> Unit,
     context: Context,
     copied: Boolean,
+    remainingSeconds: Long,
     onRestart: () -> Unit,
     onGuest: () -> Unit
 ) {
@@ -388,6 +403,14 @@ private fun AuthorizationCard(
                 ) {
                     Text("ONE-TIME CODE", color = colors.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     Text(code.userCode, color = colors.onSurface, fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+                    val minutes = remainingSeconds / 60
+                    val seconds = remainingSeconds % 60
+                    Text(
+                        if (remainingSeconds > 0L) "Expires in %02d:%02d".format(minutes, seconds) else "Code expired",
+                        color = if (remainingSeconds > 0L) colors.onSurfaceVariant else colors.error,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                     TextButton(
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -424,7 +447,7 @@ private fun AuthorizationCard(
                 if (loading) CircularProgressIndicator(modifier = Modifier.size(19.dp), strokeWidth = 2.dp, color = colors.primary)
                 else Icon(RockIcon.Check.vector(), contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text(if (loading) "Checking authorization…" else "I've authorized GitHub", fontWeight = FontWeight.Bold)
+                Text(if (loading) "Checking authorization…" else "I already authorized", fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onRestart, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text("Start over", color = colors.onSurfaceVariant)
