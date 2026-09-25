@@ -49,38 +49,27 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     init { if (authRepository.hasSession) connectExistingSession() }
 
     fun startLogin() {
-        cancelDataJobs(); authJob?.cancel()
+        // Application Login uses GitHub Device Flow as the primary in-app login path.
+        // The GitHub authorization page is opened only after the user taps the button
+        // on the login screen; it is never launched automatically.
+        cancelDataJobs()
+        authJob?.cancel()
         authJob = viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, isRefreshing = false, message = null, auth = DeviceAuthState(status = "Preparing secure GitHub sign-in…")) }
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    isRefreshing = false,
+                    message = null,
+                    auth = DeviceAuthState(status = "Requesting a one-time code…")
+                )
+            }
             try {
-                if (authRepository.isWebOAuthConfigured) {
-                    val state = UUID.randomUUID().toString()
-                    val (verifier, challenge) = generatePkcePair()
-                    pendingWebOAuthState = state; pendingWebOAuthCodeVerifier = verifier; pendingWebOAuthCreatedAt = System.currentTimeMillis()
-                    try {
-                        val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
-                        _state.update { it.copy(isLoading = false, auth = DeviceAuthState(authorizationUrl = authorizationUrl, status = "Waiting for GitHub authorization…")) }
-                        return@launch
-                    } catch (error: retrofit2.HttpException) {
-                        // A stale/mis-deployed backend can expose /v1/config while the
-                        // browser OAuth route is unavailable. Recover through the real
-                        // Device Flow instead of surfacing a misleading 404/503.
-                        if (error.code() !in setOf(404, 503)) throw error
-                        clearPendingWebOAuth()
-                        startDeviceLoginFallback()
-                        return@launch
-                    } catch (error: java.io.IOException) {
-                        // If the configured backend cannot be reached, use the real
-                        // direct Device Flow when this build has a GitHub client ID.
-                        // DeviceFlowAuthRepository will surface a precise configuration
-                        // error when no direct client is available.
-                        clearPendingWebOAuth()
-                        startDeviceLoginFallback()
-                        return@launch
-                    }
-                }
-                startDeviceLoginFallback()
-            } catch (cancelled: CancellationException) { throw cancelled } catch (error: Exception) { reportAuthFailure(error) }
+                startDeviceCodeLoginInternal()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                reportAuthFailure(error)
+            }
         }
     }
 
