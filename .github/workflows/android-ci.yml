@@ -131,7 +131,7 @@ jobs:
             app/build/reports/lint-results-debug.html
           if-no-files-found: warn
 
-      # This marker makes the workflow configuration change explicit for repository CI audits.
+      # Keep this explicit so CI verification is visible in repository audits.
       - name: CI configuration marker
         if: always()
         run: echo "Android CI verification workflow active for $GITHUB_SHA"
