@@ -67,7 +67,7 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                         // Device Flow instead of surfacing a misleading 404/503.
                         if (error.code() !in setOf(404, 503)) throw error
                         clearPendingWebOAuth()
-                        startDeviceLogin()
+                        startDeviceLoginFallback()
                         return@launch
                     } catch (error: java.io.IOException) {
                         // If the configured backend cannot be reached, use the real
@@ -75,12 +75,27 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                         // DeviceFlowAuthRepository will surface a precise configuration
                         // error when no direct client is available.
                         clearPendingWebOAuth()
-                        startDeviceLogin()
+                        startDeviceLoginFallback()
                         return@launch
                     }
                 }
-                startDeviceLogin()
+                startDeviceLoginFallback()
             } catch (cancelled: CancellationException) { throw cancelled } catch (error: Exception) { reportAuthFailure(error) }
+        }
+    }
+
+    fun startDeviceCodeLogin() {
+        cancelDataJobs()
+        authJob?.cancel()
+        authJob = viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, isRefreshing = false, message = null, auth = DeviceAuthState(status = "Requesting a one-time code…")) }
+            try {
+                startDeviceCodeLoginInternal()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                reportAuthFailure(error)
+            }
         }
     }
 
@@ -122,7 +137,7 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     fun logout() { cancelAllJobs(); monitorScheduler.cancelAll(); authRepository.logout(); clearPendingWebOAuth(); _state.value = MainUiState() }
     fun dismissMessage() = _state.update { it.copy(message = null) }
 
-    private suspend fun startDeviceLogin() { _state.update { it.copy(isLoading = true, auth = DeviceAuthState(status = "Requesting a device code…")) }; val code = authRepository.begin(); _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code = code, status = "Waiting for approval on GitHub…")) }; completeLogin(code) }
+    private suspend fun startDeviceLoginInternal() { _state.update { it.copy(isLoading = true, auth = DeviceAuthState(status = "Requesting a device code…")) }; val code = authRepository.begin(); _state.update { it.copy(isLoading = false, auth = DeviceAuthState(code = code, status = "Waiting for approval on GitHub…")) }; completeLogin(code) }
     private suspend fun completeLogin(code: DeviceCodeResponse) { authRepository.poll(code) { status -> _state.update { current -> current.copy(isLoading = false, auth = current.auth.copy(status = status, error = null)) } }; _state.update { it.copy(mode = AppMode.Connected, auth = DeviceAuthState(), isLoading = true, isRefreshing = false, message = null) }; loadConnectedDashboard() }
     private fun reportAuthFailure(error: Exception) = _state.update {
         it.copy(
