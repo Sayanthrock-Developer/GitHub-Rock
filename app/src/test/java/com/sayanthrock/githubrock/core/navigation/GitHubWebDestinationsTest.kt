@@ -67,13 +67,16 @@ class GitHubWebDestinationsTest {
         assertTrue(urls.all(GitHubUrlPolicy::isGitHubHttpsUrl))
     }
 
-    @Test fun searchFindsSpecificToolsAcrossSections() {
-        val filtered = filterGitHubWebSections(
-            sections = githubWebSections("SayanthRock"),
-            query = "personal access token"
-        )
+    @Test fun personalAccessTokenEntryPointIsNotExposed() {
+        val destinations = allGitHubWebDestinations("SayanthRock")
 
-        assertEquals(listOf("tokens"), filtered.flatMap(GitHubWebSection::destinations).map { it.id })
+        assertTrue(destinations.none { it.id == "tokens" })
+        assertTrue(destinations.none { it.url == "https://github.com/settings/tokens" })
+        assertTrue(
+            filterGitHubWebSections(githubWebSections("SayanthRock"), "personal access token")
+                .flatMap(GitHubWebSection::destinations)
+                .isEmpty()
+        )
     }
 
     @Test fun searchIsCaseInsensitiveAndKeepsAWholeMatchingSection() {
@@ -95,6 +98,6 @@ class GitHubWebDestinationsTest {
         val ids = allGitHubWebDestinations("SayanthRock").map { it.id }.toSet()
 
         assertTrue(setOf("copilot-settings", "enterprises", "accessibility", "feature-preview", "enterprise-trial", "github-free").all(ids::contains))
-        assertEquals(46, ids.size)
+        assertEquals(45, ids.size)
     }
 }
