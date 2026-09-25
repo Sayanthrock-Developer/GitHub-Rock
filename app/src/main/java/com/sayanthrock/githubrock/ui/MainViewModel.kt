@@ -49,9 +49,8 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     init { if (authRepository.hasSession) connectExistingSession() }
 
     fun startLogin() {
-        // Application Login uses GitHub Device Flow as the primary in-app login path.
-        // The GitHub authorization page is opened only after the user taps the button
-        // on the login screen; it is never launched automatically.
+        // Browser login is prepared in-app. The external browser is opened only when
+        // the user explicitly taps "Open GitHub authorization".
         cancelDataJobs()
         authJob?.cancel()
         authJob = viewModelScope.launch {
@@ -60,14 +59,32 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                     isLoading = true,
                     isRefreshing = false,
                     message = null,
-                    auth = DeviceAuthState(status = "Requesting a one-time code…")
+                    auth = DeviceAuthState(status = "Preparing secure GitHub sign-in…")
                 )
             }
             try {
-                startDeviceCodeLoginInternal()
+                val (verifier, challenge) = generatePkcePair()
+                val state = Base64.getUrlEncoder().withoutPadding()
+                    .encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })
+                pendingWebOAuthState = state
+                pendingWebOAuthCodeVerifier = verifier
+                pendingWebOAuthCreatedAt = System.currentTimeMillis()
+
+                val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        auth = DeviceAuthState(
+                            authorizationUrl = authorizationUrl,
+                            status = "Ready. Tap Open GitHub authorization to continue."
+                        )
+                    )
+                }
             } catch (cancelled: CancellationException) {
+                clearPendingWebOAuth()
                 throw cancelled
             } catch (error: Exception) {
+                clearPendingWebOAuth()
                 reportAuthFailure(error)
             }
         }
