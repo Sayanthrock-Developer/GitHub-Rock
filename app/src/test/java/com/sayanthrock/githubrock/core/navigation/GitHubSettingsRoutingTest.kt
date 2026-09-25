@@ -22,7 +22,7 @@ class GitHubSettingsRoutingTest {
     @Test fun accountAndSecurityPagesStayInsideTheTrustedGitHubPanel() {
         val destinations = allGitHubWebDestinations("SayanthRock").associateBy { it.id }
 
-        listOf("notifications", "organizations", "account-security", "tokens", "billing")
+        listOf("notifications", "organizations", "account-security", "billing")
             .forEach { id ->
                 assertEquals(
                     GitHubSettingOpenMode.InAppGitHub,
@@ -30,6 +30,8 @@ class GitHubSettingsRoutingTest {
                 )
                 assertTrue(isTrustedGitHubSettingsUrl(destinations.getValue(id).url))
             }
+
+        assertFalse(destinations.containsKey("tokens"))
     }
 
     @Test fun trustedUrlPolicyRejectsNonHttpsAndLookalikeHosts() {
