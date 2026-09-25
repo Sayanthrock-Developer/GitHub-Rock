@@ -50,7 +50,9 @@ class BackendGateway @Inject constructor(private val json: Json, @Named("authCli
     suspend fun startWebOAuth(state: String, codeChallenge: String): String {
         require(state.length in 32..256 && codeChallenge.length in 43..128) { "Invalid OAuth parameters." }
         val endpoint = requireNotNull(endpointStore.endpoint()) { "GitHub Rock Backend is not connected." }
-        val config = api(endpoint).config(); validateBackendForApp(config, "oauthWeb")
+        // Starting browser authorization must not depend on a live /v1/config request.
+        // The authorization page is opened explicitly by the user, so let the backend
+        // perform its own OAuth feature/version validation when that URL is requested.
         return "${endpoint.trimEnd('/')}/v1/auth/github/start?state=${URLEncoder.encode(state, Charsets.UTF_8.name())}&code_challenge=${URLEncoder.encode(codeChallenge, Charsets.UTF_8.name())}&code_challenge_method=S256"
     }
     suspend fun exchangeWebOAuth(code: String, codeVerifier: String): DeviceTokenResponse {
