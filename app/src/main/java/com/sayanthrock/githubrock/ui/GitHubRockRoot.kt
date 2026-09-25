@@ -51,13 +51,9 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     var authorizationUrlConsumed by rememberSaveable { mutableStateOf<String?>(null) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val navigationContentBottomPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
-    LaunchedEffect(authorizationUrl) {
-        val url = authorizationUrl ?: return@LaunchedEffect
-        if (authorizationUrlConsumed == url) return@LaunchedEffect
-        authorizationUrlConsumed = url
-        val opened = GitHubExternalLinkLauncher.openOAuthUrl(context, url)
-        if (!opened) snackbar.showSnackbar("Unable to open GitHub sign-in in your browser. Check your browser and try again.")
-    }
+    // Browser authorization is user-initiated. Do not launch an external browser merely
+    // because the backend returned an authorization URL; this keeps login inside the app
+    // until the user explicitly chooses "Open GitHub authorization".
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { if (AuthReturnPolicy.shouldCheckAuthorization(awaitingVerificationBrowserReturn, state.auth.code != null)) { awaitingVerificationBrowserReturn = false; viewModel.checkLoginStatus() } }
     LaunchedEffect(Unit) { AccountContextRefreshBus.events.collect { viewModel.refresh() } }
     val openGitHubUrl = remember(context, snackbar, scope, verificationUri) { { url: String ->
