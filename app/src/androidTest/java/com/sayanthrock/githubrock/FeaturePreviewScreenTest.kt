@@ -62,10 +62,10 @@ class FeaturePreviewScreenTest {
 
         compose.onNodeWithContentDescription("Search GitHub tools")
             .performScrollTo()
-            .performTextInput("personal access token")
+            .performTextInput("codespaces")
 
-        compose.onNodeWithText("Access tokens").assertIsDisplayed()
+        compose.onNodeWithText("Codespaces").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Dashboard").fetchSemanticsNodes().isEmpty())
-        compose.onNodeWithText("1 of 45 tools").assertIsDisplayed()
+        compose.onNodeWithText("1 of 44 tools").assertIsDisplayed()
     }
 }
