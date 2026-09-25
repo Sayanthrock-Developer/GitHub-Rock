@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sayanthrock.githubrock.build.WorkflowMonitorScheduler
@@ -24,6 +25,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val OAUTH_STATE_EXPIRY_MS = 10 * 60 * 1000L
+private const val OAUTH_STATE_KEY = "pending_web_oauth_state"
+private const val OAUTH_VERIFIER_KEY = "pending_web_oauth_verifier"
+private const val OAUTH_CREATED_AT_KEY = "pending_web_oauth_created_at"
 
 enum class AppMode { Connected, Guest }
 data class DeviceAuthState(val code: DeviceCodeResponse? = null, val authorizationUrl: String? = null, val status: String? = null, val error: String? = null)
@@ -31,7 +35,7 @@ data class ProfileExplorerState(val snapshot: GitHubProfileSnapshot? = null, val
 data class MainUiState(val mode: AppMode? = null, val isLoading: Boolean = false, val isRefreshing: Boolean = false, val profile: GitHubUser? = null, val repositories: List<GitHubRepositoryModel> = emptyList(), val workflowRuns: List<WorkflowRun> = emptyList(), val rateLimit: RateLimit? = null, val profileExplorer: ProfileExplorerState = ProfileExplorerState(), val auth: DeviceAuthState = DeviceAuthState(), val message: String? = null)
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAuthRepository, private val githubRepository: GitHubRepository, private val monitorScheduler: WorkflowMonitorScheduler) : ViewModel() {
+class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAuthRepository, private val githubRepository: GitHubRepository, private val monitorScheduler: WorkflowMonitorScheduler, private val savedStateHandle: SavedStateHandle) : ViewModel() {
     private val _state = MutableStateFlow(MainUiState())
     val state: StateFlow<MainUiState> = _state.asStateFlow()
     val loginConfigured: Boolean get() = authRepository.isConfigured
@@ -42,9 +46,6 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     private var rememberJob: Job? = null
     private var profileJob: Job? = null
     private var pendingRefresh = false
-    private var pendingWebOAuthState: String? = null
-    private var pendingWebOAuthCodeVerifier: String? = null
-    private var pendingWebOAuthCreatedAt = 0L
 
     init { if (authRepository.hasSession) connectExistingSession() }
 
@@ -66,9 +67,9 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
                 val (verifier, challenge) = generatePkcePair()
                 val state = Base64.getUrlEncoder().withoutPadding()
                     .encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })
-                pendingWebOAuthState = state
-                pendingWebOAuthCodeVerifier = verifier
-                pendingWebOAuthCreatedAt = System.currentTimeMillis()
+                savedStateHandle[OAUTH_STATE_KEY] = state
+                savedStateHandle[OAUTH_VERIFIER_KEY] = verifier
+                savedStateHandle[OAUTH_CREATED_AT_KEY] = System.currentTimeMillis()
 
                 val authorizationUrl = authRepository.startWebAuthorization(state, challenge)
                 _state.update {
@@ -106,9 +107,9 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     }
 
     fun handleWebOAuthCallback(uri: Uri) {
-        val expected = pendingWebOAuthState
-        val verifier = pendingWebOAuthCodeVerifier
-        val created = pendingWebOAuthCreatedAt
+        val expected = savedStateHandle.get<String>(OAUTH_STATE_KEY)
+        val verifier = savedStateHandle.get<String>(OAUTH_VERIFIER_KEY)
+        val created = savedStateHandle.get<Long>(OAUTH_CREATED_AT_KEY) ?: 0L
         val code = uri.getQueryParameter("code")
         val state = uri.getQueryParameter("state")
         val error = uri.getQueryParameter("error_description") ?: uri.getQueryParameter("error")
@@ -168,7 +169,11 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
         }.onFailure { error -> if (error is retrofit2.HttpException && error.code() == 401) expireSession("Your GitHub session expired. Please sign in again.") else _state.update { it.copy(isLoading = false, isRefreshing = false, message = error.userMessage()) }; if (pendingRefresh) refresh() }
     }
 
-    private fun clearPendingWebOAuth() { pendingWebOAuthState = null; pendingWebOAuthCodeVerifier = null; pendingWebOAuthCreatedAt = 0L }
+    private fun clearPendingWebOAuth() {
+        savedStateHandle[OAUTH_STATE_KEY] = null
+        savedStateHandle[OAUTH_VERIFIER_KEY] = null
+        savedStateHandle[OAUTH_CREATED_AT_KEY] = null
+    }
     private fun expireSession(message: String) { monitorScheduler.cancelAll(); authRepository.logout(); clearPendingWebOAuth(); _state.value = MainUiState(message = message) }
     private fun cancelDataJobs() { searchJob?.cancel(); refreshJob?.cancel(); sessionJob?.cancel(); rememberJob?.cancel(); profileJob?.cancel(); searchJob = null; refreshJob = null; sessionJob = null; rememberJob = null; profileJob = null }
     private fun cancelAllJobs() { authJob?.cancel(); authJob = null; cancelDataJobs() }
