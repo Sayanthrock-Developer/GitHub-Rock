@@ -74,15 +74,6 @@
                 <data android:scheme="githubrock" />
             </intent-filter>
 
-            <intent-filter android:autoVerify="false">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="https"
-                    android:host="github.com"
-                    android:pathPattern="/.*/.*" />
-            </intent-filter>
         </activity>
 
         <provider
