@@ -67,9 +67,9 @@ Use:
 | Application name | `Sayanth Rock Mobile Oauth` |
 | Homepage URL | `https://github.com/Sayanthrock-Developer/GitHub-Rock` |
 | Application description | `GitHub developer control centre for Android` |
-| Authorization callback URL | `githubrock://oauth/callback` |
+| Authorization callback URL | `<BACKEND_PUBLIC_BASE_URL>/v1/auth/github/callback` |
 
-GitHub requires a callback value when registering an OAuth App. The current Android login uses Device Flow, so this callback is not used for token exchange.
+GitHub requires a callback value when registering an OAuth App. Browser OAuth is terminated by the GitHub Rock backend at `/v1/auth/github/callback`, which validates the callback parameters and redirects to the Android deep link `githubrock://oauth/callback`. The Android app performs the PKCE token exchange through the backend; no GitHub client secret is stored in the app.
 
 ### 2 — Enable Device Flow
 
