@@ -340,7 +340,10 @@ private fun HomeCategoryRow(
     selected: HomeCategory,
     onSelected: (HomeCategory) -> Unit,
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyRow(
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         items(HomeCategory.entries, key = { it.name }) { category ->
             FilterChip(
                 selected = category == selected,
@@ -388,7 +391,7 @@ private fun HomeResultsHeader(
         ) {
             Text(
                 text = selectedSort.label,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
             )
