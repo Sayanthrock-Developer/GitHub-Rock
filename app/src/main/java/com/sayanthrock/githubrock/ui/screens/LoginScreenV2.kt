@@ -336,7 +336,8 @@ private fun BrowserAuthorizationCard(
     authorizationUrl: String?,
     status: String?,
     onOpen: (String) -> Unit,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    onCancel: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
     val url = authorizationUrl ?: return
@@ -383,8 +384,9 @@ private fun BrowserAuthorizationCard(
                 Spacer(Modifier.width(9.dp))
                 Text("Open GitHub authorization", fontWeight = FontWeight.Black)
             }
-            TextButton(onClick = onRestart, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Start over", color = colors.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel", color = colors.onSurfaceVariant) }
+                TextButton(onClick = onRestart, modifier = Modifier.weight(1f)) { Text("Start over", color = colors.onSurfaceVariant) }
             }
         }
     }
