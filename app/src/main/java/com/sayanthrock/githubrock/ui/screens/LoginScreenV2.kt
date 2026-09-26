@@ -246,7 +246,23 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
                     Text("Continue without an account", color = colors.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
                 }
             }
-            TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {\n                Text("Skip for now", color = colors.onSurfaceVariant)\n            }\n            if (!configured) {
+            Button(
+                onClick = onLogin,
+                enabled = configured && !loading,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(17.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.surfaceContainerHigh,
+                    contentColor = colors.onSurface
+                )
+            ) {
+                Icon(RockIcon.OpenInBrowser.vector(), contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Use browser login", fontWeight = FontWeight.Bold)
+            }
+            TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text("Skip for now", color = colors.onSurfaceVariant)
+            }\n            if (!configured) {
                 Text(
                     "GitHub authorization is not configured in this build. Public repository access remains available.",
                     color = colors.error,
