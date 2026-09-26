@@ -150,8 +150,8 @@ fun LoginScreenV2(
             }
             AnimatedVisibility(visible = authorizationUrl == null && code == null, enter = fadeIn(), exit = fadeOut()) {
                 when {
-                    auth.error != null -> ErrorCard(auth.error, onLogin)
-                    else -> WelcomeCard(configured, loading, onLogin, onDeviceCodeLogin, onGuest)
+                    auth.error != null -> ErrorCard(auth.error, auth.resetRequired, onReset, onLogin)
+                    else -> WelcomeCard(configured, loading, onLogin, onDeviceCodeLogin, onGuest, onCancel)
                 }
             }
             Text(
@@ -184,7 +184,7 @@ private fun RockLogoHeader() {
 }
 
 @Composable
-private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit) {
+private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit, onCancel: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -246,7 +246,7 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
                     Text("Continue without an account", color = colors.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
                 }
             }
-            if (!configured) {
+            TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {\n                Text("Skip for now", color = colors.onSurfaceVariant)\n            }\n            if (!configured) {
                 Text(
                     "GitHub authorization is not configured in this build. Public repository access remains available.",
                     color = colors.error,
@@ -460,7 +460,7 @@ private fun AuthorizationCard(
 }
 
 @Composable
-private fun ErrorCard(message: String, onRetry: () -> Unit) {
+private fun ErrorCard(message: String, resetRequired: Boolean, onReset: () -> Unit, onRetry: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -478,15 +478,15 @@ private fun ErrorCard(message: String, onRetry: () -> Unit) {
                     Icon(RockIcon.Error.vector(), contentDescription = null, tint = colors.error, modifier = Modifier.size(30.dp))
                 }
             }
-            Text("Authorization needs another try", color = colors.onSurface, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
-            Text(message, color = colors.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
+            Text(if (resetRequired) "One-Time Password Reset Required" else "Authorization needs another try", color = colors.onSurface, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
+            Text(if (resetRequired) "Your previous one-time password has expired. Generate a new code to continue." else message, color = colors.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
             Button(
                 onClick = onRetry,
                 modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = "Retry GitHub authorization" },
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.onPrimary)
             ) {
-                Text("Try again", fontWeight = FontWeight.Black)
+                Text(if (resetRequired) "Generate New Code" else "Try again", fontWeight = FontWeight.Black)
             }
         }
     }
