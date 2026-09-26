@@ -71,6 +71,7 @@ private val permissionItems = listOf(
 @Composable
 fun LoginScreenV2(
     configured: Boolean,
+    webOAuthConfigured: Boolean = false,
     loading: Boolean,
     auth: DeviceAuthState,
     onLogin: () -> Unit,
@@ -156,7 +157,7 @@ fun LoginScreenV2(
             AnimatedVisibility(visible = authorizationUrl == null && code == null, enter = fadeIn(), exit = fadeOut()) {
                 when {
                     auth.error != null -> ErrorCard(auth.error, auth.resetRequired, onReset, onLogin)
-                    else -> WelcomeCard(auth, configured, loading, onLogin, onDeviceCodeLogin, onGuest, onCancel)
+                    else -> WelcomeCard(auth, configured, webOAuthConfigured, loading, onLogin, onDeviceCodeLogin, onGuest, onCancel)
                 }
             }
             Text(
@@ -189,7 +190,7 @@ private fun RockLogoHeader() {
 }
 
 @Composable
-private fun WelcomeCard(auth: DeviceAuthState, configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit, onCancel: () -> Unit) {
+private fun WelcomeCard(auth: DeviceAuthState, configured: Boolean, webOAuthConfigured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit, onCancel: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -253,7 +254,7 @@ private fun WelcomeCard(auth: DeviceAuthState, configured: Boolean, loading: Boo
             }
             Button(
                 onClick = onLogin,
-                enabled = auth.authorizationUrl != null && !loading,
+                enabled = webOAuthConfigured && !loading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(17.dp),
                 colors = ButtonDefaults.buttonColors(
