@@ -403,7 +403,9 @@ private fun AuthorizationCard(
     copied: Boolean,
     remainingSeconds: Long,
     onRestart: () -> Unit,
-    onGuest: () -> Unit
+    onGuest: () -> Unit,
+    onCancel: () -> Unit,
+    onReset: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
@@ -473,8 +475,9 @@ private fun AuthorizationCard(
                 Spacer(Modifier.width(8.dp))
                 Text(if (loading) "Checking authorization…" else "I already authorized", fontWeight = FontWeight.Bold)
             }
-            TextButton(onClick = onRestart, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Start over", color = colors.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel", color = colors.onSurfaceVariant) }
+                TextButton(onClick = onReset, modifier = Modifier.weight(1f)) { Text("New code", color = colors.onSurfaceVariant) }
             }
             TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text("Continue without an account", color = colors.onSurfaceVariant)
