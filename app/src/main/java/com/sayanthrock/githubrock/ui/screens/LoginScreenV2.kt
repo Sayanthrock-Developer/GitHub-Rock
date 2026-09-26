@@ -78,6 +78,8 @@ fun LoginScreenV2(
     onOpenGitHubUrl: (String) -> Unit,
     onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
+    onCancel: () -> Unit,
+    onReset: () -> Unit,
 ) {
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
@@ -129,7 +131,8 @@ fun LoginScreenV2(
                     authorizationUrl = authorizationUrl,
                     status = auth.status,
                     onOpen = onOpenGitHubUrl,
-                    onRestart = onLogin
+                    onRestart = onLogin,
+                    onCancel = onCancel
                 )
             }
             AnimatedVisibility(visible = code != null, enter = fadeIn(), exit = fadeOut()) {
@@ -144,7 +147,9 @@ fun LoginScreenV2(
                         copied = copiedDeviceCode == code.deviceCode,
                         remainingSeconds = remainingSeconds,
                         onRestart = onLogin,
-                        onGuest = onGuest
+                        onGuest = onGuest,
+                        onCancel = onCancel,
+                        onReset = onReset
                     )
                 }
             }
