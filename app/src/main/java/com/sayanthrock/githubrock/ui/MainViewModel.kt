@@ -39,6 +39,7 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
     private val _state = MutableStateFlow(MainUiState())
     val state: StateFlow<MainUiState> = _state.asStateFlow()
     val loginConfigured: Boolean get() = authRepository.isConfigured
+    val loginWebOAuthConfigured: Boolean get() = authRepository.isWebOAuthConfigured
     private var authJob: Job? = null
     private var searchJob: Job? = null
     private var refreshJob: Job? = null
