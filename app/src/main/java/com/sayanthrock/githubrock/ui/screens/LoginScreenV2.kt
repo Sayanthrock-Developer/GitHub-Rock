@@ -262,7 +262,8 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
             }
             TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text("Skip for now", color = colors.onSurfaceVariant)
-            }\n            if (!configured) {
+            }
+            if (!configured) {
                 Text(
                     "GitHub authorization is not configured in this build. Public repository access remains available.",
                     color = colors.error,
