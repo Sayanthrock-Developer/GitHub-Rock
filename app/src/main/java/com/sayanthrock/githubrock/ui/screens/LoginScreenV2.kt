@@ -71,6 +71,7 @@ private val permissionItems = listOf(
 @Composable
 fun LoginScreenV2(
     configured: Boolean,
+    webOAuthConfigured: Boolean = false,
     loading: Boolean,
     auth: DeviceAuthState,
     onLogin: () -> Unit,
@@ -78,6 +79,8 @@ fun LoginScreenV2(
     onOpenGitHubUrl: (String) -> Unit,
     onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
+    onCancel: () -> Unit,
+    onReset: () -> Unit,
 ) {
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
@@ -129,7 +132,8 @@ fun LoginScreenV2(
                     authorizationUrl = authorizationUrl,
                     status = auth.status,
                     onOpen = onOpenGitHubUrl,
-                    onRestart = onLogin
+                    onRestart = onLogin,
+                    onCancel = onCancel
                 )
             }
             AnimatedVisibility(visible = code != null, enter = fadeIn(), exit = fadeOut()) {
@@ -144,14 +148,16 @@ fun LoginScreenV2(
                         copied = copiedDeviceCode == code.deviceCode,
                         remainingSeconds = remainingSeconds,
                         onRestart = onLogin,
-                        onGuest = onGuest
+                        onGuest = onGuest,
+                        onCancel = onCancel,
+                        onReset = onReset
                     )
                 }
             }
             AnimatedVisibility(visible = authorizationUrl == null && code == null, enter = fadeIn(), exit = fadeOut()) {
                 when {
-                    auth.error != null -> ErrorCard(auth.error, onLogin)
-                    else -> WelcomeCard(configured, loading, onLogin, onDeviceCodeLogin, onGuest)
+                    auth.error != null -> ErrorCard(auth.error, auth.resetRequired, onReset, onLogin)
+                    else -> WelcomeCard(auth, configured, webOAuthConfigured, loading, onLogin, onDeviceCodeLogin, onGuest, onCancel)
                 }
             }
             Text(
@@ -184,7 +190,7 @@ private fun RockLogoHeader() {
 }
 
 @Composable
-private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit) {
+private fun WelcomeCard(auth: DeviceAuthState, configured: Boolean, webOAuthConfigured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit, onCancel: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -245,6 +251,23 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
                 Box(contentAlignment = Alignment.Center) {
                     Text("Continue without an account", color = colors.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
                 }
+            }
+            Button(
+                onClick = onLogin,
+                enabled = webOAuthConfigured && !loading,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(17.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.surfaceContainerHigh,
+                    contentColor = colors.onSurface
+                )
+            ) {
+                Icon(RockIcon.OpenInBrowser.vector(), contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Use browser login", fontWeight = FontWeight.Bold)
+            }
+            TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text("Skip for now", color = colors.onSurfaceVariant)
             }
             if (!configured) {
                 Text(
@@ -314,7 +337,8 @@ private fun BrowserAuthorizationCard(
     authorizationUrl: String?,
     status: String?,
     onOpen: (String) -> Unit,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    onCancel: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
     val url = authorizationUrl ?: return
@@ -361,8 +385,9 @@ private fun BrowserAuthorizationCard(
                 Spacer(Modifier.width(9.dp))
                 Text("Open GitHub authorization", fontWeight = FontWeight.Black)
             }
-            TextButton(onClick = onRestart, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Start over", color = colors.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel", color = colors.onSurfaceVariant) }
+                TextButton(onClick = onRestart, modifier = Modifier.weight(1f)) { Text("Start over", color = colors.onSurfaceVariant) }
             }
         }
     }
@@ -379,7 +404,9 @@ private fun AuthorizationCard(
     copied: Boolean,
     remainingSeconds: Long,
     onRestart: () -> Unit,
-    onGuest: () -> Unit
+    onGuest: () -> Unit,
+    onCancel: () -> Unit,
+    onReset: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
@@ -449,8 +476,9 @@ private fun AuthorizationCard(
                 Spacer(Modifier.width(8.dp))
                 Text(if (loading) "Checking authorization…" else "I already authorized", fontWeight = FontWeight.Bold)
             }
-            TextButton(onClick = onRestart, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Start over", color = colors.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel", color = colors.onSurfaceVariant) }
+                TextButton(onClick = onReset, modifier = Modifier.weight(1f)) { Text("New code", color = colors.onSurfaceVariant) }
             }
             TextButton(onClick = onGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text("Continue without an account", color = colors.onSurfaceVariant)
@@ -460,7 +488,7 @@ private fun AuthorizationCard(
 }
 
 @Composable
-private fun ErrorCard(message: String, onRetry: () -> Unit) {
+private fun ErrorCard(message: String, resetRequired: Boolean, onReset: () -> Unit, onRetry: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -478,15 +506,15 @@ private fun ErrorCard(message: String, onRetry: () -> Unit) {
                     Icon(RockIcon.Error.vector(), contentDescription = null, tint = colors.error, modifier = Modifier.size(30.dp))
                 }
             }
-            Text("Authorization needs another try", color = colors.onSurface, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
-            Text(message, color = colors.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
+            Text(if (resetRequired) "One-Time Password Reset Required" else "Authorization needs another try", color = colors.onSurface, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
+            Text(if (resetRequired) "Your previous one-time password has expired. Generate a new code to continue." else message, color = colors.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
             Button(
-                onClick = onRetry,
+                onClick = if (resetRequired) onReset else onRetry,
                 modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = "Retry GitHub authorization" },
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.onPrimary)
             ) {
-                Text("Try again", fontWeight = FontWeight.Black)
+                Text(if (resetRequired) "Generate New Code" else "Try again", fontWeight = FontWeight.Black)
             }
         }
     }

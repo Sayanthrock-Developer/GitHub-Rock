@@ -32,9 +32,12 @@ class LoginScreenTest {
                     loading = false,
                     auth = DeviceAuthState(),
                     onLogin = {},
+                    onDeviceCodeLogin = {},
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = {},
                     onGuest = {},
+                    onCancel = {},
+                    onReset = {},
                 )
             }
         }
@@ -55,9 +58,12 @@ class LoginScreenTest {
                     loading = false,
                     auth = DeviceAuthState(),
                     onLogin = { loginStarted = true },
+                    onDeviceCodeLogin = {},
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = {},
                     onGuest = {},
+                    onCancel = {},
+                    onReset = {},
                 )
             }
         }
@@ -99,9 +105,12 @@ class LoginScreenTest {
                     loading = false,
                     auth = DeviceAuthState(),
                     onLogin = {},
+                    onDeviceCodeLogin = {},
                     onOpenGitHubUrl = { openedUrl = it },
                     onCheckAuthorization = {},
                     onGuest = {},
+                    onCancel = {},
+                    onReset = {},
                 )
             }
         }
@@ -200,10 +209,13 @@ class LoginScreenTest {
                             interval = 5
                         )
                     ),
-                    onLogin = { restarted = true },
+                    onLogin = {},
+                    onDeviceCodeLogin = {},
                     onOpenGitHubUrl = {},
                     onCheckAuthorization = {},
                     onGuest = {},
+                    onCancel = {},
+                    onReset = { restarted = true },
                 )
             }
         }

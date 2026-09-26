@@ -17,6 +17,8 @@ fun LoginScreen(
     onOpenGitHubUrl: (String) -> Unit,
     onCheckAuthorization: () -> Unit,
     onGuest: () -> Unit,
+    onCancel: () -> Unit,
+    onReset: () -> Unit,
 ) {
     LoginScreenV2(
         configured = configured,
@@ -27,5 +29,7 @@ fun LoginScreen(
         onOpenGitHubUrl = onOpenGitHubUrl,
         onCheckAuthorization = onCheckAuthorization,
         onGuest = onGuest,
+        onCancel = onCancel,
+        onReset = onReset,
     )
 }

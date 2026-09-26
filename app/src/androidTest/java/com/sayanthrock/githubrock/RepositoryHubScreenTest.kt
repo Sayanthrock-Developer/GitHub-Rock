@@ -6,6 +6,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.sayanthrock.githubrock.core.model.GitHubRepositoryModel
 import com.sayanthrock.githubrock.core.model.Owner
 import com.sayanthrock.githubrock.core.model.Release
@@ -78,6 +80,7 @@ class RepositoryHubScreenTest {
         )
 
         compose.setContent {
+            val contentListState = rememberLazyListState()
             GitHubRockTheme(dynamicColor = false) {
                 RepositoryHubContent(
                     repository = repository,
@@ -91,7 +94,8 @@ class RepositoryHubScreenTest {
                     readmeError = null,
                     onRetry = {},
                     onOpenUrl = {},
-                    onDownload = { downloadedAsset = it }
+                    onDownload = { downloadedAsset = it },
+                    contentListState = contentListState
                 )
             }
         }

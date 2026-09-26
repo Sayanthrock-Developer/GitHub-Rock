@@ -65,7 +65,7 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.dismissMessage() } }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars)) {
         if (state.mode == null) {
-            LoginScreenV2(configured = viewModel.loginConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onDeviceCodeLogin = viewModel::startDeviceCodeLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest)
+            LoginScreenV2(configured = viewModel.loginConfigured, webOAuthConfigured = viewModel.loginWebOAuthConfigured, loading = state.isLoading, auth = state.auth, onLogin = viewModel::startLogin, onDeviceCodeLogin = viewModel::startDeviceCodeLogin, onOpenGitHubUrl = openGitHubUrl, onCheckAuthorization = viewModel::checkLoginStatus, onGuest = viewModel::continueAsGuest, onCancel = viewModel::cancelLogin, onReset = viewModel::resetDeviceCodeLogin)
         } else {
             CompositionLocalProvider(LocalOpenGitHubProfile provides openNativeProfile) {
                 Box(Modifier.fillMaxSize()) {
