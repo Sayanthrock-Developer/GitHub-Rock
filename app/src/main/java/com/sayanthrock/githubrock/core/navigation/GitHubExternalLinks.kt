@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabsClient
+import android.content.pm.PackageManager
 import androidx.browser.customtabs.CustomTabsIntent
 import java.net.URI
 
@@ -50,7 +50,7 @@ object GitHubExternalLinkLauncher {
     /** Opens GitHub authentication in a Chrome Custom Tab only. No WebView or external ACTION_VIEW fallback. */
     fun openAuthenticationUrl(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
-        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList()) ?: return false
+        val customTabsPackage = findCustomTabsPackage(context) ?: return false
         if (!isExternalBrowserPackage(customTabsPackage, context.packageName)) return false
         return launchCustomTab(context, rawUrl, customTabsPackage, false)
     }
@@ -63,9 +63,33 @@ object GitHubExternalLinkLauncher {
     private fun openStandard(context: Context, rawUrl: String): Boolean = if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) false else openStandardUnchecked(context, rawUrl)
 
     private fun openStandardUnchecked(context: Context, rawUrl: String): Boolean {
-        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList())
+        val customTabsPackage = findCustomTabsPackage(context)
         if (isExternalBrowserPackage(customTabsPackage, context.packageName) && launchCustomTab(context, rawUrl, requireNotNull(customTabsPackage), false)) return true
         return launchBrowserIntent(context, rawUrl)
+    }
+
+    /** Finds a real browser Custom Tabs provider instead of relying on a nullable default-package lookup. */
+    private fun findCustomTabsPackage(context: Context): String? {
+        val serviceIntent = Intent("android.support.customtabs.action.CustomTabsService")
+        val providers = context.packageManager
+            .queryIntentServices(serviceIntent, PackageManager.MATCH_ALL)
+            .mapNotNull { it.serviceInfo?.packageName }
+            .filter { isExternalBrowserPackage(it, context.packageName) }
+            .distinct()
+
+        if (providers.isEmpty()) return null
+
+        val defaultBrowser = context.packageManager
+            .resolveActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com")).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                },
+                PackageManager.MATCH_DEFAULT_ONLY
+            )
+            ?.activityInfo
+            ?.packageName
+
+        return providers.firstOrNull { it == defaultBrowser } ?: providers.first()
     }
 
     private fun launchCustomTab(context: Context, rawUrl: String, browserPackage: String, ephemeral: Boolean): Boolean {
