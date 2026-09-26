@@ -156,7 +156,7 @@ fun LoginScreenV2(
             AnimatedVisibility(visible = authorizationUrl == null && code == null, enter = fadeIn(), exit = fadeOut()) {
                 when {
                     auth.error != null -> ErrorCard(auth.error, auth.resetRequired, onReset, onLogin)
-                    else -> WelcomeCard(configured, loading, onLogin, onDeviceCodeLogin, onGuest, onCancel)
+                    else -> WelcomeCard(auth, configured, loading, onLogin, onDeviceCodeLogin, onGuest, onCancel)
                 }
             }
             Text(
@@ -189,7 +189,7 @@ private fun RockLogoHeader() {
 }
 
 @Composable
-private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit, onCancel: () -> Unit) {
+private fun WelcomeCard(auth: DeviceAuthState, configured: Boolean, loading: Boolean, onLogin: () -> Unit, onDeviceCodeLogin: () -> Unit, onGuest: () -> Unit, onCancel: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -253,7 +253,7 @@ private fun WelcomeCard(configured: Boolean, loading: Boolean, onLogin: () -> Un
             }
             Button(
                 onClick = onLogin,
-                enabled = configured && !loading,
+                enabled = auth.authorizationUrl != null && !loading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(17.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -508,7 +508,7 @@ private fun ErrorCard(message: String, resetRequired: Boolean, onReset: () -> Un
             Text(if (resetRequired) "One-Time Password Reset Required" else "Authorization needs another try", color = colors.onSurface, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
             Text(if (resetRequired) "Your previous one-time password has expired. Generate a new code to continue." else message, color = colors.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
             Button(
-                onClick = onRetry,
+                onClick = if (resetRequired) onReset else onRetry,
                 modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = "Retry GitHub authorization" },
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.onPrimary)
