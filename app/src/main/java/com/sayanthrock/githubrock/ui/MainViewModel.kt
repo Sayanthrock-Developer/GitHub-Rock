@@ -91,7 +91,18 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
         }
     }
 
-    fun cancelLogin() {\n        cancelAllJobs()\n        clearPendingWebOAuth()\n        _state.update { it.copy(isLoading = false, auth = DeviceAuthState()) }\n    }\n\n    fun resetDeviceCodeLogin() {\n        cancelLogin()\n        startDeviceCodeLogin()\n    }\n\n    fun startDeviceCodeLogin() {
+    fun cancelLogin() {
+        cancelAllJobs()
+        clearPendingWebOAuth()
+        _state.update { it.copy(isLoading = false, auth = DeviceAuthState()) }
+    }
+
+    fun resetDeviceCodeLogin() {
+        cancelLogin()
+        startDeviceCodeLogin()
+    }
+
+    fun startDeviceCodeLogin() {
         cancelDataJobs()
         authJob?.cancel()
         authJob = viewModelScope.launch {
@@ -155,7 +166,10 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
             isLoading = false,
             // Replace the active authorization state so expired/denied failures cannot leave
             // the old device code visible while the error is shown underneath it.
-            auth = DeviceAuthState(\n                error = error.userMessage(),\n                resetRequired = error.message?.contains("device code expired", ignoreCase = true) == true\n            )
+            auth = DeviceAuthState(
+                error = error.userMessage(),
+                resetRequired = error.message?.contains("device code expired", ignoreCase = true) == true
+            )
         )
     }
     private fun connectExistingSession() { sessionJob?.cancel(); sessionJob = viewModelScope.launch { _state.update { it.copy(mode = AppMode.Connected, isLoading = true, message = null) }; try { if (!authRepository.refreshIfNeeded()) expireSession("Your GitHub session expired. Please sign in again.") else loadConnectedDashboard() } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) { if (error is retrofit2.HttpException && error.code() == 401) expireSession("Your GitHub session expired. Please sign in again.") else _state.update { it.copy(isLoading = false, isRefreshing = false, message = error.userMessage()) } } } }
