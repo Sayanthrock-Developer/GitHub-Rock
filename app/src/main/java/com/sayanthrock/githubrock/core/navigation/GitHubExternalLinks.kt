@@ -47,9 +47,17 @@ internal fun isExternalBrowserPackage(candidatePackage: String?, applicationPack
 object GitHubExternalLinkLauncher {
     fun open(context: Context, rawUrl: String): Boolean = if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) false else openStandard(context, rawUrl)
 
+    /** Opens GitHub authentication in a Chrome Custom Tab only. No WebView or external ACTION_VIEW fallback. */
+    fun openAuthenticationUrl(context: Context, rawUrl: String): Boolean {
+        if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) return false
+        val customTabsPackage = CustomTabsClient.getPackageName(context, emptyList()) ?: return false
+        if (!isExternalBrowserPackage(customTabsPackage, context.packageName)) return false
+        return launchCustomTab(context, rawUrl, customTabsPackage, false)
+    }
+
     fun openOAuthUrl(context: Context, rawUrl: String): Boolean {
         if (!GitHubUrlPolicy.isBackendOAuthStartUrl(rawUrl)) return false
-        return openStandardUnchecked(context, rawUrl)
+        return openAuthenticationUrl(context, rawUrl)
     }
 
     private fun openStandard(context: Context, rawUrl: String): Boolean = if (!GitHubUrlPolicy.isGitHubHttpsUrl(rawUrl)) false else openStandardUnchecked(context, rawUrl)
