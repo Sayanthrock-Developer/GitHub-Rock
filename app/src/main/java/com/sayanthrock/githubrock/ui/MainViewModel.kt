@@ -30,7 +30,7 @@ private const val OAUTH_VERIFIER_KEY = "pending_web_oauth_verifier"
 private const val OAUTH_CREATED_AT_KEY = "pending_web_oauth_created_at"
 
 enum class AppMode { Connected, Guest }
-data class DeviceAuthState(val code: DeviceCodeResponse? = null, val authorizationUrl: String? = null, val status: String? = null, val error: String? = null)
+data class DeviceAuthState(val code: DeviceCodeResponse? = null, val authorizationUrl: String? = null, val status: String? = null, val error: String? = null, val resetRequired: Boolean = false)
 data class ProfileExplorerState(val snapshot: GitHubProfileSnapshot? = null, val loading: Boolean = false, val error: String? = null)
 data class MainUiState(val mode: AppMode? = null, val isLoading: Boolean = false, val isRefreshing: Boolean = false, val profile: GitHubUser? = null, val repositories: List<GitHubRepositoryModel> = emptyList(), val workflowRuns: List<WorkflowRun> = emptyList(), val rateLimit: RateLimit? = null, val profileExplorer: ProfileExplorerState = ProfileExplorerState(), val auth: DeviceAuthState = DeviceAuthState(), val message: String? = null)
 
@@ -91,7 +91,7 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
         }
     }
 
-    fun startDeviceCodeLogin() {
+    fun cancelLogin() {\n        cancelAllJobs()\n        clearPendingWebOAuth()\n        _state.update { it.copy(isLoading = false, auth = DeviceAuthState()) }\n    }\n\n    fun resetDeviceCodeLogin() {\n        cancelLogin()\n        startDeviceCodeLogin()\n    }\n\n    fun startDeviceCodeLogin() {
         cancelDataJobs()
         authJob?.cancel()
         authJob = viewModelScope.launch {
@@ -155,7 +155,7 @@ class MainViewModel @Inject constructor(private val authRepository: DeviceFlowAu
             isLoading = false,
             // Replace the active authorization state so expired/denied failures cannot leave
             // the old device code visible while the error is shown underneath it.
-            auth = DeviceAuthState(error = error.userMessage())
+            auth = DeviceAuthState(\n                error = error.userMessage(),\n                resetRequired = error.message?.contains("device code expired", ignoreCase = true) == true\n            )
         )
     }
     private fun connectExistingSession() { sessionJob?.cancel(); sessionJob = viewModelScope.launch { _state.update { it.copy(mode = AppMode.Connected, isLoading = true, message = null) }; try { if (!authRepository.refreshIfNeeded()) expireSession("Your GitHub session expired. Please sign in again.") else loadConnectedDashboard() } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) { if (error is retrofit2.HttpException && error.code() == 401) expireSession("Your GitHub session expired. Please sign in again.") else _state.update { it.copy(isLoading = false, isRefreshing = false, message = error.userMessage()) } } } }
