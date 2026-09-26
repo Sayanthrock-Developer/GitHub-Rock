@@ -10,8 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.sayanthrock.githubrock.core.navigation.GitHubExternalLinkLauncher
@@ -48,14 +46,11 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     }
     val verificationUri = state.auth.code?.verificationUri
     val authorizationUrl = state.auth.authorizationUrl
-    var awaitingVerificationBrowserReturn by rememberSaveable { mutableStateOf(false) }
-    var authorizationUrlConsumed by rememberSaveable { mutableStateOf<String?>(null) }
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val navigationContentBottomPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
     // Browser authorization is user-initiated. Do not launch an external browser merely
     // because the backend returned an authorization URL; this keeps login inside the app
     // until the user explicitly chooses "Open GitHub authorization".
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { if (AuthReturnPolicy.shouldCheckAuthorization(awaitingVerificationBrowserReturn, state.auth.code != null)) { awaitingVerificationBrowserReturn = false; viewModel.checkLoginStatus() } }
     LaunchedEffect(Unit) { AccountContextRefreshBus.events.collect { viewModel.refresh() } }
     val openGitHubUrl = remember(context, snackbar, scope, verificationUri) { { url: String ->
         val isAuthenticationUrl = url == verificationUri || GitHubUrlPolicy.isBackendOAuthStartUrl(url)
@@ -64,7 +59,6 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
         } else {
             GitHubExternalLinkLauncher.open(context, url)
         }
-        if (opened && url == verificationUri) awaitingVerificationBrowserReturn = true
         if (!opened) scope.launch {
             val result = snackbar.showSnackbar(
                 if (isAuthenticationUrl) "Unable to open GitHub authentication in a browser tab." else "Unable to open GitHub.",
