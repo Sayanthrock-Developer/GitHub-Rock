@@ -22,6 +22,8 @@ import com.sayanthrock.githubrock.data.settings.RemoteImageQuality
 import com.sayanthrock.githubrock.data.settings.RemoteImageShape
 import com.sayanthrock.githubrock.data.settings.RemoteImageSize
 import com.sayanthrock.githubrock.data.settings.ThemeMode
+import com.sayanthrock.githubrock.data.settings.RockSurfaceStyle
+import com.sayanthrock.githubrock.data.settings.RockShapePreset
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -37,6 +39,15 @@ class AppearanceViewModel @Inject constructor(
     val state: StateFlow<AppearancePreferences> = preferences.appearance.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppearancePreferences())
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { preferences.setThemeMode(mode) }
+    fun setSurfaceStyle(style: RockSurfaceStyle) = viewModelScope.launch { preferences.setSurfaceStyle(style) }
+    fun setShapePreset(preset: RockShapePreset) = viewModelScope.launch { preferences.setShapePreset(preset) }
+    fun setShapeScale(value: Float) = viewModelScope.launch { preferences.setShapeScale(value) }
+    fun setSurfaceOpacity(value: Float) = viewModelScope.launch { preferences.setSurfaceOpacity(value) }
+    fun setSurfaceBorder(value: Float) = viewModelScope.launch { preferences.setSurfaceBorder(value) }
+    fun setSurfaceElevation(value: Float) = viewModelScope.launch { preferences.setSurfaceElevation(value) }
+    fun setSurfaceBlur(value: Float) = viewModelScope.launch { preferences.setSurfaceBlur(value) }
+    fun setSurfaceContrast(value: Float) = viewModelScope.launch { preferences.setSurfaceContrast(value) }
+    fun setBackgroundDepth(value: Float) = viewModelScope.launch { preferences.setBackgroundDepth(value) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
     fun setAccentColor(color: AccentColor) = viewModelScope.launch { preferences.setAccentColor(color) }
     fun setSystemDynamicAccent() = viewModelScope.launch { preferences.setSystemDynamicAccent() }
