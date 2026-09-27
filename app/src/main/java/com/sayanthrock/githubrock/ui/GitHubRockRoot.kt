@@ -8,6 +8,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,7 +49,8 @@ fun GitHubRockRoot(viewModel: MainViewModel = hiltViewModel(), appearanceViewMod
     val verificationUri = state.auth.code?.verificationUri
     val authorizationUrl = state.auth.authorizationUrl
     val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val navigationContentBottomPadding = navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
+    val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    val navigationContentBottomPadding = if (isTv) 0.dp else navigationContentInset(appearanceState.navigationBarStyle, navigationBarPadding)
     // Browser authorization is user-initiated. Do not launch an external browser merely
     // because the backend returned an authorization URL; this keeps login inside the app
     // until the user explicitly chooses "Open GitHub authorization".
@@ -104,5 +107,10 @@ private fun navigationContentInset(style: NavigationBarStyle, systemBottomInset:
 
 @Composable
 private fun NavigationContent(navController: androidx.navigation.NavHostController, bottomContentPadding: androidx.compose.ui.unit.Dp, content: @Composable () -> Unit) {
-    Box(Modifier.fillMaxSize().padding(bottom = bottomContentPadding)) { content() }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(bottom = bottomContentPadding)
+            .then(if ((LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION) Modifier.padding(start = 220.dp, end = 40.dp, top = 24.dp) else Modifier)
+    ) { content() }
 }
