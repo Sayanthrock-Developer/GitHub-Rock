@@ -1,6 +1,11 @@
 package com.sayanthrock.githubrock.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,10 +39,15 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    var focused = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val interactionModifier = if (onClick == null) {
         Modifier
     } else {
-        Modifier.clickable(role = Role.Button, onClick = onClick)
+        Modifier
+            .onFocusChanged { focused.value = it.isFocused }
+            .focusable()
+            .clickable(role = Role.Button, onClick = onClick)
     }
 
     Surface(
@@ -46,7 +56,11 @@ fun GlassCard(
             .then(interactionModifier),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(RockShapes.Card),
         color = rockSurfaceColor(RockSurfaceRole.Card),
-        border = rockSurfaceBorder(),
+        border = if (isTv && onClick != null && focused.value) {
+            BorderStroke(3.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            rockSurfaceBorder()
+        },
         tonalElevation = rockSurfaceTokens(RockSurfaceRole.Card).elevation,
         shadowElevation = if (onClick == null) 0.dp else rockSurfaceTokens(RockSurfaceRole.Card).elevation / 2
     ) {
