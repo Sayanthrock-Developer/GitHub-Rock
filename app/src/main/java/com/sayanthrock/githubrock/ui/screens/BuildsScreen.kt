@@ -490,7 +490,7 @@ private fun BuildExecutionPanel(
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                             Column(Modifier.weight(1f)) {
                                 Text(currentStep ?: currentRun.displayTitle.ifBlank { currentRun.name ?: "Android build" }, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text("Run #".plus(currentRun.runNumber ?: currentRun.id).plus(" · ").plus(currentRun.headBranch.orEmpty()), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                Text("Run #".plus(currentRun.id).plus(" · ").plus(currentRun.headBranch.orEmpty()), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                             }
                             Text(buildProgress.toString().padStart(2, '0').plus(" / 100"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = buildAccent)
                         }
