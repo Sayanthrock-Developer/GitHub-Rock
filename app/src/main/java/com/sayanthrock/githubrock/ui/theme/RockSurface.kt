@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
  * corner radii, transparency values, or theme-breaking surface colors.
  */
 object RockShapes {
+    @Composable
     private fun radius(max: Float): androidx.compose.ui.unit.Dp =
         (max * LocalRockShapeScale.current.coerceIn(0f, 1f)).dp
 
