@@ -60,7 +60,7 @@ import com.sayanthrock.githubrock.ui.theme.rockContentColor
 import com.sayanthrock.githubrock.ui.theme.rockSurfaceBorder
 import com.sayanthrock.githubrock.ui.theme.rockSurfaceColor
 
-private val rockNavigationDestinations = listOf(
+internal val rockNavigationDestinations = listOf(
     TopDestinationV2.Home,
     TopDestinationV2.Repositories,
     TopDestinationV2.Builds,
