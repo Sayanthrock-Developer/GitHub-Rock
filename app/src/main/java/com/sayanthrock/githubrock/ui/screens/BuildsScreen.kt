@@ -457,7 +457,7 @@ private fun BuildExecutionPanel(
                 WorkflowDisplayState.Failed -> "Build failed"
                 WorkflowDisplayState.Cancelled -> "Build cancelled"
                 WorkflowDisplayState.Queued -> "Waiting for runner"
-                WorkflowDisplayState.InProgress -> "Building"
+                WorkflowDisplayState.Running -> "Building"
                 else -> if (currentRun == null) "Ready to build" else "Build"
             }
 
