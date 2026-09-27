@@ -440,7 +440,84 @@ private fun BuildExecutionPanel(
     }
     GlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Current build", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            val currentRun = actionState.run
+            val currentState = currentRun?.displayState()
+            val buildAccent = currentState?.let { runColor(it, preferences) } ?: MaterialTheme.colorScheme.primary
+            val buildSteps = actionState.jobs.flatMap { it.steps }
+            val completedBuildSteps = buildSteps.count { it.conclusion != null }
+            val buildProgress = when {
+                currentRun == null -> 0
+                currentState == WorkflowDisplayState.Success -> 100
+                buildSteps.isNotEmpty() -> (completedBuildSteps * 100 / buildSteps.size).coerceIn(0, 99)
+                else -> 0
+            }
+            val currentStep = buildSteps.firstOrNull { it.status == "in_progress" }?.name
+            val buildStatus = when (currentState) {
+                WorkflowDisplayState.Success -> "Build complete"
+                WorkflowDisplayState.Failed -> "Build failed"
+                WorkflowDisplayState.Cancelled -> "Build cancelled"
+                WorkflowDisplayState.Queued -> "Waiting for runner"
+                WorkflowDisplayState.InProgress -> "Building"
+                else -> if (currentRun == null) "Ready to build" else "Build"
+            }
+
+            Surface(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text("CURRENT BUILD", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+                            Text("Android APK", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text(repository?.fullName ?: "GitHub Rock", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = buildAccent.copy(alpha = .12f),
+                            border = BorderStroke(1.dp, buildAccent.copy(alpha = .35f))
+                        ) {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Surface(Modifier.size(7.dp), shape = RoundedCornerShape(50), color = buildAccent) {}
+                                Text(buildStatus, color = buildAccent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+
+                    if (currentRun != null) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                            Column(Modifier.weight(1f)) {
+                                Text(currentStep ?: currentRun.displayTitle.ifBlank { currentRun.name ?: "Android build" }, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("Run #".plus(currentRun.runNumber ?: currentRun.id).plus(" · ").plus(currentRun.headBranch.orEmpty()), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Text(buildProgress.toString().padStart(2, '0').plus(" / 100"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = buildAccent)
+                        }
+                        LinearProgressIndicator(
+                            progress = { buildProgress / 100f },
+                            Modifier.fillMaxWidth(),
+                            color = buildAccent,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(
+                                if (buildSteps.isNotEmpty()) completedBuildSteps.toString().plus("/").plus(buildSteps.size).plus(" workflow steps complete")
+                                else "Waiting for real GitHub Actions step data",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            currentRun.runTime()?.let {
+                                Text("Running ".plus(it.formatRunTime()), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    } else {
+                        Text("Build from the real GitHub Actions workflow. No simulated progress is used.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text("Build workflow", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
             when {
                 mode != AppMode.Connected -> Text("Connect GitHub to start and track a build.")
                 repository == null -> Text("Select a repository first.")
