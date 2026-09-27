@@ -13,13 +13,16 @@ import androidx.compose.ui.unit.dp
  * corner radii, transparency values, or theme-breaking surface colors.
  */
 object RockShapes {
-    val Control = 14.dp
-    val SmallCard = 18.dp
-    val Card = 24.dp
-    val LargeCard = 28.dp
-    val Sheet = 32.dp
-    val Navigation = 28.dp
-    val Pill = 999.dp
+    private fun radius(max: Float): androidx.compose.ui.unit.Dp =
+        (max * LocalRockShapeScale.current.coerceIn(0f, 1f)).dp
+
+    val Control: androidx.compose.ui.unit.Dp @Composable get() = radius(16f)
+    val SmallCard: androidx.compose.ui.unit.Dp @Composable get() = radius(20f)
+    val Card: androidx.compose.ui.unit.Dp @Composable get() = radius(28f)
+    val LargeCard: androidx.compose.ui.unit.Dp @Composable get() = radius(34f)
+    val Sheet: androidx.compose.ui.unit.Dp @Composable get() = radius(40f)
+    val Navigation: androidx.compose.ui.unit.Dp @Composable get() = radius(36f)
+    val Pill: androidx.compose.ui.unit.Dp @Composable get() = radius(999f)
 }
 
 object RockSurfaceAlpha {
@@ -45,22 +48,26 @@ sealed interface RockSurfaceRole {
 }
 
 @Composable
-fun rockSurfaceColor(role: RockSurfaceRole): Color = when (role) {
-    RockSurfaceRole.Background -> MaterialTheme.colorScheme.background.copy(alpha = RockSurfaceAlpha.Background)
-    RockSurfaceRole.Card -> MaterialTheme.colorScheme.surface.copy(alpha = RockSurfaceAlpha.Low)
-    RockSurfaceRole.Elevated -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = RockSurfaceAlpha.Medium)
-    RockSurfaceRole.Interactive -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = RockSurfaceAlpha.Interactive)
-    RockSurfaceRole.Selected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = RockSurfaceAlpha.Selected)
-    RockSurfaceRole.Navigation -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = RockSurfaceAlpha.Medium)
-    RockSurfaceRole.Sheet -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = RockSurfaceAlpha.High)
-    RockSurfaceRole.Code -> MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = RockSurfaceAlpha.High)
+fun rockSurfaceColor(role: RockSurfaceRole): Color {
+    val tokens = rockSurfaceTokens(role)
+    val base = when (role) {
+        RockSurfaceRole.Background -> MaterialTheme.colorScheme.background
+        RockSurfaceRole.Card -> MaterialTheme.colorScheme.surface
+        RockSurfaceRole.Elevated -> MaterialTheme.colorScheme.surfaceContainerHigh
+        RockSurfaceRole.Interactive -> MaterialTheme.colorScheme.surfaceContainerHighest
+        RockSurfaceRole.Selected -> MaterialTheme.colorScheme.primaryContainer
+        RockSurfaceRole.Navigation -> MaterialTheme.colorScheme.surfaceContainerHigh
+        RockSurfaceRole.Sheet -> MaterialTheme.colorScheme.surfaceContainer
+        RockSurfaceRole.Code -> MaterialTheme.colorScheme.surfaceContainerLow
+    }
+    return base.copy(alpha = tokens.opacity)
 }
 
 @Composable
-fun rockSurfaceBorder(): BorderStroke = BorderStroke(
-    1.dp,
-    MaterialTheme.colorScheme.outlineVariant.copy(alpha = RockSurfaceAlpha.Border)
-)
+fun rockSurfaceBorder(): BorderStroke {
+    val tokens = rockSurfaceTokens(RockSurfaceRole.Card)
+    return BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = tokens.borderAlpha))
+}
 
 @Composable
 fun rockContentColor(role: RockSurfaceRole): Color = when (role) {
