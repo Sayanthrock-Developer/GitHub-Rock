@@ -76,7 +76,7 @@ private fun relativeLuminance(color: Color): Float {
 }
 
 private fun accentPalette(accentColor: AccentColor, customAccentHex: String?): AccentPalette = if (accentColor == AccentColor.Custom) customAccentHex?.let(::customPalette) ?: accentColor.palette() else accentColor.palette()
-private fun darkColors(accentColor: AccentColor, customAccentHex: String?) = accentPalette(accentColor, customAccentHex).let { a -> darkColorScheme(primary = a.dark, onPrimary = a.onDark, primaryContainer = a.darkContainer, onPrimaryContainer = a.onDarkContainer, secondary = Color(0xFFB6C2CF), onSecondary = Color(0xFF1B242D), tertiary = RockGreen, background = Color(0xFF0B0D10), surface = Color(0xFF111418), surfaceVariant = Color(0xFF191D22), surfaceContainerLowest = Color(0xFF080A0D), surfaceContainerLow = Color(0xFF0E1115), surfaceContainer = Color(0xFF111418), surfaceContainerHigh = Color(0xFF191D22), surfaceContainerHighest = Color(0xFF22272D), outline = RockDarkBorder, outlineVariant = Color(0xFF30363D), error = RockRed, onBackground = RockDarkText, onSurface = RockDarkText, onSurfaceVariant = RockDarkMuted) }
+private fun darkColors(accentColor: AccentColor, customAccentHex: String?) = accentPalette(accentColor, customAccentHex).let { a -> darkColorScheme(primary = a.dark, onPrimary = a.onDark, primaryContainer = a.darkContainer, onPrimaryContainer = a.onDarkContainer, secondary = RockDarkMuted, onSecondary = Color(0xFF1B242D), tertiary = RockGreen, background = Color(0xFF0B0D10), surface = Color(0xFF111418), surfaceVariant = Color(0xFF191D22), surfaceContainerLowest = Color(0xFF080A0D), surfaceContainerLow = Color(0xFF0E1115), surfaceContainer = Color(0xFF111418), surfaceContainerHigh = Color(0xFF191D22), surfaceContainerHighest = Color(0xFF22272D), outline = RockDarkBorder, outlineVariant = Color(0xFF30363D), error = RockRed, onBackground = RockDarkText, onSurface = RockDarkText, onSurfaceVariant = RockDarkMuted) }
 private fun lightColors(accentColor: AccentColor, customAccentHex: String?) = accentPalette(accentColor, customAccentHex).let { a -> lightColorScheme(primary = a.light, onPrimary = a.onLight, primaryContainer = a.lightContainer, onPrimaryContainer = a.onLightContainer, secondary = Color(0xFF59636E), onSecondary = Color.White, tertiary = RockLightGreen, background = RockLightBackground, surface = RockLightSurface, surfaceVariant = RockLightSurfaceHigh, surfaceContainerLowest = RockLightSurface, surfaceContainerLow = Color(0xFFF0F3F6), surfaceContainer = RockLightSurface, surfaceContainerHigh = RockLightSurfaceHigh, surfaceContainerHighest = Color(0xFFDDE2E7), outline = RockLightBorder, outlineVariant = Color(0xFFE1E5EA), error = RockLightRed, onBackground = RockLightText, onSurface = RockLightText, onSurfaceVariant = RockLightMuted) }
 
 private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
@@ -97,7 +97,7 @@ private fun contrastRatio(foreground: Color, background: Color): Float {
 
 private fun ColorScheme.ensureTextContrast(dark: Boolean): ColorScheme {
     val textFallback = if (dark) Color.White else Color(0xFF16191D)
-    val mutedFallback = if (dark) Color(0xFFB8C1CC) else Color(0xFF59636E)
+    val mutedFallback = if (dark) RockDarkMuted else Color(0xFF59636E)
     val primaryFallback = if (dark) Color.White else Color(0xFF16191D)
 
     fun readable(candidate: Color, fallback: Color, background: Color, minimum: Float): Color =
