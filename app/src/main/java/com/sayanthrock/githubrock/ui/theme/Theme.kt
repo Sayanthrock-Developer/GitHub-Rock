@@ -66,7 +66,7 @@ private fun customPalette(hex: String): AccentPalette? {
     val onDark = Color.White
     val onLight = if (relativeLuminance(lightPrimary) > .55f) RockLightText else RockDarkText
     val onDarkContainer = Color.White
-    val onLightContainer = if (relativeLuminance(lightContainer) > .55f) RockLightText else RockLightText
+    val onLightContainer = RockLightText
     return AccentPalette(darkPrimary, darkContainer, lightPrimary, lightContainer, onDark, onDarkContainer, onLight, onLightContainer)
 }
 
