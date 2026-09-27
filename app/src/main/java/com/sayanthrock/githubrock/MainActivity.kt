@@ -90,7 +90,6 @@ class MainActivity : ComponentActivity() {
                 surfaceOpacity = appearance.surfaceOpacity,
                 surfaceBorder = appearance.surfaceBorder,
                 surfaceElevation = appearance.surfaceElevation,
-                surfaceBlur = appearance.surfaceBlur,
                 surfaceContrast = appearance.surfaceContrast,
                 backgroundDepth = appearance.backgroundDepth,
                 accentColor = appearance.accentColor,
