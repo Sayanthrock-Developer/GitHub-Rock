@@ -2,6 +2,7 @@ package com.sayanthrock.githubrock.ui.navigation
 
 import android.view.HapticFeedbackConstants
 import android.view.View
+import android.content.res.Configuration
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -71,6 +73,15 @@ fun RockNavigationChrome(navController: NavHostController, style: NavigationBarS
     val entry by navController.currentBackStackEntryAsState()
     val selectedRoute = entry?.destination?.route
     if (rockNavigationDestinations.none { it.route == selectedRoute }) return
+    val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    if (isTv) {
+        TvNavigationRail(
+            selectedRoute = selectedRoute,
+            onDestinationSelected = { navigateToTopLevel(navController, it) },
+            modifier = modifier.fillMaxSize().zIndex(10f)
+        )
+        return
+    }
     BoxWithConstraints(modifier.fillMaxSize().zIndex(10f)) {
         RockBottomNavigation(selectedRoute, style, maxWidth < 360.dp, animationStyle, reduceMotion, { navigateToTopLevel(navController, it) }, Modifier.align(Alignment.BottomCenter).zIndex(10f))
     }
