@@ -2,7 +2,9 @@ package com.sayanthrock.githubrock.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +44,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.focus.onFocusChanged
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -476,9 +481,17 @@ private fun DiscoveryRepositoryCard(
 ) {
     val showImages = LocalRemoteImagesEnabled.current
     val platforms = remember(repository) { repositoryPlatforms(repository) }
+    val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    var focused by remember { mutableStateOf(false) }
 
     GlassCard(
-        modifier = modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLongClick).semantics { contentDescription = repository.fullName + ". Tap to open. Long-press to hide repository." },
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused = it.isFocused }
+            .focusable()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .then(if (isTv && focused) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), MaterialTheme.shapes.extraLarge) else Modifier)
+            .semantics { contentDescription = repository.fullName + ". Tap to open. Long-press to hide repository." },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
