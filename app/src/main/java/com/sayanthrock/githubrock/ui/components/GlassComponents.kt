@@ -8,6 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
+import com.sayanthrock.githubrock.ui.theme.RockShapes
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceBorder
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceColor
+import com.sayanthrock.githubrock.ui.theme.RockSurfaceRole
+import com.sayanthrock.githubrock.ui.theme.rockSurfaceTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -38,10 +44,11 @@ fun GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .then(interactionModifier),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
-        shadowElevation = if (onClick == null) 0.dp else 1.dp
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(RockShapes.Card),
+        color = rockSurfaceColor(RockSurfaceRole.Card),
+        border = rockSurfaceBorder(),
+        tonalElevation = rockSurfaceTokens(RockSurfaceRole.Card).elevation,
+        shadowElevation = if (onClick == null) 0.dp else rockSurfaceTokens(RockSurfaceRole.Card).elevation / 2
     ) {
         Box(modifier = Modifier.padding(contentPadding), content = content)
     }
