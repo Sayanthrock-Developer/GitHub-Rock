@@ -93,6 +93,8 @@ import com.sayanthrock.githubrock.data.settings.FontWeightStyle
 import com.sayanthrock.githubrock.data.settings.LoadingStyle
 import com.sayanthrock.githubrock.data.settings.LogDisplayStyle
 import com.sayanthrock.githubrock.data.settings.NavigationBarStyle
+import com.sayanthrock.githubrock.data.settings.RockSurfaceStyle
+import com.sayanthrock.githubrock.data.settings.RockShapePreset
 import com.sayanthrock.githubrock.data.settings.ThemeMode
 import com.sayanthrock.githubrock.data.settings.ThemeStyle
 import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
@@ -115,6 +117,15 @@ fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltVi
         state = state,
         onBack = onBack,
         onThemeMode = viewModel::setThemeMode,
+        onSurfaceStyle = viewModel::setSurfaceStyle,
+        onShapePreset = viewModel::setShapePreset,
+        onShapeScale = viewModel::setShapeScale,
+        onSurfaceOpacity = viewModel::setSurfaceOpacity,
+        onSurfaceBorder = viewModel::setSurfaceBorder,
+        onSurfaceElevation = viewModel::setSurfaceElevation,
+        onSurfaceBlur = viewModel::setSurfaceBlur,
+        onSurfaceContrast = viewModel::setSurfaceContrast,
+        onBackgroundDepth = viewModel::setBackgroundDepth,
         onAccentColor = viewModel::setAccentColor,
         onDynamicColor = viewModel::setDynamicColor,
         onTrueBlack = viewModel::setTrueBlack,
@@ -142,6 +153,15 @@ fun AppearanceContent(
     state: AppearancePreferences,
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
+    onSurfaceStyle: (RockSurfaceStyle) -> Unit = {},
+    onShapePreset: (RockShapePreset) -> Unit = {},
+    onShapeScale: (Float) -> Unit = {},
+    onSurfaceOpacity: (Float) -> Unit = {},
+    onSurfaceBorder: (Float) -> Unit = {},
+    onSurfaceElevation: (Float) -> Unit = {},
+    onSurfaceBlur: (Float) -> Unit = {},
+    onSurfaceContrast: (Float) -> Unit = {},
+    onBackgroundDepth: (Float) -> Unit = {},
     onAccentColor: (AccentColor) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
     onTrueBlack: (Boolean) -> Unit,
@@ -196,6 +216,8 @@ fun AppearanceContent(
             item { ChoiceCard("Design style", "Complete surface and shape system", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
             item { AccentPicker(state, onAccentColor, onSystemDynamicAccent, onCustomAccentHex) { showAccentPicker = true } }
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
+            item { StandardSectionHeader("Surface") }
+            item { SurfaceAndShapeControls(state, onSurfaceStyle, onShapePreset, onShapeScale, onSurfaceOpacity, onSurfaceBorder, onSurfaceElevation, onSurfaceBlur, onSurfaceContrast, onBackgroundDepth) }
             item { StandardSectionHeader("Navigation") }
             item { NavigationBarStyleControl(state.navigationBarStyle, onNavigationBarStyle) }
             item { StandardSectionHeader("Display size") }
@@ -730,6 +752,71 @@ private fun ModeMiniPreview(mode: ThemeMode, selected: Boolean) {
         }
     }
 }
+
+@Composable
+private fun SurfaceAndShapeControls(
+    state: AppearancePreferences,
+    onSurfaceStyle: (RockSurfaceStyle) -> Unit,
+    onShapePreset: (RockShapePreset) -> Unit,
+    onShapeScale: (Float) -> Unit,
+    onSurfaceOpacity: (Float) -> Unit,
+    onSurfaceBorder: (Float) -> Unit,
+    onSurfaceElevation: (Float) -> Unit,
+    onSurfaceBlur: (Float) -> Unit,
+    onSurfaceContrast: (Float) -> Unit,
+    onBackgroundDepth: (Float) -> Unit,
+) {
+    StandardSettingsGroup {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("Surface treatment", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("One global surface language for cards, sheets, navigation, inputs, loading, and states.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RockSurfaceStyle.entries.forEach { style ->
+                    FilterChip(selected = state.surfaceStyle == style, onClick = { onSurfaceStyle(style) }, label = { Text(style.name) })
+                }
+            }
+            Surface(Modifier.fillMaxWidth().height(92.dp), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = state.surfaceOpacity), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = state.surfaceBorder)), tonalElevation = state.surfaceElevation.dp) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Live surface preview", fontWeight = FontWeight.SemiBold)
+                    Text("${state.surfaceStyle.name} · ${state.surfaceOpacity.asPercent()} opacity · ${state.surfaceElevation.oneDecimal()}dp elevation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Text("Surface controls", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            AppearanceSlider("Opacity", state.surfaceOpacity, 0.55f..1f, onSurfaceOpacity)
+            AppearanceSlider("Border", state.surfaceBorder, 0f..1f, onSurfaceBorder)
+            AppearanceSlider("Elevation", state.surfaceElevation, 0f..12f, onSurfaceElevation)
+            AppearanceSlider("Blur", state.surfaceBlur, 0f..24f, onSurfaceBlur)
+            AppearanceSlider("Contrast", state.surfaceContrast, 0.85f..1.15f, onSurfaceContrast)
+            AppearanceSlider("Background depth", state.backgroundDepth, 0f..0.30f, onBackgroundDepth)
+            Text("Shape", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RockShapePreset.entries.forEach { preset ->
+                    FilterChip(selected = state.shapePreset == preset, onClick = { onShapePreset(preset) }, label = { Text(preset.name) })
+                }
+            }
+            AppearanceSlider("Corner radius", state.shapeScale, 0.08f..1f, onShapeScale)
+            Surface(Modifier.fillMaxWidth().height(68.dp), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .42f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .35f))) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("${state.shapePreset.name} · ${(state.shapeScale * 100).toInt()}% radius scale", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppearanceSlider(label: String, value: Float, range: ClosedFloatingPointRange<Float>, onValueChange: (Float) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+            Text(if (label == "Elevation" || label == "Blur") "${value.oneDecimal()}dp" else "${value.asPercent()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Slider(value = value.coerceIn(range.start, range.endInclusive), onValueChange = onValueChange, valueRange = range)
+    }
+}
+
+private fun Float.asPercent(): String = "${(this * 100f).toInt()}%"
+private fun Float.oneDecimal(): String = "%.1f".format(Locale.US)
 
 @Composable private fun TypographyPreview() = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { Text("Interface preview", style = MaterialTheme.typography.headlineSmall); Text("Clean typography preview", style = MaterialTheme.typography.titleMedium); Text("Repositories, workflows, releases, and code remain readable at every selected size.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
 @Composable private fun CodeColorPreview() { val colors = LocalCodeColors.current; val code = buildAnnotatedString { withStyle(SpanStyle(color = colors.keyword, fontWeight = FontWeight.Bold)) { append("fun ") }; withStyle(SpanStyle(color = colors.type)) { append("publishRelease") }; append("() {\n  "); withStyle(SpanStyle(color = colors.keyword)) { append("val ") }; withStyle(SpanStyle(color = colors.property)) { append("version") }; append(" = "); withStyle(SpanStyle(color = colors.string)) { append("\"1.0.0\"") }; append("\n  "); withStyle(SpanStyle(color = colors.comment)) { append("// Signed and verified") }; append("\n  "); withStyle(SpanStyle(color = colors.type)) { append("release") }; append("("); withStyle(SpanStyle(color = colors.number)) { append("100") }; append(")\n}") }; GlassCard { Text(code, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium) } }
