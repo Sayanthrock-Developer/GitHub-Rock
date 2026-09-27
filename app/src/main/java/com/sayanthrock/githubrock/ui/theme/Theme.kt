@@ -63,9 +63,9 @@ private fun customPalette(hex: String): AccentPalette? {
     val lightPrimary = if (luminance > .52f) base.copy(red = base.red * .65f, green = base.green * .65f, blue = base.blue * .65f) else base
     val darkContainer = Color(base.red * .30f, base.green * .30f, base.blue * .30f, 1f)
     val lightContainer = Color(base.red * .16f + .84f, base.green * .16f + .84f, base.blue * .16f + .84f, 1f)
-    val onDark = if (relativeLuminance(darkPrimary) > .55f) Color.Black else Color.White
+    val onDark = Color.White
     val onLight = if (relativeLuminance(lightPrimary) > .55f) Color.Black else Color.White
-    val onDarkContainer = if (relativeLuminance(darkContainer) > .55f) Color.Black else Color.White
+    val onDarkContainer = Color.White
     val onLightContainer = if (relativeLuminance(lightContainer) > .55f) Color.Black else Color(0xFF101010)
     return AccentPalette(darkPrimary, darkContainer, lightPrimary, lightContainer, onDark, onDarkContainer, onLight, onLightContainer)
 }
