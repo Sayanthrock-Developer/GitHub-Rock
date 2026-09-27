@@ -79,14 +79,15 @@ private fun accentPalette(accentColor: AccentColor, customAccentHex: String?): A
 private fun darkColors(accentColor: AccentColor, customAccentHex: String?) = accentPalette(accentColor, customAccentHex).let { a -> darkColorScheme(primary = a.dark, onPrimary = a.onDark, primaryContainer = a.darkContainer, onPrimaryContainer = a.onDarkContainer, secondary = RockDarkMuted, onSecondary = Color(0xFF1B242D), tertiary = RockGreen, background = Color(0xFF0B0D10), surface = Color(0xFF111418), surfaceVariant = Color(0xFF191D22), surfaceContainerLowest = Color(0xFF080A0D), surfaceContainerLow = Color(0xFF0E1115), surfaceContainer = Color(0xFF111418), surfaceContainerHigh = Color(0xFF191D22), surfaceContainerHighest = Color(0xFF22272D), outline = RockDarkBorder, outlineVariant = Color(0xFF30363D), error = RockRed, onBackground = RockDarkText, onSurface = RockDarkText, onSurfaceVariant = RockDarkMuted) }
 private fun lightColors(accentColor: AccentColor, customAccentHex: String?) = accentPalette(accentColor, customAccentHex).let { a -> lightColorScheme(primary = a.light, onPrimary = a.onLight, primaryContainer = a.lightContainer, onPrimaryContainer = a.onLightContainer, secondary = Color(0xFF59636E), onSecondary = Color.White, tertiary = RockLightGreen, background = RockLightBackground, surface = RockLightSurface, surfaceVariant = RockLightSurfaceHigh, surfaceContainerLowest = RockLightSurface, surfaceContainerLow = Color(0xFFF0F3F6), surfaceContainer = RockLightSurface, surfaceContainerHigh = RockLightSurfaceHigh, surfaceContainerHighest = Color(0xFFDDE2E7), outline = RockLightBorder, outlineVariant = Color(0xFFE1E5EA), error = RockLightRed, onBackground = RockLightText, onSurface = RockLightText, onSurfaceVariant = RockLightMuted) }
 
-private fun shapesFor(style: ThemeStyle): Shapes = when (style) {
-    ThemeStyle.Clean -> Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(9.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(24.dp))
-    ThemeStyle.LiquidGlass -> Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(16.dp), medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(26.dp), extraLarge = RoundedCornerShape(34.dp))
-    ThemeStyle.Studio -> Shapes(extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(7.dp), medium = RoundedCornerShape(10.dp), large = RoundedCornerShape(13.dp), extraLarge = RoundedCornerShape(18.dp))
-    ThemeStyle.Midnight -> Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
-    ThemeStyle.Aurora -> Shapes(extraSmall = RoundedCornerShape(10.dp), small = RoundedCornerShape(14.dp), medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(32.dp))
-    ThemeStyle.HighContrast -> Shapes(extraSmall = RoundedCornerShape(2.dp), small = RoundedCornerShape(4.dp), medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp), extraLarge = RoundedCornerShape(12.dp))
-    ThemeStyle.Obsidian -> Shapes(extraSmall = RoundedCornerShape(7.dp), small = RoundedCornerShape(11.dp), medium = RoundedCornerShape(15.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp))
+private fun shapesFor(scale: Float): Shapes {
+    fun radius(max: Float): androidx.compose.ui.unit.Dp = (max * scale.coerceIn(0f, 1f)).dp
+    return Shapes(
+        extraSmall = RoundedCornerShape(radius(8f)),
+        small = RoundedCornerShape(radius(16f)),
+        medium = RoundedCornerShape(radius(24f)),
+        large = RoundedCornerShape(radius(32f)),
+        extraLarge = RoundedCornerShape(radius(40f))
+    )
 }
 
 private fun contrastRatio(foreground: Color, background: Color): Float {
@@ -167,7 +168,7 @@ private fun DisplaySize.scale() = when (this) { DisplaySize.Small -> .90f; Displ
 private fun FontSize.scale() = when (this) { FontSize.Small -> .90f; FontSize.Default -> 1f; FontSize.Large -> 1.16f }
 
 @Composable
-fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, trueBlack: Boolean = false, accentColor: AccentColor = AccentColor.DefaultGitHubRock, customAccentHex: String? = null, themeStyle: ThemeStyle = ThemeStyle.Clean, displaySize: DisplaySize = DisplaySize.Standard, fontSize: FontSize = FontSize.Default, fontWeight: FontWeightStyle = FontWeightStyle.Default, fontFamily: AppFontFamily = AppFontFamily.SystemSans, loadingStyle: LoadingStyle = LoadingStyle.Spinner, codeColorStyle: CodeColorStyle = CodeColorStyle.Classic, logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal, reduceMotion: Boolean = false, showImages: Boolean = true, content: @Composable () -> Unit) {
+fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, trueBlack: Boolean = false, surfaceStyle: RockSurfaceStyle = RockSurfaceStyle.Adaptive, shapePreset: RockShapePreset = RockShapePreset.Rounded, shapeScale: Float = shapePreset.scale, accentColor: AccentColor = AccentColor.DefaultGitHubRock, customAccentHex: String? = null, themeStyle: ThemeStyle = ThemeStyle.Clean, displaySize: DisplaySize = DisplaySize.Standard, fontSize: FontSize = FontSize.Default, fontWeight: FontWeightStyle = FontWeightStyle.Default, fontFamily: AppFontFamily = AppFontFamily.SystemSans, loadingStyle: LoadingStyle = LoadingStyle.Spinner, codeColorStyle: CodeColorStyle = CodeColorStyle.Classic, logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal, reduceMotion: Boolean = false, showImages: Boolean = true, content: @Composable () -> Unit) {
     val context = LocalContext.current
     val baseDensity = LocalDensity.current
     val systemColors = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -194,9 +195,11 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, tr
         LocalCodeColorStyle provides codeColorStyle,
         LocalLogDisplayStyle provides logDisplayStyle,
         LocalCodeColors provides codeColors(codeColorStyle, darkTheme),
+        LocalRockSurfaceStyle provides surfaceStyle,
+        LocalRockShapeScale provides shapeScale.coerceIn(0f, 1f),
         LocalDensity provides density,
         LocalTextSelectionColors provides selectionColors
     ) {
-        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(themeStyle), content = content)
+        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(shapeScale), content = content)
     }
 }
