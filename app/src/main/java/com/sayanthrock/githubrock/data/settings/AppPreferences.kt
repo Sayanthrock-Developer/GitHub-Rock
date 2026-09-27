@@ -39,7 +39,6 @@ data class AppearancePreferences(
     val surfaceOpacity: Float = 1f,
     val surfaceBorder: Float = 0.38f,
     val surfaceElevation: Float = 2f,
-    val surfaceBlur: Float = 0f,
     val surfaceContrast: Float = 1f,
     val backgroundDepth: Float = 0.08f,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
@@ -81,7 +80,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             surfaceOpacity = preferences[SURFACE_OPACITY] ?: 1f,
             surfaceBorder = preferences[SURFACE_BORDER] ?: 0.38f,
             surfaceElevation = preferences[SURFACE_ELEVATION] ?: 2f,
-            surfaceBlur = preferences[SURFACE_BLUR] ?: 0f,
             surfaceContrast = preferences[SURFACE_CONTRAST] ?: 1f,
             backgroundDepth = preferences[BACKGROUND_DEPTH] ?: 0.08f,
             themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
@@ -139,7 +137,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setSurfaceOpacity(value: Float) = context.dataStore.edit { it[SURFACE_OPACITY] = value.coerceIn(0.55f, 1f) }
     suspend fun setSurfaceBorder(value: Float) = context.dataStore.edit { it[SURFACE_BORDER] = value.coerceIn(0f, 1f) }
     suspend fun setSurfaceElevation(value: Float) = context.dataStore.edit { it[SURFACE_ELEVATION] = value.coerceIn(0f, 12f) }
-    suspend fun setSurfaceBlur(value: Float) = context.dataStore.edit { it[SURFACE_BLUR] = value.coerceIn(0f, 24f) }
     suspend fun setSurfaceContrast(value: Float) = context.dataStore.edit { it[SURFACE_CONTRAST] = value.coerceIn(0.85f, 1.15f) }
     suspend fun setBackgroundDepth(value: Float) = context.dataStore.edit { it[BACKGROUND_DEPTH] = value.coerceIn(0f, 0.30f) }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
