@@ -7,7 +7,6 @@ import com.sayanthrock.githubrock.data.settings.RockSurfaceStyle
 import com.sayanthrock.githubrock.data.settings.RockShapePreset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.lerp
 
 data class RockSurfaceTokens(
     val opacity: Float,
