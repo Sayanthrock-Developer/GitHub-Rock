@@ -123,7 +123,6 @@ fun AppearanceScreen(onBack: () -> Unit, viewModel: AppearanceViewModel = hiltVi
         onSurfaceOpacity = viewModel::setSurfaceOpacity,
         onSurfaceBorder = viewModel::setSurfaceBorder,
         onSurfaceElevation = viewModel::setSurfaceElevation,
-        onSurfaceBlur = viewModel::setSurfaceBlur,
         onSurfaceContrast = viewModel::setSurfaceContrast,
         onBackgroundDepth = viewModel::setBackgroundDepth,
         onAccentColor = viewModel::setAccentColor,
@@ -159,7 +158,6 @@ fun AppearanceContent(
     onSurfaceOpacity: (Float) -> Unit = {},
     onSurfaceBorder: (Float) -> Unit = {},
     onSurfaceElevation: (Float) -> Unit = {},
-    onSurfaceBlur: (Float) -> Unit = {},
     onSurfaceContrast: (Float) -> Unit = {},
     onBackgroundDepth: (Float) -> Unit = {},
     onAccentColor: (AccentColor) -> Unit,
@@ -213,11 +211,11 @@ fun AppearanceContent(
             item { LanguageSettingCard(state.appLanguageTag) { showLanguagePicker = true } }
             item { StandardSectionHeader("Theme") }
             item { ThemePreview(state) }
-            item { ChoiceCard("Design style", "Complete surface and shape system", Icons.Default.Palette, ThemeStyle.entries.map { it to it.displayName }, state.themeStyle, onThemeStyle) }
+            item { DesignStylePreview(state.themeStyle, onThemeStyle) }
             item { AccentPicker(state, onAccentColor, onSystemDynamicAccent, onCustomAccentHex) { showAccentPicker = true } }
             item { ThemeControls(state, onThemeMode, onDynamicColor, onTrueBlack, onShowImages) }
             item { StandardSectionHeader("Surface") }
-            item { SurfaceAndShapeControls(state, onSurfaceStyle, onShapePreset, onShapeScale, onSurfaceOpacity, onSurfaceBorder, onSurfaceElevation, onSurfaceBlur, onSurfaceContrast, onBackgroundDepth) }
+            item { SurfaceAndShapeControls(state, onSurfaceStyle, onShapePreset, onShapeScale, onSurfaceOpacity, onSurfaceBorder, onSurfaceElevation, onSurfaceContrast, onBackgroundDepth) }
             item { StandardSectionHeader("Navigation") }
             item { NavigationBarStyleControl(state.navigationBarStyle, onNavigationBarStyle) }
             item { StandardSectionHeader("Display size") }
@@ -623,6 +621,48 @@ private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f 
 
 private fun selectedHex(hue: Float, saturation: Float, brightness: Float): String { val color = Color.hsv(hue, saturation, brightness); return "#%02X%02X%02X".format((color.red * 255f).toInt().coerceIn(0, 255), (color.green * 255f).toInt().coerceIn(0, 255), (color.blue * 255f).toInt().coerceIn(0, 255)) }
 
+@Composable
+private fun DesignStylePreview(selected: ThemeStyle, onSelected: (ThemeStyle) -> Unit) {
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Design style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("A complete visual direction for GitHub Rock.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+                Text("LIVE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ThemeStyle.entries.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { style ->
+                            val chosen = selected == style
+                            Surface(Modifier.weight(1f).height(76.dp).clickable { onSelected(style) }, shape = MaterialTheme.shapes.large, color = if (chosen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(if (chosen) 2.dp else 1.dp, if (chosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                                Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Surface(Modifier.fillMaxWidth().height(22.dp), shape = MaterialTheme.shapes.medium, color = when (style) {
+                                        ThemeStyle.Clean -> MaterialTheme.colorScheme.surface
+                                        ThemeStyle.LiquidGlass -> MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+                                        ThemeStyle.Studio -> MaterialTheme.colorScheme.secondaryContainer
+                                        ThemeStyle.Midnight -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                        ThemeStyle.Aurora -> MaterialTheme.colorScheme.tertiaryContainer
+                                        ThemeStyle.HighContrast -> MaterialTheme.colorScheme.onSurface
+                                        ThemeStyle.Obsidian -> MaterialTheme.colorScheme.surface
+                                    }) {}
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(style.displayName, style = MaterialTheme.typography.labelMedium, fontWeight = if (chosen) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.weight(1f))
+                                        if (chosen) Icon(Icons.Default.Check, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                            }
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable private fun ThemeControls(state: AppearancePreferences, onThemeMode: (ThemeMode) -> Unit, onDynamicColor: (Boolean) -> Unit, onTrueBlack: (Boolean) -> Unit, onShowImages: (Boolean) -> Unit) = StandardSettingsGroup {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -762,54 +802,103 @@ private fun SurfaceAndShapeControls(
     onSurfaceOpacity: (Float) -> Unit,
     onSurfaceBorder: (Float) -> Unit,
     onSurfaceElevation: (Float) -> Unit,
-    onSurfaceBlur: (Float) -> Unit,
     onSurfaceContrast: (Float) -> Unit,
     onBackgroundDepth: (Float) -> Unit,
 ) {
     StandardSettingsGroup {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Surface treatment", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text("One global surface language for cards, sheets, navigation, inputs, loading, and states.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RockSurfaceStyle.entries.forEach { style ->
-                    FilterChip(selected = state.surfaceStyle == style, onClick = { onSurfaceStyle(style) }, label = { Text(style.name) })
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Rock Adaptive", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("One visual language for cards, sheets, navigation, inputs, loading, and states.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Text("Surface", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("Choose the base treatment, then fine-tune depth and contrast below.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                RockSurfaceStyle.entries.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { style ->
+                            SurfaceChoiceCard(Modifier.weight(1f), style, state.surfaceStyle == style) { onSurfaceStyle(style) }
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
                 }
             }
-            Surface(Modifier.fillMaxWidth().height(92.dp), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = state.surfaceOpacity), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = state.surfaceBorder)), tonalElevation = state.surfaceElevation.dp) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Live surface preview", fontWeight = FontWeight.SemiBold)
-                    Text("${state.surfaceStyle.name} · ${state.surfaceOpacity.asPercent()} opacity · ${state.surfaceElevation.oneDecimal()}dp elevation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Surface(
+                Modifier.fillMaxWidth().height(104.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = state.surfaceOpacity),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = state.surfaceBorder)),
+                tonalElevation = state.surfaceElevation.dp,
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Live preview", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        if (state.surfaceStyle == RockSurfaceStyle.Adaptive) Text("AUTO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                    Text("\${state.surfaceStyle.displayName} · \${state.surfaceOpacity.asPercent()} opacity · \${state.surfaceElevation.oneDecimal()}dp elevation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Surface(Modifier.fillMaxWidth().height(6.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = (state.surfaceContrast - .35f).coerceIn(.1f, .8f))) {}
                 }
             }
-            Text("Surface controls", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("Surface tuning", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             AppearanceSlider("Opacity", state.surfaceOpacity, 0.55f..1f, onSurfaceOpacity)
             AppearanceSlider("Border", state.surfaceBorder, 0f..1f, onSurfaceBorder)
             AppearanceSlider("Elevation", state.surfaceElevation, 0f..12f, onSurfaceElevation)
-            AppearanceSlider("Blur", state.surfaceBlur, 0f..24f, onSurfaceBlur)
             AppearanceSlider("Contrast", state.surfaceContrast, 0.85f..1.15f, onSurfaceContrast)
             AppearanceSlider("Background depth", state.backgroundDepth, 0f..0.30f, onBackgroundDepth)
             Text("Shape", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RockShapePreset.entries.forEach { preset ->
-                    FilterChip(selected = state.shapePreset == preset, onClick = { onShapePreset(preset) }, label = { Text(preset.name) })
+            Text("Use the same corner language across the whole app.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                RockShapePreset.entries.chunked(3).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { preset -> ShapeChoiceCard(Modifier.weight(1f), preset, state.shapePreset == preset) { onShapePreset(preset) } }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
             AppearanceSlider("Corner radius", state.shapeScale, 0.08f..1f, onShapeScale)
-            Surface(Modifier.fillMaxWidth().height(68.dp), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .42f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .35f))) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("${state.shapePreset.name} · ${(state.shapeScale * 100).toInt()}% radius scale", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.SemiBold)
-                }
+            Surface(Modifier.fillMaxWidth().height(72.dp), shape = shapeForPreset(state.shapePreset, state.shapeScale), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .55f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .35f))) {
+                Box(contentAlignment = Alignment.Center) { Text("\${state.shapePreset.displayName} · \${(state.shapeScale * 100).toInt()}% radius", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.SemiBold) }
             }
         }
     }
 }
 
 @Composable
+private fun SurfaceChoiceCard(modifier: Modifier, style: RockSurfaceStyle, selected: Boolean, onClick: () -> Unit) {
+    Surface(modifier.height(96.dp).clickable(onClick = onClick), shape = MaterialTheme.shapes.large, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Surface(Modifier.fillMaxWidth().height(34.dp), shape = MaterialTheme.shapes.medium, color = when (style) {
+                RockSurfaceStyle.Solid -> MaterialTheme.colorScheme.surface
+                RockSurfaceStyle.Soft -> MaterialTheme.colorScheme.surfaceContainerHigh
+                RockSurfaceStyle.Glass -> MaterialTheme.colorScheme.surface.copy(alpha = .72f)
+                RockSurfaceStyle.Frosted -> MaterialTheme.colorScheme.surface.copy(alpha = .55f)
+                RockSurfaceStyle.Adaptive -> MaterialTheme.colorScheme.primary.copy(alpha = .12f)
+            }, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (style == RockSurfaceStyle.Solid) .45f else .75f)), tonalElevation = if (style == RockSurfaceStyle.Soft) 2.dp else 0.dp) {}
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(style.displayName, style = MaterialTheme.typography.labelLarge, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.weight(1f))
+                if (selected) Icon(Icons.Default.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShapeChoiceCard(modifier: Modifier, preset: RockShapePreset, selected: Boolean, onClick: () -> Unit) {
+    Surface(modifier.height(82.dp).clickable(onClick = onClick), shape = MaterialTheme.shapes.large, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.fillMaxSize().padding(9.dp), verticalArrangement = Arrangement.spacedBy(7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Surface(Modifier.width(54.dp).height(28.dp), shape = shapeForPreset(preset, preset.scale), color = MaterialTheme.colorScheme.primary.copy(alpha = .18f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .45f))) {}
+            Text(preset.displayName, style = MaterialTheme.typography.labelMedium, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+        }
+    }
+}
+
+private fun shapeForPreset(preset: RockShapePreset, scale: Float): androidx.compose.ui.graphics.Shape =
+    androidx.compose.foundation.shape.RoundedCornerShape((32f * scale.coerceIn(.08f, 1f)).dp)
+
+@Composable
 private fun AppearanceSlider(label: String, value: Float, range: ClosedFloatingPointRange<Float>, onValueChange: (Float) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-            Text(if (label == "Elevation" || label == "Blur") "${value.oneDecimal()}dp" else "${value.asPercent()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (label == "Elevation") "${value.oneDecimal()}dp" else "${value.asPercent()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Slider(value = value.coerceIn(range.start, range.endInclusive), onValueChange = onValueChange, valueRange = range)
     }
