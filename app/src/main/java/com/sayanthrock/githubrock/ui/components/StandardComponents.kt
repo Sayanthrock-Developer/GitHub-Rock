@@ -1,7 +1,9 @@
 package com.sayanthrock.githubrock.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.onFocusChanged
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -115,15 +120,21 @@ fun StandardSettingsRow(
     trailing: (@Composable () -> Unit)? = null
 ) {
     val accent = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    var focused by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val interactionModifier = if (onClick == null) {
         Modifier
     } else {
-        Modifier.clickable(role = Role.Button, onClick = onClick)
+        Modifier
+            .onFocusChanged { focused = it.isFocused }
+            .focusable()
+            .clickable(role = Role.Button, onClick = onClick)
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .then(interactionModifier)
+            .then(if (isTv && onClick != null && focused) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), MaterialTheme.shapes.medium) else Modifier)
             .padding(horizontal = 16.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
