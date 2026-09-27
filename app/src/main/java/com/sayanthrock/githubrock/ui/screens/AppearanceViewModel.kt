@@ -45,7 +45,6 @@ class AppearanceViewModel @Inject constructor(
     fun setSurfaceOpacity(value: Float) = viewModelScope.launch { preferences.setSurfaceOpacity(value) }
     fun setSurfaceBorder(value: Float) = viewModelScope.launch { preferences.setSurfaceBorder(value) }
     fun setSurfaceElevation(value: Float) = viewModelScope.launch { preferences.setSurfaceElevation(value) }
-    fun setSurfaceBlur(value: Float) = viewModelScope.launch { preferences.setSurfaceBlur(value) }
     fun setSurfaceContrast(value: Float) = viewModelScope.launch { preferences.setSurfaceContrast(value) }
     fun setBackgroundDepth(value: Float) = viewModelScope.launch { preferences.setBackgroundDepth(value) }
     fun setThemeStyle(style: ThemeStyle) = viewModelScope.launch { preferences.setThemeStyle(style) }
