@@ -294,16 +294,40 @@ private fun NavigationSurface(modifier: Modifier, shape: Dp, role: RockSurfaceRo
 }
 
 private fun navigationSlideGesture(view: View, onDestinationSelected: (TopDestinationV2) -> Unit): Modifier = Modifier.pointerInput(Unit) {
+    var lastIndex = -1
+    var totalX = 0f
+    var totalY = 0f
+
     detectDragGesturesAfterLongPress(
-        onDragStart = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+        onDragStart = {
+            lastIndex = -1
+            totalX = 0f
+            totalY = 0f
+            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        },
+        onDragEnd = { lastIndex = -1 },
+        onDragCancel = { lastIndex = -1 },
         onDrag = { change, dragAmount ->
             if (size.width <= 0) return@detectDragGesturesAfterLongPress
-            val horizontalDistance = kotlin.math.abs(dragAmount.x)
-            val verticalDistance = kotlin.math.abs(dragAmount.y)
-            if (horizontalDistance <= verticalDistance) return@detectDragGesturesAfterLongPress
+
+            totalX += dragAmount.x
+            totalY += dragAmount.y
+
+            if (kotlin.math.abs(totalX) < 16f ||
+                kotlin.math.abs(totalX) <= kotlin.math.abs(totalY)
+            ) {
+                return@detectDragGesturesAfterLongPress
+            }
+
             change.consume()
-            val index = (change.position.x / size.width * rockNavigationDestinations.size).toInt().coerceIn(0, rockNavigationDestinations.lastIndex)
-            onDestinationSelected(rockNavigationDestinations[index])
+            val index = (change.position.x / size.width * rockNavigationDestinations.size)
+                .toInt()
+                .coerceIn(0, rockNavigationDestinations.lastIndex)
+
+            if (index != lastIndex) {
+                lastIndex = index
+                onDestinationSelected(rockNavigationDestinations[index])
+            }
         }
     )
 }
