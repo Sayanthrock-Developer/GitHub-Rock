@@ -168,7 +168,7 @@ private fun DisplaySize.scale() = when (this) { DisplaySize.Small -> .90f; Displ
 private fun FontSize.scale() = when (this) { FontSize.Small -> .90f; FontSize.Default -> 1f; FontSize.Large -> 1.16f }
 
 @Composable
-fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, trueBlack: Boolean = false, surfaceStyle: RockSurfaceStyle = RockSurfaceStyle.Adaptive, shapePreset: RockShapePreset = RockShapePreset.Rounded, shapeScale: Float = shapePreset.scale, surfaceOpacity: Float = 1f, surfaceBorder: Float = 0.38f, surfaceElevation: Float = 2f, surfaceBlur: Float = 0f, surfaceContrast: Float = 1f, backgroundDepth: Float = 0.08f, accentColor: AccentColor = AccentColor.DefaultGitHubRock, customAccentHex: String? = null, themeStyle: ThemeStyle = ThemeStyle.Clean, displaySize: DisplaySize = DisplaySize.Standard, fontSize: FontSize = FontSize.Default, fontWeight: FontWeightStyle = FontWeightStyle.Default, fontFamily: AppFontFamily = AppFontFamily.SystemSans, loadingStyle: LoadingStyle = LoadingStyle.Spinner, codeColorStyle: CodeColorStyle = CodeColorStyle.Classic, logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal, reduceMotion: Boolean = false, showImages: Boolean = true, content: @Composable () -> Unit) {
+fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, trueBlack: Boolean = false, surfaceStyle: RockSurfaceStyle = RockSurfaceStyle.Adaptive, shapePreset: RockShapePreset = RockShapePreset.Rounded, shapeScale: Float = shapePreset.scale, surfaceOpacity: Float = 1f, surfaceBorder: Float = 0.38f, surfaceElevation: Float = 2f, surfaceContrast: Float = 1f, backgroundDepth: Float = 0.08f, accentColor: AccentColor = AccentColor.DefaultGitHubRock, customAccentHex: String? = null, themeStyle: ThemeStyle = ThemeStyle.Clean, displaySize: DisplaySize = DisplaySize.Standard, fontSize: FontSize = FontSize.Default, fontWeight: FontWeightStyle = FontWeightStyle.Default, fontFamily: AppFontFamily = AppFontFamily.SystemSans, loadingStyle: LoadingStyle = LoadingStyle.Spinner, codeColorStyle: CodeColorStyle = CodeColorStyle.Classic, logDisplayStyle: LogDisplayStyle = LogDisplayStyle.Terminal, reduceMotion: Boolean = false, showImages: Boolean = true, content: @Composable () -> Unit) {
     val context = LocalContext.current
     val baseDensity = LocalDensity.current
     val systemColors = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -192,7 +192,6 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, tr
         opacity = surfaceOpacity,
         borderAlpha = surfaceBorder,
         elevation = surfaceElevation.dp,
-        blur = surfaceBlur.dp,
         contrast = surfaceContrast,
         backgroundDepth = backgroundDepth
     )
