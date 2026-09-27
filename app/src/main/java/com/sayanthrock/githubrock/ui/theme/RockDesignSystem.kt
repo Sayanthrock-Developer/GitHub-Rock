@@ -1,6 +1,7 @@
 package com.sayanthrock.githubrock.ui.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,8 @@ private fun resolvedSurfaceStyle(style: RockSurfaceStyle, dark: Boolean): RockSu
 
 @Composable
 fun rockSurfaceTokens(role: RockSurfaceRole): RockSurfaceTokens {
-    val dark = androidx.compose.foundation.isSystemInDarkTheme()
+    val background = MaterialTheme.colorScheme.background
+    val dark = (background.red * 0.2126f + background.green * 0.7152f + background.blue * 0.0722f) < 0.5f
     val style = resolvedSurfaceStyle(LocalRockSurfaceStyle.current, dark)
     return when (style) {
         RockSurfaceStyle.Solid -> RockSurfaceTokens(1f, 0.30f, 0.dp, 0.dp, 1f, 0f)
