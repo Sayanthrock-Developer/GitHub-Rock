@@ -121,12 +121,12 @@ fun StandardSettingsRow(
 ) {
     val accent = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
-    var focused by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val focusedState = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val interactionModifier = if (onClick == null) {
         Modifier
     } else {
         Modifier
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged { focusedState.value = it.isFocused }
             .focusable()
             .clickable(role = Role.Button, onClick = onClick)
     }
