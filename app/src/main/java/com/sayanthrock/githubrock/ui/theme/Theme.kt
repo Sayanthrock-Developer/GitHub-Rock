@@ -96,9 +96,9 @@ private fun contrastRatio(foreground: Color, background: Color): Float {
 }
 
 private fun ColorScheme.ensureTextContrast(dark: Boolean): ColorScheme {
-    val textFallback = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D)
+    val textFallback = if (dark) Color.White else Color(0xFF16191D)
     val mutedFallback = if (dark) Color(0xFFB8C1CC) else Color(0xFF59636E)
-    val primaryFallback = if (dark) Color(0xFFF1F3F5) else Color(0xFF16191D)
+    val primaryFallback = if (dark) Color.White else Color(0xFF16191D)
 
     fun readable(candidate: Color, fallback: Color, background: Color, minimum: Float): Color =
         if (contrastRatio(candidate, background) >= minimum) candidate else fallback
