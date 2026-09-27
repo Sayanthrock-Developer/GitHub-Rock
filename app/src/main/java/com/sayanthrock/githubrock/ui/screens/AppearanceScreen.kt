@@ -103,6 +103,8 @@ import com.sayanthrock.githubrock.ui.components.StandardSettingsDivider
 import com.sayanthrock.githubrock.ui.components.StandardSettingsGroup
 import com.sayanthrock.githubrock.ui.components.StandardSettingsRow
 import com.sayanthrock.githubrock.ui.theme.LocalCodeColors
+import com.sayanthrock.githubrock.ui.theme.RockDarkText
+import com.sayanthrock.githubrock.ui.theme.RockLightText
 import com.sayanthrock.githubrock.ui.theme.parseAccentHex
 import java.util.Locale
 
@@ -392,7 +394,7 @@ private fun AppFontFamily.composeFamily(): FontFamily = when (this) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.ColorLens, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Accent color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(if (state.dynamicColor) "System Dynamic is active" else "Accent works independently of Light / Dark mode", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }
         FilterChip(state.dynamicColor, onSystemDynamic, label = { Text("System Dynamic") }, leadingIcon = if (state.dynamicColor) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null)
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            presets.forEach { accent -> val selected = !state.dynamicColor && state.accentColor == accent; Surface(Modifier.size(48.dp).selectable(selected, true, Role.RadioButton) { onSelected(accent) }.semantics { contentDescription = "Use ${accent.displayName} accent" }, shape = CircleShape, color = accent.previewColor, border = BorderStroke(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)) { if (selected) Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Check, null, tint = Color.Black) } } }
+            presets.forEach { accent -> val selected = !state.dynamicColor && state.accentColor == accent; Surface(Modifier.size(48.dp).selectable(selected, true, Role.RadioButton) { onSelected(accent) }.semantics { contentDescription = "Use ${accent.displayName} accent" }, shape = CircleShape, color = accent.previewColor, border = BorderStroke(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)) { if (selected) Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurface) } } }
             Surface(Modifier.size(48.dp).selectable(customSelected, true, Role.Button) { onOpenPicker() }.semantics { contentDescription = "Open custom accent color picker" }, shape = CircleShape, color = customColor, border = BorderStroke(if (customSelected) 3.dp else 1.dp, MaterialTheme.colorScheme.outline)) { Box(contentAlignment = Alignment.Center) { Text("+", fontWeight = FontWeight.Bold, color = readableOn(customColor)) } }
         }
         if (state.recentAccentColors.isNotEmpty()) { Text("Recent colors", style = MaterialTheme.typography.labelLarge); Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) { state.recentAccentColors.forEach { hex -> val color = parseAccentHex(hex) ?: return@forEach; Surface(Modifier.size(38.dp).selectable(false, true, Role.Button) { onCustomHex(hex) }, shape = CircleShape, color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {} } } }
@@ -400,7 +402,7 @@ private fun AppFontFamily.composeFamily(): FontFamily = when (this) {
     } }
 }
 
-private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f * color.green + 0.0722f * color.blue > 0.55f) Color.Black else Color.White
+private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f * color.green + 0.0722f * color.blue > 0.55f) RockLightText else RockDarkText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun AccentColorPickerDialog(initialHex: String, recentColors: List<String>, onDismiss: () -> Unit, onApply: (String) -> Unit) {
