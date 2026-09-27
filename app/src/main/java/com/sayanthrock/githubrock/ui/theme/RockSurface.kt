@@ -7,10 +7,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * GitHub Rock's single surface/shape vocabulary.
+ * GitHub Rock's semantic shape vocabulary.
  *
- * Components should consume these semantic roles instead of inventing their own
- * corner radii, transparency values, or theme-breaking surface colors.
+ * Components consume roles instead of inventing radii. The selected global
+ * shape scale is applied consistently to controls, cards, sheets and navigation.
  */
 object RockShapes {
     @Composable
@@ -27,16 +27,16 @@ object RockShapes {
 }
 
 object RockSurfaceAlpha {
-    const val Background = 0.96f
-    const val Low = 0.72f
-    const val Medium = 0.84f
-    const val High = 0.94f
-    const val Interactive = 0.90f
-    const val Selected = 0.96f
+    const val Background = 1f
+    const val Low = 0.92f
+    const val Medium = 0.96f
+    const val High = 0.98f
+    const val Interactive = 0.96f
+    const val Selected = 1f
     const val Border = 0.55f
 }
 
-/** Semantic surface roles used throughout the app. */
+/** One semantic surface role for every major UI layer. */
 sealed interface RockSurfaceRole {
     data object Background : RockSurfaceRole
     data object Card : RockSurfaceRole
@@ -65,9 +65,12 @@ fun rockSurfaceColor(role: RockSurfaceRole): Color {
 }
 
 @Composable
-fun rockSurfaceBorder(): BorderStroke {
-    val tokens = rockSurfaceTokens(RockSurfaceRole.Card)
-    return BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = tokens.borderAlpha))
+fun rockSurfaceBorder(role: RockSurfaceRole = RockSurfaceRole.Card): BorderStroke {
+    val tokens = rockSurfaceTokens(role)
+    return BorderStroke(
+        width = 1.dp,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = tokens.borderAlpha)
+    )
 }
 
 @Composable
