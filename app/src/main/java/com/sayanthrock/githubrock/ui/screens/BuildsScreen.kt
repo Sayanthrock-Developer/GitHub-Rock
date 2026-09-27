@@ -542,7 +542,6 @@ private fun BuildExecutionPanel(
             }
             if (actionState.tracking && !preferences.reduceMotion) LinearProgressIndicator(Modifier.fillMaxWidth())
             else if (actionState.tracking) Text("Workflow is running", color = MaterialTheme.colorScheme.primary)
-            actionState.run?.let { RunFrame(it, preferences) }
             if (actionState.artifacts.isNotEmpty()) {
                 Text("Artifacts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 actionState.artifacts.forEach { artifact ->
