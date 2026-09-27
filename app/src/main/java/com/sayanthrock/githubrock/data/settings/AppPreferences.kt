@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore by preferencesDataStore(name = "github_rock_preferences")
 
 enum class ThemeMode { System, Light, Dark; companion object { fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: System } }
+enum class RockSurfaceStyle { Solid, Soft, Glass, Frosted, Adaptive; companion object { fun fromStored(value: String?): RockSurfaceStyle = entries.firstOrNull { it.name == value } ?: Adaptive } }
+enum class RockShapePreset(val scale: Float) { Sharp(0.08f), Compact(0.28f), Rounded(0.50f), Soft(0.68f), ExtraRounded(0.82f), Pill(1f); companion object { fun fromStored(value: String?): RockShapePreset = entries.firstOrNull { it.name == value } ?: Rounded } }
 enum class ThemeStyle { Clean, LiquidGlass, Studio, Midnight, Aurora, HighContrast, Obsidian; companion object { fun fromStored(value: String?): ThemeStyle = entries.firstOrNull { it.name == value } ?: Clean } }
 enum class AccentColor { DefaultGitHubRock, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Custom, Violet, Emerald, Rose, Coral, Amber; companion object { fun fromStored(value: String?): AccentColor = entries.firstOrNull { it.name == value } ?: DefaultGitHubRock } }
 enum class DisplaySize { Small, Standard, Large; companion object { fun fromStored(value: String?): DisplaySize = entries.firstOrNull { it.name == value } ?: Standard } }
@@ -31,6 +33,15 @@ enum class NavigationBarStyle { FloatingCapsule, Classic, Minimal, Glass, Compac
 
 data class AppearancePreferences(
     val themeMode: ThemeMode = ThemeMode.System,
+    val surfaceStyle: RockSurfaceStyle = RockSurfaceStyle.Adaptive,
+    val shapePreset: RockShapePreset = RockShapePreset.Rounded,
+    val shapeScale: Float = RockShapePreset.Rounded.scale,
+    val surfaceOpacity: Float = 1f,
+    val surfaceBorder: Float = 0.38f,
+    val surfaceElevation: Float = 2f,
+    val surfaceBlur: Float = 0f,
+    val surfaceContrast: Float = 1f,
+    val backgroundDepth: Float = 0.08f,
     val themeStyle: ThemeStyle = ThemeStyle.Clean,
     val accentColor: AccentColor = AccentColor.DefaultGitHubRock,
     val customAccentHex: String = "",
@@ -64,6 +75,15 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     val appearance: Flow<AppearancePreferences> = context.dataStore.data.map { preferences ->
         AppearancePreferences(
             themeMode = ThemeMode.fromStored(preferences[THEME_MODE]),
+            surfaceStyle = RockSurfaceStyle.fromStored(preferences[SURFACE_STYLE]),
+            shapePreset = RockShapePreset.fromStored(preferences[SHAPE_PRESET]),
+            shapeScale = preferences[SHAPE_SCALE] ?: RockShapePreset.Rounded.scale,
+            surfaceOpacity = preferences[SURFACE_OPACITY] ?: 1f,
+            surfaceBorder = preferences[SURFACE_BORDER] ?: 0.38f,
+            surfaceElevation = preferences[SURFACE_ELEVATION] ?: 2f,
+            surfaceBlur = preferences[SURFACE_BLUR] ?: 0f,
+            surfaceContrast = preferences[SURFACE_CONTRAST] ?: 1f,
+            backgroundDepth = preferences[BACKGROUND_DEPTH] ?: 0.08f,
             themeStyle = ThemeStyle.fromStored(preferences[THEME_STYLE]),
             accentColor = AccentColor.fromStored(preferences[ACCENT_COLOR]),
             customAccentHex = preferences[CUSTOM_ACCENT_HEX].orEmpty(),
@@ -113,6 +133,15 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     val whatsNewTranslationLanguage: Flow<String?> = context.dataStore.data.map { it[WHATS_NEW_TRANSLATION_LANGUAGE] }
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME_MODE] = mode.name }
+    suspend fun setSurfaceStyle(style: RockSurfaceStyle) = context.dataStore.edit { it[SURFACE_STYLE] = style.name }
+    suspend fun setShapePreset(preset: RockShapePreset) = context.dataStore.edit { it[SHAPE_PRESET] = preset.name; it[SHAPE_SCALE] = preset.scale }
+    suspend fun setShapeScale(scale: Float) = context.dataStore.edit { it[SHAPE_SCALE] = scale.coerceIn(0.08f, 1f) }
+    suspend fun setSurfaceOpacity(value: Float) = context.dataStore.edit { it[SURFACE_OPACITY] = value.coerceIn(0.55f, 1f) }
+    suspend fun setSurfaceBorder(value: Float) = context.dataStore.edit { it[SURFACE_BORDER] = value.coerceIn(0f, 1f) }
+    suspend fun setSurfaceElevation(value: Float) = context.dataStore.edit { it[SURFACE_ELEVATION] = value.coerceIn(0f, 12f) }
+    suspend fun setSurfaceBlur(value: Float) = context.dataStore.edit { it[SURFACE_BLUR] = value.coerceIn(0f, 24f) }
+    suspend fun setSurfaceContrast(value: Float) = context.dataStore.edit { it[SURFACE_CONTRAST] = value.coerceIn(0.85f, 1.15f) }
+    suspend fun setBackgroundDepth(value: Float) = context.dataStore.edit { it[BACKGROUND_DEPTH] = value.coerceIn(0f, 0.30f) }
     suspend fun setThemeStyle(style: ThemeStyle) = context.dataStore.edit { it[THEME_STYLE] = style.name }
     suspend fun setAccentColor(color: AccentColor) = context.dataStore.edit { it[ACCENT_COLOR] = color.name; if (color != AccentColor.Custom) it[CUSTOM_ACCENT_HEX] = it[CUSTOM_ACCENT_HEX].orEmpty(); it[DYNAMIC_COLOR] = false }
     suspend fun setSystemDynamicAccent() = context.dataStore.edit { it[DYNAMIC_COLOR] = true; it[ACCENT_COLOR] = AccentColor.DefaultGitHubRock.name }
@@ -168,7 +197,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         else preferences[WHATS_NEW_TRANSLATION_LANGUAGE] = language
     }
     suspend fun resetAppearance() = context.dataStore.edit { preferences ->
-        preferences.remove(APP_LANGUAGE_TAG); preferences.remove(THEME_MODE); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE); preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE); preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES); preferences.remove(REMOTE_IMAGES_ALL); preferences.remove(REMOTE_IMAGES_AVATARS); preferences.remove(REMOTE_IMAGES_REPOSITORY_ARTWORK); preferences.remove(REMOTE_IMAGES_PROFILE_REPOSITORY); preferences.remove(REMOTE_IMAGES_NETWORK); preferences.remove(REMOTE_IMAGES_QUALITY); preferences.remove(REMOTE_IMAGES_CACHE); preferences.remove(REMOTE_IMAGES_SHAPE); preferences.remove(REMOTE_IMAGES_SIZE); preferences.remove(REMOTE_IMAGES_PLACEHOLDER); preferences.remove(REMOTE_IMAGES_ANIMATION); preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS); preferences.remove(REDUCE_MOTION)
+        preferences.remove(APP_LANGUAGE_TAG); preferences.remove(THEME_MODE); preferences.remove(SURFACE_STYLE); preferences.remove(SHAPE_PRESET); preferences.remove(SHAPE_SCALE); preferences.remove(SURFACE_OPACITY); preferences.remove(SURFACE_BORDER); preferences.remove(SURFACE_ELEVATION); preferences.remove(SURFACE_BLUR); preferences.remove(SURFACE_CONTRAST); preferences.remove(BACKGROUND_DEPTH); preferences.remove(THEME_STYLE); preferences.remove(ACCENT_COLOR); preferences.remove(CUSTOM_ACCENT_HEX); preferences.remove(RECENT_ACCENT_COLORS); preferences.remove(DISPLAY_SIZE); preferences.remove(FONT_SIZE); preferences.remove(FONT_WEIGHT); preferences.remove(FONT_FAMILY); preferences.remove(LOADING_STYLE); preferences.remove(ANIMATION_STYLE); preferences.remove(CODE_COLOR_STYLE); preferences.remove(LOG_DISPLAY_STYLE); preferences.remove(NAVIGATION_BAR_STYLE); preferences.remove(DYNAMIC_COLOR); preferences.remove(TRUE_BLACK); preferences.remove(SHOW_IMAGES); preferences.remove(REMOTE_IMAGES_ALL); preferences.remove(REMOTE_IMAGES_AVATARS); preferences.remove(REMOTE_IMAGES_REPOSITORY_ARTWORK); preferences.remove(REMOTE_IMAGES_PROFILE_REPOSITORY); preferences.remove(REMOTE_IMAGES_NETWORK); preferences.remove(REMOTE_IMAGES_QUALITY); preferences.remove(REMOTE_IMAGES_CACHE); preferences.remove(REMOTE_IMAGES_SHAPE); preferences.remove(REMOTE_IMAGES_SIZE); preferences.remove(REMOTE_IMAGES_PLACEHOLDER); preferences.remove(REMOTE_IMAGES_ANIMATION); preferences.remove(WORKFLOW_PREVIEW); preferences.remove(WORKFLOW_STEP_DETAILS); preferences.remove(STATUS_COLORS); preferences.remove(ACTIONS_CONTROLS); preferences.remove(REPOSITORY_MANAGER); preferences.remove(FILE_TOOLS); preferences.remove(COMPACT_CARDS); preferences.remove(REDUCE_MOTION)
     }
     suspend fun toggleFavoriteRepository(fullName: String) {
         val normalized = fullName.trim().takeIf { it.count { character -> character == '/' } == 1 } ?: return
@@ -196,7 +225,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         const val HISTORY_SEPARATOR = "\u001F"
         const val MAX_SEARCH_HISTORY = 8
         const val MAX_ACCENT_HISTORY = 8
-        val APP_LANGUAGE_TAG = stringPreferencesKey("app_language_tag"); val THEME_MODE = stringPreferencesKey("theme_mode"); val THEME_STYLE = stringPreferencesKey("theme_style"); val ACCENT_COLOR = stringPreferencesKey("accent_color"); val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex"); val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors"); val DISPLAY_SIZE = stringPreferencesKey("display_size"); val FONT_SIZE = stringPreferencesKey("font_size"); val FONT_WEIGHT = stringPreferencesKey("font_weight"); val FONT_FAMILY = stringPreferencesKey("font_family"); val LOADING_STYLE = stringPreferencesKey("loading_style"); val ANIMATION_STYLE = stringPreferencesKey("animation_style"); val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style"); val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style"); val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style"); val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color"); val TRUE_BLACK = booleanPreferencesKey("true_black"); val SHOW_IMAGES = booleanPreferencesKey("show_images")
+        val APP_LANGUAGE_TAG = stringPreferencesKey("app_language_tag"); val THEME_MODE = stringPreferencesKey("theme_mode"); val SURFACE_STYLE = stringPreferencesKey("surface_style"); val SHAPE_PRESET = stringPreferencesKey("shape_preset"); val SHAPE_SCALE = androidx.datastore.preferences.core.floatPreferencesKey("shape_scale"); val SURFACE_OPACITY = androidx.datastore.preferences.core.floatPreferencesKey("surface_opacity"); val SURFACE_BORDER = androidx.datastore.preferences.core.floatPreferencesKey("surface_border"); val SURFACE_ELEVATION = androidx.datastore.preferences.core.floatPreferencesKey("surface_elevation"); val SURFACE_BLUR = androidx.datastore.preferences.core.floatPreferencesKey("surface_blur"); val SURFACE_CONTRAST = androidx.datastore.preferences.core.floatPreferencesKey("surface_contrast"); val BACKGROUND_DEPTH = androidx.datastore.preferences.core.floatPreferencesKey("background_depth"); val THEME_STYLE = stringPreferencesKey("theme_style"); val ACCENT_COLOR = stringPreferencesKey("accent_color"); val CUSTOM_ACCENT_HEX = stringPreferencesKey("custom_accent_hex"); val RECENT_ACCENT_COLORS = stringPreferencesKey("recent_accent_colors"); val DISPLAY_SIZE = stringPreferencesKey("display_size"); val FONT_SIZE = stringPreferencesKey("font_size"); val FONT_WEIGHT = stringPreferencesKey("font_weight"); val FONT_FAMILY = stringPreferencesKey("font_family"); val LOADING_STYLE = stringPreferencesKey("loading_style"); val ANIMATION_STYLE = stringPreferencesKey("animation_style"); val CODE_COLOR_STYLE = stringPreferencesKey("code_color_style"); val LOG_DISPLAY_STYLE = stringPreferencesKey("log_display_style"); val NAVIGATION_BAR_STYLE = stringPreferencesKey("navigation_bar_style"); val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color"); val TRUE_BLACK = booleanPreferencesKey("true_black"); val SHOW_IMAGES = booleanPreferencesKey("show_images")
         val HIDDEN_REPOSITORIES = stringSetPreferencesKey("hidden_repositories"); val REMOTE_IMAGES_ALL = booleanPreferencesKey("remote_images_all"); val REMOTE_IMAGES_AVATARS = stringPreferencesKey("remote_images_avatars"); val REMOTE_IMAGES_REPOSITORY_ARTWORK = stringPreferencesKey("remote_images_repository_artwork"); val REMOTE_IMAGES_PROFILE_REPOSITORY = stringPreferencesKey("remote_images_profile_repository"); val REMOTE_IMAGES_NETWORK = stringPreferencesKey("remote_images_network"); val REMOTE_IMAGES_QUALITY = stringPreferencesKey("remote_images_quality"); val REMOTE_IMAGES_CACHE = booleanPreferencesKey("remote_images_cache"); val REMOTE_IMAGES_SHAPE = stringPreferencesKey("remote_images_shape"); val REMOTE_IMAGES_SIZE = stringPreferencesKey("remote_images_size"); val REMOTE_IMAGES_PLACEHOLDER = stringPreferencesKey("remote_images_placeholder"); val REMOTE_IMAGES_ANIMATION = stringPreferencesKey("remote_images_animation")
         val WHATS_NEW_TRANSLATION_LANGUAGE = stringPreferencesKey("whats_new_translation_language")
         val WORKFLOW_PREVIEW = booleanPreferencesKey("workflow_preview"); val WORKFLOW_STEP_DETAILS = booleanPreferencesKey("workflow_step_details"); val STATUS_COLORS = booleanPreferencesKey("status_colors"); val ACTIONS_CONTROLS = booleanPreferencesKey("actions_controls"); val REPOSITORY_MANAGER = booleanPreferencesKey("repository_manager"); val FILE_TOOLS = booleanPreferencesKey("file_tools"); val COMPACT_CARDS = booleanPreferencesKey("compact_cards"); val REDUCE_MOTION = booleanPreferencesKey("reduce_motion"); val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock"); val FAVORITE_REPOSITORIES = stringSetPreferencesKey("favorite_repositories"); val REPOSITORY_SEARCH_HISTORY = stringPreferencesKey("repository_search_history")
