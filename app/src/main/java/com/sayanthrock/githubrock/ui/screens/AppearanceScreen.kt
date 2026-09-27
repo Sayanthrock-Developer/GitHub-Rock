@@ -386,20 +386,189 @@ private fun AppFontFamily.composeFamily(): FontFamily = when (this) {
 
 @Composable private fun <T> ChoiceCard(title: String, subtitle: String, icon: ImageVector, choices: List<Pair<T, String>>, selected: T, onSelected: (T) -> Unit) = GlassCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(icon, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }; Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { choices.forEach { (v, label) -> FilterChip(selected == v, { onSelected(v) }, label = { Text(label) }, leadingIcon = if (selected == v) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null) } } } }
 
-@Composable private fun AccentPicker(state: AppearancePreferences, onSelected: (AccentColor) -> Unit, onSystemDynamic: () -> Unit, onCustomHex: (String) -> Unit, onOpenPicker: () -> Unit) {
-    val presets = listOf(AccentColor.DefaultGitHubRock, AccentColor.Red, AccentColor.Orange, AccentColor.Yellow, AccentColor.Green, AccentColor.Teal, AccentColor.Cyan, AccentColor.Blue, AccentColor.Indigo, AccentColor.Purple, AccentColor.Pink)
+@Composable
+private fun AccentPicker(
+    state: AppearancePreferences,
+    onSelected: (AccentColor) -> Unit,
+    onSystemDynamic: () -> Unit,
+    onCustomHex: (String) -> Unit,
+    onOpenPicker: () -> Unit,
+) {
+    val presets = listOf(
+        AccentColor.DefaultGitHubRock, AccentColor.Red, AccentColor.Orange,
+        AccentColor.Yellow, AccentColor.Green, AccentColor.Teal, AccentColor.Cyan,
+        AccentColor.Blue, AccentColor.Indigo, AccentColor.Purple, AccentColor.Pink,
+    )
     val customColor = parseAccentHex(state.customAccentHex) ?: MaterialTheme.colorScheme.primary
-    val customSelected = state.accentColor == AccentColor.Custom && !state.dynamicColor
-    GlassCard { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Default.ColorLens, null, tint = MaterialTheme.colorScheme.primary); Column(Modifier.weight(1f)) { Text("Accent color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(if (state.dynamicColor) "System Dynamic is active" else "Accent works independently of Light / Dark mode", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }
-        FilterChip(state.dynamicColor, onSystemDynamic, label = { Text("System Dynamic") }, leadingIcon = if (state.dynamicColor) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null)
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            presets.forEach { accent -> val selected = !state.dynamicColor && state.accentColor == accent; Surface(Modifier.size(48.dp).selectable(selected, true, Role.RadioButton) { onSelected(accent) }.semantics { contentDescription = "Use ${accent.displayName} accent" }, shape = CircleShape, color = accent.previewColor, border = BorderStroke(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)) { if (selected) Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurface) } } }
-            Surface(Modifier.size(48.dp).selectable(customSelected, true, Role.Button) { onOpenPicker() }.semantics { contentDescription = "Open custom accent color picker" }, shape = CircleShape, color = customColor, border = BorderStroke(if (customSelected) 3.dp else 1.dp, MaterialTheme.colorScheme.outline)) { Box(contentAlignment = Alignment.Center) { Text("+", fontWeight = FontWeight.Bold, color = readableOn(customColor)) } }
+    val dynamicSelected = state.dynamicColor
+    val customSelected = state.accentColor == AccentColor.Custom && !dynamicSelected
+    val activeAccent = MaterialTheme.colorScheme.primary
+
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    Modifier.size(44.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = activeAccent.copy(alpha = .14f),
+                    border = BorderStroke(1.dp, activeAccent.copy(alpha = .28f)),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.ColorLens, null, tint = activeAccent, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Accent color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (dynamicSelected) "System Dynamic is active" else "Choose the color that drives GitHub Rock",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            Surface(
+                Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = dynamicSelected,
+                        enabled = true,
+                        role = Role.RadioButton,
+                        onClick = onSystemDynamic,
+                    )
+                    .semantics { contentDescription = "Use System Dynamic accent color" },
+                shape = MaterialTheme.shapes.large,
+                color = if (dynamicSelected) activeAccent.copy(alpha = .12f)
+                else MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(
+                    if (dynamicSelected) 2.dp else 1.dp,
+                    if (dynamicSelected) activeAccent else MaterialTheme.colorScheme.outlineVariant,
+                ),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Surface(Modifier.size(42.dp), shape = CircleShape, color = activeAccent) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (dynamicSelected) {
+                                Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
+                            } else {
+                                Text("A", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("System Dynamic", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Use your Android wallpaper palette automatically",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (dynamicSelected) {
+                        Text("ACTIVE", color = activeAccent, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Text("Preset colors", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                presets.forEach { accent ->
+                    val selected = !dynamicSelected && state.accentColor == accent
+                    Surface(
+                        Modifier
+                            .size(46.dp)
+                            .selectable(
+                                selected = selected,
+                                enabled = true,
+                                role = Role.RadioButton,
+                                onClick = { onSelected(accent) },
+                            )
+                            .semantics { contentDescription = "Use ${accent.displayName} accent" },
+                        shape = CircleShape,
+                        color = accent.previewColor,
+                        border = BorderStroke(
+                            if (selected) 3.dp else 1.dp,
+                            if (selected) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.outlineVariant,
+                        ),
+                    ) {
+                        if (selected) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Surface(
+                                    Modifier.size(22.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .92f),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Check, null, tint = accent.previewColor, modifier = Modifier.size(15.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Surface(
+                    Modifier
+                        .size(46.dp)
+                        .selectable(
+                            selected = customSelected,
+                            enabled = true,
+                            role = Role.Button,
+                            onClick = onOpenPicker,
+                        )
+                        .semantics { contentDescription = "Open custom accent color picker" },
+                    shape = CircleShape,
+                    color = customColor,
+                    border = BorderStroke(
+                        if (customSelected) 3.dp else 1.dp,
+                        if (customSelected) MaterialTheme.colorScheme.onSurface
+                        else MaterialTheme.colorScheme.outlineVariant,
+                    ),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("+", fontWeight = FontWeight.Bold, color = readableOn(customColor))
+                    }
+                }
+            }
+
+            if (state.recentAccentColors.isNotEmpty()) {
+                Text("Recent", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                ) {
+                    state.recentAccentColors.forEach { hex ->
+                        val color = parseAccentHex(hex) ?: return@forEach
+                        Surface(
+                            Modifier
+                                .size(34.dp)
+                                .selectable(false, true, Role.Button) { onCustomHex(hex) }
+                                .semantics { contentDescription = "Use recent accent $hex" },
+                            shape = CircleShape,
+                            color = color,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        ) {}
+                    }
+                }
+            }
+
+            if (customSelected) {
+                Text(
+                    "${state.customAccentHex} · custom accent",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
-        if (state.recentAccentColors.isNotEmpty()) { Text("Recent colors", style = MaterialTheme.typography.labelLarge); Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) { state.recentAccentColors.forEach { hex -> val color = parseAccentHex(hex) ?: return@forEach; Surface(Modifier.size(38.dp).selectable(false, true, Role.Button) { onCustomHex(hex) }, shape = CircleShape, color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {} } } }
-        if (customSelected) Text("${state.customAccentHex} · custom accent", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-    } }
+    }
 }
 
 private fun readableOn(color: Color): Color = if (0.2126f * color.red + 0.7152f * color.green + 0.0722f * color.blue > 0.55f) RockLightText else RockDarkText
