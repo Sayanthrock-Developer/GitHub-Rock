@@ -165,6 +165,7 @@ private fun codeColors(style: CodeColorStyle, dark: Boolean) = when (style) {
 }
 
 private fun DisplaySize.scale() = when (this) { DisplaySize.Small -> .90f; DisplaySize.Standard -> 1f; DisplaySize.Large -> 1.12f }
+private fun Float.safeFinite(default: Float, min: Float, max: Float): Float = if (isFinite()) coerceIn(min, max) else default
 private fun FontSize.scale() = when (this) { FontSize.Small -> .90f; FontSize.Default -> 1f; FontSize.Large -> 1.16f }
 
 @Composable
@@ -183,18 +184,26 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, tr
         // Glass surfaces may blend with content beneath them, so validate the final
         // semantic text tokens after every theme/style transformation.
         .ensureTextContrast(darkTheme)
+    // Persisted appearance values can outlive app versions. Keep malformed floats
+    // out of Compose Density, Shapes, and surface calculations.
+    val safeShapeScale = shapeScale.safeFinite(shapePreset.scale, 0.08f, 1f)
+    val safeSurfaceOpacity = surfaceOpacity.safeFinite(1f, 0.55f, 1f)
+    val safeSurfaceBorder = surfaceBorder.safeFinite(0.38f, 0f, 1f)
+    val safeSurfaceElevation = surfaceElevation.safeFinite(2f, 0f, 12f)
+    val safeSurfaceContrast = surfaceContrast.safeFinite(1f, 0.85f, 1.15f)
+    val safeBackgroundDepth = backgroundDepth.safeFinite(0.08f, 0f, 0.30f)
     val density = Density(baseDensity.density * displaySize.scale(), baseDensity.fontScale * fontSize.scale())
     val selectionColors = TextSelectionColors(
         handleColor = colors.primary,
         backgroundColor = colors.primary.copy(alpha = if (darkTheme) 0.38f else 0.28f)
     )
     val surfaceCustomization = RockSurfaceTokens(
-        opacity = surfaceOpacity,
-        borderAlpha = surfaceBorder,
-        elevation = surfaceElevation.dp,
-        blur = surfaceBlur.dp,
-        contrast = surfaceContrast,
-        backgroundDepth = backgroundDepth
+        opacity = safeSurfaceOpacity,
+        borderAlpha = safeSurfaceBorder,
+        elevation = safeSurfaceElevation.dp,
+        blur = 0.dp,
+        contrast = safeSurfaceContrast,
+        backgroundDepth = safeBackgroundDepth
     )
     CompositionLocalProvider(
         LocalRemoteImagesEnabled provides showImages,
@@ -204,11 +213,11 @@ fun GitHubRockTheme(darkTheme: Boolean = true, dynamicColor: Boolean = false, tr
         LocalLogDisplayStyle provides logDisplayStyle,
         LocalCodeColors provides codeColors(codeColorStyle, darkTheme),
         LocalRockSurfaceStyle provides surfaceStyle,
-        LocalRockShapeScale provides shapeScale.coerceIn(0.08f, 1f),
+        LocalRockShapeScale provides safeShapeScale,
         LocalRockSurfaceCustomization provides surfaceCustomization,
         LocalDensity provides density,
         LocalTextSelectionColors provides selectionColors
     ) {
-        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(shapeScale), content = content)
+        MaterialTheme(colorScheme = colors, typography = rockTypography(fontFamily, fontWeight), shapes = shapesFor(safeShapeScale), content = content)
     }
 }
