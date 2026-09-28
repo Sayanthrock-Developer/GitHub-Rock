@@ -134,7 +134,7 @@ fun StandardSettingsRow(
         modifier = Modifier
             .fillMaxWidth()
             .then(interactionModifier)
-            .then(if (isTv && onClick != null && focused) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), MaterialTheme.shapes.medium) else Modifier)
+            .then(if (isTv && onClick != null && focusedState.value) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), MaterialTheme.shapes.medium) else Modifier)
             .padding(horizontal = 16.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
