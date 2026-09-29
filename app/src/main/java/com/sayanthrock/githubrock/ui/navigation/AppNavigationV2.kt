@@ -202,9 +202,6 @@ fun MainNavigationV2(
                     onOpenProfile = { login -> openNativeProfile(login, NativeProfileSection.Repositories) }
                 )
             }
-            composable(SETTINGS_ROUTE) { GitHubSettingsScreen(state.profile, { login -> openNativeProfile(login, NativeProfileSection.Repositories) },
-                { navController.navigate(ACCOUNT_SWITCHER_ROUTE) { launchSingleTop = true } }, { navController.navigate(APP_CUSTOMIZATION_ROUTE) { launchSingleTop = true } },
-                { navController.navigate(TopDestinationV2.Downloads.route) { launchSingleTop = true } }, { navController.navigate(APP_INFORMATION_ROUTE) { launchSingleTop = true } }, onOpenGitHubUrl, navController::navigateUp) }
             composable(APP_CUSTOMIZATION_ROUTE) { AppearanceScreen(navController::navigateUp) }
             composable(APP_INFORMATION_ROUTE) { AppInformationScreen(navController::navigateUp) }
             composable(FEATURES_PREVIEW_ROUTE) { FeaturePreviewScreen(state.profile?.login, onOpenGitHubUrl, navController::navigateUp) }
