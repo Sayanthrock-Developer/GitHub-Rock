@@ -72,11 +72,19 @@ internal val rockNavigationDestinations = listOf(
 @Composable
 fun RockNavigationChrome(navController: NavHostController, style: NavigationBarStyle = NavigationBarStyle.FloatingCapsule, animationStyle: AnimationStyle = AnimationStyle.Spring, reduceMotion: Boolean = false, modifier: Modifier = Modifier) {
     val entry by navController.currentBackStackEntryAsState()
-    // Resolve the selected top-level destination through the full destination hierarchy.
-    // Nested repository/build/profile routes must keep the main navigation chrome visible.
-    val selectedRoute = entry?.destination?.hierarchy
-        ?.firstOrNull { destination -> rockNavigationDestinations.any { it.route == destination.route } }
-        ?.route
+    // Resolve the selected top-level destination by walking the destination
+    // parents. This keeps the main navigation visible on nested repository,
+    // build, and profile routes without relying on an unavailable hierarchy extension.
+    var destination = entry?.destination
+    var selectedRoute: String? = null
+    while (destination != null) {
+        val route = destination.route
+        if (rockNavigationDestinations.any { it.route == route }) {
+            selectedRoute = route
+            break
+        }
+        destination = destination.parent
+    }
     if (selectedRoute == null) return
     val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
     if (isTv) {
