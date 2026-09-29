@@ -101,8 +101,14 @@ fun RockNavigationChrome(navController: NavHostController, style: NavigationBarS
 }
 
 private fun navigateToTopLevel(navController: NavHostController, destination: TopDestinationV2) {
+    val currentRoute = navController.currentBackStackEntry?.destination?.route
+    if (currentRoute == destination.route) return
+
     navController.navigate(destination.route) {
-        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+        // Always return to the single Home root before restoring the selected
+        // top-level destination. This prevents stale nested back-stack state
+        // from swallowing a Profile navigation click.
+        popUpTo(TopDestinationV2.Home.route) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
