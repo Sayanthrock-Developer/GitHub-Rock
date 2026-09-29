@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -71,8 +72,12 @@ internal val rockNavigationDestinations = listOf(
 @Composable
 fun RockNavigationChrome(navController: NavHostController, style: NavigationBarStyle = NavigationBarStyle.FloatingCapsule, animationStyle: AnimationStyle = AnimationStyle.Spring, reduceMotion: Boolean = false, modifier: Modifier = Modifier) {
     val entry by navController.currentBackStackEntryAsState()
-    val selectedRoute = entry?.destination?.route
-    if (rockNavigationDestinations.none { it.route == selectedRoute }) return
+    // Resolve the selected top-level destination through the full destination hierarchy.
+    // Nested repository/build/profile routes must keep the main navigation chrome visible.
+    val selectedRoute = entry?.destination?.hierarchy
+        ?.firstOrNull { destination -> rockNavigationDestinations.any { it.route == destination.route } }
+        ?.route
+    if (selectedRoute == null) return
     val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
     if (isTv) {
         TvNavigationRail(
@@ -256,7 +261,7 @@ private fun ClassicNavigation(selectedRoute: String?, animationStyle: AnimationS
 private fun MinimalNavigation(selectedRoute: String?, compact: Boolean, animationStyle: AnimationStyle, reduceMotion: Boolean, onDestinationSelected: (TopDestinationV2) -> Unit, modifier: Modifier) {
     val view = LocalView.current
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
-    Row(modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp).then(slideModifier), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier.navigationBarsPadding().imePadding().padding(horizontal = 12.dp, vertical = 6.dp).widthIn(max = 620.dp).fillMaxWidth().height(if (compact) 54.dp else 60.dp).zIndex(100f).then(slideModifier), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         rockNavigationDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
             RockNavigationItem(destination, selected, selected && !compact, Modifier.weight(1f).height(if (compact) 48.dp else 54.dp), RockShapes.Control, animationStyle, reduceMotion, { onDestinationSelected(destination) }, if (selected) 22.dp else 21.dp, true, RockSurfaceAlpha.Medium)
@@ -283,7 +288,14 @@ private fun NavigationSurface(modifier: Modifier, shape: Dp, role: RockSurfaceRo
     val view = LocalView.current
     val slideModifier = navigationSlideGesture(view, onDestinationSelected)
     Surface(
-        modifier = modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp).widthIn(max = maxWidth).fillMaxWidth().then(slideModifier),
+        modifier = modifier
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .widthIn(max = maxWidth)
+            .fillMaxWidth()
+            .zIndex(100f)
+            .then(slideModifier),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(shape),
         color = rockSurfaceColor(role),
         contentColor = rockContentColor(role),
