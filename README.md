@@ -132,20 +132,7 @@ Animations should remain useful, short and predictable.
 
 ## 06 — Architecture
 
-```text
-┌─────────────────────────────┐
-│       Jetpack Compose       │
-├─────────────────────────────┤
-│       ViewModels / UI       │
-├─────────────────────────────┤
-│     Repositories / Domain   │
-├─────────────────────────────┤
-│ GitHub API · Room · DataStore│
-├─────────────────────────────┤
-│ Auth · Actions · Releases   │
-│ Downloads · Verification    │
-└─────────────────────────────┘
-```
+[![Architecture diagram of sayanthrock-developer/github-rock](https://gitdiagram.com/sayanthrock-developer/github-rock/diagram.png)](https://gitdiagram.com/sayanthrock-developer/github-rock?utm_source=readme&utm_medium=picture)
 
 ### Core stack
 
