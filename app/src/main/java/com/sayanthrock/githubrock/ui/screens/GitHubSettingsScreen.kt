@@ -149,10 +149,14 @@ fun GitHubSettingsScreen(
                 }
             }
 
-            item { StandardSectionHeader("Appearance") }
+            item { StandardSectionHeader("Customization") }
             item {
                 StandardSettingsGroup {
-                    SettingsRow(RockIcon.Palette, "Theme & interface", "Theme, colors, surface, typography, and display preferences") { onOpenAppearance() }
+                    SettingsRow(
+                        RockIcon.Palette,
+                        "App customization",
+                        "Personalize theme, accent colors, surfaces, shapes, typography, display, and navigation"
+                    ) { onOpenAppearance() }
                 }
             }
 
