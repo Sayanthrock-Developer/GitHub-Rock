@@ -152,8 +152,13 @@ fun GitHubSettingsScreen(
             item { StandardSectionHeader("Appearance") }
             item {
                 StandardSettingsGroup {
-                    SettingsRow(RockIcon.Palette, "Theme & interface", "Theme, navigation bar style, and display preferences") { onOpenAppearance() }
-                    StandardSettingsDivider()
+                    SettingsRow(RockIcon.Palette, "Theme & interface", "Theme, colors, surface, typography, and display preferences") { onOpenAppearance() }
+                }
+            }
+
+            item { StandardSectionHeader("Navigation") }
+            item {
+                StandardSettingsGroup {
                     SettingsRow(RockIcon.ViewCompact, "Navigation bar", "Customize the navigation bar style and presentation") { onOpenAppearance() }
                 }
             }
