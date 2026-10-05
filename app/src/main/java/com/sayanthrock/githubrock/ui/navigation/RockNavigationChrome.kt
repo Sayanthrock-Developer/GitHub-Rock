@@ -72,20 +72,10 @@ internal val rockNavigationDestinations = listOf(
 @Composable
 fun RockNavigationChrome(navController: NavHostController, style: NavigationBarStyle = NavigationBarStyle.FloatingCapsule, animationStyle: AnimationStyle = AnimationStyle.Spring, reduceMotion: Boolean = false, modifier: Modifier = Modifier) {
     val entry by navController.currentBackStackEntryAsState()
-    // Resolve the selected top-level destination by walking the destination
-    // parents. This keeps the main navigation visible on nested repository,
-    // build, and profile routes without relying on an unavailable hierarchy extension.
-    var destination = entry?.destination
-    var selectedRoute: String? = null
-    while (destination != null) {
-        val route = destination.route
-        if (rockNavigationDestinations.any { it.route == route }) {
-            selectedRoute = route
-            break
-        }
-        destination = destination.parent
-    }
-    if (selectedRoute == null) return
+    // NavHost destinations are siblings, so nested destinations do not inherit
+    // a top-level parent route. Resolve the chrome selection from the actual route
+    // instead; this keeps navigation visible on repository/build/profile sub-pages.
+    val selectedRoute = topLevelNavigationRoute(entry?.destination?.route) ?: TopDestinationV2.Home.route
     val isTv = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
     if (isTv) {
         TvNavigationRail(
@@ -111,6 +101,23 @@ private fun navigateToTopLevel(navController: NavHostController, destination: To
         popUpTo(TopDestinationV2.Home.route) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+private fun topLevelNavigationRoute(route: String?): String? {
+    if (route == null) return null
+    return when {
+        route == TopDestinationV2.Home.route -> TopDestinationV2.Home.route
+        route == TopDestinationV2.Repositories.route -> TopDestinationV2.Repositories.route
+        route == TopDestinationV2.Builds.route -> TopDestinationV2.Builds.route
+        route == TopDestinationV2.Downloads.route -> TopDestinationV2.Downloads.route
+        route == TopDestinationV2.Profile.route -> TopDestinationV2.Profile.route
+        route.startsWith("repo/") || route.startsWith("release/") -> TopDestinationV2.Repositories.route
+        route.startsWith("build/") || route.startsWith("builds/") -> TopDestinationV2.Builds.route
+        route.startsWith("native-profile/") || route == "accounts-organizations" ||
+            route == "settings" || route == "app-customization" ||
+            route == "app-information" || route == "features-preview" -> TopDestinationV2.Profile.route
+        else -> null
     }
 }
 
