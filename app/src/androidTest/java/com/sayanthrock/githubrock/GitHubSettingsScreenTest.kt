@@ -39,7 +39,7 @@ class GitHubSettingsScreenTest {
         assertTextDoesNotExist("Profile and repositories use native screens. Every other supported GitHub setting opens inside GitHub Rock instead of an external browser.")
         assertTextDoesNotExist("Password, passkey, token, session, authorization, and billing changes remain on GitHub's secure pages inside a protected in-app panel. GitHub Rock never injects your OAuth token into web content.")
 
-        compose.onNodeWithText("Theme & interface")
+        compose.onNodeWithText("App customization")
             .performScrollTo()
             .performClick()
         compose.runOnIdle { assertTrue(openedAppearance) }
