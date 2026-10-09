@@ -22,7 +22,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -185,6 +185,6 @@ private fun readLimited(input: java.io.InputStream): ByteArray {
 }
 private fun sanitizePath(value: String): String = value.replace("/", "_").replace("\\", "_").trim().ifBlank { "uploaded-file" }
 
-@Composable private fun OperationStatus(loading: Boolean, label: String, error: Boolean) { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .10f), border = BorderStroke(1.dp, (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .3f))) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) else Icon(if (error) RockIcon.Error.vector() else RockIcon.Check.vector(), null); Spacer(Modifier.size(10.dp)); Text(label, fontWeight = FontWeight.Bold) } } }
+@Composable private fun OperationStatus(loading: Boolean, label: String, error: Boolean) { Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .10f), border = BorderStroke(1.dp, (if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = .3f))) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { if (loading) AppLoadingIndicator(modifier = Modifier.size(width = 30.dp, height = 32.dp), compact = true) else Icon(if (error) RockIcon.Error.vector() else RockIcon.Check.vector(), null); Spacer(Modifier.size(10.dp)); Text(label, fontWeight = FontWeight.Bold) } } }
 
 @Composable private fun FileEntryCard(entry: ContentEntry, enabled: Boolean, onClick: () -> Unit, onRaw: (() -> Unit)?) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(imageVector = if (entry.type == "dir") RockIcon.FolderOpen.vector() else RockIcon.Description.vector(), contentDescription = null, tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.size(10.dp)); Column(Modifier.weight(1f)) { Text(entry.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(if (entry.type == "dir") "Folder" else "${entry.size} bytes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }; if (onRaw != null) IconButton(onClick = onRaw, enabled = enabled) { Icon(RockIcon.OpenInNew.vector(), "Open raw") } } } }
