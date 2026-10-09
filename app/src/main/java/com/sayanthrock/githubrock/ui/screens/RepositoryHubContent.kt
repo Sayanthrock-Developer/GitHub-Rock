@@ -82,6 +82,7 @@ import com.sayanthrock.githubrock.core.util.MarkdownRenderer
 import com.sayanthrock.githubrock.core.util.ReleaseAssetClassifier
 import com.sayanthrock.githubrock.core.util.ReleaseAssetInfo
 import com.sayanthrock.githubrock.core.util.ReleasePlatform
+import com.sayanthrock.githubrock.ui.components.AppLoadingIndicator
 import com.sayanthrock.githubrock.ui.components.GlassCard
 import com.sayanthrock.githubrock.ui.components.RepositoryOperationLoader
 import com.sayanthrock.githubrock.ui.components.RepositoryOperationSkeleton
@@ -151,9 +152,21 @@ fun RepositoryHubContent(
     ) {
         if (loading && repository == null) {
             item(key = "loading") {
-                RepositoryOperationSkeleton(
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    AppLoadingIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        compact = false
+                    )
+                    Text(
+                        "Loading repository…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
