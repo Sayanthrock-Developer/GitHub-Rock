@@ -1,19 +1,19 @@
 package com.sayanthrock.githubrock
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
-import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import com.sayanthrock.githubrock.ui.screens.GitHubSettingsScreen
+import com.sayanthrock.githubrock.ui.theme.GitHubRockTheme
 
 class GitHubSettingsScreenTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun settingsOpenWithoutMobileExperienceCard() {
         var openedAppearance = false
